@@ -26,3 +26,17 @@ dotnet test tests/Callora.Host.Backend.Tests/Callora.Host.Backend.Tests.csproj
 - This split keeps current project references local.
 - Later, `src/Abstractions` can become its own package if desired.
 - Host API supports plugin lifecycle (`install/activate/deactivate/uninstall`) and `install/nuget`.
+
+## VoIP Plugin (neu)
+- Projekt: `src/Plugins/Voip/Callora.Plugins.Voip.csproj`
+- Entrypoint: `Callora.Plugins.Voip.Application.VoipPlugin`
+- Registry: `src/Plugins/Voip/registry.json`
+
+Build + Install-Beispiel:
+```bash
+dotnet build src/Plugins/Voip/Callora.Plugins.Voip.csproj
+curl -s -X POST http://localhost:5000/api/plugins/install \
+  -H "X-Callora-Api-Key: callora-local-dev-key-change-me" \
+  -H "Content-Type: application/json" \
+  -d '{"assemblyPath":"/abs/path/to/Callora.Plugins.Voip.dll"}'
+```

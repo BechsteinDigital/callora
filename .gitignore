@@ -78,7 +78,6 @@ Thumbs.db
 .claude/skills/
 .claude/settings.local.json
 .codex
-src/Plugins/
 
 # ------------------------------
 # Documentation (DocFX)
@@ -87,3 +86,4 @@ _site/
 docs/portal/_api/
 
 .worktrees/
+src/Host/Backend/plugins/

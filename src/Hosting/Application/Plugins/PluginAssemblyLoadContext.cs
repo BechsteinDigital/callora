@@ -13,7 +13,9 @@ internal sealed class PluginAssemblyLoadContext(string pluginAssemblyPath) : Ass
     {
         if (assemblyName.Name is { } name &&
             (name.Equals("Callora", StringComparison.Ordinal) ||
-             name.StartsWith("Callora.", StringComparison.Ordinal)))
+             name.StartsWith("Callora.", StringComparison.Ordinal) ||
+             name.Equals("VoipHost.PluginContracts", StringComparison.Ordinal) ||
+             name.StartsWith("VoipHost.", StringComparison.Ordinal)))
         {
             return null;
         }
