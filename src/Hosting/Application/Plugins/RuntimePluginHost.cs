@@ -1,0 +1,771 @@
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Reflection;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using VoipHost.PluginContracts.Application.Plugins;
+using VoipHost.PluginContracts.Domain.Plugins;
+using Callora.Hosting.Application.Options;
+using Callora.Modules.Abstractions.Application.Plugins;
+
+namespace Callora.Hosting.Application.Plugins;
+
+/// <summary>
+/// Runtime plugin host backed by collectible assembly load contexts.
+/// </summary>
+public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
+{
+    private static readonly JsonSerializerOptions RegistryJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private readonly IServiceProvider _services;
+    private readonly CalloraHostingOptions _options;
+    private readonly ILogger<RuntimePluginHost> _logger;
+    private readonly ConcurrentDictionary<string, InstalledPluginRecord> _installed = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, ActivePluginHandle> _active = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<Type, ImmutableArray<PluginExportRegistration>> _exports = new();
+    private readonly SemaphoreSlim _mutationLock = new(1, 1);
+    private long _exportSequence;
+
+    /// <summary>
+    /// Creates a runtime plugin host.
+    /// </summary>
+    public RuntimePluginHost(
+        IServiceProvider services,
+        CalloraHostingOptions options,
+        ILogger<RuntimePluginHost> logger)
+    {
+        _services = services;
+        _options = options;
+        _logger = logger;
+        LoadRegistryFromDisk();
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyCollection<RuntimePluginDescriptor> LoadedPlugins =>
+        _installed.Values
+            .Select(ToDescriptor)
+            .OrderBy(static plugin => plugin.PluginId, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    /// <inheritdoc />
+    public bool TryGetExport(Type contractType, out object? service)
+    {
+        ArgumentNullException.ThrowIfNull(contractType);
+        if (_exports.TryGetValue(contractType, out var registrations) && registrations.Length > 0)
+        {
+            // Highest sequence wins to keep deterministic "latest active export" behavior.
+            service = registrations
+                .OrderByDescending(static registration => registration.Sequence)
+                .First()
+                .Service;
+            return true;
+        }
+
+        service = null;
+        return false;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<object> GetExports(Type contractType)
+    {
+        ArgumentNullException.ThrowIfNull(contractType);
+        if (!_exports.TryGetValue(contractType, out var registrations) || registrations.Length == 0)
+            return Array.Empty<object>();
+
+        return registrations
+            .OrderByDescending(static registration => registration.Sequence)
+            .Select(static registration => registration.Service)
+            .ToArray();
+    }
+
+    /// <inheritdoc />
+    public async Task<RuntimePluginInstallResult> InstallAsync(
+        string assemblyPath,
+        string? entryTypeName = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(assemblyPath))
+        {
+            return new RuntimePluginInstallResult(
+                RuntimePluginInstallStatus.InvalidPath,
+                Plugin: null,
+                Message: "Plugin assembly path is empty.");
+        }
+
+        var fullPath = Path.GetFullPath(assemblyPath);
+        if (!File.Exists(fullPath))
+        {
+            return new RuntimePluginInstallResult(
+                RuntimePluginInstallStatus.InvalidPath,
+                Plugin: null,
+                Message: $"Plugin assembly '{fullPath}' does not exist.");
+        }
+
+        await _mutationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var inspection = InspectPluginAssembly(fullPath, entryTypeName);
+            if (inspection.Result is not null)
+                return inspection.Result;
+
+            var record = inspection.Record!;
+            if (_installed.TryGetValue(record.PluginId, out var existing))
+            {
+                return new RuntimePluginInstallResult(
+                    RuntimePluginInstallStatus.AlreadyInstalled,
+                    ToDescriptor(existing),
+                    $"Plugin '{record.PluginId}' is already installed.");
+            }
+
+            _installed[record.PluginId] = record;
+            PersistRegistryToDisk();
+
+            _logger.LogInformation("Installed plugin {PluginId} from {AssemblyPath}.", record.PluginId, fullPath);
+            return new RuntimePluginInstallResult(RuntimePluginInstallStatus.Installed, ToDescriptor(record));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Plugin install failed for assembly {AssemblyPath}.", fullPath);
+            return new RuntimePluginInstallResult(RuntimePluginInstallStatus.Failed, Plugin: null, ex.Message);
+        }
+        finally
+        {
+            _mutationLock.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<RuntimePluginActivateResult> ActivateAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(pluginId))
+        {
+            return new RuntimePluginActivateResult(
+                RuntimePluginActivateStatus.NotInstalled,
+                pluginId,
+                "Plugin id is empty.");
+        }
+
+        await _mutationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!_installed.TryGetValue(pluginId, out var record))
+            {
+                return new RuntimePluginActivateResult(
+                    RuntimePluginActivateStatus.NotInstalled,
+                    pluginId,
+                    $"Plugin '{pluginId}' is not installed.");
+            }
+
+            if (_active.ContainsKey(pluginId))
+            {
+                return new RuntimePluginActivateResult(
+                    RuntimePluginActivateStatus.AlreadyActive,
+                    pluginId);
+            }
+
+            var activation = await ActivateInternalAsync(record, cancellationToken).ConfigureAwait(false);
+            if (!activation.IsSuccess)
+                return activation;
+
+            record.State = RuntimePluginState.Active;
+            _installed[record.PluginId] = record;
+            PersistRegistryToDisk();
+            return activation;
+        }
+        finally
+        {
+            _mutationLock.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<RuntimePluginDeactivateResult> DeactivateAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(pluginId))
+        {
+            return new RuntimePluginDeactivateResult(
+                RuntimePluginDeactivateStatus.NotInstalled,
+                pluginId,
+                "Plugin id is empty.");
+        }
+
+        await _mutationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!_installed.TryGetValue(pluginId, out var record))
+            {
+                return new RuntimePluginDeactivateResult(
+                    RuntimePluginDeactivateStatus.NotInstalled,
+                    pluginId,
+                    $"Plugin '{pluginId}' is not installed.");
+            }
+
+            if (!_active.TryGetValue(pluginId, out var activeHandle))
+            {
+                return new RuntimePluginDeactivateResult(
+                    RuntimePluginDeactivateStatus.AlreadyInactive,
+                    pluginId);
+            }
+
+            var deactivation = await DeactivateInternalAsync(activeHandle, cancellationToken).ConfigureAwait(false);
+            if (!deactivation.IsSuccess)
+                return deactivation;
+
+            record.State = RuntimePluginState.Inactive;
+            _installed[record.PluginId] = record;
+            PersistRegistryToDisk();
+            return deactivation;
+        }
+        finally
+        {
+            _mutationLock.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<RuntimePluginUninstallResult> UninstallAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(pluginId))
+        {
+            return new RuntimePluginUninstallResult(
+                RuntimePluginUninstallStatus.NotInstalled,
+                pluginId,
+                "Plugin id is empty.");
+        }
+
+        await _mutationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!_installed.TryGetValue(pluginId, out _))
+            {
+                return new RuntimePluginUninstallResult(
+                    RuntimePluginUninstallStatus.NotInstalled,
+                    pluginId,
+                    $"Plugin '{pluginId}' is not installed.");
+            }
+
+            if (_active.TryGetValue(pluginId, out var activeHandle))
+            {
+                var deactivate = await DeactivateInternalAsync(activeHandle, cancellationToken).ConfigureAwait(false);
+                if (!deactivate.IsSuccess)
+                {
+                    return new RuntimePluginUninstallResult(
+                        RuntimePluginUninstallStatus.Failed,
+                        pluginId,
+                        deactivate.Message);
+                }
+            }
+
+            _installed.TryRemove(pluginId, out _);
+            PersistRegistryToDisk();
+            _logger.LogInformation("Uninstalled plugin {PluginId}.", pluginId);
+            return new RuntimePluginUninstallResult(RuntimePluginUninstallStatus.Uninstalled, pluginId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Plugin uninstall failed for {PluginId}.", pluginId);
+            return new RuntimePluginUninstallResult(RuntimePluginUninstallStatus.Failed, pluginId, ex.Message);
+        }
+        finally
+        {
+            _mutationLock.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    [Obsolete("Use InstallAsync(...) + ActivateAsync(...) instead.")]
+    public async Task<RuntimePluginInstallResult> LoadAsync(
+        string assemblyPath,
+        string? entryTypeName = null,
+        CancellationToken cancellationToken = default)
+    {
+        var install = await InstallAsync(assemblyPath, entryTypeName, cancellationToken).ConfigureAwait(false);
+        if (!install.IsSuccess || install.Plugin is null)
+            return install;
+
+        var activate = await ActivateAsync(install.Plugin.PluginId, cancellationToken).ConfigureAwait(false);
+        if (!activate.IsSuccess)
+        {
+            return new RuntimePluginInstallResult(
+                RuntimePluginInstallStatus.Failed,
+                install.Plugin with { State = RuntimePluginState.Inactive },
+                activate.Message);
+        }
+
+        return new RuntimePluginInstallResult(
+            RuntimePluginInstallStatus.Installed,
+            install.Plugin with { State = RuntimePluginState.Active },
+            install.Message);
+    }
+
+    /// <inheritdoc />
+    [Obsolete("Use DeactivateAsync(...) or UninstallAsync(...) instead.")]
+    public Task<RuntimePluginUninstallResult> UnloadAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default)
+        => UninstallAsync(pluginId, cancellationToken);
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        await _mutationLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            foreach (var pluginId in _active.Keys.ToArray())
+            {
+                if (_active.TryGetValue(pluginId, out var handle))
+                    await DeactivateInternalAsync(handle, CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _mutationLock.Release();
+            _mutationLock.Dispose();
+        }
+    }
+
+    private async Task<RuntimePluginActivateResult> ActivateInternalAsync(
+        InstalledPluginRecord record,
+        CancellationToken cancellationToken)
+    {
+        PluginAssemblyLoadContext? loadContext = null;
+        IHostManagedPlugin? plugin = null;
+
+        try
+        {
+            loadContext = new PluginAssemblyLoadContext(record.AssemblyPath);
+            var assembly = loadContext.LoadFromAssemblyPath(record.AssemblyPath);
+            var pluginType = ResolvePluginType(assembly, record.EntryTypeName);
+            if (pluginType is null)
+            {
+                loadContext.Unload();
+                return new RuntimePluginActivateResult(
+                    RuntimePluginActivateStatus.Failed,
+                    record.PluginId,
+                    "Plugin entrypoint type not found.");
+            }
+
+            var created = CreatePluginInstance(pluginType);
+            if (created is null)
+            {
+                loadContext.Unload();
+                return new RuntimePluginActivateResult(
+                    RuntimePluginActivateStatus.Failed,
+                    record.PluginId,
+                    $"Could not create plugin entrypoint '{pluginType.FullName}'.");
+            }
+
+            plugin = created;
+            if (!string.Equals(plugin.PluginId, record.PluginId, StringComparison.OrdinalIgnoreCase))
+            {
+                loadContext.Unload();
+                return new RuntimePluginActivateResult(
+                    RuntimePluginActivateStatus.Failed,
+                    record.PluginId,
+                    $"Plugin id mismatch. Expected '{record.PluginId}', but plugin returned '{plugin.PluginId}'.");
+            }
+
+            var pluginContext = new PluginContext(_services, record.PluginId, RegisterExport);
+            await plugin.StartAsync(pluginContext, cancellationToken).ConfigureAwait(false);
+
+            var handle = new ActivePluginHandle(record.PluginId, plugin, loadContext);
+            if (!_active.TryAdd(record.PluginId, handle))
+            {
+                await SafeStopAsync(plugin, cancellationToken).ConfigureAwait(false);
+                RemoveExportsByPlugin(record.PluginId);
+                loadContext.Unload();
+                return new RuntimePluginActivateResult(
+                    RuntimePluginActivateStatus.AlreadyActive,
+                    record.PluginId);
+            }
+
+            _logger.LogInformation("Activated plugin {PluginId}.", record.PluginId);
+            return new RuntimePluginActivateResult(RuntimePluginActivateStatus.Activated, record.PluginId);
+        }
+        catch (Exception ex)
+        {
+            RemoveExportsByPlugin(record.PluginId);
+
+            if (plugin is not null)
+                await SafeStopAsync(plugin, cancellationToken).ConfigureAwait(false);
+            loadContext?.Unload();
+
+            _logger.LogError(ex, "Plugin activation failed for {PluginId}.", record.PluginId);
+            return new RuntimePluginActivateResult(RuntimePluginActivateStatus.Failed, record.PluginId, ex.Message);
+        }
+    }
+
+    private async Task<RuntimePluginDeactivateResult> DeactivateInternalAsync(
+        ActivePluginHandle handle,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            RemoveExportsByPlugin(handle.PluginId);
+            await SafeStopAsync(handle.Plugin, cancellationToken).ConfigureAwait(false);
+            handle.LoadContext.Unload();
+            _active.TryRemove(handle.PluginId, out _);
+
+            _logger.LogInformation("Deactivated plugin {PluginId}.", handle.PluginId);
+            return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.Deactivated, handle.PluginId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Plugin deactivation failed for {PluginId}.", handle.PluginId);
+            return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.Failed, handle.PluginId, ex.Message);
+        }
+    }
+
+    private (InstalledPluginRecord? Record, RuntimePluginInstallResult? Result) InspectPluginAssembly(
+        string fullPath,
+        string? entryTypeName)
+    {
+        PluginAssemblyLoadContext? loadContext = null;
+        IHostManagedPlugin? plugin = null;
+
+        try
+        {
+            loadContext = new PluginAssemblyLoadContext(fullPath);
+            var assembly = loadContext.LoadFromAssemblyPath(fullPath);
+            var pluginType = ResolvePluginType(assembly, entryTypeName);
+            if (pluginType is null)
+            {
+                loadContext.Unload();
+                return (null, new RuntimePluginInstallResult(
+                    RuntimePluginInstallStatus.EntryPointNotFound,
+                    Plugin: null,
+                    Message: "No host plugin entrypoint found."));
+            }
+
+            if (!IsSupportedPluginType(pluginType) ||
+                pluginType.IsAbstract ||
+                pluginType.IsInterface)
+            {
+                loadContext.Unload();
+                return (null, new RuntimePluginInstallResult(
+                    RuntimePluginInstallStatus.EntryPointInvalid,
+                    Plugin: null,
+                    Message: $"Type '{pluginType.FullName}' is not a valid host plugin entrypoint."));
+            }
+
+            var compatibility = ValidateHostCompatibility(assembly);
+            if (compatibility is not null)
+            {
+                loadContext.Unload();
+                return (null, new RuntimePluginInstallResult(
+                    RuntimePluginInstallStatus.Failed,
+                    Plugin: null,
+                    Message: compatibility));
+            }
+
+            var created = CreatePluginInstance(pluginType);
+            if (created is null)
+            {
+                loadContext.Unload();
+                return (null, new RuntimePluginInstallResult(
+                    RuntimePluginInstallStatus.EntryPointInvalid,
+                    Plugin: null,
+                    Message: $"Could not create plugin entrypoint '{pluginType.FullName}'."));
+            }
+
+            plugin = created;
+            var record = new InstalledPluginRecord(
+                plugin.PluginId,
+                plugin.DisplayName,
+                fullPath,
+                pluginType.FullName,
+                RuntimePluginState.Installed);
+
+            return (record, null);
+        }
+        catch (Exception ex)
+        {
+            return (null, new RuntimePluginInstallResult(RuntimePluginInstallStatus.Failed, Plugin: null, ex.Message));
+        }
+        finally
+        {
+            switch (plugin)
+            {
+                case IAsyncDisposable asyncDisposable:
+                    asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                    break;
+                case IDisposable disposable:
+                    disposable.Dispose();
+                    break;
+            }
+
+            loadContext?.Unload();
+        }
+    }
+
+    private static string? ValidateHostCompatibility(Assembly pluginAssembly)
+    {
+        var pluginAbstractionsRef = pluginAssembly
+            .GetReferencedAssemblies()
+            .FirstOrDefault(static reference => string.Equals(
+                reference.Name,
+                "Callora.Modules.Abstractions",
+                StringComparison.Ordinal));
+        var hostContractsRef = pluginAssembly
+            .GetReferencedAssemblies()
+            .FirstOrDefault(static reference => string.Equals(
+                reference.Name,
+                "VoipHost.PluginContracts",
+                StringComparison.Ordinal));
+
+        var pluginVersion = hostContractsRef?.Version ?? pluginAbstractionsRef?.Version;
+        if (pluginVersion is null)
+            return null;
+
+        var hostVersion = typeof(IHostManagedPlugin).Assembly.GetName().Version;
+        if (hostVersion is null)
+            return null;
+
+        if (pluginVersion.Major != hostVersion.Major)
+        {
+            return $"Plugin targets host contracts {pluginVersion}, but host uses {hostVersion}.";
+        }
+
+        return null;
+    }
+
+    private static Type? ResolvePluginType(Assembly assembly, string? entryTypeName)
+    {
+        if (!string.IsNullOrWhiteSpace(entryTypeName))
+            return assembly.GetType(entryTypeName, throwOnError: false, ignoreCase: false);
+
+        return assembly
+            .GetTypes()
+            .FirstOrDefault(static type => IsSupportedPluginType(type) &&
+                                           !type.IsAbstract &&
+                                           !type.IsInterface);
+    }
+
+    private static bool IsSupportedPluginType(Type type) =>
+        typeof(IHostManagedPlugin).IsAssignableFrom(type) ||
+        typeof(ICalloraRuntimePlugin).IsAssignableFrom(type);
+
+    private static IHostManagedPlugin? CreatePluginInstance(Type pluginType)
+    {
+        if (Activator.CreateInstance(pluginType) is not object created)
+            return null;
+
+        if (created is IHostManagedPlugin hostPlugin)
+            return hostPlugin;
+
+        if (created is ICalloraRuntimePlugin legacyPlugin)
+            return new LegacyRuntimePluginAdapter(legacyPlugin);
+
+        return null;
+    }
+
+    private void RegisterExport(string pluginId, Type contractType, object service)
+    {
+        ArgumentNullException.ThrowIfNull(pluginId);
+        ArgumentNullException.ThrowIfNull(contractType);
+        ArgumentNullException.ThrowIfNull(service);
+
+        if (!contractType.IsInstanceOfType(service))
+        {
+            throw new InvalidOperationException(
+                $"Export instance type '{service.GetType().FullName}' does not implement '{contractType.FullName}'.");
+        }
+
+        var registration = new PluginExportRegistration(
+            pluginId,
+            contractType,
+            service,
+            Interlocked.Increment(ref _exportSequence));
+
+        _exports.AddOrUpdate(
+            contractType,
+            _ => ImmutableArray.Create(registration),
+            (_, current) =>
+            {
+                if (current.Any(existing => string.Equals(existing.PluginId, pluginId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        $"Plugin '{pluginId}' already exports contract '{contractType.FullName}'.");
+                }
+
+                return current.Add(registration);
+            });
+    }
+
+    private void RemoveExportsByPlugin(string pluginId)
+    {
+        foreach (var (contractType, exports) in _exports)
+        {
+            if (exports.Length == 0)
+                continue;
+
+            var filtered = exports
+                .Where(export => !string.Equals(export.PluginId, pluginId, StringComparison.OrdinalIgnoreCase))
+                .ToImmutableArray();
+
+            if (filtered.Length == exports.Length)
+                continue;
+
+            if (filtered.IsEmpty)
+            {
+                _exports.TryRemove(contractType, out _);
+                continue;
+            }
+
+            _exports[contractType] = filtered;
+        }
+    }
+
+    private void LoadRegistryFromDisk()
+    {
+        try
+        {
+            if (!File.Exists(_options.PluginRegistryFilePath))
+                return;
+
+            var json = File.ReadAllText(_options.PluginRegistryFilePath);
+            var document = JsonSerializer.Deserialize<PluginRegistryDocument>(json, RegistryJsonOptions);
+            if (document?.Plugins is null)
+                return;
+
+            foreach (var plugin in document.Plugins)
+            {
+                if (string.IsNullOrWhiteSpace(plugin.PluginId) ||
+                    string.IsNullOrWhiteSpace(plugin.AssemblyPath))
+                    continue;
+
+                var record = new InstalledPluginRecord(
+                    plugin.PluginId,
+                    plugin.DisplayName ?? plugin.PluginId,
+                    plugin.AssemblyPath,
+                    plugin.EntryTypeName,
+                    plugin.State);
+
+                _installed[record.PluginId] = record;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load plugin registry {RegistryPath}.", _options.PluginRegistryFilePath);
+        }
+    }
+
+    private void PersistRegistryToDisk()
+    {
+        var registryPath = _options.PluginRegistryFilePath;
+        var directory = Path.GetDirectoryName(registryPath);
+        if (!string.IsNullOrWhiteSpace(directory))
+            Directory.CreateDirectory(directory);
+
+        var document = new PluginRegistryDocument(
+            _installed.Values
+                .OrderBy(static p => p.PluginId, StringComparer.OrdinalIgnoreCase)
+                .Select(static p => new PluginRegistryEntry(
+                    p.PluginId,
+                    p.DisplayName,
+                    p.AssemblyPath,
+                    p.EntryTypeName,
+                    p.State))
+                .ToArray());
+
+        var json = JsonSerializer.Serialize(document, RegistryJsonOptions);
+        File.WriteAllText(registryPath, json);
+    }
+
+    private static RuntimePluginDescriptor ToDescriptor(InstalledPluginRecord record) =>
+        new(record.PluginId, record.DisplayName, record.AssemblyPath, record.EntryTypeName, record.State);
+
+    private static async Task SafeStopAsync(IHostManagedPlugin plugin, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await plugin.StopAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            switch (plugin)
+            {
+                case IAsyncDisposable asyncDisposable:
+                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    break;
+                case IDisposable disposable:
+                    disposable.Dispose();
+                    break;
+            }
+        }
+    }
+
+    private sealed record InstalledPluginRecord(
+        string PluginId,
+        string DisplayName,
+        string AssemblyPath,
+        string? EntryTypeName,
+        RuntimePluginState State)
+    {
+        public RuntimePluginState State { get; set; } = State;
+    }
+
+    private sealed record ActivePluginHandle(
+        string PluginId,
+        IHostManagedPlugin Plugin,
+        PluginAssemblyLoadContext LoadContext);
+
+    private sealed record PluginExportRegistration(
+        string PluginId,
+        Type ContractType,
+        object Service,
+        long Sequence);
+
+    private sealed class PluginContext(
+        IServiceProvider services,
+        string pluginId,
+        Action<string, Type, object> registerExport) : ICalloraPluginContext
+    {
+        public IServiceProvider Services { get; } = services;
+
+        public void Export(Type contractType, object service)
+        {
+            registerExport(pluginId, contractType, service);
+        }
+    }
+
+    private sealed record PluginRegistryDocument(PluginRegistryEntry[] Plugins);
+
+    private sealed record PluginRegistryEntry(
+        string PluginId,
+        string? DisplayName,
+        string AssemblyPath,
+        string? EntryTypeName,
+        RuntimePluginState State);
+
+    private sealed class LegacyRuntimePluginAdapter(ICalloraRuntimePlugin inner) : IHostManagedPlugin
+    {
+        public string PluginId => inner.PluginId;
+
+        public string DisplayName => inner.DisplayName;
+
+        public ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
+        {
+            if (context is not ICalloraPluginContext voipContext)
+            {
+                throw new InvalidOperationException(
+                    $"Expected context implementing {nameof(ICalloraPluginContext)}.");
+            }
+
+            return inner.StartAsync(voipContext, cancellationToken);
+        }
+
+        public ValueTask StopAsync(CancellationToken cancellationToken = default) =>
+            inner.StopAsync(cancellationToken);
+    }
+}

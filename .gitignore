@@ -1,0 +1,87 @@
+# ------------------------------
+# Build artifacts
+# ------------------------------
+[Bb]in/
+[Oo]bj/
+out/
+artifacts/
+publish/
+
+# ------------------------------
+# Test / coverage / benchmark
+# ------------------------------
+TestResults/
+BenchmarkDotNet.Artifacts/
+coverage/
+coverage-*/
+coverage*.json
+coverage*.xml
+*.coverage
+*.coveragexml
+
+# ------------------------------
+# NuGet
+# ------------------------------
+*.nupkg
+*.snupkg
+packages/
+
+# ------------------------------
+# User / IDE-specific
+# ------------------------------
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userprefs
+*.rsuser
+*.sln.docstates
+
+# Rider / ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# NCrunch
+*.ncrunchsolution
+*.ncrunchproject
+_NCrunch_*
+
+# ------------------------------
+# Logs / temp
+# ------------------------------
+*.log
+*.tmp
+*.temp
+*.cache
+
+# ------------------------------
+# OS files
+# ------------------------------
+.DS_Store
+Thumbs.db
+.directory
+
+# ------------------------------
+# Local environment / secrets
+# ------------------------------
+.env
+.env.*
+!.env.example
+!.env.dist
+
+# ------------------------------
+# Cursor / local AI tooling
+# ------------------------------
+.cursor/
+.claude/skills/
+.claude/settings.local.json
+
+# ------------------------------
+# Documentation (DocFX)
+# ------------------------------
+_site/
+docs/portal/_api/
+
+.worktrees/
