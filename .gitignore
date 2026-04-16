@@ -77,6 +77,8 @@ Thumbs.db
 .cursor/
 .claude/skills/
 .claude/settings.local.json
+.codex
+src/Plugins/
 
 # ------------------------------
 # Documentation (DocFX)
