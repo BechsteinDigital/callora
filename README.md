@@ -15,6 +15,13 @@ dotnet build Callora.Host.sln
 dotnet test tests/Callora.Host.Backend.Tests/Callora.Host.Backend.Tests.csproj
 ```
 
+## Knowledge Base
+- Zentraler Einstieg: `docs/HOST_KNOWLEDGE_INDEX.md`
+- Zielbild: `Callora_Targetstruktur_fuer_KI.md`
+- Host API: `docs/portal/architecture/host-backend-api.md`
+- Pluginmodell: `docs/portal/modules/plugins.md`
+- Compliance: `docs/compliance/COMPLIANCE_BASELINE_DSGVO_EU_AI_ACT.md`
+
 ## Notes
 - This split keeps current project references local.
 - Later, `src/Abstractions` can become its own package if desired.
