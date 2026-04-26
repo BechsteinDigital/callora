@@ -1,0 +1,15 @@
+.git
+.gitignore
+**/.DS_Store
+**/node_modules
+**/.nuxt
+**/.output
+**/dist
+**/bin
+**/obj
+**/TestResults
+artifacts
+build
+.env
+.env.*
+!.env.example

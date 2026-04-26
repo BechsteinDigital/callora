@@ -1,0 +1,24 @@
+{
+  "name": "@callora/host-admin-ui",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "nuxt dev --port 3200",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.6.1",
+    "@pinia/nuxt": "^0.11.3",
+    "nunjucks": "^3.2.4",
+    "nuxt": "^4.4.2",
+    "pinia": "^3.0.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@vue/language-core": "^2.2.12",
+    "vue-tsc": "^2.2.12"
+  }
+}

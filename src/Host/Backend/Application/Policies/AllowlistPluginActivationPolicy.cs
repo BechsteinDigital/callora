@@ -10,6 +10,7 @@ public sealed class AllowlistPluginActivationPolicy(BackendHostOptions options) 
 
     public ValueTask<PluginActivationDecision> EvaluateAsync(
         string pluginId,
+        string? tenantId = null,
         CancellationToken cancellationToken = default)
     {
         if (!options.RequireAllowlistForActivation)

@@ -40,7 +40,15 @@ cd "$ROOT_DIR"
 mkdir -p "$(dirname "$OUT_PATH")"
 
 collect_files() {
-  find src tests samples perf docs scripts .github/workflows \
+  local roots=()
+  local candidate
+  for candidate in src custom tests samples perf docs scripts .github/workflows; do
+    if [[ -e "$candidate" ]]; then
+      roots+=("$candidate")
+    fi
+  done
+
+  find "${roots[@]}" \
     -type f \
     -not -path '*/.git/*' \
     -not -path '*/bin/*' \
@@ -95,7 +103,7 @@ path_scope() {
     src/Client/*) echo "Client" ;;
     src/Hosting/*) echo "Hosting" ;;
     src/Host/*) echo "Host" ;;
-    src/Plugins/*) echo "Plugins" ;;
+    custom/plugins/*) echo "Plugins" ;;
     src/Modules/*) echo "Modules" ;;
     src/Audio/*) echo "Audio" ;;
     src/Licensing/*) echo "Licensing" ;;

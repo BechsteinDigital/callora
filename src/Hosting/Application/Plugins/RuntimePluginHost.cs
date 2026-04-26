@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Reflection;
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using VoipHost.PluginContracts.Application.Plugins;
 using VoipHost.PluginContracts.Domain.Plugins;
@@ -15,12 +14,6 @@ namespace Callora.Hosting.Application.Plugins;
 /// </summary>
 public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 {
-    private static readonly JsonSerializerOptions RegistryJsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
-    };
-
     private readonly IServiceProvider _services;
     private readonly CalloraHostingOptions _options;
     private readonly ILogger<RuntimePluginHost> _logger;
@@ -41,7 +34,6 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         _services = services;
         _options = options;
         _logger = logger;
-        LoadRegistryFromDisk();
     }
 
     /// <inheritdoc />
@@ -122,9 +114,11 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             }
 
             _installed[record.PluginId] = record;
-            PersistRegistryToDisk();
 
-            _logger.LogInformation("Installed plugin {PluginId} from {AssemblyPath}.", record.PluginId, fullPath);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Installed plugin {PluginId} from {AssemblyPath}.", record.PluginId, fullPath);
+            }
             return new RuntimePluginInstallResult(RuntimePluginInstallStatus.Installed, ToDescriptor(record));
         }
         catch (Exception ex)
@@ -175,7 +169,6 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
             record.State = RuntimePluginState.Active;
             _installed[record.PluginId] = record;
-            PersistRegistryToDisk();
             return activation;
         }
         finally
@@ -221,7 +214,6 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
             record.State = RuntimePluginState.Inactive;
             _installed[record.PluginId] = record;
-            PersistRegistryToDisk();
             return deactivation;
         }
         finally
@@ -267,8 +259,10 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             }
 
             _installed.TryRemove(pluginId, out _);
-            PersistRegistryToDisk();
-            _logger.LogInformation("Uninstalled plugin {PluginId}.", pluginId);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Uninstalled plugin {PluginId}.", pluginId);
+            }
             return new RuntimePluginUninstallResult(RuntimePluginUninstallStatus.Uninstalled, pluginId);
         }
         catch (Exception ex)
@@ -389,7 +383,10 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                     record.PluginId);
             }
 
-            _logger.LogInformation("Activated plugin {PluginId}.", record.PluginId);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Activated plugin {PluginId}.", record.PluginId);
+            }
             return new RuntimePluginActivateResult(RuntimePluginActivateStatus.Activated, record.PluginId);
         }
         catch (Exception ex)
@@ -416,7 +413,10 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             handle.LoadContext.Unload();
             _active.TryRemove(handle.PluginId, out _);
 
-            _logger.LogInformation("Deactivated plugin {PluginId}.", handle.PluginId);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Deactivated plugin {PluginId}.", handle.PluginId);
+            }
             return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.Deactivated, handle.PluginId);
         }
         catch (Exception ex)
@@ -592,10 +592,12 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             _ => ImmutableArray.Create(registration),
             (_, current) =>
             {
-                if (current.Any(existing => string.Equals(existing.PluginId, pluginId, StringComparison.OrdinalIgnoreCase)))
+                if (current.Any(existing =>
+                        string.Equals(existing.PluginId, pluginId, StringComparison.OrdinalIgnoreCase) &&
+                        ReferenceEquals(existing.Service, service)))
                 {
                     throw new InvalidOperationException(
-                        $"Plugin '{pluginId}' already exports contract '{contractType.FullName}'.");
+                        $"Plugin '{pluginId}' already exported this service instance for contract '{contractType.FullName}'.");
                 }
 
                 return current.Add(registration);
@@ -626,62 +628,6 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         }
     }
 
-    private void LoadRegistryFromDisk()
-    {
-        try
-        {
-            if (!File.Exists(_options.PluginRegistryFilePath))
-                return;
-
-            var json = File.ReadAllText(_options.PluginRegistryFilePath);
-            var document = JsonSerializer.Deserialize<PluginRegistryDocument>(json, RegistryJsonOptions);
-            if (document?.Plugins is null)
-                return;
-
-            foreach (var plugin in document.Plugins)
-            {
-                if (string.IsNullOrWhiteSpace(plugin.PluginId) ||
-                    string.IsNullOrWhiteSpace(plugin.AssemblyPath))
-                    continue;
-
-                var record = new InstalledPluginRecord(
-                    plugin.PluginId,
-                    plugin.DisplayName ?? plugin.PluginId,
-                    plugin.AssemblyPath,
-                    plugin.EntryTypeName,
-                    plugin.State);
-
-                _installed[record.PluginId] = record;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to load plugin registry {RegistryPath}.", _options.PluginRegistryFilePath);
-        }
-    }
-
-    private void PersistRegistryToDisk()
-    {
-        var registryPath = _options.PluginRegistryFilePath;
-        var directory = Path.GetDirectoryName(registryPath);
-        if (!string.IsNullOrWhiteSpace(directory))
-            Directory.CreateDirectory(directory);
-
-        var document = new PluginRegistryDocument(
-            _installed.Values
-                .OrderBy(static p => p.PluginId, StringComparer.OrdinalIgnoreCase)
-                .Select(static p => new PluginRegistryEntry(
-                    p.PluginId,
-                    p.DisplayName,
-                    p.AssemblyPath,
-                    p.EntryTypeName,
-                    p.State))
-                .ToArray());
-
-        var json = JsonSerializer.Serialize(document, RegistryJsonOptions);
-        File.WriteAllText(registryPath, json);
-    }
-
     private static RuntimePluginDescriptor ToDescriptor(InstalledPluginRecord record) =>
         new(record.PluginId, record.DisplayName, record.AssemblyPath, record.EntryTypeName, record.State);
 
@@ -703,69 +649,5 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                     break;
             }
         }
-    }
-
-    private sealed record InstalledPluginRecord(
-        string PluginId,
-        string DisplayName,
-        string AssemblyPath,
-        string? EntryTypeName,
-        RuntimePluginState State)
-    {
-        public RuntimePluginState State { get; set; } = State;
-    }
-
-    private sealed record ActivePluginHandle(
-        string PluginId,
-        IHostManagedPlugin Plugin,
-        PluginAssemblyLoadContext LoadContext);
-
-    private sealed record PluginExportRegistration(
-        string PluginId,
-        Type ContractType,
-        object Service,
-        long Sequence);
-
-    private sealed class PluginContext(
-        IServiceProvider services,
-        string pluginId,
-        Action<string, Type, object> registerExport) : ICalloraPluginContext
-    {
-        public IServiceProvider Services { get; } = services;
-
-        public void Export(Type contractType, object service)
-        {
-            registerExport(pluginId, contractType, service);
-        }
-    }
-
-    private sealed record PluginRegistryDocument(PluginRegistryEntry[] Plugins);
-
-    private sealed record PluginRegistryEntry(
-        string PluginId,
-        string? DisplayName,
-        string AssemblyPath,
-        string? EntryTypeName,
-        RuntimePluginState State);
-
-    private sealed class LegacyRuntimePluginAdapter(ICalloraRuntimePlugin inner) : IHostManagedPlugin
-    {
-        public string PluginId => inner.PluginId;
-
-        public string DisplayName => inner.DisplayName;
-
-        public ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
-        {
-            if (context is not ICalloraPluginContext voipContext)
-            {
-                throw new InvalidOperationException(
-                    $"Expected context implementing {nameof(ICalloraPluginContext)}.");
-            }
-
-            return inner.StartAsync(voipContext, cancellationToken);
-        }
-
-        public ValueTask StopAsync(CancellationToken cancellationToken = default) =>
-            inner.StopAsync(cancellationToken);
     }
 }

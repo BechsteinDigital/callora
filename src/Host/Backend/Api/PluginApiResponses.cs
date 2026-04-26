@@ -3,4 +3,14 @@ namespace Callora.Host.Backend.Api;
 public sealed record PluginLifecycleApiResponse(
     bool IsSuccess,
     string? PluginId,
-    string? Message);
+    string? Message,
+    string? ErrorCode = null,
+    string? WarningMessage = null,
+    string? WarningCode = null);
+
+public sealed record PluginContractSupportApiResponse(
+    string ContractVersion,
+    string SupportStatus,
+    bool IsInstallable,
+    bool EmitsWarning,
+    string Message);

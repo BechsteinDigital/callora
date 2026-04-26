@@ -1,0 +1,12 @@
+{
+  "contractVersion": "v1",
+  "schemaVersion": "1.0",
+  "name": "Template Beta",
+  "pluginId": "template-beta",
+  "version": "1.1.0",
+  "assemblyFileName": "Callora.Plugins.TemplateBeta.dll",
+  "entryTypeName": "Callora.Plugins.TemplateBeta.Application.TemplateBetaPlugin",
+  "capabilities": [
+    "workspace.templates"
+  ]
+}

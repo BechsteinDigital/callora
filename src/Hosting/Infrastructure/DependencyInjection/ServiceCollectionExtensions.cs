@@ -23,8 +23,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(typeof(CalloraHostingOptions), options);
         services.AddSingleton(typeof(ModuleBootstrapRunner), typeof(ModuleBootstrapRunner));
         services.AddSingleton(typeof(RuntimePluginHost), typeof(RuntimePluginHost));
-        services.AddSingleton(typeof(ICalloraPluginRuntime), typeof(RuntimePluginHost));
-        services.AddSingleton(typeof(ICalloraPluginCatalog), typeof(RuntimePluginHost));
+        services.AddSingleton(typeof(ICalloraPluginRuntime), provider =>
+            (ICalloraPluginRuntime)(provider.GetService(typeof(RuntimePluginHost))
+                ?? throw new InvalidOperationException("RuntimePluginHost is not registered.")));
+        services.AddSingleton(typeof(ICalloraPluginCatalog), provider =>
+            (ICalloraPluginCatalog)(provider.GetService(typeof(RuntimePluginHost))
+                ?? throw new InvalidOperationException("RuntimePluginHost is not registered.")));
         services.AddSingleton(typeof(IHostPluginLifecycle), typeof(HostPluginLifecycle));
         services.AddSingleton(typeof(CalloraHostStartup), typeof(CalloraHostStartup));
     }

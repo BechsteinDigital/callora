@@ -9,4 +9,7 @@ internal sealed class ServiceCollectionHostRegistry(IServiceCollection services)
 
     public void AddSingleton(Type serviceType, object instance) =>
         services.AddSingleton(serviceType, instance);
+
+    public void AddSingleton(Type serviceType, Func<IServiceProvider, object> implementationFactory) =>
+        services.AddSingleton(serviceType, implementationFactory);
 }

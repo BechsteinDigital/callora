@@ -1,0 +1,18 @@
+services:
+  callora-frontdoor:
+    image: caddy:2.8
+    container_name: ${DEV_FRONTDOOR_CONTAINER_NAME:-callora-frontdoor-dev}
+    restart: unless-stopped
+    depends_on:
+      callora-backend:
+        condition: service_started
+    ports:
+      - "${DEV_FRONTDOOR_PORT:-8080}:80"
+    environment:
+      BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-callora-backend:5000}
+      ADMIN_UI_UPSTREAM: ${ADMIN_UI_UPSTREAM:-host.docker.internal:3200}
+      WORKSPACE_UI_UPSTREAM: ${WORKSPACE_UI_UPSTREAM:-host.docker.internal:3300}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./ops/local-frontdoor/Caddyfile:/etc/caddy/Caddyfile:ro

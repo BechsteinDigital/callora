@@ -55,11 +55,21 @@ public sealed class LocalNuGetPackagePluginAssemblyResolver : INuGetPluginAssemb
                 .FirstOrDefault();
         }
 
-        var libNet8 = Path.Combine(packageRoot, "lib", "net8.0");
-        if (Directory.Exists(libNet8))
+        var preferredLibTfms = new[]
         {
+            "net10.0",
+            "net9.0",
+            "net8.0"
+        };
+
+        foreach (var tfm in preferredLibTfms)
+        {
+            var libFolder = Path.Combine(packageRoot, "lib", tfm);
+            if (!Directory.Exists(libFolder))
+                continue;
+
             var match = Directory
-                .EnumerateFiles(libNet8, "*.dll", SearchOption.TopDirectoryOnly)
+                .EnumerateFiles(libFolder, "*.dll", SearchOption.TopDirectoryOnly)
                 .Where(static path => !path.EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .FirstOrDefault();

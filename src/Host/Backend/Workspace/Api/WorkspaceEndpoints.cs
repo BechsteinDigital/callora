@@ -1,0 +1,229 @@
+using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Policies;
+using Callora.Host.Backend.Infrastructure.Security;
+
+namespace Callora.Host.Workspace.Api;
+
+public static class WorkspaceEndpoints
+{
+    public static void MapWorkspaceEndpoints(this IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/workspaces")
+            .WithTags("Workspaces")
+            .RequireAuthorization();
+
+        group.MapGet("/", async (
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            CancellationToken cancellationToken) =>
+        {
+            if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
+            {
+                return Results.BadRequest(new { message = "Workspace host default tenant key is not configured." });
+            }
+
+            var workspaces = await workspaceStore.ListAsync(hostOptions.DefaultTenantKey, cancellationToken).ConfigureAwait(false);
+            return Results.Ok(workspaces.Select(ToResponse).ToArray());
+        }).WithName("Workspaces_List")
+            .RequirePermission(BackendPermissionKeys.WorkspaceRead);
+
+        group.MapGet("/{workspaceKey}", async (
+            string workspaceKey,
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            CancellationToken cancellationToken) =>
+        {
+            if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
+            {
+                return Results.BadRequest(new { message = "Workspace host default tenant key is not configured." });
+            }
+
+            var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            if (workspace is not null &&
+                !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
+            {
+                workspace = null;
+            }
+
+            return workspace is null ? Results.NotFound() : Results.Ok(ToResponse(workspace));
+        }).WithName("Workspaces_Get")
+            .RequirePermission(BackendPermissionKeys.WorkspaceRead);
+
+        group.MapPut("/{workspaceKey}", async (
+            string workspaceKey,
+            UpsertWorkspaceApiRequest request,
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            CancellationToken cancellationToken) =>
+        {
+            var tenantKey = hostOptions.DefaultTenantKey;
+
+            if (string.IsNullOrWhiteSpace(tenantKey))
+            {
+                return Results.BadRequest(new { message = "No tenant key provided and no workspace host default tenant key configured." });
+            }
+
+            var workspace = await workspaceStore
+                .UpsertAsync(
+                    tenantKey,
+                    workspaceKey,
+                    request.DisplayName,
+                    request.WorkspaceType,
+                    request.IsActive,
+                    request.PublicBaseUrl,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            return workspace.Status switch
+            {
+                WorkspaceUpsertStatus.Ok when workspace.Workspace is not null => Results.Ok(ToResponse(workspace.Workspace)),
+                WorkspaceUpsertStatus.TenantNotFound => Results.NotFound(new { message = $"Tenant '{tenantKey}' not found." }),
+                WorkspaceUpsertStatus.InvalidPublicUrl => Results.BadRequest(new { message = "Workspace public URL is invalid." }),
+                _ => Results.BadRequest()
+            };
+        }).WithName("Workspaces_Upsert")
+            .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
+
+        group.MapDelete("/{workspaceKey}", async (
+            string workspaceKey,
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            CancellationToken cancellationToken) =>
+        {
+            if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
+            {
+                return Results.BadRequest(new { message = "Workspace host default tenant key is not configured." });
+            }
+
+            var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            if (workspace is null ||
+                !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.NotFound();
+            }
+
+            var removed = await workspaceStore.RemoveAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            return removed ? Results.NoContent() : Results.NotFound();
+        }).WithName("Workspaces_Delete")
+            .RequirePermission(BackendPermissionKeys.WorkspaceDelete);
+
+        group.MapGet("/{workspaceKey}/members", async (
+            string workspaceKey,
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            CancellationToken cancellationToken) =>
+        {
+            if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
+            {
+                return Results.BadRequest(new { message = "Workspace host default tenant key is not configured." });
+            }
+
+            var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            if (workspace is null ||
+                !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+            }
+
+            var members = await workspaceStore.ListMembersAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            return Results.Ok(members.Select(ToResponse).ToArray());
+        }).WithName("Workspaces_Members_List")
+            .RequirePermission(BackendPermissionKeys.WorkspaceRead);
+
+        group.MapPut("/{workspaceKey}/members/{userId}", async (
+            string workspaceKey,
+            string userId,
+            UpsertWorkspaceMemberApiRequest request,
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            CancellationToken cancellationToken) =>
+        {
+            if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
+            {
+                return Results.BadRequest(new { message = "Workspace host default tenant key is not configured." });
+            }
+
+            var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            if (workspace is null ||
+                !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+            }
+
+            var result = await workspaceStore
+                .UpsertMemberAsync(workspaceKey, userId, request.Role, cancellationToken)
+                .ConfigureAwait(false);
+
+            return result.Status switch
+            {
+                WorkspaceMemberUpsertStatus.Ok when result.Member is not null => Results.Ok(ToResponse(result.Member)),
+                WorkspaceMemberUpsertStatus.WorkspaceNotFound => Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." }),
+                WorkspaceMemberUpsertStatus.UserNotFound => Results.NotFound(new { message = $"User '{userId}' not found." }),
+                _ => Results.BadRequest()
+            };
+        }).WithName("Workspaces_Members_Upsert")
+            .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
+
+        group.MapDelete("/{workspaceKey}/members/{userId}", async (
+            string workspaceKey,
+            string userId,
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            CancellationToken cancellationToken) =>
+        {
+            if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
+            {
+                return Results.BadRequest(new { message = "Workspace host default tenant key is not configured." });
+            }
+
+            var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            if (workspace is null ||
+                !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+            }
+
+            var result = await workspaceStore.RemoveMemberAsync(workspaceKey, userId, cancellationToken).ConfigureAwait(false);
+            return result.Status switch
+            {
+                WorkspaceMemberDeleteStatus.Deleted => Results.NoContent(),
+                WorkspaceMemberDeleteStatus.WorkspaceNotFound => Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." }),
+                WorkspaceMemberDeleteStatus.UserNotFound => Results.NotFound(new { message = $"User '{userId}' not found." }),
+                WorkspaceMemberDeleteStatus.MembershipNotFound => Results.NotFound(new { message = $"Membership '{workspaceKey}/{userId}' not found." }),
+                _ => Results.BadRequest()
+            };
+        }).WithName("Workspaces_Members_Delete")
+            .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
+    }
+
+    private static WorkspaceApiResponse ToResponse(WorkspaceSnapshot workspace)
+    {
+        return new WorkspaceApiResponse(
+            workspace.TenantKey,
+            workspace.WorkspaceKey,
+            workspace.DisplayName,
+            workspace.WorkspaceType,
+            workspace.IsActive,
+            workspace.TenantIsActive,
+            workspace.PublicBaseUrl,
+            workspace.PublicHost,
+            workspace.PublicPathPrefix,
+            workspace.ThemePluginId,
+            workspace.ThemeVersion,
+            workspace.ThemeAssignedBy,
+            workspace.ThemeAssignedAtUtc,
+            workspace.CreatedAtUtc,
+            workspace.UpdatedAtUtc);
+    }
+
+    private static WorkspaceMemberApiResponse ToResponse(WorkspaceMemberSnapshot member)
+    {
+        return new WorkspaceMemberApiResponse(
+            member.WorkspaceKey,
+            member.UserId,
+            member.Email,
+            member.DisplayName,
+            member.Role,
+            member.AssignedAtUtc);
+    }
+}

@@ -10,18 +10,24 @@ public sealed class PluginLifecycleLoggingSubscriber(
     {
         if (appEvent.IsSuccess)
         {
-            logger.LogInformation(
-                "Plugin lifecycle event {Action} for {PluginId} succeeded.",
-                appEvent.Action,
-                appEvent.PluginId);
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation(
+                    "Plugin lifecycle event {Action} for {PluginId} succeeded.",
+                    appEvent.Action,
+                    appEvent.PluginId);
+            }
         }
         else
         {
-            logger.LogWarning(
-                "Plugin lifecycle event {Action} for {PluginId} failed: {Message}",
-                appEvent.Action,
-                appEvent.PluginId,
-                appEvent.Message);
+            if (logger.IsEnabled(LogLevel.Warning))
+            {
+                logger.LogWarning(
+                    "Plugin lifecycle event {Action} for {PluginId} failed: {Message}",
+                    appEvent.Action,
+                    appEvent.PluginId,
+                    appEvent.Message);
+            }
         }
 
         return Task.CompletedTask;

@@ -14,4 +14,9 @@ public interface IHostServiceRegistry
     /// Registers a singleton instance.
     /// </summary>
     void AddSingleton(Type serviceType, object instance);
+
+    /// <summary>
+    /// Registers a singleton factory.
+    /// </summary>
+    void AddSingleton(Type serviceType, Func<IServiceProvider, object> implementationFactory);
 }

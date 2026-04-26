@@ -1,4 +1,5 @@
 using Callora.Host.Backend.Application.Abstractions.Events;
+using VoipHost.PluginContracts.Application.Events;
 
 namespace Callora.Host.Backend.Tests.Support;
 
@@ -9,9 +10,15 @@ internal sealed class RecordingHostApplicationEventPublisher : IHostApplicationE
     public IReadOnlyList<IHostApplicationEvent> Events => _events;
 
     public Task PublishAsync<TEvent>(TEvent appEvent, CancellationToken cancellationToken = default)
-        where TEvent : IHostApplicationEvent
+        where TEvent : IHostEvent
     {
-        _events.Add(appEvent);
+        if (appEvent is not IHostApplicationEvent hostEvent)
+        {
+            throw new InvalidOperationException(
+                $"Unsupported event type '{typeof(TEvent).FullName}' for {nameof(RecordingHostApplicationEventPublisher)}.");
+        }
+
+        _events.Add(hostEvent);
         return Task.CompletedTask;
     }
 }

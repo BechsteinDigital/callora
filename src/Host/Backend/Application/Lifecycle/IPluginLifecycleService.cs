@@ -17,6 +17,14 @@ public interface IPluginLifecycleService
         InstallNuGetPluginCommand command,
         CancellationToken cancellationToken = default);
 
+    Task<PluginLifecycleServiceResult> UpdateFromNuGetAsync(
+        UpdateNuGetPluginCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<PluginLifecycleServiceResult> UpdateFromLocalAsync(
+        UpdateLocalPluginCommand command,
+        CancellationToken cancellationToken = default);
+
     Task<PluginLifecycleServiceResult> ActivateAsync(
         PluginLifecycleCommand command,
         CancellationToken cancellationToken = default);

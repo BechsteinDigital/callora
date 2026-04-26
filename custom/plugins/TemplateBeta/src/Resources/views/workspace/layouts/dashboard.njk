@@ -1,0 +1,25 @@
+{% extends "base.njk" %}
+
+{% block title %}Workspace Dashboard Beta{% endblock %}
+
+{% block content %}
+<section class="panel" data-template-key="workspace.dashboard" data-plugin-id="template-beta" data-version="1.1.0">
+  <h1 style="margin: 0 0 8px;">Workspace Dashboard Beta</h1>
+  <p style="margin: 0; color: var(--muted);">
+    This template demonstrates a second themed workspace inheritance chain.
+  </p>
+</section>
+
+<section class="panel">
+  <h2 style="margin: 0 0 8px;">Runtime Flags</h2>
+  {% if flags and flags.length > 0 %}
+    <ul style="margin: 0; padding-left: 18px;">
+      {% for flag in flags %}
+        <li>{{ flag }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p style="margin: 0; color: var(--muted);">No runtime flags active.</p>
+  {% endif %}
+</section>
+{% endblock %}

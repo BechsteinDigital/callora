@@ -1,0 +1,29 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+:root {
+  --workspace-bg: #f5f7fb;
+  --workspace-surface: #ffffff;
+  --workspace-line: #d7dfec;
+  --workspace-text: #1d2837;
+  --workspace-muted: #607089;
+  --workspace-brand: #1f6fe5;
+  --workspace-radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+a {
+  color: inherit;
+}

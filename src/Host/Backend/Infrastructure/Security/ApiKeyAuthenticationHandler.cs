@@ -16,19 +16,16 @@ public sealed class ApiKeyAuthenticationHandler(
 {
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (!hostOptions.RequireApiKeyAuthentication)
-        {
-            var bypassPrincipal = CreatePrincipal("anonymous-host");
-            return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(bypassPrincipal, Scheme.Name)));
-        }
+        if (!hostOptions.EnableBootstrapApiKeys)
+            return Task.FromResult(AuthenticateResult.Fail("Bootstrap API key authentication is disabled."));
 
         if (!Request.Headers.TryGetValue(hostOptions.ApiKeyHeaderName, out var providedKey))
             return Task.FromResult(AuthenticateResult.Fail($"Missing '{hostOptions.ApiKeyHeaderName}' header."));
 
-        if (!IsKnownApiKey(providedKey.ToString()))
+        if (hostOptions.RequireApiKeyAuthentication && !IsKnownApiKey(providedKey.ToString()))
             return Task.FromResult(AuthenticateResult.Fail("Invalid API key."));
 
-        var principal = CreatePrincipal("host-api-key");
+        var principal = CreatePrincipal("bootstrap-api-key");
         return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name)));
     }
 
@@ -58,7 +55,9 @@ public sealed class ApiKeyAuthenticationHandler(
         var identity = new ClaimsIdentity(
             [
                 new Claim(ClaimTypes.Name, identityName),
-                new Claim(ClaimTypes.Role, "host.api")
+                new Claim(ClaimTypes.Role, BackendRoles.HostApi),
+                new Claim(ClaimTypes.Role, BackendRoles.Admin),
+                new Claim(BackendClaimTypes.Permission, "*")
             ],
             authenticationType: ApiKeyAuthenticationDefaults.Scheme);
 

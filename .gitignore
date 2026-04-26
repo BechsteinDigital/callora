@@ -4,8 +4,17 @@
 [Bb]in/
 [Oo]bj/
 out/
+build/
 artifacts/
 publish/
+apps/admin-shell/node_modules/
+apps/admin-shell/.nuxt/
+apps/admin-shell/.output/
+apps/admin-shell/dist/
+apps/workspace-shell/node_modules/
+apps/workspace-shell/.nuxt/
+apps/workspace-shell/.output/
+apps/workspace-shell/dist/
 
 # ------------------------------
 # Test / coverage / benchmark
@@ -83,7 +92,11 @@ Thumbs.db
 # Documentation (DocFX)
 # ------------------------------
 _site/
-docs/portal/_api/
+docs
+*.md
+!README.md
 
 .worktrees/
-src/Host/Backend/plugins/
+dashboard-vue/
+shopware/
+diff.txt

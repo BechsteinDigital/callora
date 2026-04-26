@@ -1,20 +1,32 @@
 using Callora.Host.Backend.Application.Abstractions.Events;
-using Microsoft.Extensions.DependencyInjection;
+using VoipHost.PluginContracts.Application.Events;
 
 namespace Callora.Host.Backend.Infrastructure.Events;
 
-public sealed class HostApplicationEventPublisher(IServiceProvider services) : IHostApplicationEventPublisher
+/// <summary>
+/// Publishes host events through a decorator pipeline and a concrete dispatcher.
+/// </summary>
+public sealed class HostApplicationEventPublisher(
+    IHostApplicationEventDispatcher dispatcher,
+    IEnumerable<IHostApplicationEventPublisherDecorator> decorators) : IHostApplicationEventPublisher
 {
-    public async Task PublishAsync<TEvent>(TEvent appEvent, CancellationToken cancellationToken = default)
-        where TEvent : IHostApplicationEvent
+    private readonly IHostApplicationEventPublisherDecorator[] _orderedDecorators = decorators
+        .OrderBy(x => x.DecorationPriority)
+        .ToArray();
+
+    public Task PublishAsync<TEvent>(TEvent appEvent, CancellationToken cancellationToken = default)
+        where TEvent : IHostEvent
     {
         ArgumentNullException.ThrowIfNull(appEvent);
 
-        var handlers = services.GetServices<IHostApplicationEventSubscriber<TEvent>>();
-        foreach (var handler in handlers)
+        HostApplicationEventPublishNext<TEvent> pipeline = dispatcher.DispatchAsync;
+
+        foreach (var decorator in _orderedDecorators)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            await handler.HandleAsync(appEvent, cancellationToken).ConfigureAwait(false);
+            var next = pipeline;
+            pipeline = (eventToPublish, token) => decorator.PublishAsync(eventToPublish, next, token);
         }
+
+        return pipeline(appEvent, cancellationToken);
     }
 }
