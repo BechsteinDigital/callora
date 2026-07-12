@@ -17,7 +17,7 @@ public sealed class ArchitectureRulesTests
         RegexOptions.Compiled);
 
     private static readonly Regex NestedTypeRegex = new(
-        @"^\s{4,}(public|internal|private|protected)\s+(sealed\s+|static\s+|abstract\s+|readonly\s+|partial\s+)*(class|interface|enum)\s+\w",
+        @"^\s{4,}(public|internal|private|protected)\s+(sealed\s+|static\s+|abstract\s+|readonly\s+|partial\s+)*(class|interface|enum|record)\s+\w",
         RegexOptions.Compiled);
 
     private static readonly Regex PartialTypeRegex = new(

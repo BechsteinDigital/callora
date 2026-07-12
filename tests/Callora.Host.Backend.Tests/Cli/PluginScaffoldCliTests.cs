@@ -3,6 +3,9 @@ using Callora.Host.Cli.Application;
 
 namespace Callora.Host.Backend.Tests.Cli;
 
+// Baut pro Test ein komplettes dotnet-Projekt — lokal filterbar via
+// --filter "Category!=Slow" für eine schnelle Feedback-Schleife.
+[Trait("Category", "Slow")]
 public sealed class PluginScaffoldCliTests
 {
     [Fact]

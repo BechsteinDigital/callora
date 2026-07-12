@@ -9,10 +9,14 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build-test:
     name: Build & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,11 +42,20 @@ jobs:
       # Läuft komplett ohne externe Dienste (InMemory-Stores); enthält auch die
       # Architektur-Tests (keine partial/nested types, ein Typ pro Datei, DDD-Layering).
       - name: Test
-        run: dotnet test Callora.Host.sln --no-build --configuration Release --logger "console;verbosity=normal"
+        run: dotnet test Callora.Host.sln --no-build --configuration Release --logger "console;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory ./test-results
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: ./test-results/**/coverage.cobertura.xml
+          if-no-files-found: warn
 
   build-shells:
     name: Build ${{ matrix.shell }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

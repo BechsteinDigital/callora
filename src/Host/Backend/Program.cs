@@ -279,7 +279,18 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+// Liveness (/health, vom Frontdoor geprobt): Prozess antwortet, keine
+// Abhängigkeitsprüfung. Readiness (/ready) prüft die Datenbank.
+// Der JSON-Body ist Vertrag: die Workspace-Shell prüft status == "ok".
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false,
+    ResponseWriter = static (context, _) =>
+    {
+        context.Response.ContentType = "application/json";
+        return context.Response.WriteAsync("{\"status\":\"ok\"}");
+    }
+});
 app.MapHealthChecks("/ready");
 app.MapAuthEndpoints();
 app.MapEntitlementSyncEndpoints();
@@ -304,5 +315,20 @@ app.MapUserEndpoints();
 app.MapWorkspaceEndpoints();
 app.MapWorkspaceThemeEndpoints();
 app.MapWorkspacePublicEndpoints();
+
+// Laut, aber nicht blockierend: Dev-Defaults dürfen eine Produktionsumgebung
+// nie unbemerkt erreichen (der Default-JwtSigningKey wirft bereits beim Start).
+if (backendOptions.ApiKeys.Contains("callora-local-dev-key-change-me", StringComparer.Ordinal))
+{
+    app.Logger.LogWarning(
+        "SECURITY: The default development API key is active. Replace BackendHost__ApiKeys before exposing this host.");
+}
+
+if (backendOptions.DemoAdminUser.Enabled &&
+    string.Equals(backendOptions.DemoAdminUser.Password, "admin123!", StringComparison.Ordinal))
+{
+    app.Logger.LogWarning(
+        "SECURITY: The demo admin user is enabled with its default password. Disable it or set a strong password for production.");
+}
 
 await app.RunAsync();

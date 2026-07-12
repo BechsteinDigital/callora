@@ -43,12 +43,10 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 if [[ -z "$SOLUTION_OR_PROJECT" ]]; then
-  if [[ -f "Callora.sln" ]]; then
-    SOLUTION_OR_PROJECT="Callora.sln"
-  elif [[ -f "VoipSdk.sln" ]]; then
-    SOLUTION_OR_PROJECT="VoipSdk.sln"
+  if [[ -f "Callora.Host.sln" ]]; then
+    SOLUTION_OR_PROJECT="Callora.Host.sln"
   else
-    echo "No solution file found (expected Callora.sln or VoipSdk.sln)."
+    echo "No solution file found (expected Callora.Host.sln)."
     exit 1
   fi
 fi

@@ -24,7 +24,7 @@ public sealed class SmtpMailSender(
         {
             logger.LogInformation(
                 "No SMTP host configured (host/mail.smtp.host); mail to {Recipient} with subject '{Subject}' was not sent.",
-                message.To,
+                MaskRecipient(message.To),
                 message.Subject);
             return;
         }
@@ -53,5 +53,14 @@ public sealed class SmtpMailSender(
         }
 
         await client.SendMailAsync(mail, cancellationToken).ConfigureAwait(false);
+    }
+
+    // DSGVO: Empfängeradressen erreichen die Logs nie unmaskiert.
+    private static string MaskRecipient(string recipient)
+    {
+        var atIndex = recipient.IndexOf('@');
+        return atIndex > 1
+            ? $"{recipient[..2]}***{recipient[atIndex..]}"
+            : "***";
     }
 }

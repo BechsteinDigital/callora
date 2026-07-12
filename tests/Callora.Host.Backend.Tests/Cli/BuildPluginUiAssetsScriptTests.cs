@@ -3,6 +3,9 @@ using System.Text.Json;
 
 namespace Callora.Host.Backend.Tests.Cli;
 
+// Führt das Build-Script als externen Prozess aus — lokal filterbar via
+// --filter "Category!=Slow" für eine schnelle Feedback-Schleife.
+[Trait("Category", "Slow")]
 public sealed class BuildPluginUiAssetsScriptTests
 {
     [Fact]
