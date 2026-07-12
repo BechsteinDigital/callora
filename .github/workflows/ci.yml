@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET (global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore Callora.Host.sln
+
+      - name: Build
+        run: dotnet build Callora.Host.sln --no-restore --configuration Release
+
+      # Läuft komplett ohne externe Dienste (InMemory-Stores); enthält auch die
+      # Architektur-Tests (keine partial/nested types, ein Typ pro Datei, DDD-Layering).
+      - name: Test
+        run: dotnet test Callora.Host.sln --no-build --configuration Release --logger "console;verbosity=normal"
