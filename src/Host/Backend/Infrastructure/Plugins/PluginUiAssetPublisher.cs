@@ -256,17 +256,62 @@ public sealed class PluginUiAssetPublisher(
         }
 
         var targetDirectory = Path.Combine(pluginAssetsRoot, pluginId, "app", surface);
-        CopyDirectory(sourceDirectory, targetDirectory);
-
         var entry = ResolveEntryFile(sourceDirectory);
-        if (entry is null)
+        var entryRelativePath = entry is null
+            ? null
+            : ToManifestPath(Path.GetRelativePath(sourceDirectory, entry));
+
+        // ADR-011: Das Manifest referenziert nur finale Pfade. Liegt der Einstieg in
+        // einem src/-Wrapper, wird dieser beim Publizieren aufgelöst (src/main.js -> main.js).
+        if (entryRelativePath is not null &&
+            entryRelativePath.StartsWith("src/", StringComparison.OrdinalIgnoreCase))
+        {
+            CopyDirectory(Path.Combine(sourceDirectory, "src"), targetDirectory);
+            CopyDirectoryExcept(sourceDirectory, targetDirectory, "src");
+            entryRelativePath = entryRelativePath["src/".Length..];
+        }
+        else
+        {
+            CopyDirectory(sourceDirectory, targetDirectory);
+        }
+
+        if (entryRelativePath is null)
         {
             return;
         }
 
-        var entryRelativePath = Path.GetRelativePath(sourceDirectory, entry);
         var entryPath = ToManifestPath(Path.Combine(pluginId, "app", surface, entryRelativePath));
         manifestEntries.Add(new PluginUiAssetManifestEntry(pluginId, surface, entryPath));
+    }
+
+    private static void CopyDirectoryExcept(string sourceDirectory, string targetDirectory, string exceptSubdirectory)
+    {
+        if (!Directory.Exists(sourceDirectory))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(targetDirectory);
+        var excludedPrefix = exceptSubdirectory + Path.DirectorySeparatorChar;
+
+        var files = Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories);
+        foreach (var sourceFile in files)
+        {
+            var relative = Path.GetRelativePath(sourceDirectory, sourceFile);
+            if (relative.StartsWith(excludedPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var targetFile = Path.Combine(targetDirectory, relative);
+            var targetFolder = Path.GetDirectoryName(targetFile);
+            if (!string.IsNullOrWhiteSpace(targetFolder))
+            {
+                Directory.CreateDirectory(targetFolder);
+            }
+
+            File.Copy(sourceFile, targetFile, overwrite: true);
+        }
     }
 
     private static void PublishWorkspaceTemplates(

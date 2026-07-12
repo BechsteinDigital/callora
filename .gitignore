@@ -101,3 +101,6 @@ dashboard-vue/
 shopware/
 diff.txt
 graphify-out/
+
+# Vom PluginUiAssetPublisher generiert (bei jedem Start neu aufgebaut)
+src/Host/Backend/wwwroot/plugin-assets/
