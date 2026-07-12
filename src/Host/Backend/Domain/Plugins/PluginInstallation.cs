@@ -25,6 +25,12 @@ public sealed class PluginInstallation
 
     public DateTimeOffset UpdatedAtUtc { get; private set; }
 
+    /// <summary>Capability codes this plugin provides, encoded via <see cref="CapabilityListCodec"/>.</summary>
+    public string? ProvidedCapabilities { get; private set; }
+
+    /// <summary>Capability codes this plugin requires, encoded via <see cref="CapabilityListCodec"/>.</summary>
+    public string? RequiredCapabilities { get; private set; }
+
     public static PluginInstallation CreateInstalled(
         string pluginId,
         string displayName,
@@ -64,6 +70,20 @@ public sealed class PluginInstallation
         State = PluginInstallationState.Installed;
         UpdatedAtUtc = nowUtc;
     }
+
+    public void SetCapabilities(
+        IReadOnlyList<string>? providedCapabilities,
+        IReadOnlyList<string>? requiredCapabilities,
+        DateTimeOffset nowUtc)
+    {
+        ProvidedCapabilities = CapabilityListCodec.Join(providedCapabilities);
+        RequiredCapabilities = CapabilityListCodec.Join(requiredCapabilities);
+        UpdatedAtUtc = nowUtc;
+    }
+
+    public IReadOnlyList<string> GetProvidedCapabilities() => CapabilityListCodec.Split(ProvidedCapabilities);
+
+    public IReadOnlyList<string> GetRequiredCapabilities() => CapabilityListCodec.Split(RequiredCapabilities);
 
     public void MarkActivated(DateTimeOffset nowUtc)
     {
