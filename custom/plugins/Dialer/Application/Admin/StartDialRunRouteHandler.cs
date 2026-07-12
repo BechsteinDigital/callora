@@ -4,7 +4,7 @@ using Callora.Plugins.Dialer.Application.Runs;
 
 namespace Callora.Plugins.Dialer.Application.Admin;
 
-public sealed class StartDialRunRouteHandler(DialRunTracker tracker) : IHostAdminApiRouteHandler
+public sealed class StartDialRunRouteHandler(DialRunCoordinator coordinator) : IHostAdminApiRouteHandler
 {
     public async ValueTask<HostAdminApiResponse> HandleAsync(
         HostAdminApiRequest request,
@@ -14,7 +14,7 @@ public sealed class StartDialRunRouteHandler(DialRunTracker tracker) : IHostAdmi
             return error!;
 
         var options = ParseOptions(request.Body);
-        var snapshot = await tracker.StartRunAsync(workspaceKey, options, cancellationToken).ConfigureAwait(false);
+        var snapshot = await coordinator.StartRunAsync(workspaceKey, options, cancellationToken).ConfigureAwait(false);
         if (snapshot is null)
         {
             return new HostAdminApiResponse(409, new { message = "A dial run is already in progress for this workspace." });

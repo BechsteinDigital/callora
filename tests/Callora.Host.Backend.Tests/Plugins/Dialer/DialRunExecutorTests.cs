@@ -79,31 +79,90 @@ public sealed class DialRunExecutorTests
     }
 
     [Fact]
-    public async Task Tracker_StartsRun_TracksCompletion_AndRejectsParallelRuns()
+    public async Task Coordinator_PersistsRunningSnapshot_EnqueuesJob_AndRejectsParallelRuns()
+    {
+        var dataStore = new Callora.Host.Backend.Application.Plugins.InMemoryPluginDataStore();
+        var runStore = new DataStoreDialRunStore(dataStore);
+        var jobQueue = new RecordingBackgroundJobQueue();
+        var coordinator = new DialRunCoordinator(runStore, jobQueue);
+
+        var started = await coordinator.StartRunAsync("workspace-a", new DialRunOptions(TimeSpan.FromSeconds(5)));
+
+        Assert.NotNull(started);
+        Assert.Equal(DialRunStatus.Running, started!.Status);
+        var jobRequest = Assert.Single(jobQueue.Requests);
+        Assert.Equal(DialRunJobHandler.JobTypeName, jobRequest.JobType);
+        Assert.Equal("workspace-a", jobRequest.WorkspaceKey);
+        Assert.Equal(1, jobRequest.MaxAttempts);
+
+        var rejected = await coordinator.StartRunAsync("workspace-a", DialRunOptions.Default);
+        Assert.Null(rejected);
+
+        var latest = await coordinator.GetLatestRunAsync("workspace-a");
+        Assert.Equal(started.RunId, latest!.RunId);
+    }
+
+    [Fact]
+    public async Task JobHandler_ExecutesRun_AndPersistsCompletedSnapshot()
     {
         var registry = new CommunicationChannelRegistry();
         var channel = new StaticCommunicationChannel("fake-voice");
         registry.Register("workspace-a", channel);
-        var numberStore = new DataStoreDialNumberStore(
-            new Callora.Host.Backend.Application.Plugins.InMemoryPluginDataStore());
+
+        var dataStore = new Callora.Host.Backend.Application.Plugins.InMemoryPluginDataStore();
+        var runStore = new DataStoreDialRunStore(dataStore);
+        var numberStore = new DataStoreDialNumberStore(dataStore);
         await numberStore.AddAsync("workspace-a", "+4930111", null);
-        var tracker = new DialRunTracker(new DialRunExecutor(registry), numberStore);
 
-        var started = await tracker.StartRunAsync("workspace-a", new DialRunOptions(TimeSpan.FromSeconds(5)));
-        Assert.NotNull(started);
-        Assert.Equal(DialRunStatus.Running, started!.Status);
+        var coordinator = new DialRunCoordinator(runStore, new RecordingBackgroundJobQueue());
+        var started = await coordinator.StartRunAsync("workspace-a", new DialRunOptions(TimeSpan.FromSeconds(5)));
 
-        var rejected = await tracker.StartRunAsync("workspace-a", DialRunOptions.Default);
-        Assert.Null(rejected);
+        var handler = new DialRunJobHandler(new DialRunExecutor(registry), numberStore, runStore);
+        var handlerTask = handler.ExecuteAsync(new Callora.Host.PluginContracts.Application.Jobs.BackgroundJobExecutionContext(
+            Guid.NewGuid(),
+            DialRunJobHandler.JobTypeName,
+            $$"""{"runId":"{{started!.RunId}}","workspaceKey":"workspace-a","callTimeoutSeconds":5}""",
+            "workspace-a",
+            Attempt: 1));
 
         var call = await WaitForPlacedCallAsync(channel, index: 0);
         call.TransitionTo(CallState.Connected);
         call.TransitionTo(CallState.Terminated);
+        await handlerTask;
 
-        var completed = await tracker.WaitForCompletionAsync("workspace-a", TimeSpan.FromSeconds(15));
+        var completed = await runStore.GetLatestAsync("workspace-a");
         Assert.NotNull(completed);
         Assert.Equal(DialRunStatus.Completed, completed!.Status);
         Assert.Equal(DialAttemptOutcome.Connected, Assert.Single(completed.Attempts).Outcome);
+        Assert.Equal(started.RunId, completed.RunId);
+    }
+
+    [Fact]
+    public async Task JobHandler_FailingRun_PersistsFailedSnapshot_AndRethrows()
+    {
+        // Kein Voice-Channel registriert: der Executor wirft.
+        var registry = new CommunicationChannelRegistry();
+        var dataStore = new Callora.Host.Backend.Application.Plugins.InMemoryPluginDataStore();
+        var runStore = new DataStoreDialRunStore(dataStore);
+        var numberStore = new DataStoreDialNumberStore(dataStore);
+        await numberStore.AddAsync("workspace-a", "+4930111", null);
+
+        var coordinator = new DialRunCoordinator(runStore, new RecordingBackgroundJobQueue());
+        var started = await coordinator.StartRunAsync("workspace-a", DialRunOptions.Default);
+
+        var handler = new DialRunJobHandler(new DialRunExecutor(registry), numberStore, runStore);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            handler.ExecuteAsync(new Callora.Host.PluginContracts.Application.Jobs.BackgroundJobExecutionContext(
+                Guid.NewGuid(),
+                DialRunJobHandler.JobTypeName,
+                $$"""{"runId":"{{started!.RunId}}","workspaceKey":"workspace-a","callTimeoutSeconds":5}""",
+                "workspace-a",
+                Attempt: 1)));
+
+        var failed = await runStore.GetLatestAsync("workspace-a");
+        Assert.Equal(DialRunStatus.Failed, failed!.Status);
+        Assert.NotNull(failed.ErrorMessage);
     }
 
     private static DialNumberEntry NewNumber(string number) =>
