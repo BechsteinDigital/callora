@@ -16,7 +16,7 @@
     pluginId: 'voip',
     title: 'SIP Accounts',
     routePath: '/extensions/voip/sip-accounts',
-    apiBasePath: '/api/ext/admin/plugins/voip/sip-accounts',
+    apiBasePath: '/api/ext/admin/plugins/voip/workspaces/{workspaceKey}/sip-accounts',
     primaryKey: 'sipAccountId',
     icon: 'i-lucide-phone-call',
     description: 'Manage SIP accounts provided by the VoIP plugin.',

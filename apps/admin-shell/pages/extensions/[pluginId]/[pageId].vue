@@ -2,10 +2,14 @@
 import { h, resolveComponent } from "vue";
 import type { TableColumn } from "@nuxt/ui";
 import type { AdminPluginCrudField, AdminPluginCrudPageExtension } from "~/types/admin-plugin-extensions";
+import type { AdminWorkspace } from "~/types/admin-workspaces";
 
 type CrudRow = Record<string, unknown>;
 
+const WORKSPACE_PLACEHOLDER = "{workspaceKey}";
+
 const route = useRoute();
+const router = useRouter();
 const { request, requestSafe } = useAdminApi();
 const { ensureAdminPluginAssetsLoaded } = useAdminPluginAssets();
 const { findCrudPageByRoute } = useAdminPageExtensions();
@@ -18,6 +22,9 @@ const loading = ref(true);
 const saving = ref(false);
 const listError = ref<string | null>(null);
 const saveError = ref<string | null>(null);
+
+const workspaces = ref<AdminWorkspace[]>([]);
+const selectedWorkspaceKey = ref<string>("");
 
 const detailsModalOpen = ref(false);
 const editModalOpen = ref(false);
@@ -34,6 +41,34 @@ function toSegment(value: unknown): string {
 }
 
 const routePath = computed(() => `/extensions/${toSegment(route.params.pluginId)}/${toSegment(route.params.pageId)}`);
+
+const requiresWorkspace = computed(() =>
+  Boolean(extension.value?.apiBasePath.includes(WORKSPACE_PLACEHOLDER))
+);
+
+const resolvedApiBasePath = computed<string | null>(() => {
+  if (!extension.value) {
+    return null;
+  }
+
+  if (!requiresWorkspace.value) {
+    return extension.value.apiBasePath;
+  }
+
+  const workspaceKey = selectedWorkspaceKey.value.trim();
+  if (!workspaceKey) {
+    return null;
+  }
+
+  return extension.value.apiBasePath.replace(WORKSPACE_PLACEHOLDER, encodeURIComponent(workspaceKey));
+});
+
+const workspaceSelectItems = computed(() =>
+  workspaces.value.map((workspace) => ({
+    label: workspace.displayName || workspace.workspaceKey,
+    value: workspace.workspaceKey
+  }))
+);
 
 function clearFormState(): void {
   Object.keys(formState).forEach((key) => {
@@ -175,6 +210,21 @@ function buildPayload(): Record<string, unknown> {
   return payload;
 }
 
+async function loadWorkspaces(): Promise<void> {
+  const response = await requestSafe<AdminWorkspace[]>("/api/workspaces");
+  workspaces.value = response.ok ? response.data ?? [] : [];
+
+  const requestedKey = toSegment(route.query.workspaceKey).trim();
+  const availableKeys = new Set(workspaces.value.map((workspace) => workspace.workspaceKey));
+
+  if (requestedKey && availableKeys.has(requestedKey)) {
+    selectedWorkspaceKey.value = requestedKey;
+    return;
+  }
+
+  selectedWorkspaceKey.value = workspaces.value[0]?.workspaceKey ?? "";
+}
+
 async function loadEntries(): Promise<void> {
   if (!extension.value) {
     entries.value = [];
@@ -183,10 +233,18 @@ async function loadEntries(): Promise<void> {
     return;
   }
 
+  const apiBasePath = resolvedApiBasePath.value;
+  if (!apiBasePath) {
+    entries.value = [];
+    loading.value = false;
+    listError.value = null;
+    return;
+  }
+
   loading.value = true;
   listError.value = null;
 
-  const response = await requestSafe<CrudRow[]>(extension.value.apiBasePath);
+  const response = await requestSafe<CrudRow[]>(apiBasePath);
   if (!response.ok) {
     entries.value = [];
     listError.value = "Data could not be loaded.";
@@ -203,10 +261,15 @@ async function resolvePageExtension(): Promise<void> {
   await ensureAdminPluginAssetsLoaded();
   extension.value = findCrudPageByRoute(routePath.value);
   loadingExtension.value = false;
+
+  if (requiresWorkspace.value && workspaces.value.length === 0) {
+    await loadWorkspaces();
+  }
 }
 
 async function save(): Promise<void> {
-  if (!extension.value) {
+  const apiBasePath = resolvedApiBasePath.value;
+  if (!extension.value || !apiBasePath) {
     saveError.value = "No plugin extension definition found.";
     return;
   }
@@ -224,12 +287,12 @@ async function save(): Promise<void> {
 
   try {
     if (editTargetId.value) {
-      await request(`${extension.value.apiBasePath}/${encodeURIComponent(editTargetId.value)}`, {
+      await request(`${apiBasePath}/${encodeURIComponent(editTargetId.value)}`, {
         method: "PUT",
         body: payload
       });
     } else {
-      await request(extension.value.apiBasePath, {
+      await request(apiBasePath, {
         method: "POST",
         body: payload
       });
@@ -246,7 +309,8 @@ async function save(): Promise<void> {
 }
 
 async function remove(row: CrudRow): Promise<void> {
-  if (!extension.value) {
+  const apiBasePath = resolvedApiBasePath.value;
+  if (!extension.value || !apiBasePath) {
     return;
   }
 
@@ -260,7 +324,7 @@ async function remove(row: CrudRow): Promise<void> {
     return;
   }
 
-  await request(`${extension.value.apiBasePath}/${encodeURIComponent(itemId)}`, {
+  await request(`${apiBasePath}/${encodeURIComponent(itemId)}`, {
     method: "DELETE"
   });
 
@@ -344,6 +408,18 @@ watch(routePath, async () => {
   await loadEntries();
 });
 
+watch(selectedWorkspaceKey, async (workspaceKey, previousKey) => {
+  if (workspaceKey === previousKey) {
+    return;
+  }
+
+  if (workspaceKey && toSegment(route.query.workspaceKey) !== workspaceKey) {
+    await router.replace({ query: { ...route.query, workspaceKey } });
+  }
+
+  await loadEntries();
+});
+
 await resolvePageExtension();
 await loadEntries();
 </script>
@@ -353,9 +429,16 @@ await loadEntries();
     <template #header>
       <UDashboardNavbar :title="extension?.title || 'Plugin Page'">
         <template #right>
+          <USelect
+            v-if="requiresWorkspace && workspaceSelectItems.length > 0"
+            v-model="selectedWorkspaceKey"
+            :items="workspaceSelectItems"
+            icon="i-lucide-store"
+            class="w-56"
+          />
           <UButton
             icon="i-lucide-plus"
-            :disabled="!extension"
+            :disabled="!extension || !resolvedApiBasePath"
             @click="openCreate"
           >
             Add
@@ -390,6 +473,15 @@ await loadEntries();
         />
 
         <UAlert
+          v-if="requiresWorkspace && !selectedWorkspaceKey"
+          class="mb-4"
+          color="warning"
+          variant="soft"
+          title="Kein Workspace ausgewählt"
+          description="Diese Plugin-Seite ist workspace-bezogen. Lege zuerst einen Workspace an oder wähle einen aus."
+        />
+
+        <UAlert
           v-if="listError"
           class="mb-4"
           color="error"
@@ -397,7 +489,7 @@ await loadEntries();
           :description="listError"
         />
 
-        <UPageCard>
+        <UPageCard v-if="!requiresWorkspace || selectedWorkspaceKey">
           <UTable
             :loading="loading"
             :columns="tableColumns"
