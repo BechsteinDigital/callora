@@ -1,6 +1,9 @@
 namespace Callora.Host.Backend.Application.Lifecycle;
 
-internal sealed class WorkspaceLifecycleLock
+/// <summary>
+/// Reference-counted async lock state for one workspace/plugin pair.
+/// </summary>
+public sealed class WorkspaceLifecycleLock
 {
     public SemaphoreSlim Semaphore { get; } = new(1, 1);
 

@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
-using VoipHost.PluginContracts.Domain.Plugins;
+using Callora.Host.PluginContracts.Domain.Plugins;
 
 namespace Callora.Host.Cli.Application;
 
@@ -190,14 +190,14 @@ internal sealed class PluginContractTester
         var hostContractsReference = assembly
             .GetReferencedAssemblies()
             .FirstOrDefault(static reference =>
-                string.Equals(reference.Name, "VoipHost.PluginContracts", StringComparison.Ordinal));
+                string.Equals(reference.Name, "Callora.Host.PluginContracts", StringComparison.Ordinal));
 
         if (hostContractsReference is null)
         {
             issues.Add(new PluginContractTestIssue(
                 PluginContractTestIssueCodes.CompatibilityContractsReferenceMissing,
-                "Plugin does not reference VoipHost.PluginContracts.",
-                "Add a reference to VoipHost.PluginContracts and rebuild the plugin."));
+                "Plugin does not reference Callora.Host.PluginContracts.",
+                "Add a reference to Callora.Host.PluginContracts and rebuild the plugin."));
             return;
         }
 
@@ -207,7 +207,7 @@ internal sealed class PluginContractTester
         {
             issues.Add(new PluginContractTestIssue(
                 PluginContractTestIssueCodes.CompatibilityMajorMismatch,
-                $"Plugin references VoipHost.PluginContracts major {pluginMajor.Value}, host expects {hostMajor.Value}.",
+                $"Plugin references Callora.Host.PluginContracts major {pluginMajor.Value}, host expects {hostMajor.Value}.",
                 "Align plugin contract package major version to the host contract major."));
         }
     }

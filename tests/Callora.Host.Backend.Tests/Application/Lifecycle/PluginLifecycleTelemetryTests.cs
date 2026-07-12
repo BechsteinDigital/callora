@@ -4,7 +4,7 @@ using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Lifecycle;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Tests.Support;
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
 namespace Callora.Host.Backend.Tests.Application.Lifecycle;
 

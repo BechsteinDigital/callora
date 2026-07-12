@@ -1,4 +1,4 @@
-namespace VoipHost.PluginContracts.Application.Plugins;
+namespace Callora.Host.PluginContracts.Application.Plugins;
 
 /// <summary>
 /// One plugin-provided Admin API route declaration.

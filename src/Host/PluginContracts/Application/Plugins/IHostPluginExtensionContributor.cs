@@ -1,4 +1,4 @@
-namespace VoipHost.PluginContracts.Application.Plugins;
+namespace Callora.Host.PluginContracts.Application.Plugins;
 
 /// <summary>
 /// Exposes code-first extension registrations from one active plugin.

@@ -1,4 +1,4 @@
-namespace VoipHost.PluginContracts.Application.Plugins;
+namespace Callora.Host.PluginContracts.Application.Plugins;
 
 /// <summary>
 /// Provides backend API and navigation extensions for the host Admin UI.

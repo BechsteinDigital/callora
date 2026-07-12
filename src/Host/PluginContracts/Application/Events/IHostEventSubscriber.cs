@@ -1,4 +1,4 @@
-namespace VoipHost.PluginContracts.Application.Events;
+namespace Callora.Host.PluginContracts.Application.Events;
 
 /// <summary>
 /// Runtime plugin subscriber contract for host events.

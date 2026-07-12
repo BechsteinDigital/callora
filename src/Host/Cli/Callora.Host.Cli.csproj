@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PluginContracts\VoipHost.PluginContracts.csproj" />
+    <ProjectReference Include="..\PluginContracts\Callora.Host.PluginContracts.csproj" />
   </ItemGroup>
 
 </Project>

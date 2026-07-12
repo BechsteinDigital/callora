@@ -4,7 +4,7 @@ using Callora.Host.Backend.Domain.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
 namespace Callora.Host.Backend.Infrastructure.Startup;
 

@@ -1,5 +1,5 @@
 using Callora.Host.Backend.Application.Lifecycle;
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
 namespace Callora.Host.Backend.Tests.Support;
 

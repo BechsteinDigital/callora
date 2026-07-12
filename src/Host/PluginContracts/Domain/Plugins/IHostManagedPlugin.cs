@@ -1,6 +1,6 @@
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
-namespace VoipHost.PluginContracts.Domain.Plugins;
+namespace Callora.Host.PluginContracts.Domain.Plugins;
 
 /// <summary>
 /// Runtime-loadable plugin entrypoint owned by the host platform.

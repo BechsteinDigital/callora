@@ -1,4 +1,4 @@
-using VoipHost.PluginContracts.Application.Events;
+using Callora.Host.PluginContracts.Application.Events;
 
 namespace Callora.Host.Backend.Tests.Infrastructure.Events.Support;
 

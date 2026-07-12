@@ -1,8 +1,8 @@
 using Callora.Host.Backend.Application.Abstractions.Security;
 using Callora.Host.Backend.Infrastructure.Security;
-using Callora.Modules.Abstractions.Application.Plugins;
+using Callora.Hosting.Application.Plugins;
 using Microsoft.AspNetCore.Mvc;
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
 namespace Callora.Host.Backend.Api;
 

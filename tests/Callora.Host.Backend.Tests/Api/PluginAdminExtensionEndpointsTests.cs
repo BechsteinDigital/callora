@@ -2,13 +2,13 @@ using System.Net;
 using System.Net.Http.Json;
 using Callora.Host.Backend.Api;
 using Callora.Host.Workspace.Api;
-using Callora.Modules.Abstractions.Application.Plugins;
+using Callora.Hosting.Application.Plugins;
 using Callora.Host.Backend.Tests.Support;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
 namespace Callora.Host.Backend.Tests.Api;
 

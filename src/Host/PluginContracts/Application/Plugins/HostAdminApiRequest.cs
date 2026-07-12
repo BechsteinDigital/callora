@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace VoipHost.PluginContracts.Application.Plugins;
+namespace Callora.Host.PluginContracts.Application.Plugins;
 
 /// <summary>
 /// Request model passed to plugin-provided Admin API handlers.

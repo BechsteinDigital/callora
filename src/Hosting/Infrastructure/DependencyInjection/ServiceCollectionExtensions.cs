@@ -1,9 +1,7 @@
-using Callora.Hosting.Application.Bootstrap;
 using Callora.Hosting.Application.Options;
 using Callora.Hosting.Application.Plugins;
 using Callora.Hosting.Application.Startup;
-using VoipHost.PluginContracts.Application.Plugins;
-using Callora.Modules.Abstractions.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
 namespace Callora.Hosting.Infrastructure.DependencyInjection;
 
@@ -21,7 +19,6 @@ public static class ServiceCollectionExtensions
         configure?.Invoke(options);
 
         services.AddSingleton(typeof(CalloraHostingOptions), options);
-        services.AddSingleton(typeof(ModuleBootstrapRunner), typeof(ModuleBootstrapRunner));
         services.AddSingleton(typeof(RuntimePluginHost), typeof(RuntimePluginHost));
         services.AddSingleton(typeof(ICalloraPluginRuntime), provider =>
             (ICalloraPluginRuntime)(provider.GetService(typeof(RuntimePluginHost))

@@ -1,5 +1,5 @@
-using VoipHost.PluginContracts.Application.Plugins;
-using VoipHost.PluginContracts.Domain.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Domain.Plugins;
 
 namespace Callora.Hosting.Application.Plugins;
 

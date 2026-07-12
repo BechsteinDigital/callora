@@ -11,11 +11,11 @@ internal sealed class PluginAssemblyLoadContext(string pluginAssemblyPath) : Ass
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
+        // Callora.*-Verträge müssen aus dem Default-Kontext kommen, damit Host und Plugin
+        // dieselben Contract-Typen teilen. CalloraVoipSdk (ohne Punkt) bleibt plugin-lokal.
         if (assemblyName.Name is { } name &&
             (name.Equals("Callora", StringComparison.Ordinal) ||
-             name.StartsWith("Callora.", StringComparison.Ordinal) ||
-             name.Equals("VoipHost.PluginContracts", StringComparison.Ordinal) ||
-             name.StartsWith("VoipHost.", StringComparison.Ordinal)))
+             name.StartsWith("Callora.", StringComparison.Ordinal)))
         {
             return null;
         }

@@ -2,10 +2,9 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
-using VoipHost.PluginContracts.Application.Plugins;
-using VoipHost.PluginContracts.Domain.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Domain.Plugins;
 using Callora.Hosting.Application.Options;
-using Callora.Modules.Abstractions.Application.Plugins;
 
 namespace Callora.Hosting.Application.Plugins;
 
@@ -277,39 +276,6 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     }
 
     /// <inheritdoc />
-    [Obsolete("Use InstallAsync(...) + ActivateAsync(...) instead.")]
-    public async Task<RuntimePluginInstallResult> LoadAsync(
-        string assemblyPath,
-        string? entryTypeName = null,
-        CancellationToken cancellationToken = default)
-    {
-        var install = await InstallAsync(assemblyPath, entryTypeName, cancellationToken).ConfigureAwait(false);
-        if (!install.IsSuccess || install.Plugin is null)
-            return install;
-
-        var activate = await ActivateAsync(install.Plugin.PluginId, cancellationToken).ConfigureAwait(false);
-        if (!activate.IsSuccess)
-        {
-            return new RuntimePluginInstallResult(
-                RuntimePluginInstallStatus.Failed,
-                install.Plugin with { State = RuntimePluginState.Inactive },
-                activate.Message);
-        }
-
-        return new RuntimePluginInstallResult(
-            RuntimePluginInstallStatus.Installed,
-            install.Plugin with { State = RuntimePluginState.Active },
-            install.Message);
-    }
-
-    /// <inheritdoc />
-    [Obsolete("Use DeactivateAsync(...) or UninstallAsync(...) instead.")]
-    public Task<RuntimePluginUninstallResult> UnloadAsync(
-        string pluginId,
-        CancellationToken cancellationToken = default)
-        => UninstallAsync(pluginId, cancellationToken);
-
-    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         await _mutationLock.WaitAsync().ConfigureAwait(false);
@@ -510,20 +476,14 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
     private static string? ValidateHostCompatibility(Assembly pluginAssembly)
     {
-        var pluginAbstractionsRef = pluginAssembly
-            .GetReferencedAssemblies()
-            .FirstOrDefault(static reference => string.Equals(
-                reference.Name,
-                "Callora.Modules.Abstractions",
-                StringComparison.Ordinal));
         var hostContractsRef = pluginAssembly
             .GetReferencedAssemblies()
             .FirstOrDefault(static reference => string.Equals(
                 reference.Name,
-                "VoipHost.PluginContracts",
+                typeof(IHostManagedPlugin).Assembly.GetName().Name,
                 StringComparison.Ordinal));
 
-        var pluginVersion = hostContractsRef?.Version ?? pluginAbstractionsRef?.Version;
+        var pluginVersion = hostContractsRef?.Version;
         if (pluginVersion is null)
             return null;
 
@@ -552,22 +512,10 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     }
 
     private static bool IsSupportedPluginType(Type type) =>
-        typeof(IHostManagedPlugin).IsAssignableFrom(type) ||
-        typeof(ICalloraRuntimePlugin).IsAssignableFrom(type);
+        typeof(IHostManagedPlugin).IsAssignableFrom(type);
 
-    private static IHostManagedPlugin? CreatePluginInstance(Type pluginType)
-    {
-        if (Activator.CreateInstance(pluginType) is not object created)
-            return null;
-
-        if (created is IHostManagedPlugin hostPlugin)
-            return hostPlugin;
-
-        if (created is ICalloraRuntimePlugin legacyPlugin)
-            return new LegacyRuntimePluginAdapter(legacyPlugin);
-
-        return null;
-    }
+    private static IHostManagedPlugin? CreatePluginInstance(Type pluginType) =>
+        Activator.CreateInstance(pluginType) as IHostManagedPlugin;
 
     private void RegisterExport(string pluginId, Type contractType, object service)
     {

@@ -1,5 +1,5 @@
 using Callora.Host.Backend.Application.Abstractions.Events;
-using VoipHost.PluginContracts.Application.Events;
+using Callora.Host.PluginContracts.Application.Events;
 
 namespace Callora.Host.Backend.Infrastructure.Events;
 

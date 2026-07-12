@@ -1,4 +1,4 @@
-namespace VoipHost.PluginContracts.Application.Plugins;
+namespace Callora.Host.PluginContracts.Application.Plugins;
 
 /// <summary>
 /// Handles one plugin-provided Admin API request.

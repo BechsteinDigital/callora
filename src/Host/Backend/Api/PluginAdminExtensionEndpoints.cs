@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Callora.Host.Backend.Infrastructure.Security;
-using Callora.Modules.Abstractions.Application.Plugins;
+using Callora.Hosting.Application.Plugins;
 using Microsoft.Extensions.Primitives;
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
 namespace Callora.Host.Backend.Api;
 

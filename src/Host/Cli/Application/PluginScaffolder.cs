@@ -58,7 +58,7 @@ internal sealed class PluginScaffolder
         var repositoryRoot = FindRepositoryRoot(currentDirectory);
         if (repositoryRoot is null)
         {
-            return "<PackageReference Include=\"VoipHost.PluginContracts\" Version=\"0.1.0\" />";
+            return "<PackageReference Include=\"Callora.Host.PluginContracts\" Version=\"0.1.0\" />";
         }
 
         var projectReferenceAbsolutePath = Path.Combine(
@@ -66,7 +66,7 @@ internal sealed class PluginScaffolder
             "src",
             "Host",
             "PluginContracts",
-            "VoipHost.PluginContracts.csproj");
+            "Callora.Host.PluginContracts.csproj");
 
         var relativePath = Path.GetRelativePath(outputDirectory, projectReferenceAbsolutePath)
             .Replace('\\', '/');
@@ -118,8 +118,8 @@ internal sealed class PluginScaffolder
         string className,
         string pluginId,
         string displayName) =>
-        $@"using VoipHost.PluginContracts.Application.Plugins;
-using VoipHost.PluginContracts.Domain.Plugins;
+        $@"using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Domain.Plugins;
 
 namespace {namespaceName};
 
@@ -167,7 +167,7 @@ public sealed class {className} : IHostManagedPlugin
             },
             dependencies = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["VoipHost.PluginContracts"] = ">=0.1.0"
+                ["Callora.Host.PluginContracts"] = ">=0.1.0"
             }
         };
 

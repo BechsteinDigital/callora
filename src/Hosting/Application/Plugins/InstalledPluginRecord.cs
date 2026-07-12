@@ -1,4 +1,3 @@
-using Callora.Modules.Abstractions.Application.Plugins;
 
 namespace Callora.Hosting.Application.Plugins;
 

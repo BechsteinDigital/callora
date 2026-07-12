@@ -1,8 +1,8 @@
 using Callora.Host.Backend.Application.Abstractions.Events;
-using Callora.Modules.Abstractions.Application.Plugins;
+using Callora.Hosting.Application.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using VoipHost.PluginContracts.Application.Events;
+using Callora.Host.PluginContracts.Application.Events;
 
 namespace Callora.Host.Backend.Infrastructure.Events;
 

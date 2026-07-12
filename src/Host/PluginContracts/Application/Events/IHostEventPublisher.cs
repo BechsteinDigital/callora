@@ -1,4 +1,4 @@
-namespace VoipHost.PluginContracts.Application.Events;
+namespace Callora.Host.PluginContracts.Application.Events;
 
 /// <summary>
 /// Publishes one host event instance to all matching subscribers.

@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Abstractions\Callora.Modules.Abstractions.csproj" />
-    <ProjectReference Include="..\Host\PluginContracts\VoipHost.PluginContracts.csproj" />
+    <ProjectReference Include="..\Host\PluginContracts\Callora.Host.PluginContracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,10 +2,10 @@ using Callora.Host.Backend.Application.Abstractions.Events;
 using Callora.Host.Backend.Tests.Support;
 using Callora.Host.Backend.Infrastructure.Events;
 using Callora.Host.Backend.Tests.Infrastructure.Events.Support;
-using Callora.Modules.Abstractions.Application.Plugins;
+using Callora.Hosting.Application.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using VoipHost.PluginContracts.Application.Events;
+using Callora.Host.PluginContracts.Application.Events;
 
 namespace Callora.Host.Backend.Tests.Infrastructure.Events;
 

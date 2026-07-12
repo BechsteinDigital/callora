@@ -8,7 +8,7 @@ using Callora.Host.Backend.Domain.Plugins;
 using Callora.Host.Backend.Infrastructure.Extensions;
 using Callora.Host.Backend.Tests.Support;
 using System.Reflection;
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
 namespace Callora.Host.Backend.Tests.Application.Lifecycle;
 
@@ -53,8 +53,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
                 true,
                 "plugin-install",
                 null)
@@ -99,8 +99,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -140,8 +140,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -228,8 +228,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -469,8 +469,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
                 true,
                 "plugin-reg",
                 null)
@@ -601,8 +601,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
                 true,
                 "plugin-deprecated",
                 null)
@@ -706,8 +706,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
                 true,
                 "plugin-with-extension",
                 null)
@@ -769,8 +769,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
                 true,
                 "plugin-scope",
                 null)
@@ -835,8 +835,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -891,8 +891,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -1082,8 +1082,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
                 true,
                 "plugin-nuget",
                 null)
@@ -1121,13 +1121,13 @@ public sealed class PluginLifecycleServiceTests
         {
             InstallHandler = (assemblyPath, _) =>
                 assemblyPath == "/tmp/plugin-new.dll"
-                    ? new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                        VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+                    ? new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                        Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
                         false,
                         "plugin-x",
                         "new install failed")
-                    : new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                        VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+                    : new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                        Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
                         true,
                         "plugin-x",
                         null)
@@ -1193,8 +1193,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new VoipHost.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                VoipHost.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
+                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
                 true,
                 "plugin-local",
                 null)

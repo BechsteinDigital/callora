@@ -3,10 +3,10 @@ using System.Text.RegularExpressions;
 
 namespace Callora.Host.Cli.Application;
 
-internal static partial class PluginScaffoldNaming
+internal static class PluginScaffoldNaming
 {
-    private static readonly Regex InvalidPluginIdRegex = BuildInvalidPluginIdRegex();
-    private static readonly Regex SplitterRegex = BuildSplitterRegex();
+    private static readonly Regex InvalidPluginIdRegex = new("[^a-zA-Z0-9._-]", RegexOptions.Compiled);
+    private static readonly Regex SplitterRegex = new("[^a-zA-Z0-9]+", RegexOptions.Compiled);
 
     public static bool IsValidPluginId(string value) =>
         !string.IsNullOrWhiteSpace(value)
@@ -71,10 +71,4 @@ internal static partial class PluginScaffoldNaming
 
         return builder.ToString();
     }
-
-    [GeneratedRegex("[^a-zA-Z0-9._-]", RegexOptions.Compiled)]
-    private static partial Regex BuildInvalidPluginIdRegex();
-
-    [GeneratedRegex("[^a-zA-Z0-9]+", RegexOptions.Compiled)]
-    private static partial Regex BuildSplitterRegex();
 }

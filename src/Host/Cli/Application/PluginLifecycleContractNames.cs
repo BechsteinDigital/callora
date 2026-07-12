@@ -2,5 +2,5 @@ namespace Callora.Host.Cli.Application;
 
 internal static class PluginLifecycleContractNames
 {
-    public const string HostManagedPluginInterface = "VoipHost.PluginContracts.Domain.Plugins.IHostManagedPlugin";
+    public const string HostManagedPluginInterface = "Callora.Host.PluginContracts.Domain.Plugins.IHostManagedPlugin";
 }

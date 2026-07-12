@@ -1,4 +1,4 @@
-namespace VoipHost.PluginContracts.Application.Events;
+namespace Callora.Host.PluginContracts.Application.Events;
 
 /// <summary>
 /// Exposes propagation state for events that can stop further subscriber execution.

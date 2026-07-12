@@ -1,11 +1,11 @@
-using Callora.Modules.Abstractions.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
 
 namespace Callora.Hosting.Application.Plugins;
 
 internal sealed class PluginContext(
     IServiceProvider services,
     string pluginId,
-    Action<string, Type, object> registerExport) : ICalloraPluginContext
+    Action<string, Type, object> registerExport) : IHostPluginContext
 {
     public IServiceProvider Services { get; } = services;
 
