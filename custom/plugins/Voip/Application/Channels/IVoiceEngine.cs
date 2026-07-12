@@ -16,4 +16,13 @@ public interface IVoiceEngine : IAsyncDisposable
         SipAccountEntry account,
         CallTarget target,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Registers the SIP account and invokes the callback for every inbound
+    /// call arriving on it. Disposing the returned handle ends the subscription.
+    /// </summary>
+    Task<IDisposable> SubscribeIncomingCallsAsync(
+        SipAccountEntry account,
+        Action<IEngineCall> onIncomingCall,
+        CancellationToken cancellationToken = default);
 }

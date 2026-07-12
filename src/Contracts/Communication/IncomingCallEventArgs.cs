@@ -1,0 +1,17 @@
+namespace Callora.Contracts.Communication;
+
+/// <summary>
+/// Payload of <see cref="ICommunicationChannel.IncomingCall"/>. The call is
+/// in <see cref="CallState.Ringing"/> until accepted or rejected.
+/// </summary>
+public sealed class IncomingCallEventArgs : EventArgs
+{
+    public IncomingCallEventArgs(ICall call)
+    {
+        ArgumentNullException.ThrowIfNull(call);
+        Call = call;
+    }
+
+    /// <summary>The inbound call awaiting accept or reject.</summary>
+    public ICall Call { get; }
+}

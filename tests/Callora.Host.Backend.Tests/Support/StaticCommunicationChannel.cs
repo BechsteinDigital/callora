@@ -31,10 +31,23 @@ public sealed class StaticCommunicationChannel : ICommunicationChannel
 
     public IReadOnlyList<StaticCall> PlacedCalls => _placedCalls;
 
+    public event EventHandler<IncomingCallEventArgs>? IncomingCall;
+
     public Task<ICall> PlaceCallAsync(CallTarget target, CancellationToken cancellationToken = default)
     {
         var call = new StaticCall(target);
         _placedCalls.Add(call);
         return Task.FromResult<ICall>(call);
+    }
+
+    /// <summary>
+    /// Simulates one inbound ringing call from the given caller and raises
+    /// <see cref="IncomingCall"/> for it.
+    /// </summary>
+    public StaticCall SimulateIncomingCall(CallTarget caller)
+    {
+        var call = new StaticCall(caller, CallDirection.Inbound, CallState.Ringing);
+        IncomingCall?.Invoke(this, new IncomingCallEventArgs(call));
+        return call;
     }
 }

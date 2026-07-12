@@ -48,6 +48,12 @@ public sealed class SipCall : ICall
 
     public event EventHandler<CallStateChangedEventArgs>? StateChanged;
 
+    public Task AcceptAsync(CancellationToken cancellationToken = default) =>
+        _inner.AcceptAsync(cancellationToken);
+
+    public Task RejectAsync(CancellationToken cancellationToken = default) =>
+        _inner.RejectAsync(cancellationToken);
+
     public Task HangupAsync(CancellationToken cancellationToken = default) =>
         _inner.HangupAsync(cancellationToken);
 

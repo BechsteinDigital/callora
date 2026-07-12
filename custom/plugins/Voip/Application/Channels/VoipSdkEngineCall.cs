@@ -25,7 +25,24 @@ public sealed class VoipSdkEngineCall : IEngineCall
 
     public SdkCallDirection Direction => _inner.Direction;
 
+    public string RemoteParty => _inner.RemoteParty;
+
     public event Action<SdkCallState>? StateChanged;
+
+    public Task AcceptAsync(CancellationToken cancellationToken = default) =>
+        _inner.AcceptAsync(cancellationToken);
+
+    public async Task RejectAsync(CancellationToken cancellationToken = default)
+    {
+        // The SDK reports foreseeable reject outcomes via the result instead of
+        // throwing; the platform contract expects an exception on failure.
+        var result = await _inner.RejectAsync(ct: cancellationToken).ConfigureAwait(false);
+        if (!result.IsSuccess)
+        {
+            throw new InvalidOperationException(
+                $"Rejecting call '{CallId}' failed with status '{result.Status}': {result.Reason}");
+        }
+    }
 
     public Task HangupAsync(CancellationToken cancellationToken = default) =>
         _inner.HangupAsync(cancellationToken);

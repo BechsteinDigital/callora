@@ -22,11 +22,31 @@ public sealed class FakeEngineCall : IEngineCall
 
     public SdkCallDirection Direction { get; init; } = SdkCallDirection.Outbound;
 
+    public string RemoteParty { get; init; } = "sip:caller@voice.example.org";
+
     public int HangupCallCount { get; private set; }
+
+    public int AcceptCallCount { get; private set; }
+
+    public int RejectCallCount { get; private set; }
 
     public IReadOnlyList<char> SentDtmfTones => _sentDtmfTones;
 
     public event Action<SdkCallState>? StateChanged;
+
+    public Task AcceptAsync(CancellationToken cancellationToken = default)
+    {
+        AcceptCallCount++;
+        RaiseState(SdkCallState.Connected);
+        return Task.CompletedTask;
+    }
+
+    public Task RejectAsync(CancellationToken cancellationToken = default)
+    {
+        RejectCallCount++;
+        RaiseState(SdkCallState.Terminated);
+        return Task.CompletedTask;
+    }
 
     public Task HangupAsync(CancellationToken cancellationToken = default)
     {

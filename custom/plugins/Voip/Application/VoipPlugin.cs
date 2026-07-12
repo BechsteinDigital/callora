@@ -6,6 +6,7 @@ using Callora.Host.PluginContracts.Domain.Plugins;
 using Callora.Plugins.Voip.Application.Accounts;
 using Callora.Plugins.Voip.Application.Admin;
 using Callora.Plugins.Voip.Application.Channels;
+using Microsoft.Extensions.Logging;
 
 namespace Callora.Plugins.Voip.Application;
 
@@ -32,9 +33,15 @@ public sealed class VoipPlugin : IHostManagedPlugin
         var dataProtector = ResolveRequired<IPluginDataProtector>(context.Services);
         var channelRegistry = ResolveRequired<ICommunicationChannelRegistry>(context.Services);
 
+        var loggerFactory = context.Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
+
         var accountStore = new DataStoreSipAccountStore(dataStore, dataProtector);
         _engine = new VoipSdkVoiceEngine();
-        _channelManager = new SipChannelManager(channelRegistry, _engine, accountStore);
+        _channelManager = new SipChannelManager(
+            channelRegistry,
+            _engine,
+            accountStore,
+            loggerFactory?.CreateLogger<SipChannelManager>());
         await _channelManager.SynchronizeAllAsync(cancellationToken).ConfigureAwait(false);
 
         context.Export<IHostAdminApiExtensionContributor>(

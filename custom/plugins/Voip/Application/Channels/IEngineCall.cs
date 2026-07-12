@@ -15,8 +15,17 @@ public interface IEngineCall
 
     SdkCallDirection Direction { get; }
 
+    /// <summary>Protocol address of the remote party, for example the caller URI.</summary>
+    string RemoteParty { get; }
+
     /// <summary>Raised with the new engine state on every transition.</summary>
     event Action<SdkCallState>? StateChanged;
+
+    /// <summary>Accepts an inbound ringing call.</summary>
+    Task AcceptAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Rejects an inbound ringing call with the engine default cause.</summary>
+    Task RejectAsync(CancellationToken cancellationToken = default);
 
     Task HangupAsync(CancellationToken cancellationToken = default);
 

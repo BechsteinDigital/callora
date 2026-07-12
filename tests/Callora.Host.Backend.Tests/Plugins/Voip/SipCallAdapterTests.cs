@@ -59,6 +59,30 @@ public sealed class SipCallAdapterTests
     }
 
     [Fact]
+    public async Task Accept_DelegatesToEngineCall()
+    {
+        var engineCall = new FakeEngineCall(SdkCallState.Ringing);
+        var call = new SipCall(engineCall, new CallTarget("+4930111"));
+
+        await call.AcceptAsync();
+
+        Assert.Equal(1, engineCall.AcceptCallCount);
+        Assert.Equal(CallState.Connected, call.State);
+    }
+
+    [Fact]
+    public async Task Reject_DelegatesToEngineCall()
+    {
+        var engineCall = new FakeEngineCall(SdkCallState.Ringing);
+        var call = new SipCall(engineCall, new CallTarget("+4930111"));
+
+        await call.RejectAsync();
+
+        Assert.Equal(1, engineCall.RejectCallCount);
+        Assert.Equal(CallState.Terminated, call.State);
+    }
+
+    [Fact]
     public async Task Hangup_DelegatesToEngineCall()
     {
         var engineCall = new FakeEngineCall(SdkCallState.Connected);

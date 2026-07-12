@@ -25,6 +25,21 @@ public interface ICall
     event EventHandler<CallStateChangedEventArgs>? StateChanged;
 
     /// <summary>
+    /// Accepts an inbound ringing call; on success the call transitions to
+    /// <see cref="CallState.Connected"/>. Throws <see cref="InvalidOperationException"/>
+    /// when the call is not inbound or not in <see cref="CallState.Ringing"/>.
+    /// </summary>
+    Task AcceptAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Rejects an inbound ringing call; the channel translates the rejection
+    /// into its protocol-specific cause and the call transitions to
+    /// <see cref="CallState.Terminated"/>. Throws <see cref="InvalidOperationException"/>
+    /// when the call is not inbound or not in <see cref="CallState.Ringing"/>.
+    /// </summary>
+    Task RejectAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Ends the call. Completes without error when the call is already terminated.
     /// </summary>
     Task HangupAsync(CancellationToken cancellationToken = default);

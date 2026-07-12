@@ -33,6 +33,22 @@ public sealed class VoipSdkVoiceEngine : IVoiceEngine
         return new VoipSdkEngineCall(call);
     }
 
+    public async Task<IDisposable> SubscribeIncomingCallsAsync(
+        SipAccountEntry account,
+        Action<IEngineCall> onIncomingCall,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+        ArgumentNullException.ThrowIfNull(onIncomingCall);
+
+        var connection = await GetOrConnectAsync(account, cancellationToken).ConfigureAwait(false);
+        return connection.Client.OnIncomingCall(call =>
+        {
+            onIncomingCall(new VoipSdkEngineCall(call));
+            return Task.CompletedTask;
+        });
+    }
+
     public async ValueTask DisposeAsync()
     {
         await _connectLock.WaitAsync().ConfigureAwait(false);

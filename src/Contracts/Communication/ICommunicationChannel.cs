@@ -23,6 +23,13 @@ public interface ICommunicationChannel
     IReadOnlyCollection<string> Capabilities { get; }
 
     /// <summary>
+    /// Raised for each inbound call arriving on this channel. The call starts
+    /// in <see cref="CallState.Ringing"/>; consumers answer it via
+    /// <see cref="ICall.AcceptAsync"/> or <see cref="ICall.RejectAsync"/>.
+    /// </summary>
+    event EventHandler<IncomingCallEventArgs>? IncomingCall;
+
+    /// <summary>
     /// Places one outbound call to the target. The returned call starts in
     /// <see cref="CallState.Connecting"/>.
     /// </summary>
