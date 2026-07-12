@@ -1,6 +1,7 @@
 using Callora.Contracts.Communication;
 using Callora.Host.PluginContracts.Application.Data;
 using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Secrets;
 using Callora.Host.PluginContracts.Domain.Plugins;
 using Callora.Plugins.Voip.Application.Accounts;
 using Callora.Plugins.Voip.Application.Admin;
@@ -28,9 +29,10 @@ public sealed class VoipPlugin : IHostManagedPlugin
         ArgumentNullException.ThrowIfNull(context);
 
         var dataStore = ResolveRequired<IPluginDataStore>(context.Services);
+        var dataProtector = ResolveRequired<IPluginDataProtector>(context.Services);
         var channelRegistry = ResolveRequired<ICommunicationChannelRegistry>(context.Services);
 
-        var accountStore = new DataStoreSipAccountStore(dataStore);
+        var accountStore = new DataStoreSipAccountStore(dataStore, dataProtector);
         _engine = new VoipSdkVoiceEngine();
         _channelManager = new SipChannelManager(channelRegistry, _engine, accountStore);
         await _channelManager.SynchronizeAllAsync(cancellationToken).ConfigureAwait(false);

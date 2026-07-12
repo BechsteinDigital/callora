@@ -57,7 +57,7 @@ public sealed class SipChannelManagerTests
     {
         var engine = new FakeVoiceEngine();
         var registry = new CommunicationChannelRegistry();
-        var store = new DataStoreSipAccountStore(new InMemoryPluginDataStore());
+        var store = new DataStoreSipAccountStore(new InMemoryPluginDataStore(), new FakePluginDataProtector());
         var manager = new SipChannelManager(registry, engine, store);
         await store.CreateAsync("workspace-a", NewRequest("alice", isActive: true));
         await manager.SynchronizeWorkspaceAsync("workspace-a");
@@ -86,7 +86,7 @@ public sealed class SipChannelManagerTests
     private static (SipChannelManager Manager, CommunicationChannelRegistry Registry, DataStoreSipAccountStore Store) CreateManager()
     {
         var registry = new CommunicationChannelRegistry();
-        var store = new DataStoreSipAccountStore(new InMemoryPluginDataStore());
+        var store = new DataStoreSipAccountStore(new InMemoryPluginDataStore(), new FakePluginDataProtector());
         var manager = new SipChannelManager(registry, new FakeVoiceEngine(), store);
         return (manager, registry, store);
     }

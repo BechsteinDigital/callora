@@ -1,4 +1,5 @@
 using Callora.Host.Backend.Application.Plugins;
+using Callora.Host.Backend.Tests.Support;
 using Callora.Plugins.Voip.Application.Accounts;
 using Xunit;
 
@@ -81,7 +82,7 @@ public sealed class DataStoreSipAccountStoreTests
     }
 
     private static DataStoreSipAccountStore CreateStore() =>
-        new(new InMemoryPluginDataStore());
+        new(new InMemoryPluginDataStore(), new FakePluginDataProtector());
 
     private static UpsertSipAccountRequest NewRequest(string username) =>
         new(

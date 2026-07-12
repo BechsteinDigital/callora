@@ -22,6 +22,7 @@ using Callora.Host.Backend.Infrastructure.Security;
 using Callora.Host.Backend.Infrastructure.Startup;
 using Callora.Host.Workspace.Api;
 using Callora.Hosting.Infrastructure.DependencyInjection;
+using Microsoft.AspNetCore.DataProtection;
 using Callora.Host.Backend.Application.Monitoring;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry;
@@ -127,6 +128,8 @@ builder.Services.AddSingleton<ISecretStore>(sp => new ChainedSecretStore(
     new EnvironmentSecretStore(),
     new ConfigurationSecretStore(builder.Configuration)
 ]));
+builder.Services.AddDataProtection().SetApplicationName("callora-host");
+builder.Services.AddSingleton<IPluginDataProtector, DataProtectionPluginDataProtector>();
 builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
 builder.Services.AddScoped<MarketplaceEntitlementApplier>();
 builder.Services.AddScoped<IBackgroundJobHandler, MarketplaceEntitlementSyncJobHandler>();

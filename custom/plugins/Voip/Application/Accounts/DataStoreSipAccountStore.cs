@@ -1,12 +1,17 @@
 using System.Text.Json;
 using Callora.Host.PluginContracts.Application.Data;
+using Callora.Host.PluginContracts.Application.Secrets;
 
 namespace Callora.Plugins.Voip.Application.Accounts;
 
 /// <summary>
-/// SIP account store backed by the host-provided plugin data store.
+/// SIP account store backed by the host-provided plugin data store. The
+/// account secret is encrypted at rest via the host data protector; legacy
+/// plaintext values stay readable and are re-encrypted on the next write.
 /// </summary>
-public sealed class DataStoreSipAccountStore(IPluginDataStore dataStore) : ISipAccountStore
+public sealed class DataStoreSipAccountStore(
+    IPluginDataStore dataStore,
+    IPluginDataProtector dataProtector) : ISipAccountStore
 {
     private const string Collection = "sip-accounts";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -114,22 +119,29 @@ public sealed class DataStoreSipAccountStore(IPluginDataStore dataStore) : ISipA
 
     private Task SaveAsync(string workspaceKey, SipAccountEntry entry, CancellationToken cancellationToken)
     {
-        var json = JsonSerializer.Serialize(entry, JsonOptions);
+        var persistable = entry with { Secret = dataProtector.Protect(VoipPlugin.Id, entry.Secret) };
+        var json = JsonSerializer.Serialize(persistable, JsonOptions);
         return dataStore.SetAsync(BuildKey(workspaceKey, entry.SipAccountId), json, cancellationToken);
     }
 
     private static PluginDataKey BuildKey(string workspaceKey, string sipAccountId) =>
         new(VoipPlugin.Id, workspaceKey, Collection, sipAccountId);
 
-    private static SipAccountEntry? Deserialize(string json)
+    private SipAccountEntry? Deserialize(string json)
     {
         try
         {
-            return JsonSerializer.Deserialize<SipAccountEntry>(json, JsonOptions);
+            var entry = JsonSerializer.Deserialize<SipAccountEntry>(json, JsonOptions);
+            return entry is null ? null : entry with { Secret = UnprotectSecret(entry.Secret) };
         }
         catch (JsonException)
         {
             return null;
         }
     }
+
+    private string UnprotectSecret(string storedSecret) =>
+        dataProtector.TryUnprotect(VoipPlugin.Id, storedSecret, out var plaintext)
+            ? plaintext
+            : storedSecret; // Legacy-Klartext bleibt lesbar; nächster Schreibvorgang verschlüsselt.
 }
