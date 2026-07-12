@@ -39,3 +39,30 @@ jobs:
       # Architektur-Tests (keine partial/nested types, ein Typ pro Datei, DDD-Layering).
       - name: Test
         run: dotnet test Callora.Host.sln --no-build --configuration Release --logger "console;verbosity=normal"
+
+  build-shells:
+    name: Build ${{ matrix.shell }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [admin-shell, workspace-shell]
+    defaults:
+      run:
+        working-directory: apps/${{ matrix.shell }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/${{ matrix.shell }}/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
