@@ -10,15 +10,15 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "@nuxt/ui": "^4.6.1",
+    "@nuxt/ui": "^4.9.0",
     "@pinia/nuxt": "^0.11.3",
     "nunjucks": "^3.2.4",
-    "nuxt": "^4.4.2",
+    "nuxt": "^4.4.8",
     "pinia": "^3.0.3",
-    "zod": "^4.0.0"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@vue/language-core": "^2.2.12",
-    "vue-tsc": "^2.2.12"
+    "@vue/language-core": "^3.3.7",
+    "vue-tsc": "^3.3.7"
   }
 }
