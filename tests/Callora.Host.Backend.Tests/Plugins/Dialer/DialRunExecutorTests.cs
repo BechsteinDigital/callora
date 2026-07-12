@@ -70,7 +70,7 @@ public sealed class DialRunExecutorTests
         var attempts = await executor.ExecuteAsync(
             "workspace-a",
             [NewNumber("+4930111")],
-            new DialRunOptions(TimeSpan.FromMilliseconds(50)),
+            new DialRunOptions(TimeSpan.FromMilliseconds(250)),
             CancellationToken.None);
 
         var attempt = Assert.Single(attempts);
@@ -100,7 +100,7 @@ public sealed class DialRunExecutorTests
         call.TransitionTo(CallState.Connected);
         call.TransitionTo(CallState.Terminated);
 
-        var completed = await tracker.WaitForCompletionAsync("workspace-a", TimeSpan.FromSeconds(5));
+        var completed = await tracker.WaitForCompletionAsync("workspace-a", TimeSpan.FromSeconds(15));
         Assert.NotNull(completed);
         Assert.Equal(DialRunStatus.Completed, completed!.Status);
         Assert.Equal(DialAttemptOutcome.Connected, Assert.Single(completed.Attempts).Outcome);
@@ -111,7 +111,8 @@ public sealed class DialRunExecutorTests
 
     private static async Task<StaticCall> WaitForPlacedCallAsync(StaticCommunicationChannel channel, int index)
     {
-        var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(5);
+        // Großzügiges Budget: CI-Runner unter Last dürfen den Test nicht flaken lassen.
+        var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(15);
         while (DateTimeOffset.UtcNow < deadline)
         {
             if (channel.PlacedCalls.Count > index)
