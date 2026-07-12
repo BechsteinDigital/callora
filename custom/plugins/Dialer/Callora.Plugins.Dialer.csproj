@@ -21,4 +21,11 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="src/Resources/app/admin/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>app/admin/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
+  </ItemGroup>
+
 </Project>

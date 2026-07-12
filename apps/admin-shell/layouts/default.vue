@@ -54,6 +54,13 @@ const baseMainLinks: SidebarLink[] = [{
   onSelect: () => {
     open.value = false;
   }
+}, {
+  label: 'Jobs',
+  icon: 'i-lucide-list-checks',
+  to: '/jobs',
+  onSelect: () => {
+    open.value = false;
+  }
 }];
 
 const mainLinks = computed(() => {
