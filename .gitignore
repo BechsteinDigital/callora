@@ -7,14 +7,10 @@ out/
 build/
 artifacts/
 publish/
-apps/admin-shell/node_modules/
-apps/admin-shell/.nuxt/
-apps/admin-shell/.output/
-apps/admin-shell/dist/
-apps/workspace-shell/node_modules/
-apps/workspace-shell/.nuxt/
-apps/workspace-shell/.output/
-apps/workspace-shell/dist/
+apps/*/node_modules/
+apps/*/.output/
+apps/*/dist/
+apps/*/.nuxt/
 
 # ------------------------------
 # Test / coverage / benchmark
@@ -104,3 +100,5 @@ graphify-out/
 
 # Vom PluginUiAssetPublisher generiert (bei jedem Start neu aufgebaut)
 src/Host/Backend/wwwroot/plugin-assets/
+
+custom/plugins/*/node_modules/

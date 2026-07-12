@@ -46,7 +46,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shell: [admin-shell, workspace-shell]
+        # legacy-admin-shell bleibt gebaut, bis die neue Admin-Shell den Platz
+        # von apps/admin-shell übernimmt.
+        shell: [legacy-admin-shell, workspace-shell]
     defaults:
       run:
         working-directory: apps/${{ matrix.shell }}
