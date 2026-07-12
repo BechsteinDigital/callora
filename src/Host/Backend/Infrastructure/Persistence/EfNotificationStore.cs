@@ -54,6 +54,15 @@ public sealed class EfNotificationStore(HostPersistenceDbContext dbContext) : IN
             .ConfigureAwait(false);
     }
 
+    public async Task<NotificationSnapshot?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await dbContext.Notifications
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+        return entity is null ? null : ToSnapshot(entity);
+    }
+
     public async Task<bool> MarkReadAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await dbContext.Notifications

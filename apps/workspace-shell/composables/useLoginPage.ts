@@ -32,10 +32,7 @@ export function useLoginPage() {
         workspaceKey: workspaceKey.value
       });
 
-      const returnUrl = typeof route.query.returnUrl === "string" && route.query.returnUrl.trim()
-        ? route.query.returnUrl
-        : `${basePath.value}/dashboard`;
-      await navigateTo(returnUrl);
+      await navigateTo(sanitizeReturnUrl(route.query.returnUrl, `${basePath.value}/dashboard`));
     } catch {
       errorMessage.value = "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.";
     } finally {

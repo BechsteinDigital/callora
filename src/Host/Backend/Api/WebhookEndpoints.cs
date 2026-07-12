@@ -58,19 +58,35 @@ public static class WebhookEndpoints
                 IWebhookSubscriptionStore store,
                 Guid id,
                 bool isActive,
+                HttpContext httpContext,
                 CancellationToken cancellationToken) =>
-                await store.SetActiveAsync(id, isActive, cancellationToken)
-                    ? Results.NoContent()
-                    : Results.NotFound())
+            {
+                var existing = await store.GetAsync(id, cancellationToken);
+                if (existing is null)
+                    return Results.NotFound();
+                if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, existing.WorkspaceKey))
+                    return Results.Forbid();
+
+                await store.SetActiveAsync(id, isActive, cancellationToken);
+                return Results.NoContent();
+            })
             .RequirePermission(BackendPermissionKeys.WebhookManage);
 
         group.MapDelete("/{id:guid}", async (
                 IWebhookSubscriptionStore store,
                 Guid id,
+                HttpContext httpContext,
                 CancellationToken cancellationToken) =>
-                await store.DeleteAsync(id, cancellationToken)
-                    ? Results.NoContent()
-                    : Results.NotFound())
+            {
+                var existing = await store.GetAsync(id, cancellationToken);
+                if (existing is null)
+                    return Results.NotFound();
+                if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, existing.WorkspaceKey))
+                    return Results.Forbid();
+
+                await store.DeleteAsync(id, cancellationToken);
+                return Results.NoContent();
+            })
             .RequirePermission(BackendPermissionKeys.WebhookManage);
 
         return app;

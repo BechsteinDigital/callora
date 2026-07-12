@@ -40,9 +40,7 @@ async function resolveWorkspaceKey(): Promise<string> {
     return workspaceKey.value;
   }
 
-  const candidatePath = typeof route.query.returnUrl === "string" && route.query.returnUrl.trim().length > 0
-    ? route.query.returnUrl
-    : "/";
+  const candidatePath = sanitizeReturnUrl(route.query.returnUrl, "/");
   const resolved = await hydrateFromPublicContext(candidatePath);
   if (!resolved) {
     return "";
@@ -81,10 +79,9 @@ async function onSubmit(payload: FormSubmitEvent<Schema>): Promise<void> {
       workspaceKey
     });
 
-    const returnUrl = typeof route.query.returnUrl === "string" && route.query.returnUrl.trim().length > 0
-      ? route.query.returnUrl
-      : (useRuntimeConfig().public.workspaceDashboardPath || "/dashboard");
-    await navigateTo(returnUrl);
+    await navigateTo(sanitizeReturnUrl(
+      route.query.returnUrl,
+      useRuntimeConfig().public.workspaceDashboardPath || "/dashboard"));
   } catch {
     errorMessage.value = "Authentication failed. Check your credentials and workspace assignment.";
   } finally {

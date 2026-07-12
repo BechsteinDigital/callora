@@ -15,5 +15,7 @@ public interface INotificationStore
         int limit,
         CancellationToken cancellationToken = default);
 
+    Task<NotificationSnapshot?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<bool> MarkReadAsync(Guid id, CancellationToken cancellationToken = default);
 }

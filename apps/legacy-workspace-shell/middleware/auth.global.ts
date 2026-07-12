@@ -24,9 +24,7 @@ export default defineNuxtRouteMiddleware((to) => {
     await auth.hydrate();
 
     const basePath = publicPathPrefix.value === "/" ? "" : publicPathPrefix.value;
-    const returnUrlValue = typeof to.query.returnUrl === "string" && to.query.returnUrl.trim().length > 0
-      ? to.query.returnUrl
-      : `${basePath}${dashboardPath}`;
+    const returnUrlValue = sanitizeReturnUrl(to.query.returnUrl, `${basePath}${dashboardPath}`);
 
     if (isLoginRoute && auth.isAuthenticated.value) {
       return navigateTo(returnUrlValue);
