@@ -30,7 +30,7 @@ public sealed class VoipSdkVoiceEngine : IVoiceEngine
             .DialAsync(targetUri, options: null, cancellationToken)
             .ConfigureAwait(false);
 
-        return new VoipSdkEngineCall(call);
+        return new VoipSdkEngineCall(call, connection.Client.Media);
     }
 
     public async Task<IDisposable> SubscribeIncomingCallsAsync(
@@ -44,7 +44,7 @@ public sealed class VoipSdkVoiceEngine : IVoiceEngine
         var connection = await GetOrConnectAsync(account, cancellationToken).ConfigureAwait(false);
         return connection.Client.OnIncomingCall(call =>
         {
-            onIncomingCall(new VoipSdkEngineCall(call));
+            onIncomingCall(new VoipSdkEngineCall(call, connection.Client.Media));
             return Task.CompletedTask;
         });
     }

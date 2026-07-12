@@ -1,3 +1,4 @@
+using Callora.Contracts.Communication;
 using SdkCallDirection = CalloraVoipSdk.Core.Domain.Calls.CallDirection;
 using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;
 
@@ -30,4 +31,7 @@ public interface IEngineCall
     Task HangupAsync(CancellationToken cancellationToken = default);
 
     Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default);
+
+    /// <summary>Opens the bidirectional audio stream of the connected call.</summary>
+    Task<ICallAudioStream> OpenAudioAsync(CancellationToken cancellationToken = default);
 }

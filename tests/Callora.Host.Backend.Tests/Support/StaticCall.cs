@@ -9,6 +9,7 @@ namespace Callora.Host.Backend.Tests.Support;
 public sealed class StaticCall : ICall
 {
     private readonly List<char> _sentDtmfTones = [];
+    private readonly List<RecordingCallAudioStream> _openedAudioStreams = [];
     private CallState _state;
 
     public StaticCall(
@@ -31,6 +32,8 @@ public sealed class StaticCall : ICall
     public CallTarget Target { get; }
 
     public IReadOnlyList<char> SentDtmfTones => _sentDtmfTones;
+
+    public IReadOnlyList<RecordingCallAudioStream> OpenedAudioStreams => _openedAudioStreams;
 
     public event EventHandler<CallStateChangedEventArgs>? StateChanged;
 
@@ -58,6 +61,19 @@ public sealed class StaticCall : ICall
     {
         _sentDtmfTones.Add(tone);
         return Task.CompletedTask;
+    }
+
+    public Task<ICallAudioStream> OpenAudioAsync(CancellationToken cancellationToken = default)
+    {
+        if (_state != CallState.Connected)
+        {
+            throw new InvalidOperationException(
+                $"Cannot open audio on a call in state '{_state}'; audio requires a connected call.");
+        }
+
+        var stream = new RecordingCallAudioStream();
+        _openedAudioStreams.Add(stream);
+        return Task.FromResult<ICallAudioStream>(stream);
     }
 
     public void TransitionTo(CallState newState)

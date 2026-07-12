@@ -1,3 +1,5 @@
+using Callora.Contracts.Communication;
+using CalloraVoipSdk.Core.Application.Media;
 using SdkCall = CalloraVoipSdk.Core.Domain.Calls.ICall;
 using SdkCallDirection = CalloraVoipSdk.Core.Domain.Calls.CallDirection;
 using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;
@@ -11,11 +13,14 @@ namespace Callora.Plugins.Voip.Application.Channels;
 public sealed class VoipSdkEngineCall : IEngineCall
 {
     private readonly SdkCall _inner;
+    private readonly MediaManager _media;
 
-    public VoipSdkEngineCall(SdkCall inner)
+    public VoipSdkEngineCall(SdkCall inner, MediaManager media)
     {
         ArgumentNullException.ThrowIfNull(inner);
+        ArgumentNullException.ThrowIfNull(media);
         _inner = inner;
+        _media = media;
         _inner.StateChanged += (_, args) => StateChanged?.Invoke(args.NewState);
     }
 
@@ -49,4 +54,20 @@ public sealed class VoipSdkEngineCall : IEngineCall
 
     public Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default) =>
         _inner.SendDtmfAsync(new SdkDtmfTone(tone), cancellationToken);
+
+    public Task<ICallAudioStream> OpenAudioAsync(CancellationToken cancellationToken = default)
+    {
+        var parameters = _inner.MediaParameters
+            ?? throw new InvalidOperationException(
+                $"Call '{CallId}' has no negotiated media yet; audio requires a connected call.");
+
+        var receiver = _media.CreateReceiver();
+        var sender = _media.CreateSender();
+        receiver.AttachToCall(_inner);
+        sender.AttachToCall(_inner);
+
+        var format = new AudioFormat(parameters.CodecName, parameters.ClockRate);
+        return Task.FromResult<ICallAudioStream>(
+            new VoipSdkAudioStream(receiver, sender, format, parameters.PayloadType));
+    }
 }

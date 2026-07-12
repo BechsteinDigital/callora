@@ -48,4 +48,12 @@ public interface ICall
     /// Sends one DTMF tone (0-9, *, #, A-D) to the remote party.
     /// </summary>
     Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Opens the bidirectional audio stream of the call. Requires
+    /// <see cref="CallState.Connected"/> — throws
+    /// <see cref="InvalidOperationException"/> otherwise. Multiple streams can
+    /// be open in parallel; each observes every inbound frame.
+    /// </summary>
+    Task<ICallAudioStream> OpenAudioAsync(CancellationToken cancellationToken = default);
 }

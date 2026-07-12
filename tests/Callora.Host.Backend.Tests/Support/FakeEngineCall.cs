@@ -1,3 +1,4 @@
+using Callora.Contracts.Communication;
 using Callora.Plugins.Voip.Application.Channels;
 using SdkCallDirection = CalloraVoipSdk.Core.Domain.Calls.CallDirection;
 using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;
@@ -60,6 +61,14 @@ public sealed class FakeEngineCall : IEngineCall
         _sentDtmfTones.Add(tone);
         return Task.CompletedTask;
     }
+
+    public Task<ICallAudioStream> OpenAudioAsync(CancellationToken cancellationToken = default)
+    {
+        OpenedAudioStream = new RecordingCallAudioStream();
+        return Task.FromResult<ICallAudioStream>(OpenedAudioStream);
+    }
+
+    public RecordingCallAudioStream? OpenedAudioStream { get; private set; }
 
     public void RaiseState(SdkCallState newState)
     {

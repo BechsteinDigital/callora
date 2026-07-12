@@ -107,6 +107,18 @@ public sealed class SipCallAdapterTests
     }
 
     [Fact]
+    public async Task OpenAudio_DelegatesToEngineCall()
+    {
+        var engineCall = new FakeEngineCall(SdkCallState.Connected);
+        var call = new SipCall(engineCall, new CallTarget("+4930111"));
+
+        var stream = await call.OpenAudioAsync();
+
+        Assert.NotNull(engineCall.OpenedAudioStream);
+        Assert.Same(engineCall.OpenedAudioStream, stream);
+    }
+
+    [Fact]
     public void NoTransitions_AfterTerminated()
     {
         var engineCall = new FakeEngineCall(SdkCallState.Connected);

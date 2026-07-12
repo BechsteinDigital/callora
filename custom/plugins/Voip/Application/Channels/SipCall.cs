@@ -60,6 +60,9 @@ public sealed class SipCall : ICall
     public Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default) =>
         _inner.SendDtmfAsync(tone, cancellationToken);
 
+    public Task<ICallAudioStream> OpenAudioAsync(CancellationToken cancellationToken = default) =>
+        _inner.OpenAudioAsync(cancellationToken);
+
     private void HandleEngineStateChanged(SdkCallState engineState)
     {
         CallStateChangedEventArgs? payload;
