@@ -15,4 +15,4 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./ops/local-frontdoor/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./ops/local-frontdoor/Caddyfile.dev:/etc/caddy/Caddyfile:ro
