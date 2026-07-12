@@ -10,7 +10,7 @@ public sealed class HostDatabaseInitializationHostedService(IServiceProvider ser
     {
         using var scope = services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<HostPersistenceDbContext>();
-        await dbContext.MigrateOrEnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
+        await dbContext.ApplyMigrationsAsync(cancellationToken).ConfigureAwait(false);
         await EnsureWorkspaceTemplateTablesAsync(dbContext, cancellationToken).ConfigureAwait(false);
 
         var options = scope.ServiceProvider.GetRequiredService<BackendHostOptions>();

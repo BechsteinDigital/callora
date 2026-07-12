@@ -8,9 +8,7 @@ namespace Callora.Host.Backend.Application.Extensions;
 
 public sealed class CachedWorkspaceTemplateResolutionService(
     IMemoryCache cache,
-    IWorkspaceTemplateRegistryStore templateRegistryStore,
-    IWorkspaceManagementStore workspaceStore,
-    IPluginEntitlementStore entitlementStore) : IWorkspaceTemplateResolutionService, IWorkspaceTemplateResolutionCache
+    IServiceScopeFactory scopeFactory) : IWorkspaceTemplateResolutionService, IWorkspaceTemplateResolutionCache
 {
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(2);
     private readonly ConcurrentDictionary<string, string> _workspaceTenantIndex =
@@ -82,6 +80,13 @@ public sealed class CachedWorkspaceTemplateResolutionService(
         string workspaceKey,
         CancellationToken cancellationToken)
     {
+        // Scoped Stores pro Aufruf auflösen: Der Service ist Singleton (Cache-Index),
+        // darf aber keine scoped Abhängigkeiten dauerhaft halten.
+        using var scope = scopeFactory.CreateScope();
+        var workspaceStore = scope.ServiceProvider.GetRequiredService<IWorkspaceManagementStore>();
+        var templateRegistryStore = scope.ServiceProvider.GetRequiredService<IWorkspaceTemplateRegistryStore>();
+        var entitlementStore = scope.ServiceProvider.GetRequiredService<IPluginEntitlementStore>();
+
         var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         if (workspace is null || !workspace.IsActive || !workspace.TenantIsActive)
         {
@@ -105,6 +110,7 @@ public sealed class CachedWorkspaceTemplateResolutionService(
         }
 
         var entitledDefinitions = await FilterEntitledDefinitionsAsync(
+                entitlementStore,
                 workspace,
                 definitions,
                 cancellationToken)
@@ -299,7 +305,8 @@ public sealed class CachedWorkspaceTemplateResolutionService(
         return best;
     }
 
-    private async Task<IReadOnlyList<WorkspaceTemplateDefinitionSnapshot>> FilterEntitledDefinitionsAsync(
+    private static async Task<IReadOnlyList<WorkspaceTemplateDefinitionSnapshot>> FilterEntitledDefinitionsAsync(
+        IPluginEntitlementStore entitlementStore,
         WorkspaceSnapshot workspace,
         IReadOnlyList<WorkspaceTemplateDefinitionSnapshot> definitions,
         CancellationToken cancellationToken)

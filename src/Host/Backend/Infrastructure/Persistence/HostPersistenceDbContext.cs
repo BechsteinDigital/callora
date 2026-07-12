@@ -16,6 +16,14 @@ public sealed class HostPersistenceDbContext(DbContextOptions<HostPersistenceDbC
 
     public DbSet<PluginAuditLog> PluginAuditLogs => Set<PluginAuditLog>();
 
+    public DbSet<PluginDataDocument> PluginDataDocuments => Set<PluginDataDocument>();
+
+    public DbSet<Callora.Host.Backend.Domain.Jobs.BackgroundJob> BackgroundJobs =>
+        Set<Callora.Host.Backend.Domain.Jobs.BackgroundJob>();
+
+    public DbSet<Callora.Host.Backend.Domain.Entitlements.MarketplaceEntitlementEventRecord> MarketplaceEntitlementEvents =>
+        Set<Callora.Host.Backend.Domain.Entitlements.MarketplaceEntitlementEventRecord>();
+
     public DbSet<BackendRbacRole> BackendRbacRoles => Set<BackendRbacRole>();
 
     public DbSet<BackendRbacRoleGrant> BackendRbacRoleGrants => Set<BackendRbacRoleGrant>();

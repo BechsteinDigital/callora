@@ -3,13 +3,15 @@ using Callora.Host.Backend.Application.Abstractions.Plugins;
 namespace Callora.Host.Backend.Infrastructure.Startup;
 
 public sealed class PluginUiAssetPublishHostedService(
-    IPluginUiAssetPublisher assetPublisher,
+    IServiceScopeFactory scopeFactory,
     ILogger<PluginUiAssetPublishHostedService> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         try
         {
+            using var scope = scopeFactory.CreateScope();
+            var assetPublisher = scope.ServiceProvider.GetRequiredService<IPluginUiAssetPublisher>();
             await assetPublisher.PublishAllAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)

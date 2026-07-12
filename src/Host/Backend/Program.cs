@@ -1,6 +1,12 @@
+using Callora.Contracts.Communication;
 using Callora.Host.Backend.Api;
 using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Abstractions.Extensions;
+using Callora.Host.Backend.Application.Abstractions.Entitlements;
+using Callora.Host.Backend.Application.Abstractions.Jobs;
+using Callora.Host.Backend.Application.Communication;
+using Callora.Host.Backend.Application.Entitlements;
+using Callora.Host.Backend.Application.Jobs;
 using Callora.Host.Backend.Application.Abstractions.Events;
 using Callora.Host.Backend.Application.Abstractions.Plugins;
 using Callora.Host.Backend.Application.Extensions;
@@ -16,10 +22,25 @@ using Callora.Host.Backend.Infrastructure.Security;
 using Callora.Host.Backend.Infrastructure.Startup;
 using Callora.Host.Workspace.Api;
 using Callora.Hosting.Infrastructure.DependencyInjection;
+using Callora.Host.Backend.Application.Monitoring;
 using Microsoft.OpenApi.Models;
-using VoipHost.PluginContracts.Application.Events;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Callora.Host.PluginContracts.Application.Data;
+using Callora.Host.PluginContracts.Application.Events;
+using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Host.PluginContracts.Application.Secrets;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Lifetime-Fehler (Captive Dependencies) sollen sofort beim Start auffallen.
+builder.Host.UseDefaultServiceProvider(static options =>
+{
+    options.ValidateScopes = true;
+    options.ValidateOnBuild = true;
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddMemoryCache();
@@ -88,6 +109,49 @@ ServiceCollectionExtensions.AddCalloraHosting(
         options.PluginDirectory = CalloraHostingPathResolver.ResolvePluginDirectory(options.PluginDirectory);
     });
 
+builder.Services.AddSingleton<ICommunicationChannelRegistry, CommunicationChannelRegistry>();
+builder.Services.AddScoped<EfPluginDataStore>();
+builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
+
+var backgroundJobOptions = new BackgroundJobOptions();
+builder.Configuration.GetSection("BackgroundJobs").Bind(backgroundJobOptions);
+builder.Services.AddSingleton(backgroundJobOptions);
+builder.Services.AddScoped<IBackgroundJobStore, EfBackgroundJobStore>();
+builder.Services.AddScoped<BackgroundJobHandlerResolver>();
+builder.Services.AddScoped<BackgroundJobProcessor>();
+builder.Services.AddSingleton<IBackgroundJobQueue, ScopedBackgroundJobQueue>();
+builder.Services.AddSingleton<RecurringJobEnqueuer>();
+
+builder.Services.AddSingleton<ISecretStore>(sp => new ChainedSecretStore(
+[
+    new EnvironmentSecretStore(),
+    new ConfigurationSecretStore(builder.Configuration)
+]));
+builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
+builder.Services.AddScoped<MarketplaceEntitlementApplier>();
+builder.Services.AddScoped<IBackgroundJobHandler, MarketplaceEntitlementSyncJobHandler>();
+
+var observabilityOptions = new ObservabilityOptions();
+builder.Configuration.GetSection("Observability").Bind(observabilityOptions);
+builder.Services.AddSingleton(observabilityOptions);
+var openTelemetry = builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(observabilityOptions.ServiceName))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddSource(PluginLifecycleTelemetry.ActivitySourceName))
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddMeter(PluginLifecycleTelemetry.MeterName)
+        .AddMeter(BackgroundJobTelemetry.MeterName));
+if (!string.IsNullOrWhiteSpace(observabilityOptions.OtlpEndpoint))
+{
+    openTelemetry.UseOtlpExporter(
+        OpenTelemetry.Exporter.OtlpExportProtocol.Grpc,
+        new Uri(observabilityOptions.OtlpEndpoint));
+}
+
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseReadinessHealthCheck>("database");
 builder.Services.AddScoped<IPluginActivationPolicy, AllowlistPluginActivationPolicy>();
 builder.Services.AddScoped<IPluginEntitlementStore, EfPluginEntitlementStore>();
 builder.Services.AddSingleton<IExtensionPointRegistryStore, InMemoryExtensionPointRegistryStore>();
@@ -98,7 +162,7 @@ builder.Services.AddSingleton<IPluginPackageSignatureVerifier, AuthenticodePlugi
 builder.Services.AddSingleton<INuGetPluginAssemblyResolver, LocalNuGetPackagePluginAssemblyResolver>();
 builder.Services.AddSingleton<ILocalPluginProjectBuilder, LocalPluginProjectBuilder>();
 builder.Services.AddSingleton<ILocalPluginInstallSourceResolver, LocalPluginInstallSourceResolver>();
-builder.Services.AddSingleton<IPluginUiAssetPublisher, PluginUiAssetPublisher>();
+builder.Services.AddScoped<IPluginUiAssetPublisher, PluginUiAssetPublisher>();
 builder.Services.AddScoped<IHostApplicationEventDispatcher, HostApplicationEventDispatcher>();
 builder.Services.AddScoped<IHostApplicationEventPublisher, HostApplicationEventPublisher>();
 builder.Services.AddScoped<IHostEventPublisher>(sp => sp.GetRequiredService<IHostApplicationEventPublisher>());
@@ -112,6 +176,10 @@ builder.Services.AddScoped<IPluginLifecycleService, PluginLifecycleService>();
 builder.Services.AddSingleton<CachedWorkspaceTemplateResolutionService>();
 builder.Services.AddSingleton<IWorkspaceTemplateResolutionService>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());
 builder.Services.AddSingleton<IWorkspaceTemplateResolutionCache>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());
+// Nach der DB-Initialisierung (AddBackendPersistence) starten, damit der
+// Worker nicht gegen noch fehlende Tabellen pollt.
+builder.Services.AddHostedService<BackgroundJobWorkerHostedService>();
+builder.Services.AddHostedService<RecurringJobSchedulerHostedService>();
 builder.Services.AddHostedService<CalloraHostStartupHostedService>();
 builder.Services.AddHostedService<LocalPluginDiscoveryHostedService>();
 builder.Services.AddHostedService<PluginRuntimeRehydrationHostedService>();
@@ -144,7 +212,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapHealthChecks("/ready");
 app.MapAuthEndpoints();
+app.MapEntitlementSyncEndpoints();
+app.MapJobEndpoints();
 app.MapPluginEndpoints();
 app.MapPluginAssetEndpoints(backendOptions);
 app.MapPluginAdminExtensionEndpoints();

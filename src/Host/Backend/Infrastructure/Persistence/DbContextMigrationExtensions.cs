@@ -4,19 +4,16 @@ namespace Callora.Host.Backend.Infrastructure.Persistence;
 
 public static class DbContextMigrationExtensions
 {
-    public static async Task MigrateOrEnsureCreatedAsync(
+    /// <summary>
+    /// Applies pending EF migrations. Failures propagate loudly: the previous
+    /// silent EnsureCreated fallback produced schema drift between database
+    /// and migration history and is intentionally removed.
+    /// </summary>
+    public static Task ApplyMigrationsAsync(
         this HostPersistenceDbContext dbContext,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
-
-        try
-        {
-            await dbContext.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception) when (!cancellationToken.IsCancellationRequested)
-        {
-            await dbContext.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-        }
+        return dbContext.Database.MigrateAsync(cancellationToken);
     }
 }
