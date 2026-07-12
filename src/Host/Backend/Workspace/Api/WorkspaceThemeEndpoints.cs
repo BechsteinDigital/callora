@@ -36,6 +36,11 @@ public static class WorkspaceThemeEndpoints
                 return Results.BadRequest(new { message = "workspaceKey query parameter or workspace claim is required." });
             }
 
+            if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(user, resolvedWorkspaceKey))
+            {
+                return Results.Forbid();
+            }
+
             var workspace = await workspaceStore.GetAsync(resolvedWorkspaceKey, cancellationToken).ConfigureAwait(false);
             if (workspace is null ||
                 !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))

@@ -37,6 +37,39 @@ public sealed class AnnouncementAudioTests
     }
 
     [Fact]
+    public void WaveReader_RejectsTruncatedFmtChunk()
+    {
+        // fmt-Header am Dateiende verspricht 16 Bytes, die Datei endet davor.
+        var bytes = new byte[44];
+        "RIFF"u8.CopyTo(bytes);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(4), 36);
+        "WAVE"u8.CopyTo(bytes.AsSpan(8));
+        "JUNK"u8.CopyTo(bytes.AsSpan(12));
+        BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(16), 16);
+        "fmt "u8.CopyTo(bytes.AsSpan(36));
+        BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(40), 16);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => PcmWaveReader.Read(bytes));
+        Assert.Contains("truncated", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void WaveReader_SurvivesOversizedChunkSize_WithoutIntegerOverflow()
+    {
+        // Chunkgröße nahe int.MaxValue: Int-Arithmetik würde den Cursor
+        // negativ überlaufen lassen; erwartet ist ein sauberer Parserfehler.
+        var bytes = new byte[64];
+        "RIFF"u8.CopyTo(bytes);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(4), 56);
+        "WAVE"u8.CopyTo(bytes.AsSpan(8));
+        "JUNK"u8.CopyTo(bytes.AsSpan(12));
+        BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(16), int.MaxValue - 4);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => PcmWaveReader.Read(bytes));
+        Assert.Contains("no data chunk", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Streamer_SendsPacedG711Frames_IntoCallAudioStream()
     {
         // 8000 Hz → 160 Samples pro 20-ms-Frame; 400 Samples ergeben 3 Frames.

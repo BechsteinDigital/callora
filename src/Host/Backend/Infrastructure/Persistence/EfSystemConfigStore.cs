@@ -1,11 +1,16 @@
 using Callora.Host.Backend.Application.Abstractions.Configuration;
 using Callora.Host.Backend.Domain.Configuration;
+using Callora.Host.PluginContracts.Application.Secrets;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Host.Backend.Infrastructure.Persistence;
 
-public sealed class EfSystemConfigStore(HostPersistenceDbContext dbContext) : ISystemConfigStore
+public sealed class EfSystemConfigStore(
+    HostPersistenceDbContext dbContext,
+    IPluginDataProtector dataProtector) : ISystemConfigStore
 {
+    private const string ProtectionScope = "callora-system-config";
+
     public async Task<IReadOnlyList<SystemConfigDefinitionSnapshot>> ListDefinitionsAsync(
         string? pluginId = null,
         CancellationToken cancellationToken = default)
@@ -111,7 +116,7 @@ public sealed class EfSystemConfigStore(HostPersistenceDbContext dbContext) : IS
                 value.ConfigKey,
                 value.Scope,
                 value.ScopeKey,
-                value.ValueJson,
+                UnprotectValue(value.ValueJson),
                 value.UpdatedAtUtc))
             .ToArray();
     }
@@ -137,6 +142,8 @@ public sealed class EfSystemConfigStore(HostPersistenceDbContext dbContext) : IS
             .ToDictionaryAsync(x => x.ConfigKey, StringComparer.OrdinalIgnoreCase, cancellationToken)
             .ConfigureAwait(false);
 
+        var secretKeys = await ListSecretConfigKeysAsync(normalizedPluginId, cancellationToken).ConfigureAwait(false);
+
         var now = DateTimeOffset.UtcNow;
         foreach (var (configKey, valueJson) in valuesByKey)
         {
@@ -150,9 +157,13 @@ public sealed class EfSystemConfigStore(HostPersistenceDbContext dbContext) : IS
                 continue;
             }
 
+            var storedValue = secretKeys.Contains(normalizedKey)
+                ? dataProtector.Protect(ProtectionScope, valueJson)
+                : valueJson;
+
             if (existing.TryGetValue(normalizedKey, out var current))
             {
-                current.ValueJson = valueJson;
+                current.ValueJson = storedValue;
                 current.UpdatedAtUtc = now;
             }
             else
@@ -164,7 +175,7 @@ public sealed class EfSystemConfigStore(HostPersistenceDbContext dbContext) : IS
                     ConfigKey = normalizedKey,
                     Scope = scope,
                     ScopeKey = normalizedScopeKey,
-                    ValueJson = valueJson,
+                    ValueJson = storedValue,
                     UpdatedAtUtc = now
                 });
             }
@@ -172,4 +183,26 @@ public sealed class EfSystemConfigStore(HostPersistenceDbContext dbContext) : IS
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    private async Task<HashSet<string>> ListSecretConfigKeysAsync(
+        string pluginId,
+        CancellationToken cancellationToken)
+    {
+        var definitions = await dbContext.SystemConfigDefinitions
+            .AsNoTracking()
+            .Where(x => x.PluginId == pluginId)
+            .Select(x => new { x.ConfigKey, x.FieldType })
+            .ToArrayAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return definitions
+            .Where(x => SystemConfigFieldTypes.IsSecret(x.FieldType))
+            .Select(x => x.ConfigKey)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private string UnprotectValue(string storedValue) =>
+        dataProtector.TryUnprotect(ProtectionScope, storedValue, out var plaintext)
+            ? plaintext
+            : storedValue; // Legacy-Klartext bleibt lesbar; Neuanlagen sind verschlüsselt.
 }

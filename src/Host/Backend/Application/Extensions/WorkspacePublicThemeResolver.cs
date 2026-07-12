@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Callora.Host.Backend.Application.Abstractions.Configuration;
 using Callora.Host.Backend.Application.Abstractions.Extensions;
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
 
@@ -22,6 +23,8 @@ public sealed class WorkspacePublicThemeResolver(
             .GetAsync(workspaceKey.Trim(), cancellationToken)
             .ConfigureAwait(false);
         if (workspace is null ||
+            !workspace.IsActive ||
+            !workspace.TenantIsActive ||
             string.IsNullOrWhiteSpace(workspace.ThemePluginId) ||
             string.IsNullOrWhiteSpace(workspace.ThemeVersion))
         {
@@ -40,8 +43,10 @@ public sealed class WorkspacePublicThemeResolver(
             static value => value.ValueJson,
             StringComparer.OrdinalIgnoreCase);
 
+        // The endpoint is anonymous — secret-typed settings never leave here.
         var valuesByKey = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var definition in definitions.Where(static definition => definition.IsActive))
+        foreach (var definition in definitions.Where(static definition =>
+                     definition.IsActive && !SystemConfigFieldTypes.IsSecret(definition.FieldType)))
         {
             var rawValue = overridesByKey.TryGetValue(definition.SettingKey, out var overrideJson)
                 ? overrideJson

@@ -24,12 +24,28 @@ public static class SystemConfigEndpoints
 
         group.MapGet("/effective", async (
                 SystemConfigResolver resolver,
+                ISystemConfigStore store,
                 string pluginId,
                 string? workspaceKey,
                 CancellationToken cancellationToken) =>
             {
                 var values = await resolver.ResolveAsync(pluginId, tenantKey: null, workspaceKey, cancellationToken);
-                return Results.Ok(new { pluginId, workspaceKey, valuesByKey = values });
+
+                // Secrets are write-only through the API: internal consumers
+                // (mail, plugins) resolve plaintext, clients read "***".
+                var definitions = await store.ListDefinitionsAsync(pluginId, cancellationToken);
+                var secretKeys = definitions
+                    .Where(definition => SystemConfigFieldTypes.IsSecret(definition.FieldType))
+                    .Select(definition => definition.ConfigKey)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var valuesByKey = values.ToDictionary(
+                    pair => pair.Key,
+                    pair => secretKeys.Contains(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value)
+                        ? "\"***\""
+                        : pair.Value,
+                    StringComparer.OrdinalIgnoreCase);
+
+                return Results.Ok(new { pluginId, workspaceKey, valuesByKey });
             })
             .RequirePermission(BackendPermissionKeys.ConfigRead)
             .RequireWorkspaceScope();
@@ -46,10 +62,13 @@ public static class SystemConfigEndpoints
                 if (request.Scope != SystemConfigScopes.Global && string.IsNullOrWhiteSpace(request.ScopeKey))
                     return Results.BadRequest(new { error = "scopeKey is required for tenant and workspace scope." });
 
-                // The scope key travels in the body, so workspace binding is
-                // enforced here instead of via RequireWorkspaceScope.
-                var requestedWorkspace = request.Scope == SystemConfigScopes.Workspace ? request.ScopeKey : null;
-                if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, requestedWorkspace))
+                // Explicit per-scope authorization (the scope key travels in
+                // the body): global and tenant values are operator-only;
+                // workspace values require access to that workspace.
+                var allowed = request.Scope == SystemConfigScopes.Workspace
+                    ? WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, request.ScopeKey)
+                    : WorkspaceScopeEvaluator.IsOperator(httpContext.User);
+                if (!allowed)
                     return Results.Forbid();
 
                 var values = (request.ValuesByKey ?? []).ToDictionary(

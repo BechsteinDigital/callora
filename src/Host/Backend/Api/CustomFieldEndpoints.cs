@@ -61,8 +61,9 @@ public static class CustomFieldEndpoints
     private static bool HasEntityAccess(HttpContext httpContext, string entityName, string entityId)
     {
         // For workspace entities the id IS the workspace key; other entities
-        // are guarded by permissions until they carry their own ownership.
-        return !string.Equals(entityName?.Trim(), "workspace", StringComparison.OrdinalIgnoreCase) ||
-               WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, entityId);
+        // carry no per-entity ownership yet, so they stay operator-only.
+        return string.Equals(entityName?.Trim(), "workspace", StringComparison.OrdinalIgnoreCase)
+            ? WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, entityId)
+            : WorkspaceScopeEvaluator.IsOperator(httpContext.User);
     }
 }

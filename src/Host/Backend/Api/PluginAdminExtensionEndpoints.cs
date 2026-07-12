@@ -15,6 +15,8 @@ public static class PluginAdminExtensionEndpoints
             .WithTags("Plugin Extensions")
             .RequireAuthorization();
 
+        // Navigation is deliberately readable for every authenticated session:
+        // entries carrying a RequiredPermission are filtered per user below.
         group.MapGet("/navigation", (HttpContext httpContext, ICalloraPluginCatalog pluginCatalog) =>
         {
             var contributors = pluginCatalog.GetExports<IHostAdminApiExtensionContributor>();

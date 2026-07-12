@@ -26,6 +26,7 @@ public static class BackendPermissionKeys
     public const string CustomFieldUpdate = "customfield.update";
     public const string FlowRead = "flow.read";
     public const string FlowManage = "flow.manage";
+    public const string JobRead = "job.read";
     public const string ExtensionRead = "extension.read";
     public const string ExtensionUpdate = "extension.update";
     public const string RoleRead = "role.read";

@@ -11,7 +11,8 @@ namespace Callora.Host.Backend.Application.Webhooks;
 /// </summary>
 public sealed class WebhookDeliveryJobHandler(
     IWebhookSubscriptionStore store,
-    IHttpClientFactory httpClientFactory) : IBackgroundJobHandler
+    IHttpClientFactory httpClientFactory,
+    WebhookEgressGuard egressGuard) : IBackgroundJobHandler
 {
     public const string HttpClientName = "callora-webhooks";
 
@@ -31,8 +32,11 @@ public sealed class WebhookDeliveryJobHandler(
             return;
         }
 
+        var targetUri = new Uri(subscription.TargetUrl, UriKind.Absolute);
+        await egressGuard.EnsureAllowedAsync(targetUri, cancellationToken).ConfigureAwait(false);
+
         var client = httpClientFactory.CreateClient(HttpClientName);
-        using var request = new HttpRequestMessage(HttpMethod.Post, subscription.TargetUrl)
+        using var request = new HttpRequestMessage(HttpMethod.Post, targetUri)
         {
             Content = new StringContent(payload.BodyJson, Encoding.UTF8, "application/json")
         };

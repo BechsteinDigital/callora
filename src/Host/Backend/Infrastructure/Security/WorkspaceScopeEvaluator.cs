@@ -9,6 +9,17 @@ namespace Callora.Host.Backend.Infrastructure.Security;
 /// </summary>
 public static class WorkspaceScopeEvaluator
 {
+    /// <summary>
+    /// True for platform operators: admins and principals without a
+    /// workspace binding. Required for global- and tenant-scoped mutations.
+    /// </summary>
+    public static bool IsOperator(ClaimsPrincipal user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        return user.IsInRole(BackendRoles.Admin) ||
+               string.IsNullOrWhiteSpace(user.FindFirst(BackendClaimTypes.WorkspaceKey)?.Value);
+    }
+
     public static bool HasWorkspaceAccess(ClaimsPrincipal user, string? requestedWorkspaceKey)
     {
         ArgumentNullException.ThrowIfNull(user);

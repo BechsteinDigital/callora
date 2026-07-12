@@ -126,11 +126,23 @@ public static class WorkspacePublicEndpoints
                 async (
                     string? workspaceKey,
                     WorkspaceUiChainResolver uiChainResolver,
+                    BackendHostOptions hostOptions,
+                    IWorkspaceManagementStore workspaceStore,
                     CancellationToken cancellationToken) =>
                 {
                     var normalizedKey = string.IsNullOrWhiteSpace(workspaceKey)
                         ? "default"
                         : workspaceKey.Trim();
+
+                    // Anonymous endpoint — only visible workspaces expose their chain.
+                    var workspace = await workspaceStore
+                        .GetAsync(normalizedKey, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (!IsWorkspaceVisibleInTenant(workspace, hostOptions.DefaultTenantKey))
+                    {
+                        return Results.NotFound();
+                    }
+
                     var chain = await uiChainResolver
                         .ResolveAsync(normalizedKey, cancellationToken)
                         .ConfigureAwait(false);

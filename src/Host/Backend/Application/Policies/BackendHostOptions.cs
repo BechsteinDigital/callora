@@ -29,6 +29,19 @@ public sealed class BackendHostOptions
     public string MediaStoragePath { get; set; } =
         Path.Combine(AppContext.BaseDirectory, "media");
 
+    /// <summary>
+    /// Permits webhook targets on private/loopback addresses — development
+    /// only; production keeps the SSRF egress guard active.
+    /// </summary>
+    public bool AllowPrivateWebhookTargets { get; set; }
+
+    /// <summary>
+    /// Key-ring directory for ASP.NET DataProtection; must live on durable
+    /// storage or every restart loses access to encrypted secrets.
+    /// </summary>
+    public string DataProtectionKeysPath { get; set; } =
+        Path.Combine(AppContext.BaseDirectory, "dataprotection-keys");
+
     public string DatabaseConnectionString { get; set; } =
         "Host=localhost;Port=5432;Database=callora_host;Username=callora;Password=callora";
 

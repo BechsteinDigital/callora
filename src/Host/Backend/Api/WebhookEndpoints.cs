@@ -39,6 +39,13 @@ public static class WebhookEndpoints
                     return Results.BadRequest(new { error = "eventName, secret and an absolute http(s) targetUrl are required." });
                 }
 
+                // Event names travel as HTTP header values — strict allowlist
+                // rules out CR/LF header-injection payloads at the source.
+                if (!System.Text.RegularExpressions.Regex.IsMatch(request.EventName.Trim(), @"^[\w.\-*]{1,120}$"))
+                {
+                    return Results.BadRequest(new { error = "eventName may only contain letters, digits, dots, dashes and *." });
+                }
+
                 if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, request.WorkspaceKey))
                 {
                     return Results.Forbid();

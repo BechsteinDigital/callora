@@ -1,11 +1,16 @@
 using Callora.Host.Backend.Application.Abstractions.Webhooks;
 using Callora.Host.Backend.Domain.Webhooks;
+using Callora.Host.PluginContracts.Application.Secrets;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Host.Backend.Infrastructure.Persistence;
 
-public sealed class EfWebhookSubscriptionStore(HostPersistenceDbContext dbContext) : IWebhookSubscriptionStore
+public sealed class EfWebhookSubscriptionStore(
+    HostPersistenceDbContext dbContext,
+    IPluginDataProtector dataProtector) : IWebhookSubscriptionStore
 {
+    private const string ProtectionScope = "callora-webhooks";
+
     public async Task<IReadOnlyList<WebhookSubscriptionSnapshot>> ListAsync(
         string? workspaceKey = null,
         CancellationToken cancellationToken = default)
@@ -17,11 +22,11 @@ public sealed class EfWebhookSubscriptionStore(HostPersistenceDbContext dbContex
             query = query.Where(x => x.WorkspaceKey == normalized);
         }
 
-        return await query
+        var entities = await query
             .OrderBy(x => x.CreatedAtUtc)
-            .Select(x => ToSnapshot(x))
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
+        return entities.Select(ToSnapshot).ToArray();
     }
 
     public async Task<IReadOnlyList<WebhookSubscriptionSnapshot>> ListActiveForEventAsync(
@@ -65,7 +70,7 @@ public sealed class EfWebhookSubscriptionStore(HostPersistenceDbContext dbContex
             WorkspaceKey = string.IsNullOrWhiteSpace(workspaceKey) ? null : workspaceKey.Trim(),
             EventName = eventName.Trim(),
             TargetUrl = targetUrl.Trim(),
-            Secret = secret,
+            Secret = dataProtector.Protect(ProtectionScope, secret),
             IsActive = true,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
@@ -106,12 +111,17 @@ public sealed class EfWebhookSubscriptionStore(HostPersistenceDbContext dbContex
         return true;
     }
 
-    private static WebhookSubscriptionSnapshot ToSnapshot(WebhookSubscription entity) => new(
+    private WebhookSubscriptionSnapshot ToSnapshot(WebhookSubscription entity) => new(
         entity.Id,
         entity.WorkspaceKey,
         entity.EventName,
         entity.TargetUrl,
-        entity.Secret,
+        UnprotectSecret(entity.Secret),
         entity.IsActive,
         entity.CreatedAtUtc);
+
+    private string UnprotectSecret(string storedSecret) =>
+        dataProtector.TryUnprotect(ProtectionScope, storedSecret, out var plaintext)
+            ? plaintext
+            : storedSecret; // Legacy-Klartext bleibt lesbar; Neuanlagen sind verschlüsselt.
 }

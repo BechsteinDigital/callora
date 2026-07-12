@@ -29,6 +29,15 @@ public static class BackendSecurityServiceCollectionExtensions
                 "Either BackendHost.OidcAuthority or BackendHost.JwtSigningKey must be configured for JWT authentication.");
         }
 
+        // The repository-known dev key must never sign production tokens.
+        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        if (!string.Equals(environment, "Development", StringComparison.OrdinalIgnoreCase) &&
+            options.JwtSigningKey == "callora-local-dev-signing-key-change-me")
+        {
+            throw new InvalidOperationException(
+                "BackendHost.JwtSigningKey still carries the development default — configure a strong secret before running outside Development.");
+        }
+
         services.TryAddSingleton<IBackendRbacStore>(_ => new InMemoryBackendRbacStore(options));
         services.AddTransient<IClaimsTransformation, BackendClaimsTransformation>();
 

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Callora.Host.Backend.Application.Entitlements;
+using Callora.Host.Backend.Infrastructure.Security;
 using Callora.Host.PluginContracts.Application.Jobs;
 
 namespace Callora.Host.Backend.Api;
@@ -15,7 +16,10 @@ public static class EntitlementSyncEndpoints
     public static IEndpointRouteBuilder MapEntitlementSyncEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/entitlements")
-            .RequireAuthorization();
+            .RequireAuthorization()
+            // Entitlement grants/revokes are an operator/marketplace concern —
+            // never reachable with a plain authenticated session.
+            .RequirePermission(BackendPermissionKeys.PluginExecute);
 
         group.MapPost("/sync", async (
             MarketplaceEntitlementEventPayload payload,

@@ -19,23 +19,37 @@ public static class PcmWaveReader
             throw new InvalidOperationException("Announcement audio must be a RIFF/WAVE file.");
         }
 
-        var offset = 12;
+        // Offsets stay in long: chunk sizes near int.MaxValue would overflow
+        // the int-based cursor arithmetic and wrap into valid-looking offsets.
+        var offset = 12L;
         short channels = 0;
         var sampleRate = 0;
         short bitsPerSample = 0;
 
         while (offset + 8 <= wavBytes.Length)
         {
-            var chunkId = wavBytes.AsSpan(offset, 4);
-            var chunkSize = BinaryPrimitives.ReadInt32LittleEndian(wavBytes.AsSpan(offset + 4, 4));
+            var chunkId = wavBytes.AsSpan((int)offset, 4);
+            var chunkSize = BinaryPrimitives.ReadInt32LittleEndian(wavBytes.AsSpan((int)offset + 4, 4));
+            if (chunkSize < 0)
+            {
+                // Malformed/adversarial files must not drive the offset backwards.
+                throw new InvalidOperationException("WAV chunk size is negative.");
+            }
+
             var dataOffset = offset + 8;
 
             if (chunkId.SequenceEqual("fmt "u8))
             {
-                var audioFormat = BinaryPrimitives.ReadInt16LittleEndian(wavBytes.AsSpan(dataOffset, 2));
-                channels = BinaryPrimitives.ReadInt16LittleEndian(wavBytes.AsSpan(dataOffset + 2, 2));
-                sampleRate = BinaryPrimitives.ReadInt32LittleEndian(wavBytes.AsSpan(dataOffset + 4, 4));
-                bitsPerSample = BinaryPrimitives.ReadInt16LittleEndian(wavBytes.AsSpan(dataOffset + 14, 2));
+                if (chunkSize < 16 || dataOffset + 16 > wavBytes.Length)
+                {
+                    throw new InvalidOperationException("WAV fmt chunk is truncated.");
+                }
+
+                var fmtOffset = (int)dataOffset;
+                var audioFormat = BinaryPrimitives.ReadInt16LittleEndian(wavBytes.AsSpan(fmtOffset, 2));
+                channels = BinaryPrimitives.ReadInt16LittleEndian(wavBytes.AsSpan(fmtOffset + 2, 2));
+                sampleRate = BinaryPrimitives.ReadInt32LittleEndian(wavBytes.AsSpan(fmtOffset + 4, 4));
+                bitsPerSample = BinaryPrimitives.ReadInt16LittleEndian(wavBytes.AsSpan(fmtOffset + 14, 2));
 
                 if (audioFormat != 1 || channels != 1 || bitsPerSample != 16)
                 {
@@ -51,11 +65,11 @@ public static class PcmWaveReader
                     throw new InvalidOperationException("WAV data chunk appeared before the fmt chunk.");
                 }
 
-                var byteCount = Math.Min(chunkSize, wavBytes.Length - dataOffset);
+                var byteCount = (int)Math.Min(chunkSize, wavBytes.Length - dataOffset);
                 var samples = new short[byteCount / 2];
                 for (var i = 0; i < samples.Length; i++)
                 {
-                    samples[i] = BinaryPrimitives.ReadInt16LittleEndian(wavBytes.AsSpan(dataOffset + i * 2, 2));
+                    samples[i] = BinaryPrimitives.ReadInt16LittleEndian(wavBytes.AsSpan((int)dataOffset + i * 2, 2));
                 }
 
                 return (samples, sampleRate);

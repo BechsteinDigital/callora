@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Application.Webhooks;
 using Callora.Host.Backend.Tests.Support;
 using Callora.Host.PluginContracts.Application.Jobs;
@@ -27,7 +28,7 @@ public sealed class WebhookDeliveryTests
         var store = new InMemoryWebhookSubscriptionStore();
         var subscription = await store.CreateAsync("workspace-a", "call.ringing", "https://example.org/hook", "s3cret");
         var handler = new RecordingHttpMessageHandler();
-        var jobHandler = new WebhookDeliveryJobHandler(store, new StaticHttpClientFactory(handler));
+        var jobHandler = new WebhookDeliveryJobHandler(store, new StaticHttpClientFactory(handler), TestGuard());
         var payload = JsonSerializer.Serialize(
             new WebhookDeliveryPayload(subscription.Id, "call.ringing", "{\"callId\":\"c1\"}"),
             new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -51,7 +52,8 @@ public sealed class WebhookDeliveryTests
         var subscription = await store.CreateAsync(null, "*", "https://example.org/hook", "s3cret");
         var jobHandler = new WebhookDeliveryJobHandler(
             store,
-            new StaticHttpClientFactory(new RecordingHttpMessageHandler(HttpStatusCode.BadGateway)));
+            new StaticHttpClientFactory(new RecordingHttpMessageHandler(HttpStatusCode.BadGateway)),
+            TestGuard());
         var payload = JsonSerializer.Serialize(
             new WebhookDeliveryPayload(subscription.Id, "call.ended", "{}"),
             new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -68,7 +70,7 @@ public sealed class WebhookDeliveryTests
         var subscription = await store.CreateAsync(null, "*", "https://example.org/hook", "s3cret");
         await store.SetActiveAsync(subscription.Id, isActive: false);
         var handler = new RecordingHttpMessageHandler();
-        var jobHandler = new WebhookDeliveryJobHandler(store, new StaticHttpClientFactory(handler));
+        var jobHandler = new WebhookDeliveryJobHandler(store, new StaticHttpClientFactory(handler), TestGuard());
         var payload = JsonSerializer.Serialize(
             new WebhookDeliveryPayload(subscription.Id, "call.ended", "{}"),
             new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -94,4 +96,7 @@ public sealed class WebhookDeliveryTests
         Assert.Contains(matches, m => m.TargetUrl == "https://a.example");
         Assert.Contains(matches, m => m.TargetUrl == "https://b.example");
     }
+
+    private static WebhookEgressGuard TestGuard() =>
+        new(new BackendHostOptions { AllowPrivateWebhookTargets = true });
 }

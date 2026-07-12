@@ -258,7 +258,7 @@ public sealed class PluginUiAssetPublisher(
             Directory.Exists(Path.Combine(pluginRoot, "views", "workspace"));
     }
 
-    private static void PublishSurface(
+    private void PublishSurface(
         string pluginId,
         string pluginRoot,
         string surface,
@@ -272,7 +272,11 @@ public sealed class PluginUiAssetPublisher(
             return;
         }
 
-        var targetDirectory = Path.Combine(pluginAssetsRoot, pluginId, "app", surface);
+        var targetDirectory = ResolveContainedTargetDirectory(pluginAssetsRoot, pluginId, "app", surface);
+        if (targetDirectory is null)
+        {
+            return;
+        }
         var entry = ResolveEntryFile(sourceDirectory);
         var entryRelativePath = entry is null
             ? null
@@ -340,7 +344,7 @@ public sealed class PluginUiAssetPublisher(
         }
     }
 
-    private static void PublishWorkspaceTemplates(
+    private void PublishWorkspaceTemplates(
         string pluginId,
         string pluginRoot,
         string pluginAssetsRoot,
@@ -352,7 +356,11 @@ public sealed class PluginUiAssetPublisher(
             return;
         }
 
-        var targetDirectory = Path.Combine(pluginAssetsRoot, pluginId, "views", "workspace");
+        var targetDirectory = ResolveContainedTargetDirectory(pluginAssetsRoot, pluginId, "views", "workspace");
+        if (targetDirectory is null)
+        {
+            return;
+        }
         CopyDirectory(sourceDirectory, targetDirectory);
 
         var files = Directory
@@ -383,6 +391,28 @@ public sealed class PluginUiAssetPublisher(
 
     private static string ToManifestPath(string value) =>
         value.Replace('\\', '/');
+
+    /// <summary>
+    /// Plugin ids come from registry.json files on disk — a crafted id like
+    /// "../x" must never write outside the asset root.
+    /// </summary>
+    private string? ResolveContainedTargetDirectory(
+        string pluginAssetsRoot,
+        string pluginId,
+        params string[] segments)
+    {
+        var root = Path.GetFullPath(pluginAssetsRoot);
+        var target = Path.GetFullPath(Path.Combine([pluginAssetsRoot, pluginId, .. segments]));
+        if (!target.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        {
+            logger.LogWarning(
+                "Skipping plugin UI asset publish for {PluginId}: target path escapes the plugin asset root.",
+                pluginId);
+            return null;
+        }
+
+        return target;
+    }
 
     private static string ResolveSurfaceSourceDirectory(string pluginRoot, string surface)
     {

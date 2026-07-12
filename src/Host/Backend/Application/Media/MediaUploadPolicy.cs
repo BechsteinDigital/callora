@@ -8,6 +8,8 @@ public static class MediaUploadPolicy
 {
     public const long MaxSizeBytes = 25 * 1024 * 1024;
 
+    // SVG is deliberately absent: script-capable markup served from the
+    // API origin would be a stored-XSS vector.
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "audio/wav",
@@ -16,8 +18,7 @@ public static class MediaUploadPolicy
         "audio/ogg",
         "image/png",
         "image/jpeg",
-        "image/webp",
-        "image/svg+xml"
+        "image/webp"
     };
 
     public static bool IsAllowedContentType(string? contentType) =>

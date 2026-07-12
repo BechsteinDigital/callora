@@ -134,7 +134,11 @@ builder.Services.AddSingleton<ISecretStore>(sp => new ChainedSecretStore(
     new EnvironmentSecretStore(),
     new ConfigurationSecretStore(builder.Configuration)
 ]));
-builder.Services.AddDataProtection().SetApplicationName("callora-host");
+builder.Services.AddDataProtection()
+    .SetApplicationName("callora-host")
+    // Durable key ring: without it, restarts orphan every protected secret
+    // (SIP passwords, webhook secrets, config secrets).
+    .PersistKeysToFileSystem(new DirectoryInfo(backendOptions.DataProtectionKeysPath));
 builder.Services.AddSingleton<IPluginDataProtector, DataProtectionPluginDataProtector>();
 builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
 builder.Services.AddScoped<MarketplaceEntitlementApplier>();
@@ -195,10 +199,13 @@ builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Webhook
 builder.Services.AddScoped<IBackgroundJobHandler, Callora.Host.Backend.Application.Webhooks.WebhookDeliveryJobHandler>();
 builder.Services.AddSingleton<Callora.Host.Backend.Application.Webhooks.WebhookDispatcher>();
 builder.Services.AddHostedService<Callora.Host.Backend.Application.Webhooks.WebhookCallEventRelay>();
+builder.Services.AddSingleton<Callora.Host.Backend.Application.Webhooks.WebhookEgressGuard>();
 builder.Services.AddHttpClient(Callora.Host.Backend.Application.Webhooks.WebhookDeliveryJobHandler.HttpClientName, client =>
-{
-    client.Timeout = TimeSpan.FromSeconds(10);
-});
+    {
+        client.Timeout = TimeSpan.FromSeconds(10);
+    })
+    // Redirects could re-target a validated URL into private ranges.
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Notifications.INotificationStore, EfNotificationStore>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Notifications.INotificationPublisher, Callora.Host.Backend.Application.Notifications.ScopedNotificationPublisher>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Mail.IMailSender, Callora.Host.Backend.Infrastructure.Mail.SmtpMailSender>();
@@ -260,6 +267,12 @@ app.Map("/swagger/workspace", workspaceSwagger =>
         options.RoutePrefix = string.Empty;
         options.SwaggerEndpoint("/swagger/workspace/swagger.json", "Callora Workspace API v1");
     });
+});
+app.Use(async (context, next) =>
+{
+    // Browsers must not MIME-sniff plugin assets or media streams.
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    await next();
 });
 app.UseStaticFiles();
 app.UseRateLimiter();

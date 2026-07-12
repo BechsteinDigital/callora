@@ -68,7 +68,8 @@ public static class AuthEndpoints
                 options,
                 httpContext.Request.IsHttps);
             return Results.NoContent();
-        }).WithName("Auth_Api_Logout");
+        }).WithName("Auth_Api_Logout")
+            .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
 
         var protectedApiGroup = endpoints.MapGroup("/api/auth")
             .WithTags("Auth")

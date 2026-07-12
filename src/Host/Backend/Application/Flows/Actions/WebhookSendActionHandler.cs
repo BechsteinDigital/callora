@@ -9,7 +9,9 @@ namespace Callora.Host.Backend.Application.Flows.Actions;
 /// Posts the event payload to an ad-hoc URL ("url", optional "secret") —
 /// for flow-specific integrations without a standing subscription.
 /// </summary>
-public sealed class WebhookSendActionHandler(IHttpClientFactory httpClientFactory) : IFlowActionHandler
+public sealed class WebhookSendActionHandler(
+    IHttpClientFactory httpClientFactory,
+    WebhookEgressGuard egressGuard) : IFlowActionHandler
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -26,6 +28,8 @@ public sealed class WebhookSendActionHandler(IHttpClientFactory httpClientFactor
         {
             throw new InvalidOperationException("webhook.send requires an absolute http(s) 'url' parameter.");
         }
+
+        await egressGuard.EnsureAllowedAsync(target, cancellationToken).ConfigureAwait(false);
 
         var body = JsonSerializer.Serialize(new
         {
