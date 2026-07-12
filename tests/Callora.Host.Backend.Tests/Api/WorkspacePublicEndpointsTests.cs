@@ -177,6 +177,32 @@ public sealed class WorkspacePublicEndpointsTests
             response.Headers.Location?.ToString());
     }
 
+    [Fact]
+    public async Task UiChainEndpoint_ReturnsOrderedPluginChain()
+    {
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync("/workspace/public/ui-chain?workspaceKey=workspace-public");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"chain\":[\"dialer\",\"voip\"]", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ThemeEndpoint_WithoutAssignedTheme_ReturnsEmptyValues()
+    {
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync("/workspace/public/theme?workspaceKey=workspace-public");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"valuesByKey\":{}", content, StringComparison.Ordinal);
+    }
+
     private static async Task<WebApplication> CreateAppAsync()
     {
         var workspaceStore = new InMemoryWorkspaceManagementStore();
@@ -198,6 +224,14 @@ public sealed class WorkspacePublicEndpointsTests
             AdminShellBaseUrl = "https://admin-shell.local/admin/",
             WorkspaceShellBaseUrl = "https://workspace-shell.local/"
         });
+        builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Extensions.IWorkspaceTemplateResolutionService>(
+            new StaticWorkspaceTemplateResolutionService([]));
+        builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader>(
+            new StaticWorkspacePluginActivationReader(["dialer", "voip"]));
+        builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Extensions.IWorkspaceThemeSettingsStore>(
+            new InMemoryWorkspaceThemeSettingsStore());
+        builder.Services.AddScoped<Callora.Host.Backend.Application.Extensions.WorkspaceUiChainResolver>();
+        builder.Services.AddScoped<Callora.Host.Backend.Application.Extensions.WorkspacePublicThemeResolver>();
 
         var app = builder.Build();
         app.MapWorkspacePublicEndpoints();

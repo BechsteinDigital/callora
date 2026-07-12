@@ -133,6 +133,8 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => [[{
   }
 }]]);
 
+const blockContext = computed(() => ({ workspaceKey: workspaceKey.value }));
+
 </script>
 
 <template>
@@ -146,31 +148,35 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => [[{
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
       <template #header="{ collapsed }">
-        <UButton
-          color="neutral"
-          variant="ghost"
-          block
-          :square="collapsed"
-          class="data-[state=open]:bg-elevated"
-          :label="collapsed ? undefined : workspaceName"
-          trailing-icon="i-lucide-chevrons-up-down"
-        >
-          <template #leading>
-            <UAvatar alt="Workspace" text="WS" size="xs" />
-          </template>
-        </UButton>
+        <ShellBlock name="workspace.layout.branding" :context="blockContext">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            block
+            :square="collapsed"
+            class="data-[state=open]:bg-elevated"
+            :label="collapsed ? undefined : workspaceName"
+            trailing-icon="i-lucide-chevrons-up-down"
+          >
+            <template #leading>
+              <UAvatar alt="Workspace" text="WS" size="xs" />
+            </template>
+          </UButton>
+        </ShellBlock>
       </template>
 
       <template #default="{ collapsed }">
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
-        <UNavigationMenu
-          :collapsed="collapsed"
-          :items="mainLinks"
-          orientation="vertical"
-          tooltip
-          popover
-        />
+        <ShellBlock name="workspace.layout.nav" :context="blockContext">
+          <UNavigationMenu
+            :collapsed="collapsed"
+            :items="mainLinks"
+            orientation="vertical"
+            tooltip
+            popover
+          />
+        </ShellBlock>
 
         <UNavigationMenu
           v-if="pluginBannerLinks.length > 0"
@@ -200,10 +206,12 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => [[{
       </template>
 
       <template #footer="{ collapsed }">
-        <div class="px-2 pb-2 text-xs text-muted" v-if="!collapsed">
-          <div>Type: {{ workspaceType }}</div>
-          <div>Key: {{ workspaceKey }}</div>
-        </div>
+        <ShellBlock name="workspace.layout.sidebar.footer" :context="blockContext">
+          <div class="px-2 pb-2 text-xs text-muted" v-if="!collapsed">
+            <div>Type: {{ workspaceType }}</div>
+            <div>Key: {{ workspaceKey }}</div>
+          </div>
+        </ShellBlock>
 
         <UDropdownMenu
           :items="userMenuItems"

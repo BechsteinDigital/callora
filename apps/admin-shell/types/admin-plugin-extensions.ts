@@ -56,6 +56,15 @@ export type PluginAdminUiManifestEntry = import("#shell-core/types/shell-extensi
 
 export type PluginAdminUiManifest = import("#shell-core/types/shell-extensions").ShellPluginManifest;
 
+export type AdminBlockExtension = import("#shell-core/types/shell-extensions").ShellBlockExtension;
+
+export type AdminFragment = import("#shell-core/types/shell-extensions").ShellFragment;
+
+export type AdminSnippetRegistration = {
+  locale: string;
+  values: Record<string, string>;
+};
+
 export interface AdminUiBridge {
   registerLoginNoticeExtension?: (extension: import("~/types/admin-login-extensions").AdminLoginNoticeExtension) => void;
   registerPageExtension?: (extension: AdminPluginCrudPageExtension) => void;
@@ -63,4 +72,13 @@ export interface AdminUiBridge {
   queuedLoginNoticeExtensions?: import("~/types/admin-login-extensions").AdminLoginNoticeExtension[];
   queuedPageExtensions?: AdminPluginCrudPageExtension[];
   queuedWidgets?: AdminWidget[];
+  registerBlockExtension?: (extension: AdminBlockExtension) => void;
+  queuedBlockExtensions?: AdminBlockExtension[];
+  registerFragment?: (fragment: AdminFragment) => void;
+  queuedFragments?: AdminFragment[];
+  registerSnippets?: (locale: string, values: Record<string, string>) => void;
+  queuedSnippets?: AdminSnippetRegistration[];
+  translate?: (snippetKey: string, fallback?: string) => string;
+  mountFragment?: (fragmentName: string, container: HTMLElement) => (() => void) | void;
+  listBlocks?: () => string[];
 }

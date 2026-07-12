@@ -182,6 +182,9 @@ builder.Services.AddScoped<IThemeJsonWorkspaceTemplateSyncService, ThemeJsonWork
 builder.Services.AddBackendPersistence(backendOptions);
 builder.Services.AddBackendApiSecurity(backendOptions);
 builder.Services.AddScoped<IPluginLifecycleService, PluginLifecycleService>();
+builder.Services.AddScoped<IWorkspacePluginActivationReader, EfWorkspacePluginActivationReader>();
+builder.Services.AddScoped<WorkspaceUiChainResolver>();
+builder.Services.AddScoped<WorkspacePublicThemeResolver>();
 builder.Services.AddSingleton<CachedWorkspaceTemplateResolutionService>();
 builder.Services.AddSingleton<IWorkspaceTemplateResolutionService>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());
 builder.Services.AddSingleton<IWorkspaceTemplateResolutionCache>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());

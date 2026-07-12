@@ -1,5 +1,7 @@
 import type {
+  WorkspaceBlockExtension,
   WorkspaceBridgeContext,
+  WorkspaceFragment,
   WorkspaceInfoBanner,
   WorkspaceUiBridge,
   WorkspaceWidget
@@ -17,7 +19,11 @@ export default defineNuxtPlugin(() => {
   const route = useRoute();
   const { registerInfoBanner } = useWorkspaceInfoBanners();
   const { registerWidget } = useWorkspaceWidgets();
+  const { registerBlockExtension, listKnownBlocks } = useShellBlocks();
+  const { registerSnippets, translate } = useShellSnippets();
+  const { registerFragment, mountFragment } = useShellFragments();
   const { ensureWorkspacePluginAssetsLoaded } = useWorkspacePluginAssets();
+  const { applyWorkspaceThemeVariables } = useWorkspaceThemeVariables();
   const bootstrapContext = window.__CALLORA_WORKSPACE_CONTEXT__;
   const initialContext: WorkspaceBridgeContext = {
     workspace: {
@@ -41,6 +47,18 @@ export default defineNuxtPlugin(() => {
   bridge.registerWidget = (widget: WorkspaceWidget) => {
     registerWidget(widget);
   };
+  bridge.registerBlockExtension = (extension: WorkspaceBlockExtension) => {
+    registerBlockExtension(extension);
+  };
+  bridge.registerFragment = (fragment: WorkspaceFragment) => {
+    registerFragment(fragment);
+  };
+  bridge.registerSnippets = (locale: string, values: Record<string, string>) => {
+    registerSnippets(locale, values);
+  };
+  bridge.translate = translate;
+  bridge.mountFragment = mountFragment;
+  bridge.listBlocks = listKnownBlocks;
 
   if (Array.isArray(bridge.queuedInfoBanners)) {
     bridge.queuedInfoBanners.forEach((banner) => {
@@ -54,6 +72,13 @@ export default defineNuxtPlugin(() => {
     });
     bridge.queuedWidgets = [];
   }
+  if (Array.isArray(bridge.queuedBlockExtensions)) {
+    bridge.queuedBlockExtensions.forEach((extension) => {
+      registerBlockExtension(extension);
+    });
+    bridge.queuedBlockExtensions = [];
+  }
+  drainQueuedFragmentsAndSnippets(bridge);
 
   window.calloraWorkspaceUi = bridge;
 
@@ -68,6 +93,8 @@ export default defineNuxtPlugin(() => {
       window.calloraWorkspaceUi.getContext = () => context.value;
     }
   );
+
+  void applyWorkspaceThemeVariables();
 
   void ensureWorkspacePluginAssetsLoaded().then(() => {
     const afterLoadBridge = window.calloraWorkspaceUi;
@@ -88,5 +115,30 @@ export default defineNuxtPlugin(() => {
       });
       afterLoadBridge.queuedWidgets = [];
     }
+
+    if (Array.isArray(afterLoadBridge.queuedBlockExtensions)) {
+      afterLoadBridge.queuedBlockExtensions.forEach((extension) => {
+        registerBlockExtension(extension);
+      });
+      afterLoadBridge.queuedBlockExtensions = [];
+    }
+
+    drainQueuedFragmentsAndSnippets(afterLoadBridge);
   });
+
+  function drainQueuedFragmentsAndSnippets(target: WorkspaceUiBridge): void {
+    if (Array.isArray(target.queuedFragments)) {
+      target.queuedFragments.forEach((fragment) => {
+        registerFragment(fragment);
+      });
+      target.queuedFragments = [];
+    }
+
+    if (Array.isArray(target.queuedSnippets)) {
+      target.queuedSnippets.forEach((registration) => {
+        registerSnippets(registration.locale, registration.values);
+      });
+      target.queuedSnippets = [];
+    }
+  }
 });

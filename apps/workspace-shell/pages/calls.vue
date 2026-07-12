@@ -10,7 +10,10 @@ const {
   callAction,
   sendDtmf
 } = useWorkspaceCalls();
+const { workspaceKey } = useWorkspaceContext();
 const toast = useToast();
+
+const blockContext = computed(() => ({ workspaceKey: workspaceKey.value }));
 
 const loading = ref(true);
 const placing = ref(false);
@@ -139,6 +142,8 @@ await loadCalls();
 
     <template #body>
       <div class="space-y-6">
+        <ShellBlock name="workspace.calls.before" :context="blockContext" />
+
         <UPageCard title="Place a call">
           <form class="flex flex-col sm:flex-row gap-3" @submit.prevent="submitDial">
             <UInput
@@ -257,6 +262,8 @@ await loadCalls();
             </li>
           </ul>
         </UPageCard>
+
+        <ShellBlock name="workspace.calls.after" :context="blockContext" />
       </div>
     </template>
   </UDashboardPanel>

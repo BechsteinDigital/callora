@@ -4,6 +4,8 @@ const { banners } = useWorkspaceInfoBanners();
 const { listResolvedWidgets } = useWorkspaceWidgets();
 const { workspaceKey, workspaceName, workspaceType } = useWorkspaceContext();
 
+const blockContext = computed(() => ({ workspaceKey: workspaceKey.value }));
+
 const hasPluginWidgets = computed(() => banners.value.length > 0);
 const dashboardWidgets = listResolvedWidgets("dashboard.main");
 const loading = ref(true);
@@ -58,6 +60,8 @@ await loadDashboardStatus();
 
     <template #body>
       <div class="space-y-6">
+        <ShellBlock name="workspace.dashboard.before" :context="blockContext" />
+
         <UPageCard :title="`Workspace Dashboard • ${workspaceName}`">
           <template #description>
             Baseline dashboard with empty and degraded states, ready for plugin enrichments.
@@ -113,6 +117,8 @@ await loadDashboardStatus();
             <div v-if="widget.contentHtml" class="text-sm" v-html="widget.contentHtml" />
           </UCard>
         </div>
+
+        <ShellBlock name="workspace.dashboard.after" :context="blockContext" />
       </div>
     </template>
   </UDashboardPanel>

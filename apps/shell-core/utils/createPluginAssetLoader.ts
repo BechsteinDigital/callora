@@ -1,4 +1,4 @@
-import type { ShellPluginManifest, ShellPluginManifestEntry } from "#shell-core/types/shell-extensions";
+import type { ShellPluginManifest, ShellPluginManifestEntry, ShellPluginStyleEntry } from "#shell-core/types/shell-extensions";
 
 export interface PluginAssetLoaderOptions {
   /** Manifest surface to load, for example "admin" or "workspace". */
@@ -47,6 +47,26 @@ function resolveScriptUrl(assetBase: string, entryPath: string): string {
   return `${trimmedBase}/${relativePath}`;
 }
 
+function sortByChain<TEntry extends { pluginId: string }>(
+  entries: TEntry[],
+  orderedPluginIds: string[] | undefined
+): TEntry[] {
+  if (!orderedPluginIds || orderedPluginIds.length === 0) {
+    return entries;
+  }
+
+  const rankByPluginId = new Map<string, number>();
+  orderedPluginIds.forEach((pluginId, index) => {
+    rankByPluginId.set(pluginId.trim().toLowerCase(), index);
+  });
+
+  return entries.slice().sort((left, right) => {
+    const leftRank = rankByPluginId.get(left.pluginId.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+    const rightRank = rankByPluginId.get(right.pluginId.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+    return leftRank - rightRank;
+  });
+}
+
 async function appendScript(url: string): Promise<void> {
   if (!url) {
     return;
@@ -66,6 +86,23 @@ async function appendScript(url: string): Promise<void> {
     script.onerror = () => reject(new Error(`Failed to load plugin asset '${url}'.`));
     document.head.appendChild(script);
   });
+}
+
+function appendStylesheet(url: string): void {
+  if (!url) {
+    return;
+  }
+
+  const existing = document.querySelector(`link[data-callora-plugin-style="${url}"]`);
+  if (existing) {
+    return;
+  }
+
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = url;
+  link.dataset.calloraPluginStyle = url;
+  document.head.appendChild(link);
 }
 
 /**
@@ -94,7 +131,7 @@ export function createPluginAssetLoader(options: PluginAssetLoaderOptions) {
     return runtimeConfig.public.calloraApiBase ?? "";
   }
 
-  async function ensureLoaded(): Promise<void> {
+  async function ensureLoaded(orderedPluginIds?: string[]): Promise<void> {
     if (isLoaded.value) {
       return;
     }
@@ -114,7 +151,24 @@ export function createPluginAssetLoader(options: PluginAssetLoaderOptions) {
             : resolveAssetBase() || undefined
         });
 
-        const entries = manifest.entries.filter((entry) => isJavaScriptEntry(entry, options.surface));
+        // Stylesheets append in template-chain order before any script runs,
+        // so theme CSS can override base styles by cascade order.
+        const styleEntries = sortByChain(
+          (manifest.styleEntries ?? []).filter(
+            (entry: ShellPluginStyleEntry) => entry.surface === options.surface
+          ),
+          orderedPluginIds
+        );
+        for (const styleEntry of styleEntries) {
+          appendStylesheet(resolveScriptUrl(resolveAssetBase(), styleEntry.stylePath));
+        }
+
+        // Scripts load sequentially in template-chain order so later bundles
+        // can extend blocks contributed by earlier ones.
+        const entries = sortByChain(
+          manifest.entries.filter((entry) => isJavaScriptEntry(entry, options.surface)),
+          orderedPluginIds
+        );
         for (const entry of entries) {
           const scriptUrl = resolveScriptUrl(resolveAssetBase(), entry.entryPath);
           if (!scriptUrl) {

@@ -34,6 +34,15 @@ export type WorkspaceBridgeContext = {
   };
 };
 
+export type WorkspaceBlockExtension = import("#shell-core/types/shell-extensions").ShellBlockExtension;
+
+export type WorkspaceFragment = import("#shell-core/types/shell-extensions").ShellFragment;
+
+export type WorkspaceSnippetRegistration = {
+  locale: string;
+  values: Record<string, string>;
+};
+
 export type WorkspaceUiBridge = {
   context?: WorkspaceBridgeContext;
   getContext?: () => WorkspaceBridgeContext;
@@ -41,4 +50,13 @@ export type WorkspaceUiBridge = {
   queuedInfoBanners?: WorkspaceInfoBanner[];
   registerWidget?: (widget: WorkspaceWidget) => void;
   queuedWidgets?: WorkspaceWidget[];
+  registerBlockExtension?: (extension: WorkspaceBlockExtension) => void;
+  queuedBlockExtensions?: WorkspaceBlockExtension[];
+  registerFragment?: (fragment: WorkspaceFragment) => void;
+  queuedFragments?: WorkspaceFragment[];
+  registerSnippets?: (locale: string, values: Record<string, string>) => void;
+  queuedSnippets?: WorkspaceSnippetRegistration[];
+  translate?: (snippetKey: string, fallback?: string) => string;
+  mountFragment?: (fragmentName: string, container: HTMLElement) => (() => void) | void;
+  listBlocks?: () => string[];
 };

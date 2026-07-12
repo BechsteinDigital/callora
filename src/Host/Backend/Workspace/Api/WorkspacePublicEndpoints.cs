@@ -1,4 +1,5 @@
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Policies;
 using System.Text.Json;
 
@@ -115,6 +116,52 @@ public static class WorkspacePublicEndpoints
                             workspace.PublicHost,
                             workspace.PublicPathPrefix
                         }
+                    });
+                })
+            .AllowAnonymous()
+            .ExcludeFromDescription();
+
+        endpoints.MapGet(
+                "/workspace/public/ui-chain",
+                async (
+                    string? workspaceKey,
+                    WorkspaceUiChainResolver uiChainResolver,
+                    CancellationToken cancellationToken) =>
+                {
+                    var normalizedKey = string.IsNullOrWhiteSpace(workspaceKey)
+                        ? "default"
+                        : workspaceKey.Trim();
+                    var chain = await uiChainResolver
+                        .ResolveAsync(normalizedKey, cancellationToken)
+                        .ConfigureAwait(false);
+                    return Results.Ok(new
+                    {
+                        workspaceKey = normalizedKey,
+                        chain
+                    });
+                })
+            .AllowAnonymous()
+            .ExcludeFromDescription();
+
+        endpoints.MapGet(
+                "/workspace/public/theme",
+                async (
+                    string? workspaceKey,
+                    WorkspacePublicThemeResolver themeResolver,
+                    CancellationToken cancellationToken) =>
+                {
+                    var normalizedKey = string.IsNullOrWhiteSpace(workspaceKey)
+                        ? "default"
+                        : workspaceKey.Trim();
+                    var theme = await themeResolver
+                        .ResolveAsync(normalizedKey, cancellationToken)
+                        .ConfigureAwait(false);
+                    return Results.Ok(new
+                    {
+                        workspaceKey = normalizedKey,
+                        themePluginId = theme?.ThemePluginId,
+                        themeVersion = theme?.ThemeVersion,
+                        valuesByKey = theme?.ValuesByKey ?? new Dictionary<string, string>()
                     });
                 })
             .AllowAnonymous()

@@ -35,4 +35,39 @@
     queuedWidgets.push(widget);
     bridge.queuedWidgets = queuedWidgets;
   }
+
+  // Template inheritance proof: replace the shell branding block and embed
+  // the original via the data-shell-parent marker — Twig's parent().
+  const brandingOverride = {
+    blockName: "workspace.layout.branding",
+    pluginId: "template-alpha",
+    mode: "replace",
+    priority: 100,
+    contentHtml:
+      '<div class="rounded-lg p-2" style="background: var(--callora-brand-primary, #4c1d95); color: white;">' +
+      '  <p class="font-bold text-sm px-1">Template Alpha</p>' +
+      '  <div data-shell-parent></div>' +
+      "</div>"
+  };
+
+  const dashboardNotice = {
+    blockName: "workspace.dashboard.before",
+    pluginId: "template-alpha",
+    mode: "append",
+    priority: 100,
+    contentHtml:
+      '<div class="border border-default rounded-lg p-3 text-sm text-muted">' +
+      "Template Alpha steuert dieses Workspace-Layout (Block: workspace.dashboard.before)." +
+      "</div>"
+  };
+
+  for (const extension of [brandingOverride, dashboardNotice]) {
+    if (typeof bridge.registerBlockExtension === "function") {
+      bridge.registerBlockExtension(extension);
+    } else {
+      const queuedBlockExtensions = bridge.queuedBlockExtensions || [];
+      queuedBlockExtensions.push(extension);
+      bridge.queuedBlockExtensions = queuedBlockExtensions;
+    }
+  }
 })();

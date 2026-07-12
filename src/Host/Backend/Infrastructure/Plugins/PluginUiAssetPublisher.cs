@@ -29,6 +29,12 @@ public sealed class PluginUiAssetPublisher(
         "src/app.ts",
         "src/app.js"
     ];
+    private static readonly string[] StyleEntryCandidates =
+    [
+        "main.css",
+        "style.css",
+        "styles.css"
+    ];
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
@@ -83,6 +89,7 @@ public sealed class PluginUiAssetPublisher(
         }
 
         var entries = new List<PluginUiAssetManifestEntry>();
+        var styleEntries = new List<PluginUiStyleManifestEntry>();
         var workspaceTemplates = new List<PluginWorkspaceTemplateManifestEntry>();
 
         foreach (var pair in pluginRootsByPluginId.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
@@ -97,14 +104,16 @@ public sealed class PluginUiAssetPublisher(
                 pluginRoot,
                 "admin",
                 pluginAssetsRoot,
-                entries);
+                entries,
+                styleEntries);
 
             PublishSurface(
                 pluginId,
                 pluginRoot,
                 "workspace",
                 pluginAssetsRoot,
-                entries);
+                entries,
+                styleEntries);
 
             PublishWorkspaceTemplates(
                 pluginId,
@@ -120,6 +129,11 @@ public sealed class PluginUiAssetPublisher(
                 .OrderBy(x => x.PluginId, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(x => x.Surface, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(x => x.EntryPath, StringComparer.OrdinalIgnoreCase)
+                .ToArray(),
+            styleEntries = styleEntries
+                .OrderBy(x => x.PluginId, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(x => x.Surface, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(x => x.StylePath, StringComparer.OrdinalIgnoreCase)
                 .ToArray(),
             workspaceTemplates = workspaceTemplates
                 .OrderBy(x => x.PluginId, StringComparer.OrdinalIgnoreCase)
@@ -247,7 +261,8 @@ public sealed class PluginUiAssetPublisher(
         string pluginRoot,
         string surface,
         string pluginAssetsRoot,
-        ICollection<PluginUiAssetManifestEntry> manifestEntries)
+        ICollection<PluginUiAssetManifestEntry> manifestEntries,
+        ICollection<PluginUiStyleManifestEntry> styleManifestEntries)
     {
         var sourceDirectory = ResolveSurfaceSourceDirectory(pluginRoot, surface);
         if (!Directory.Exists(sourceDirectory))
@@ -273,6 +288,15 @@ public sealed class PluginUiAssetPublisher(
         else
         {
             CopyDirectory(sourceDirectory, targetDirectory);
+        }
+
+        foreach (var styleCandidate in StyleEntryCandidates)
+        {
+            if (File.Exists(Path.Combine(targetDirectory, styleCandidate)))
+            {
+                var stylePath = ToManifestPath(Path.Combine(pluginId, "app", surface, styleCandidate));
+                styleManifestEntries.Add(new PluginUiStyleManifestEntry(pluginId, surface, stylePath));
+            }
         }
 
         if (entryRelativePath is null)
