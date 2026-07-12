@@ -12,13 +12,27 @@ const host = ref<HTMLElement | null>(null);
 const parentTarget = ref<HTMLElement | null>(null);
 let cleanup: (() => void) | void;
 
-onMounted(async () => {
+async function mountLevel(): Promise<void> {
+  if (typeof cleanup === "function") {
+    cleanup();
+    cleanup = undefined;
+  }
+  parentTarget.value = null;
+
   if (level.value?.mount && host.value) {
     cleanup = level.value.mount(host.value, props.context);
   }
 
   await nextTick();
   parentTarget.value = host.value?.querySelector<HTMLElement>("[data-shell-parent]") ?? null;
+}
+
+onMounted(() => {
+  void mountLevel();
+  // Re-mount when a later-registered replace extension shifts this level.
+  watch(level, () => {
+    void mountLevel();
+  });
 });
 
 onBeforeUnmount(() => {

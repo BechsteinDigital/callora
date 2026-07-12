@@ -57,15 +57,22 @@ public sealed class ActiveCallRegistry(CallEventBroadcaster broadcaster)
 
         var tracked = new TrackedCall(workspaceKey.Trim(), channelId, call, DateTimeOffset.UtcNow);
         if (!_calls.TryAdd(call.CallId, tracked))
-            return _calls[call.CallId].ToSnapshot();
+        {
+            // Terminated race: the existing entry may vanish concurrently.
+            return _calls.TryGetValue(call.CallId, out var existing)
+                ? existing.ToSnapshot()
+                : tracked.ToSnapshot();
+        }
 
-        call.StateChanged += (_, args) => HandleStateChanged(tracked, args);
+        EventHandler<CallStateChangedEventArgs>? handler = null;
+        handler = (_, args) => HandleStateChanged(tracked, handler!, args);
+        call.StateChanged += handler;
 
         // The call may have terminated between placement and subscription;
         // drop it immediately instead of leaking a dead entry.
         if (call.State == CallState.Terminated)
         {
-            RemoveTerminated(tracked);
+            RemoveTerminated(tracked, handler);
             return tracked.ToSnapshot();
         }
 
@@ -73,19 +80,25 @@ public sealed class ActiveCallRegistry(CallEventBroadcaster broadcaster)
         return tracked.ToSnapshot();
     }
 
-    private void HandleStateChanged(TrackedCall tracked, CallStateChangedEventArgs args)
+    private void HandleStateChanged(
+        TrackedCall tracked,
+        EventHandler<CallStateChangedEventArgs> handler,
+        CallStateChangedEventArgs args)
     {
         if (args.CurrentState == CallState.Terminated)
         {
-            RemoveTerminated(tracked);
+            RemoveTerminated(tracked, handler);
             return;
         }
 
         broadcaster.Publish(new CallEvent(CallEventTypes.StateChanged, tracked.ToSnapshot()));
     }
 
-    private void RemoveTerminated(TrackedCall tracked)
+    private void RemoveTerminated(TrackedCall tracked, EventHandler<CallStateChangedEventArgs> handler)
     {
+        // Detach so long-lived channel/call objects cannot pin tracked entries.
+        tracked.Call.StateChanged -= handler;
+
         if (_calls.TryRemove(tracked.Call.CallId, out _))
         {
             broadcaster.Publish(new CallEvent(CallEventTypes.Ended, tracked.ToSnapshot()));

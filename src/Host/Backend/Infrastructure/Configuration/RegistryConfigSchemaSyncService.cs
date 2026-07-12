@@ -91,7 +91,9 @@ public sealed class RegistryConfigSchemaSyncService(ISystemConfigStore store)
         }
 
         var current = new DirectoryInfo(Path.GetDirectoryName(Path.GetFullPath(assemblyPath)) ?? string.Empty);
-        while (current is not null)
+        // Bounded walk: the registry sits at the plugin root (bin/Debug/net10.0
+        // is three levels below); never crawl toward the filesystem root.
+        for (var depth = 0; current is not null && depth < 4; depth++)
         {
             var candidate = Path.Combine(current.FullName, "registry.json");
             if (File.Exists(candidate))

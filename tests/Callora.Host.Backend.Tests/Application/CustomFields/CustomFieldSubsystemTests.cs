@@ -60,7 +60,10 @@ public sealed class CustomFieldSubsystemTests
 
         public string Description => $"test migration {version}";
 
-        public Task UpAsync(System.Data.Common.DbConnection connection, CancellationToken cancellationToken = default) =>
+        public Task UpAsync(
+            System.Data.Common.DbConnection connection,
+            System.Data.Common.DbTransaction transaction,
+            CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
     }
 }

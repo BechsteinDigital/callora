@@ -125,10 +125,10 @@ public static class CallEndpoints
         context.Response.Headers.Append("X-Accel-Buffering", "no");
 
         using var subscription = broadcaster.Subscribe(workspaceKey);
-        await context.Response.Body.FlushAsync(cancellationToken);
 
         try
         {
+            await context.Response.Body.FlushAsync(cancellationToken);
             await foreach (var callEvent in subscription.Reader.ReadAllAsync(cancellationToken))
             {
                 var payload = JsonSerializer.Serialize(callEvent, JsonSerializerOptions.Web);

@@ -15,6 +15,7 @@ public sealed class VoipSdkVoiceEngine : IVoiceEngine
 {
     private readonly SemaphoreSlim _connectLock = new(1, 1);
     private readonly Dictionary<string, VoipSdkLineConnection> _connections = new(StringComparer.OrdinalIgnoreCase);
+    private volatile bool _disposed;
 
     public async Task<IEngineCall> PlaceCallAsync(
         SipAccountEntry account,
@@ -52,6 +53,7 @@ public sealed class VoipSdkVoiceEngine : IVoiceEngine
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         await _connectLock.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -73,6 +75,7 @@ public sealed class VoipSdkVoiceEngine : IVoiceEngine
         SipAccountEntry account,
         CancellationToken cancellationToken)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         await _connectLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {

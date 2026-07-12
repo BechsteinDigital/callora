@@ -36,8 +36,13 @@ export function applyWorkspacePrefixRoutes(
     }
   }
 
+  // Re-resolve only when the URL now matches a prefixed route while the
+  // current navigation still sits on an unprefixed one (e.g. the catch-all) —
+  // comparing names alone would loop when resolve prefers the alias.
   const resolved = router.resolve(to.fullPath);
-  if (resolved.name !== to.name) {
+  const resolvedIsPrefixed = String(resolved.name ?? "").startsWith(PREFIXED_ROUTE_NAMESPACE);
+  const currentIsPrefixed = String(to.name ?? "").startsWith(PREFIXED_ROUTE_NAMESPACE);
+  if (resolvedIsPrefixed && !currentIsPrefixed && resolved.name !== to.name) {
     return navigateTo(to.fullPath, { replace: true });
   }
 

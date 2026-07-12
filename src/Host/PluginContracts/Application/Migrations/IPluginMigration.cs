@@ -14,5 +14,12 @@ public interface IPluginMigration
 
     string Description { get; }
 
-    Task UpAsync(DbConnection connection, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Applies the migration. Commands MUST enlist in the provided
+    /// transaction so schema change and bookkeeping commit atomically.
+    /// </summary>
+    Task UpAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        CancellationToken cancellationToken = default);
 }

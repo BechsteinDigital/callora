@@ -66,6 +66,7 @@ public sealed class SipCall : ICall
     private void HandleEngineStateChanged(SdkCallState engineState)
     {
         CallStateChangedEventArgs? payload;
+        var reachedTerminated = false;
         lock (_stateLock)
         {
             var mapped = SipCallStateMapper.Map(engineState);
@@ -74,8 +75,16 @@ public sealed class SipCall : ICall
 
             payload = new CallStateChangedEventArgs(_state, mapped);
             _state = mapped;
+            reachedTerminated = mapped == CallState.Terminated;
         }
 
         StateChanged?.Invoke(this, payload);
+
+        if (reachedTerminated)
+        {
+            // Terminated is final: detach so long-lived engine objects cannot
+            // pin completed adapter instances.
+            _inner.StateChanged -= HandleEngineStateChanged;
+        }
     }
 }

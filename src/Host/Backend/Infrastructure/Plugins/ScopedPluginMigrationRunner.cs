@@ -3,6 +3,7 @@ using Callora.Host.Backend.Domain.Plugins;
 using Callora.Host.Backend.Infrastructure.Persistence;
 using Callora.Host.PluginContracts.Application.Migrations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Callora.Host.Backend.Infrastructure.Plugins;
 
@@ -61,7 +62,12 @@ public sealed class ScopedPluginMigrationRunner(
                 migration.Version,
                 migration.Description);
 
-            await migration.UpAsync(connection, cancellationToken).ConfigureAwait(false);
+            await migration
+                .UpAsync(
+                    connection,
+                    transaction.GetDbTransaction(),
+                    cancellationToken)
+                .ConfigureAwait(false);
 
             dbContext.PluginMigrations.Add(new PluginMigrationRecord
             {

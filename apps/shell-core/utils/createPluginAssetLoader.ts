@@ -185,6 +185,9 @@ export function createPluginAssetLoader(options: PluginAssetLoaderOptions) {
         // Manifest kann in frühen Dev-Zuständen fehlen.
       } finally {
         isLoaded.value = true;
+        // Eintrag freigeben, damit HMR/Folgeaufrufe nicht dauerhaft an der
+        // ersten (ggf. kettenlosen) Promise hängen bleiben.
+        loadPromises.delete(options.stateKey);
       }
     })();
 

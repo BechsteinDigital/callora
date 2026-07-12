@@ -21,7 +21,21 @@ public sealed class VoipSdkEngineCall : IEngineCall
         ArgumentNullException.ThrowIfNull(media);
         _inner = inner;
         _media = media;
-        _inner.StateChanged += (_, args) => StateChanged?.Invoke(args.NewState);
+        _inner.StateChanged += HandleInnerStateChanged;
+    }
+
+    private void HandleInnerStateChanged(
+        object? sender,
+        CalloraVoipSdk.Core.Domain.Events.CallStateChangedEventArgs args)
+    {
+        StateChanged?.Invoke(args.NewState);
+
+        if (args.NewState == SdkCallState.Terminated)
+        {
+            // Terminated is final: detach so long-lived SDK call objects
+            // cannot pin adapter instances.
+            _inner.StateChanged -= HandleInnerStateChanged;
+        }
     }
 
     public string CallId => _inner.CallId.ToString();

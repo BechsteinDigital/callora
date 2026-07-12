@@ -90,7 +90,9 @@ export function useWorkspaceAuth() {
 
   function invalidate(): void {
     session.value = null;
-    hydrationState.value = "done";
+    // Back to idle so the next guarded navigation re-checks /api/auth/me
+    // instead of trusting the stale "done" state.
+    hydrationState.value = "idle";
   }
 
   return {
