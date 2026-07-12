@@ -2,6 +2,7 @@ using Callora.Contracts.Communication;
 using Callora.Plugins.Voip.Application.Accounts;
 using CalloraVoipSdk;
 using CalloraVoipSdk.Core.Domain.Lines;
+using CalloraVoipSdk.Core.Security;
 
 namespace Callora.Plugins.Voip.Application.Channels;
 
@@ -78,7 +79,7 @@ public sealed class VoipSdkVoiceEngine : IVoiceEngine
             if (_connections.TryGetValue(account.SipAccountId, out var existing))
                 return existing;
 
-            var client = new VoipClient();
+            var client = new VoipClient(BuildRegistrarFriendlyConfiguration());
             try
             {
                 var connect = await client
@@ -107,6 +108,17 @@ public sealed class VoipSdkVoiceEngine : IVoiceEngine
             _connectLock.Release();
         }
     }
+
+    private static SdkConfiguration BuildRegistrarFriendlyConfiguration() =>
+        new()
+        {
+            // Consumer registrars (FritzBox) and classic provider trunks reject
+            // SDP offers carrying SRTP crypto attributes with 488; plain RTP
+            // with G.711-first keeps the broadest compatibility. SRTP becomes
+            // a per-account option once a trunk requires it.
+            SrtpPolicy = SrtpPolicy.Disabled,
+            PreferredAudioCodecs = ["PCMA", "PCMU", "G722"]
+        };
 
     private static SipAccount BuildSipAccount(SipAccountEntry account) =>
         new()
