@@ -84,6 +84,12 @@ export interface ShellBlockExtension {
    * renders. May return a cleanup function invoked on unmount.
    */
   mount?: (container: HTMLElement, context: ShellBlockMountContext) => (() => void) | void;
+  /**
+   * A Vue component rendered inside the shell's Vue instance with a `context`
+   * prop. Plugin bundles compile against `vue` as external (provided as the
+   * CalloraVue global), so components share the shell runtime.
+   */
+  component?: unknown;
   /** Higher priority wins for "replace" and orders extensions within a mode. */
   priority?: number;
 }

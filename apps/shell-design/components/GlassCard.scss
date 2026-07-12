@@ -1,0 +1,36 @@
+.glass-card {
+  @include glass(soft);
+
+  border-radius: $radius-lg;
+  padding: $space-6;
+
+  &--strong {
+    @include glass(strong);
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-4;
+    margin-bottom: $space-4;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $text-lg;
+    font-weight: 650;
+  }
+
+  &__description {
+    margin: $space-1 0 0;
+    font-size: $text-sm;
+    color: var(--cds-text-muted);
+  }
+
+  &__actions {
+    display: flex;
+    gap: $space-2;
+    flex-shrink: 0;
+  }
+}

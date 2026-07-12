@@ -25,14 +25,12 @@
     </None>
   </ItemGroup>
 
+  <!-- Nur Kompilate (public/) und Templates werden ausgeliefert; die
+       UI-Quellen unter src/Resources/app bleiben beim Hersteller. -->
   <ItemGroup>
-    <Content Include="src/Resources/app/admin/**">
+    <Content Include="src/Resources/public/**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>app/admin/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
-    </Content>
-    <Content Include="src/Resources/app/workspace/**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>app/workspace/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+      <TargetPath>public/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </Content>
     <Content Include="src/Resources/views/workspace/**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

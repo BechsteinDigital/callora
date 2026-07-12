@@ -6,7 +6,7 @@ function normalizeExtension(
 ): ShellBlockExtensionEntry | null {
   const blockName = input.blockName?.trim();
   const pluginId = input.pluginId?.trim();
-  if (!blockName || !pluginId || (!input.contentHtml && !input.mount)) {
+  if (!blockName || !pluginId || (!input.contentHtml && !input.mount && !input.component)) {
     return null;
   }
 

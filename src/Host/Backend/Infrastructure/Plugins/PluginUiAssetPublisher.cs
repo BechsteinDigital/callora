@@ -250,8 +250,10 @@ public sealed class PluginUiAssetPublisher(
     private static bool HasResourceRoots(string pluginRoot)
     {
         return
+            Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "public")) ||
             Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "app")) ||
             Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "views", "workspace")) ||
+            Directory.Exists(Path.Combine(pluginRoot, "public")) ||
             Directory.Exists(Path.Combine(pluginRoot, "app")) ||
             Directory.Exists(Path.Combine(pluginRoot, "views", "workspace"));
     }
@@ -384,13 +386,26 @@ public sealed class PluginUiAssetPublisher(
 
     private static string ResolveSurfaceSourceDirectory(string pluginRoot, string surface)
     {
-        var sourcePreferred = Path.Combine(pluginRoot, "src", "Resources", "app", surface);
-        if (Directory.Exists(sourcePreferred))
+        // Shopware-analog: compiled deliverables live under Resources/public;
+        // the app/ directories carry sources and stay with the vendor. The
+        // app fallbacks keep legacy layouts working.
+        string[] candidates =
+        [
+            Path.Combine(pluginRoot, "src", "Resources", "public", surface),
+            Path.Combine(pluginRoot, "public", surface),
+            Path.Combine(pluginRoot, "src", "Resources", "app", surface),
+            Path.Combine(pluginRoot, "app", surface)
+        ];
+
+        foreach (var candidate in candidates)
         {
-            return sourcePreferred;
+            if (Directory.Exists(candidate))
+            {
+                return candidate;
+            }
         }
 
-        return Path.Combine(pluginRoot, "app", surface);
+        return candidates[^1];
     }
 
     private static string ResolveWorkspaceTemplateSourceDirectory(string pluginRoot)

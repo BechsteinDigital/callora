@@ -38,6 +38,8 @@ export type WorkspaceBlockExtension = import("#shell-core/types/shell-extensions
 
 export type WorkspaceFragment = import("#shell-core/types/shell-extensions").ShellFragment;
 
+export type WorkspacePluginPage = import("#shell-core/utils/createShellPageRegistry").ShellPluginPage;
+
 export type WorkspaceSnippetRegistration = {
   locale: string;
   values: Record<string, string>;
@@ -54,6 +56,8 @@ export type WorkspaceUiBridge = {
   queuedBlockExtensions?: WorkspaceBlockExtension[];
   registerFragment?: (fragment: WorkspaceFragment) => void;
   queuedFragments?: WorkspaceFragment[];
+  registerPage?: (page: WorkspacePluginPage) => void;
+  queuedPages?: WorkspacePluginPage[];
   registerSnippets?: (locale: string, values: Record<string, string>) => void;
   queuedSnippets?: WorkspaceSnippetRegistration[];
   translate?: (snippetKey: string, fallback?: string) => string;

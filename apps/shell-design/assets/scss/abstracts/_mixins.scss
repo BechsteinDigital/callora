@@ -1,0 +1,36 @@
+// Core glassmorphism surface. Level steers opacity: "soft" for large panels,
+// "strong" for interactive cards that need more contrast.
+@mixin glass($level: soft) {
+  border: 1px solid var(--cds-glass-border);
+  box-shadow: var(--cds-glass-shadow);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+
+  @if $level == strong {
+    background: var(--cds-glass-bg-strong);
+  } @else {
+    background: var(--cds-glass-bg);
+  }
+}
+
+@mixin focus-ring {
+  outline: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--cds-brand);
+    outline-offset: 2px;
+  }
+}
+
+@mixin interactive-lift {
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 40px rgb(31 38 84 / 16%);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}

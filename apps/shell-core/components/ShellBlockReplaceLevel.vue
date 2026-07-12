@@ -33,6 +33,7 @@ onBeforeUnmount(() => {
     <!-- Plugin block content is trusted shell-extension code by design;
          plugins already execute JS via their UI bundles. -->
     <div v-if="level?.contentHtml" v-html="level.contentHtml" />
+    <component :is="level.component" v-if="level?.component" :context="context" />
   </div>
 
   <Teleport v-if="parentTarget" :to="parentTarget">

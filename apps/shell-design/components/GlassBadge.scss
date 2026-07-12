@@ -1,0 +1,35 @@
+.glass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 0.125rem $space-2;
+  border-radius: $radius-full;
+  font-size: $text-sm;
+  font-weight: 600;
+
+  &--neutral {
+    @include glass(strong);
+
+    color: var(--cds-text-muted);
+  }
+
+  &--brand {
+    background: color-mix(in srgb, var(--cds-brand) 14%, transparent);
+    color: var(--cds-brand-strong);
+  }
+
+  &--success {
+    background: color-mix(in srgb, var(--cds-success) 14%, transparent);
+    color: var(--cds-success);
+  }
+
+  &--warning {
+    background: color-mix(in srgb, var(--cds-warning) 14%, transparent);
+    color: var(--cds-warning);
+  }
+
+  &--danger {
+    background: color-mix(in srgb, var(--cds-danger) 14%, transparent);
+    color: var(--cds-danger);
+  }
+}

@@ -27,6 +27,7 @@ onBeforeUnmount(() => {
     <!-- Plugin block content is trusted shell-extension code by design;
          plugins already execute JS via their UI bundles. -->
     <div v-if="extension.contentHtml" v-html="extension.contentHtml" />
+    <component :is="extension.component" v-if="extension.component" :context="context" />
     <div v-if="extension.mount" ref="container" />
   </div>
 </template>

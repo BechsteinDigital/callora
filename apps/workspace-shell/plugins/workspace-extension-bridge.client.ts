@@ -1,8 +1,11 @@
+import * as Vue from "vue";
+import PluginPageHost from "~/components/PluginPageHost.vue";
 import type {
   WorkspaceBlockExtension,
   WorkspaceBridgeContext,
   WorkspaceFragment,
   WorkspaceInfoBanner,
+  WorkspacePluginPage,
   WorkspaceUiBridge,
   WorkspaceWidget
 } from "~/types/workspace-plugin-extensions";
@@ -11,10 +14,15 @@ declare global {
   interface Window {
     calloraWorkspaceUi?: WorkspaceUiBridge;
     __CALLORA_WORKSPACE_CONTEXT__?: WorkspaceBridgeContext;
+    CalloraVue?: typeof Vue;
   }
 }
 
 export default defineNuxtPlugin(() => {
+  // Plugin bundles compile with vue as external and resolve it from this
+  // global, so their components run inside the shell's Vue instance.
+  window.CalloraVue = Vue;
+
   const config = useRuntimeConfig();
   const route = useRoute();
   const { registerInfoBanner } = useWorkspaceInfoBanners();
@@ -22,6 +30,8 @@ export default defineNuxtPlugin(() => {
   const { registerBlockExtension, listKnownBlocks } = useShellBlocks();
   const { registerSnippets, translate } = useShellSnippets();
   const { registerFragment, mountFragment } = useShellFragments();
+  const { registerPage, listPages } = useShellPages();
+  const router = useRouter();
   const { ensureWorkspacePluginAssetsLoaded } = useWorkspacePluginAssets();
   const { applyWorkspaceThemeVariables } = useWorkspaceThemeVariables();
   const bootstrapContext = window.__CALLORA_WORKSPACE_CONTEXT__;
@@ -53,6 +63,28 @@ export default defineNuxtPlugin(() => {
   bridge.registerFragment = (fragment: WorkspaceFragment) => {
     registerFragment(fragment);
   };
+  bridge.registerPage = (page: WorkspacePluginPage) => {
+    registerPluginPage(page);
+  };
+
+  function registerPluginPage(page: WorkspacePluginPage): void {
+    const entry = registerPage(page);
+    if (!entry) {
+      return;
+    }
+
+    // The page body is a regular block extension (replace, lowest priority):
+    // templates override it with higher-priority replaces and can embed it
+    // via the data-shell-parent marker.
+    registerBlockExtension({
+      blockName: `workspace.${entry.pageId}.content`,
+      pluginId: entry.pluginId,
+      mode: "replace",
+      priority: 0,
+      mount: entry.mount,
+      component: entry.component
+    });
+  }
   bridge.registerSnippets = (locale: string, values: Record<string, string>) => {
     registerSnippets(locale, values);
   };
@@ -124,7 +156,42 @@ export default defineNuxtPlugin(() => {
     }
 
     drainQueuedFragmentsAndSnippets(afterLoadBridge);
+    registerPluginPageRoutes();
   });
+
+  function registerPluginPageRoutes(): void {
+    const prefix = context.value.route.publicPathPrefix?.trim() || "/";
+    const basePath = prefix === "/" ? "" : prefix.replace(/\/+$/, "");
+
+    for (const page of listPages()) {
+      const routeName = `plugin-page:${page.pageId}`;
+      if (!router.hasRoute(routeName)) {
+        router.addRoute({
+          path: page.path,
+          name: routeName,
+          component: PluginPageHost,
+          props: { pagePath: page.path }
+        });
+      }
+
+      const prefixedName = `ws-prefixed:${routeName}`;
+      if (basePath && !router.hasRoute(prefixedName)) {
+        router.addRoute({
+          path: `${basePath}${page.path}`,
+          name: prefixedName,
+          component: PluginPageHost,
+          props: { pagePath: page.path }
+        });
+      }
+    }
+
+    // Re-resolve when the user landed on a plugin page before its route existed.
+    const current = router.currentRoute.value;
+    const resolved = router.resolve(current.fullPath);
+    if (resolved.name !== current.name) {
+      void navigateTo(current.fullPath, { replace: true });
+    }
+  }
 
   function drainQueuedFragmentsAndSnippets(target: WorkspaceUiBridge): void {
     if (Array.isArray(target.queuedFragments)) {
@@ -139,6 +206,13 @@ export default defineNuxtPlugin(() => {
         registerSnippets(registration.locale, registration.values);
       });
       target.queuedSnippets = [];
+    }
+
+    if (Array.isArray(target.queuedPages)) {
+      target.queuedPages.forEach((page) => {
+        registerPluginPage(page);
+      });
+      target.queuedPages = [];
     }
   }
 });

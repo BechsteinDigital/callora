@@ -1,0 +1,47 @@
+// Design tokens. Colors resolve through the --callora-* workspace theme
+// variables (see /workspace/public/theme), so a whitelabel theme recolors the
+// whole glass surface without touching SCSS.
+
+:root {
+  // Brand palette (theme-overridable)
+  --cds-brand: var(--callora-brand-primary, #6d5df6);
+  --cds-brand-strong: var(--callora-brand-secondary, #4f46e5);
+  --cds-accent: var(--callora-brand-accent, #22d3ee);
+
+  // Canvas
+  --cds-bg-from: var(--callora-background-from, #eef1ff);
+  --cds-bg-to: var(--callora-background-to, #e6f7ff);
+  --cds-text: var(--callora-text, #1e2235);
+  --cds-text-muted: var(--callora-text-muted, #5b6178);
+
+  // Glass surfaces
+  --cds-glass-bg: rgb(255 255 255 / 55%);
+  --cds-glass-bg-strong: rgb(255 255 255 / 75%);
+  --cds-glass-border: rgb(255 255 255 / 65%);
+  --cds-glass-shadow: 0 8px 32px rgb(31 38 84 / 12%);
+
+  // Feedback
+  --cds-success: #16a34a;
+  --cds-warning: #d97706;
+  --cds-danger: #dc2626;
+}
+
+// Spacing / radii / typography scale
+$space-1: 0.25rem;
+$space-2: 0.5rem;
+$space-3: 0.75rem;
+$space-4: 1rem;
+$space-6: 1.5rem;
+$space-8: 2rem;
+
+$radius-md: 0.75rem;
+$radius-lg: 1.25rem;
+$radius-full: 999px;
+
+$font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+$text-sm: 0.875rem;
+$text-base: 1rem;
+$text-lg: 1.125rem;
+$text-xl: 1.5rem;
+
+$sidebar-width: 17rem;

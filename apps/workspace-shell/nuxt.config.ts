@@ -1,19 +1,16 @@
 export default defineNuxtConfig({
-  extends: ["../shell-core"],
-  modules: ["@nuxt/ui", "@pinia/nuxt"],
+  extends: ["../shell-core", "../shell-design"],
   ssr: false,
-  fonts: {
-    provider: "local",
-    providers: {
-      adobe: false,
-      google: false,
-      googleicons: false,
-      bunny: false,
-      fontshare: false,
-      fontsource: false
+  hooks: {
+    // Page meta lives here so .vue files stay pure templates (strict
+    // vue/ts/scss separation; definePageMeta needs inline <script setup>).
+    "pages:extend"(pages) {
+      const login = pages.find((page) => page.name === "login");
+      if (login) {
+        login.meta = { ...login.meta, layout: false };
+      }
     }
   },
-  css: ["~/assets/css/main.css"],
   app: {
     baseURL: import.meta.env.NUXT_PUBLIC_WORKSPACE_BASE_URL ?? "/",
     head: {
