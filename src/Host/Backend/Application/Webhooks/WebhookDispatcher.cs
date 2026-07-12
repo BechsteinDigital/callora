@@ -1,0 +1,76 @@
+using System.Text.Json;
+using Callora.Host.Backend.Application.Abstractions.Webhooks;
+using Callora.Host.PluginContracts.Application.Jobs;
+
+namespace Callora.Host.Backend.Application.Webhooks;
+
+/// <summary>
+/// Matches platform events against webhook subscriptions and enqueues one
+/// durable delivery job per match. Singleton — resolves the scoped store per
+/// dispatch.
+/// </summary>
+public sealed class WebhookDispatcher(
+    IServiceScopeFactory scopeFactory,
+    IBackgroundJobQueue jobQueue,
+    ILogger<WebhookDispatcher> logger)
+{
+    public const string DeliveryJobType = "webhook.deliver";
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    public async Task DispatchAsync(
+        string eventName,
+        string? workspaceKey,
+        object payload,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+
+        IReadOnlyList<WebhookSubscriptionSnapshot> subscriptions;
+        using (var scope = scopeFactory.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IWebhookSubscriptionStore>();
+            subscriptions = await store
+                .ListActiveForEventAsync(eventName, workspaceKey, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (subscriptions.Count == 0)
+        {
+            return;
+        }
+
+        var body = JsonSerializer.Serialize(new
+        {
+            @event = eventName,
+            workspaceKey,
+            occurredAtUtc = DateTimeOffset.UtcNow,
+            data = payload
+        }, JsonOptions);
+
+        foreach (var subscription in subscriptions)
+        {
+            try
+            {
+                var jobPayload = JsonSerializer.Serialize(
+                    new WebhookDeliveryPayload(subscription.Id, eventName, body), JsonOptions);
+                await jobQueue.EnqueueAsync(
+                        new BackgroundJobRequest(
+                            DeliveryJobType,
+                            jobPayload,
+                            MaxAttempts: 5,
+                            WorkspaceKey: subscription.WorkspaceKey),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Enqueueing webhook delivery for subscription {SubscriptionId} on event {EventName} failed.",
+                    subscription.Id,
+                    eventName);
+            }
+        }
+    }
+}

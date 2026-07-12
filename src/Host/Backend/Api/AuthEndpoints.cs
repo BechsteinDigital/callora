@@ -56,7 +56,8 @@ public static class AuthEndpoints
                 Email: user.Email,
                 Role: role,
                 WorkspaceKey: null));
-        }).WithName("Auth_Api_Login");
+        }).WithName("Auth_Api_Login")
+            .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
 
         apiGroup.MapPost("/logout", (
             BackendHostOptions options,
@@ -147,6 +148,7 @@ public static class AuthEndpoints
                 Email: user.Email,
                 Role: role,
                 WorkspaceKey: request.WorkspaceKey.Trim()));
-        }).WithName("Auth_Workspace_Login");
+        }).WithName("Auth_Workspace_Login")
+            .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
     }
 }

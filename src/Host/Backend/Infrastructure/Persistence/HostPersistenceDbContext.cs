@@ -47,6 +47,33 @@ public sealed class HostPersistenceDbContext(DbContextOptions<HostPersistenceDbC
     public DbSet<Callora.Host.Backend.Domain.Extensions.WorkspaceThemeSettingValue> WorkspaceThemeSettingValues =>
         Set<Callora.Host.Backend.Domain.Extensions.WorkspaceThemeSettingValue>();
 
+    public DbSet<Callora.Host.Backend.Domain.Configuration.SystemConfigDefinition> SystemConfigDefinitions =>
+        Set<Callora.Host.Backend.Domain.Configuration.SystemConfigDefinition>();
+
+    public DbSet<Callora.Host.Backend.Domain.Configuration.SystemConfigValue> SystemConfigValues =>
+        Set<Callora.Host.Backend.Domain.Configuration.SystemConfigValue>();
+
+    public DbSet<Callora.Host.Backend.Domain.Webhooks.WebhookSubscription> WebhookSubscriptions =>
+        Set<Callora.Host.Backend.Domain.Webhooks.WebhookSubscription>();
+
+    public DbSet<Callora.Host.Backend.Domain.Notifications.NotificationEntry> Notifications =>
+        Set<Callora.Host.Backend.Domain.Notifications.NotificationEntry>();
+
+    public DbSet<Callora.Host.Backend.Domain.Media.MediaItem> MediaItems =>
+        Set<Callora.Host.Backend.Domain.Media.MediaItem>();
+
+    public DbSet<Callora.Host.Backend.Domain.Plugins.PluginMigrationRecord> PluginMigrations =>
+        Set<Callora.Host.Backend.Domain.Plugins.PluginMigrationRecord>();
+
+    public DbSet<Callora.Host.Backend.Domain.CustomFields.CustomFieldDefinition> CustomFieldDefinitions =>
+        Set<Callora.Host.Backend.Domain.CustomFields.CustomFieldDefinition>();
+
+    public DbSet<Callora.Host.Backend.Domain.CustomFields.CustomFieldValue> CustomFieldValues =>
+        Set<Callora.Host.Backend.Domain.CustomFields.CustomFieldValue>();
+
+    public DbSet<Callora.Host.Backend.Domain.Flows.FlowDefinition> Flows =>
+        Set<Callora.Host.Backend.Domain.Flows.FlowDefinition>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

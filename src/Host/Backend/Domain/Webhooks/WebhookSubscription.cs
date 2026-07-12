@@ -1,0 +1,27 @@
+namespace Callora.Host.Backend.Domain.Webhooks;
+
+/// <summary>
+/// One outbound webhook subscription: platform events matching the filter are
+/// delivered to the target URL as signed HTTP POSTs.
+/// </summary>
+public sealed class WebhookSubscription
+{
+    public Guid Id { get; set; }
+
+    /// <summary>Null subscribes across all workspaces (operator webhooks).</summary>
+    public string? WorkspaceKey { get; set; }
+
+    /// <summary>Event name filter, e.g. "call.ringing"; "*" matches all events.</summary>
+    public string EventName { get; set; } = string.Empty;
+
+    public string TargetUrl { get; set; } = string.Empty;
+
+    /// <summary>Shared secret for the HMAC-SHA256 payload signature.</summary>
+    public string Secret { get; set; } = string.Empty;
+
+    public bool IsActive { get; set; } = true;
+
+    public DateTimeOffset CreatedAtUtc { get; set; }
+
+    public DateTimeOffset UpdatedAtUtc { get; set; }
+}

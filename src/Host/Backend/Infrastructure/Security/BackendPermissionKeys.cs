@@ -15,6 +15,17 @@ public static class BackendPermissionKeys
     public const string PluginExecute = "plugin.execute";
     public const string CallRead = "call.read";
     public const string CallExecute = "call.execute";
+    public const string ConfigRead = "config.read";
+    public const string ConfigUpdate = "config.update";
+    public const string WebhookRead = "webhook.read";
+    public const string WebhookManage = "webhook.manage";
+    public const string NotificationRead = "notification.read";
+    public const string MediaRead = "media.read";
+    public const string MediaManage = "media.manage";
+    public const string CustomFieldRead = "customfield.read";
+    public const string CustomFieldUpdate = "customfield.update";
+    public const string FlowRead = "flow.read";
+    public const string FlowManage = "flow.manage";
     public const string ExtensionRead = "extension.read";
     public const string ExtensionUpdate = "extension.update";
     public const string RoleRead = "role.read";

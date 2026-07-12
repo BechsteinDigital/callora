@@ -10,6 +10,12 @@ public sealed class CallEventBroadcaster
 {
     private readonly ConcurrentDictionary<Guid, CallEventSubscription> _subscriptions = new();
 
+    /// <summary>
+    /// Raised for every published event regardless of workspace — host-internal
+    /// consumers (webhooks, flows) attach here.
+    /// </summary>
+    public event Action<CallEvent>? EventPublished;
+
     public CallEventSubscription Subscribe(string workspaceKey)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
@@ -22,6 +28,8 @@ public sealed class CallEventBroadcaster
     public void Publish(CallEvent callEvent)
     {
         ArgumentNullException.ThrowIfNull(callEvent);
+
+        EventPublished?.Invoke(callEvent);
 
         foreach (var subscription in _subscriptions.Values)
         {

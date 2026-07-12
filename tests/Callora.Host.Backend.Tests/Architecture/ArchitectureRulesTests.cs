@@ -54,6 +54,9 @@ public sealed class ArchitectureRulesTests
     public void ProductionCode_StaysBelowLineCap()
     {
         var violations = EnumerateProductionSourceFiles()
+            // Generierte EF-Migrations-Artefakte wachsen mit dem Schema und
+            // unterliegen wie bei den übrigen Regeln nicht dem Cap.
+            .Where(file => !file.RelativePath.Contains("Migrations", StringComparison.OrdinalIgnoreCase))
             .Where(file => file.Lines.Length > MaxLinesPerFile)
             .Select(file => $"{file.RelativePath} ({file.Lines.Length} Zeilen)")
             .ToArray();

@@ -19,6 +19,16 @@ public sealed class BackendHostOptions
 
     public string PluginManifestUrl { get; set; } = "/manifests/plugin-ui-assets.manifest.json";
 
+    /// <summary>Login attempts allowed per client and minute; 0 disables limiting.</summary>
+    public int RateLimitAuthPerMinute { get; set; } = 5;
+
+    /// <summary>General API requests allowed per client and minute; 0 disables limiting.</summary>
+    public int RateLimitApiPerMinute { get; set; } = 600;
+
+    /// <summary>Root directory for stored media assets.</summary>
+    public string MediaStoragePath { get; set; } =
+        Path.Combine(AppContext.BaseDirectory, "media");
+
     public string DatabaseConnectionString { get; set; } =
         "Host=localhost;Port=5432;Database=callora_host;Username=callora;Password=callora";
 
