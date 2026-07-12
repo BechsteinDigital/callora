@@ -1,4 +1,6 @@
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Plugins.Voip.Application.Accounts;
+using Callora.Plugins.Voip.Application.Channels;
 
 namespace Callora.Plugins.Voip.Application.Admin;
 
@@ -7,17 +9,18 @@ public sealed class VoipAdminApiExtensionContributor : IHostAdminApiExtensionCon
     private readonly IReadOnlyList<HostAdminApiRouteRegistration> _routes;
     private readonly IReadOnlyList<HostAdminNavigationItem> _navigationItems;
 
-    public VoipAdminApiExtensionContributor()
+    public VoipAdminApiExtensionContributor(ISipAccountStore store, SipChannelManager channelManager)
     {
-        var store = new InMemorySipAccountStore();
+        ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(channelManager);
 
         _routes =
         [
-            new HostAdminApiRouteRegistration("GET", "sip-accounts", VoipPermissionKeys.SipAccountRead, new ListSipAccountsRouteHandler(store)),
-            new HostAdminApiRouteRegistration("GET", "sip-accounts/{sipAccountId}", VoipPermissionKeys.SipAccountRead, new GetSipAccountRouteHandler(store)),
-            new HostAdminApiRouteRegistration("POST", "sip-accounts", VoipPermissionKeys.SipAccountCreate, new CreateSipAccountRouteHandler(store)),
-            new HostAdminApiRouteRegistration("PUT", "sip-accounts/{sipAccountId}", VoipPermissionKeys.SipAccountUpdate, new UpdateSipAccountRouteHandler(store)),
-            new HostAdminApiRouteRegistration("DELETE", "sip-accounts/{sipAccountId}", VoipPermissionKeys.SipAccountDelete, new DeleteSipAccountRouteHandler(store))
+            new HostAdminApiRouteRegistration("GET", "workspaces/{workspaceKey}/sip-accounts", VoipPermissionKeys.SipAccountRead, new ListSipAccountsRouteHandler(store)),
+            new HostAdminApiRouteRegistration("GET", "workspaces/{workspaceKey}/sip-accounts/{sipAccountId}", VoipPermissionKeys.SipAccountRead, new GetSipAccountRouteHandler(store)),
+            new HostAdminApiRouteRegistration("POST", "workspaces/{workspaceKey}/sip-accounts", VoipPermissionKeys.SipAccountCreate, new CreateSipAccountRouteHandler(store, channelManager)),
+            new HostAdminApiRouteRegistration("PUT", "workspaces/{workspaceKey}/sip-accounts/{sipAccountId}", VoipPermissionKeys.SipAccountUpdate, new UpdateSipAccountRouteHandler(store, channelManager)),
+            new HostAdminApiRouteRegistration("DELETE", "workspaces/{workspaceKey}/sip-accounts/{sipAccountId}", VoipPermissionKeys.SipAccountDelete, new DeleteSipAccountRouteHandler(store, channelManager))
         ];
 
         _navigationItems =

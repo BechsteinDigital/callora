@@ -10,11 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Host\PluginContracts\VoipHost.PluginContracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Contracts\Communication\Callora.Contracts.Communication.csproj" />
+    <ProjectReference Include="..\..\..\src\Host\PluginContracts\Callora.Host.PluginContracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CalloraVoipSdk" Version="1.0.2" />
+    <PackageReference Include="CalloraVoipSdk" Version="4.4.1" />
   </ItemGroup>
 
   <ItemGroup>

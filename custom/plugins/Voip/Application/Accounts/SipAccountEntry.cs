@@ -1,5 +1,8 @@
-namespace Callora.Plugins.Voip.Application.Admin;
+namespace Callora.Plugins.Voip.Application.Accounts;
 
+/// <summary>
+/// One configured SIP account within a workspace.
+/// </summary>
 public sealed record SipAccountEntry(
     string SipAccountId,
     string Username,

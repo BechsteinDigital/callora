@@ -1,12 +1,18 @@
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Plugins.Voip.Application.Accounts;
 
 namespace Callora.Plugins.Voip.Application.Admin;
 
 public sealed class ListSipAccountsRouteHandler(ISipAccountStore store) : IHostAdminApiRouteHandler
 {
-    public ValueTask<HostAdminApiResponse> HandleAsync(HostAdminApiRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<HostAdminApiResponse> HandleAsync(
+        HostAdminApiRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var payload = store.List().Select(SipAccountMapper.ToApiModel).ToArray();
-        return ValueTask.FromResult(new HostAdminApiResponse(StatusCode: 200, Payload: payload));
+        if (!AdminRequestWorkspace.TryGet(request, out var workspaceKey, out var error))
+            return error!;
+
+        var accounts = await store.ListAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+        return new HostAdminApiResponse(200, accounts.Select(SipAccountMapper.ToApiModel).ToArray());
     }
 }

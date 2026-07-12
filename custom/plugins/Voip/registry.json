@@ -1,15 +1,16 @@
 {
   "contractVersion": "v1",
   "schemaVersion": "1.0",
-  "name": "Callora VoIP Plugin",
+  "name": "Callora Voice Plugin",
   "pluginId": "voip",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "assemblyFileName": "Callora.Plugins.Voip.dll",
   "entryTypeName": "Callora.Plugins.Voip.Application.VoipPlugin",
   "capabilities": [
-    "telephony.engine"
+    "communication.voice"
   ],
   "dependencies": {
-    "VoipHost.PluginContracts": ">=0.1.0"
+    "Callora.Host.PluginContracts": ">=0.1.0",
+    "Callora.Contracts.Communication": ">=0.1.0"
   }
 }

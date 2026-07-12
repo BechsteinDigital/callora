@@ -1,27 +1,37 @@
-using VoipHost.PluginContracts.Application.Plugins;
+using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Plugins.Voip.Application.Accounts;
+using Callora.Plugins.Voip.Application.Channels;
 
 namespace Callora.Plugins.Voip.Application.Admin;
 
-public sealed class UpdateSipAccountRouteHandler(ISipAccountStore store) : IHostAdminApiRouteHandler
+public sealed class UpdateSipAccountRouteHandler(
+    ISipAccountStore store,
+    SipChannelManager channelManager) : IHostAdminApiRouteHandler
 {
-    public ValueTask<HostAdminApiResponse> HandleAsync(HostAdminApiRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<HostAdminApiResponse> HandleAsync(
+        HostAdminApiRequest request,
+        CancellationToken cancellationToken = default)
     {
+        if (!AdminRequestWorkspace.TryGet(request, out var workspaceKey, out var error))
+            return error!;
+
         if (!request.RouteValues.TryGetValue("sipAccountId", out var sipAccountId) || string.IsNullOrWhiteSpace(sipAccountId))
         {
-            return ValueTask.FromResult(new HostAdminApiResponse(400, new { message = "Route value 'sipAccountId' is required." }));
+            return new HostAdminApiResponse(400, new { message = "Route value 'sipAccountId' is required." });
         }
 
         if (!SipAccountRequestParser.TryParseUpsert(request.Body, out var payload, out var errorMessage))
         {
-            return ValueTask.FromResult(new HostAdminApiResponse(400, new { message = errorMessage ?? "Invalid payload." }));
+            return new HostAdminApiResponse(400, new { message = errorMessage ?? "Invalid payload." });
         }
 
-        var updated = store.Update(sipAccountId, payload!);
+        var updated = await store.UpdateAsync(workspaceKey, sipAccountId, payload!, cancellationToken).ConfigureAwait(false);
         if (updated is null)
         {
-            return ValueTask.FromResult(new HostAdminApiResponse(404, new { message = $"SIP account '{sipAccountId}' was not found." }));
+            return new HostAdminApiResponse(404, new { message = $"SIP account '{sipAccountId}' was not found." });
         }
 
-        return ValueTask.FromResult(new HostAdminApiResponse(200, SipAccountMapper.ToApiModel(updated)));
+        await channelManager.SynchronizeWorkspaceAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+        return new HostAdminApiResponse(200, SipAccountMapper.ToApiModel(updated));
     }
 }
