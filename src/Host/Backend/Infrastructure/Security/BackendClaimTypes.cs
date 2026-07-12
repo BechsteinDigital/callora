@@ -14,4 +14,10 @@ public static class BackendClaimTypes
     /// Scope claim type used by OAuth-style tokens.
     /// </summary>
     public const string Scope = "scope";
+
+    /// <summary>
+    /// Workspace binding claim stamped by workspace logins; principals
+    /// carrying it are locked to that workspace.
+    /// </summary>
+    public const string WorkspaceKey = "workspace_key";
 }

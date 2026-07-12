@@ -14,6 +14,12 @@ public sealed class CommunicationChannelRegistry : ICommunicationChannelRegistry
     private readonly ConcurrentDictionary<string, ImmutableArray<ICommunicationChannel>> _channelsByWorkspace =
         new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Raised after a channel was registered. Host-internal, not part of the plugin contract.</summary>
+    public event Action<string, ICommunicationChannel>? ChannelRegistered;
+
+    /// <summary>Raised after a channel was unregistered. Host-internal, not part of the plugin contract.</summary>
+    public event Action<string, ICommunicationChannel>? ChannelUnregistered;
+
     /// <inheritdoc />
     public IDisposable Register(string workspaceKey, ICommunicationChannel channel)
     {
@@ -35,6 +41,7 @@ public sealed class CommunicationChannelRegistry : ICommunicationChannelRegistry
                 return current.Add(channel);
             });
 
+        ChannelRegistered?.Invoke(normalizedKey, channel);
         return new CommunicationChannelRegistration(this, normalizedKey, channel);
     }
 
@@ -68,6 +75,17 @@ public sealed class CommunicationChannelRegistry : ICommunicationChannelRegistry
         return channel is not null;
     }
 
+    /// <summary>
+    /// Snapshot of all current registrations across workspaces. Host-internal,
+    /// used to attach observers to channels registered before they subscribed.
+    /// </summary>
+    public IReadOnlyList<(string WorkspaceKey, ICommunicationChannel Channel)> GetAllRegistrations()
+    {
+        return _channelsByWorkspace
+            .SelectMany(pair => pair.Value.Select(channel => (pair.Key, channel)))
+            .ToArray();
+    }
+
     internal void Unregister(string workspaceKey, ICommunicationChannel channel)
     {
         while (_channelsByWorkspace.TryGetValue(workspaceKey, out var current))
@@ -81,11 +99,13 @@ public sealed class CommunicationChannelRegistry : ICommunicationChannelRegistry
                 if (_channelsByWorkspace.TryRemove(
                         new KeyValuePair<string, ImmutableArray<ICommunicationChannel>>(workspaceKey, current)))
                 {
+                    ChannelUnregistered?.Invoke(workspaceKey, channel);
                     return;
                 }
             }
             else if (_channelsByWorkspace.TryUpdate(workspaceKey, updated, current))
             {
+                ChannelUnregistered?.Invoke(workspaceKey, channel);
                 return;
             }
         }

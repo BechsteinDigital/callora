@@ -127,7 +127,7 @@ public static class AuthEndpoints
                 roles: roles,
                 customClaims: new Dictionary<string, string>
                 {
-                    ["workspace_key"] = request.WorkspaceKey.Trim()
+                    [BackendClaimTypes.WorkspaceKey] = request.WorkspaceKey.Trim()
                 },
                 lifetime: AccessTokenLifetime);
 

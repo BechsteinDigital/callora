@@ -60,6 +60,13 @@ const mainLinks = computed<NavigationMenuItem[][]>(() => [[{
     open.value = false;
   }
 }, {
+  label: "Calls",
+  icon: "i-lucide-phone",
+  to: toWorkspacePath("/calls"),
+  onSelect: () => {
+    open.value = false;
+  }
+}, {
   label: "Content",
   icon: "i-lucide-layout-template",
   to: toWorkspacePath("/content"),

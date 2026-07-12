@@ -5,6 +5,7 @@ using Callora.Host.Backend.Application.Abstractions.Extensions;
 using Callora.Host.Backend.Application.Abstractions.Entitlements;
 using Callora.Host.Backend.Application.Abstractions.Jobs;
 using Callora.Host.Backend.Application.Communication;
+using Callora.Host.Backend.Application.Communication.Calls;
 using Callora.Host.Backend.Application.Entitlements;
 using Callora.Host.Backend.Application.Jobs;
 using Callora.Host.Backend.Application.Abstractions.Events;
@@ -110,7 +111,12 @@ ServiceCollectionExtensions.AddCalloraHosting(
         options.PluginDirectory = CalloraHostingPathResolver.ResolvePluginDirectory(options.PluginDirectory);
     });
 
-builder.Services.AddSingleton<ICommunicationChannelRegistry, CommunicationChannelRegistry>();
+builder.Services.AddSingleton<CommunicationChannelRegistry>();
+builder.Services.AddSingleton<ICommunicationChannelRegistry>(sp => sp.GetRequiredService<CommunicationChannelRegistry>());
+builder.Services.AddSingleton<CallEventBroadcaster>();
+builder.Services.AddSingleton<ActiveCallRegistry>();
+builder.Services.AddSingleton<CallPlacementService>();
+builder.Services.AddHostedService<IncomingCallMonitor>();
 builder.Services.AddScoped<EfPluginDataStore>();
 builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
 
@@ -219,6 +225,7 @@ app.MapHealthChecks("/ready");
 app.MapAuthEndpoints();
 app.MapEntitlementSyncEndpoints();
 app.MapJobEndpoints();
+app.MapCallEndpoints();
 app.MapPluginEndpoints();
 app.MapPluginAssetEndpoints(backendOptions);
 app.MapPluginAdminExtensionEndpoints();
