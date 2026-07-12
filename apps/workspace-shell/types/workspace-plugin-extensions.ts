@@ -1,19 +1,8 @@
-export type WorkspacePluginManifestEntry = {
-  pluginId: string;
-  surface: string;
-  entryPath: string;
-};
+export type WorkspacePluginManifestEntry = import("#shell-core/types/shell-extensions").ShellPluginManifestEntry;
 
-export type WorkspacePluginTemplateEntry = {
-  pluginId: string;
-  templatePath: string;
-};
+export type WorkspacePluginTemplateEntry = import("#shell-core/types/shell-extensions").ShellPluginTemplateEntry;
 
-export type WorkspacePluginManifest = {
-  generatedAtUtc: string;
-  entries: WorkspacePluginManifestEntry[];
-  workspaceTemplates: WorkspacePluginTemplateEntry[];
-};
+export type WorkspacePluginManifest = import("#shell-core/types/shell-extensions").ShellPluginManifest;
 
 export type WorkspaceInfoBanner = {
   id: string;
@@ -27,27 +16,11 @@ export type WorkspaceWidgetSlot =
   | "content.main"
   | "sidebar.main";
 
-export type WorkspaceWidgetOverrideMode =
-  | "replace"
-  | "before"
-  | "after";
+export type WorkspaceWidgetOverrideMode = import("#shell-core/types/shell-extensions").ShellWidgetOverrideMode;
 
-export type WorkspaceWidgetOverride = {
-  targetWidgetKey: string;
-  mode: WorkspaceWidgetOverrideMode;
-};
+export type WorkspaceWidgetOverride = import("#shell-core/types/shell-extensions").ShellWidgetOverride;
 
-export type WorkspaceWidget = {
-  widgetKey: string;
-  pluginId: string;
-  slot: WorkspaceWidgetSlot;
-  title: string;
-  description?: string;
-  contentHtml?: string;
-  order?: number;
-  priority?: number;
-  override?: WorkspaceWidgetOverride;
-};
+export type WorkspaceWidget = import("#shell-core/types/shell-extensions").ShellWidget<WorkspaceWidgetSlot>;
 
 export type WorkspaceBridgeContext = {
   workspace: {

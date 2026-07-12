@@ -1030,14 +1030,14 @@ await reloadAllData();
               :title="`Workspace-Zuweisung für ${workspaceAssignmentMutatingPluginId} wird aktualisiert...`"
             />
 
-            <UEmptyState
+            <UEmpty
               v-if="workspaceOptions.length === 0"
               icon="i-lucide-store"
               title="Keine Workspaces vorhanden"
               description="Lege zuerst einen Workspace an, um Plugin-Zuweisungen zu konfigurieren."
             />
 
-            <UEmptyState
+            <UEmpty
               v-else-if="workspaceAssignmentRows.length === 0"
               icon="i-lucide-plug-zap"
               title="Keine Plugins installiert"

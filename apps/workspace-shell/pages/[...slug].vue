@@ -9,7 +9,7 @@ const route = useRoute();
     </template>
 
     <template #body>
-      <UEmptyState
+      <UEmpty
         icon="i-lucide-route"
         title="Route not mapped"
         :description="`No workspace view is registered for '${route.path}'.`"

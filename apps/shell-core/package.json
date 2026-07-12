@@ -1,0 +1,8 @@
+{
+  "name": "callora-shell-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./nuxt.config.ts",
+  "description": "Shared Nuxt layer for the Callora admin and workspace shells: API client, plugin asset loading and the widget extension registry."
+}

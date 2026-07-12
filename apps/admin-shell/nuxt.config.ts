@@ -1,4 +1,5 @@
 export default defineNuxtConfig({
+  extends: ["../shell-core"],
   ssr: false,
   modules: ["@nuxt/ui", "@pinia/nuxt"],
   fonts: {

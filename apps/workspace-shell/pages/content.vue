@@ -22,7 +22,7 @@ const contentWidgets = listResolvedWidgets("content.main");
           </template>
         </UPageCard>
 
-        <UEmptyState
+        <UEmpty
           v-if="sortedBanners.length === 0 && contentWidgets.length === 0"
           icon="i-lucide-plug-zap"
           title="No content extensions active"

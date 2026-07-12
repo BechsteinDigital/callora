@@ -46,38 +46,15 @@ export type AdminWidgetSlot =
   | 'plugins.main'
   | 'sidebar.main';
 
-export type AdminWidgetOverrideMode =
-  | 'replace'
-  | 'before'
-  | 'after';
+export type AdminWidgetOverrideMode = import("#shell-core/types/shell-extensions").ShellWidgetOverrideMode;
 
-export interface AdminWidgetOverride {
-  targetWidgetKey: string;
-  mode: AdminWidgetOverrideMode;
-}
+export type AdminWidgetOverride = import("#shell-core/types/shell-extensions").ShellWidgetOverride;
 
-export interface AdminWidget {
-  widgetKey: string;
-  pluginId: string;
-  slot: AdminWidgetSlot;
-  title: string;
-  description?: string;
-  contentHtml?: string;
-  order?: number;
-  priority?: number;
-  override?: AdminWidgetOverride;
-}
+export type AdminWidget = import("#shell-core/types/shell-extensions").ShellWidget<AdminWidgetSlot>;
 
-export interface PluginAdminUiManifestEntry {
-  pluginId: string;
-  surface: string;
-  entryPath: string;
-}
+export type PluginAdminUiManifestEntry = import("#shell-core/types/shell-extensions").ShellPluginManifestEntry;
 
-export interface PluginAdminUiManifest {
-  generatedAtUtc: string;
-  entries: PluginAdminUiManifestEntry[];
-}
+export type PluginAdminUiManifest = import("#shell-core/types/shell-extensions").ShellPluginManifest;
 
 export interface AdminUiBridge {
   registerLoginNoticeExtension?: (extension: import("~/types/admin-login-extensions").AdminLoginNoticeExtension) => void;

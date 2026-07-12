@@ -89,7 +89,7 @@ await loadDashboardStatus();
           </ul>
         </UPageCard>
 
-        <UEmptyState
+        <UEmpty
           v-else
           icon="i-lucide-layout-grid"
           title="No workspace widgets active yet"
