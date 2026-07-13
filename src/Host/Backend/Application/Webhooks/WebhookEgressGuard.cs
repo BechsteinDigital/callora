@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using Callora.Host.Backend.Application.Policies;
 
@@ -6,9 +7,12 @@ namespace Callora.Host.Backend.Application.Webhooks;
 
 /// <summary>
 /// SSRF guard for outbound webhook targets: resolves the host and rejects
-/// loopback, private (RFC 1918), link-local, ULA and multicast addresses
-/// before any request is sent. Dev environments can opt in to private
-/// targets via BackendHostOptions.AllowPrivateWebhookTargets.
+/// loopback, private (RFC 1918), link-local, ULA and multicast addresses.
+/// <see cref="EnsureAllowedAsync"/> is the cheap pre-flight check;
+/// <see cref="ConnectAsync"/> enforces the same policy at socket-connect
+/// time so a DNS answer that changes between check and connect (rebinding)
+/// can never reach a private address. Dev environments can opt in to
+/// private targets via BackendHostOptions.AllowPrivateWebhookTargets.
 /// </summary>
 public sealed class WebhookEgressGuard(BackendHostOptions options)
 {
@@ -40,6 +44,52 @@ public sealed class WebhookEgressGuard(BackendHostOptions options)
         {
             throw new InvalidOperationException(
                 $"Webhook target '{target.Host}' resolves to a non-public address and was blocked.");
+        }
+    }
+
+    /// <summary>
+    /// SocketsHttpHandler.ConnectCallback: resolves the target itself and
+    /// connects only to addresses that pass the egress policy, closing the
+    /// DNS-rebinding window between validation and connect.
+    /// </summary>
+    public async ValueTask<Stream> ConnectAsync(
+        SocketsHttpConnectionContext context,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var host = context.DnsEndPoint.Host;
+        IPAddress[] addresses;
+        if (IPAddress.TryParse(host, out var literal))
+        {
+            addresses = [literal];
+        }
+        else
+        {
+            addresses = await Dns.GetHostAddressesAsync(host, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (!options.AllowPrivateWebhookTargets)
+        {
+            addresses = addresses.Where(address => !IsForbidden(address)).ToArray();
+        }
+
+        if (addresses.Length == 0)
+        {
+            throw new HttpRequestException(
+                $"Webhook target '{host}' resolves to a non-public address and was blocked.");
+        }
+
+        var socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
+        try
+        {
+            await socket.ConnectAsync(addresses, context.DnsEndPoint.Port, cancellationToken).ConfigureAwait(false);
+            return new NetworkStream(socket, ownsSocket: true);
+        }
+        catch
+        {
+            socket.Dispose();
+            throw;
         }
     }
 

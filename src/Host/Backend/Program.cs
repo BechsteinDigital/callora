@@ -204,8 +204,18 @@ builder.Services.AddHttpClient(Callora.Host.Backend.Application.Webhooks.Webhook
     {
         client.Timeout = TimeSpan.FromSeconds(10);
     })
-    // Redirects could re-target a validated URL into private ranges.
-    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+    // Redirects could re-target a validated URL into private ranges; the
+    // ConnectCallback re-validates resolved addresses at connect time so a
+    // changing DNS answer (rebinding) cannot bypass the egress guard.
+    .ConfigurePrimaryHttpMessageHandler(sp =>
+    {
+        var egressGuard = sp.GetRequiredService<Callora.Host.Backend.Application.Webhooks.WebhookEgressGuard>();
+        return new SocketsHttpHandler
+        {
+            AllowAutoRedirect = false,
+            ConnectCallback = egressGuard.ConnectAsync
+        };
+    });
 builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Notifications.INotificationStore, EfNotificationStore>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Notifications.INotificationPublisher, Callora.Host.Backend.Application.Notifications.ScopedNotificationPublisher>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Mail.IMailSender, Callora.Host.Backend.Infrastructure.Mail.SmtpMailSender>();

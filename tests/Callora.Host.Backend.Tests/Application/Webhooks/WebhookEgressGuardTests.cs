@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Application.Webhooks;
 using Xunit;
@@ -42,5 +44,56 @@ public sealed class WebhookEgressGuardTests
 
         var dev = new WebhookEgressGuard(new BackendHostOptions { AllowPrivateWebhookTargets = true });
         await dev.EnsureAllowedAsync(new Uri("http://127.0.0.1:5000/hook"));
+    }
+
+    [Fact]
+    public async Task ConnectCallback_BlocksPrivateAddressAtConnectTime()
+    {
+        var guard = new WebhookEgressGuard(new BackendHostOptions());
+        using var handler = new SocketsHttpHandler
+        {
+            AllowAutoRedirect = false,
+            ConnectCallback = guard.ConnectAsync
+        };
+        using var client = new HttpClient(handler);
+
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            client.GetAsync(new Uri("http://127.0.0.1:59999/hook")));
+        Assert.Contains("blocked", exception.Message + exception.InnerException?.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConnectCallback_InDevMode_ConnectsToLocalTarget()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var serverTask = Task.Run(async () =>
+        {
+            using var socket = await listener.AcceptSocketAsync();
+            var buffer = new byte[4096];
+            await socket.ReceiveAsync(buffer);
+            await socket.SendAsync(Encoding.ASCII.GetBytes(
+                "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"));
+        });
+
+        try
+        {
+            var guard = new WebhookEgressGuard(new BackendHostOptions { AllowPrivateWebhookTargets = true });
+            using var handler = new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                ConnectCallback = guard.ConnectAsync
+            };
+            using var client = new HttpClient(handler);
+
+            var response = await client.GetAsync(new Uri($"http://127.0.0.1:{port}/hook"));
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+            await serverTask;
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
 }
