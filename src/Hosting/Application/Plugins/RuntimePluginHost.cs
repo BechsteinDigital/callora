@@ -353,6 +353,11 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             var pluginContext = new PluginContext(_services, record.PluginId, RegisterExport);
             await plugin.StartAsync(pluginContext, cancellationToken).ConfigureAwait(false);
 
+            // Shopware-artige Controller-Discovery: IApiController-Typen der
+            // Plugin-Assembly werden automatisch instanziiert (Ctor-DI über
+            // die kuratierte Oberfläche) und exportiert (PLAT-257).
+            RegisterApiControllers(record.PluginId, assembly, pluginContext.Services);
+
             var handle = new ActivePluginHandle(record.PluginId, plugin, loadContext);
             if (!_active.TryAdd(record.PluginId, handle))
             {
@@ -545,6 +550,44 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
     private static IHostManagedPlugin? CreatePluginInstance(Type pluginType) =>
         Activator.CreateInstance(pluginType) as IHostManagedPlugin;
+
+    private void RegisterApiControllers(string pluginId, Assembly pluginAssembly, IServiceProvider pluginServices)
+    {
+        Type[] assemblyTypes;
+        try
+        {
+            assemblyTypes = pluginAssembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException exception)
+        {
+            assemblyTypes = exception.Types.Where(static type => type is not null).ToArray()!;
+        }
+
+        foreach (var controllerType in assemblyTypes)
+        {
+            if (controllerType.IsAbstract ||
+                controllerType.IsInterface ||
+                !typeof(Callora.Host.PluginContracts.Application.Http.IApiController).IsAssignableFrom(controllerType))
+            {
+                continue;
+            }
+
+            // Ctor-Fehler (nicht kuratierter Service) lassen die Aktivierung
+            // bewusst laut scheitern statt Routen still zu verlieren.
+            var controller = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance(
+                pluginServices,
+                controllerType);
+            RegisterExport(pluginId, typeof(Callora.Host.PluginContracts.Application.Http.IApiController), controller);
+
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation(
+                    "Registered API controller {ControllerType} for plugin {PluginId}.",
+                    controllerType.FullName,
+                    pluginId);
+            }
+        }
+    }
 
     private void RegisterExport(string pluginId, Type contractType, object service)
     {

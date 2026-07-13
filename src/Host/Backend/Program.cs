@@ -214,6 +214,9 @@ builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Configu
 builder.Services.AddScoped<Callora.Host.Backend.Application.Configuration.SystemConfigResolver>();
 builder.Services.AddScoped<Callora.Host.Backend.Infrastructure.Configuration.RegistryConfigSchemaSyncService>();
 builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginConfigSchemaSyncSubscriber>();
+builder.Services.AddSingleton<Callora.Host.Backend.Infrastructure.Http.PluginApiEndpointDataSource>();
+builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>,
+    Callora.Host.Backend.Infrastructure.Http.PluginApiRoutingRefreshSubscriber>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Configuration.IPluginConfigReader, Callora.Host.Backend.Application.Configuration.ScopedPluginConfigReader>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Webhooks.IWebhookSubscriptionStore, EfWebhookSubscriptionStore>();
 builder.Services.AddScoped<IBackgroundJobHandler, Callora.Host.Backend.Application.Webhooks.WebhookDeliveryJobHandler>();
@@ -324,6 +327,11 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
     }
 });
 app.MapHealthChecks("/ready");
+// Plugin-Controller-Routen (Shopware-artige Discovery, PLAT-257): Plugins
+// liefern ihre API-Routen selbst; Aktivieren fügt hinzu, Deaktivieren entfernt.
+((IEndpointRouteBuilder)app).DataSources.Add(
+    app.Services.GetRequiredService<Callora.Host.Backend.Infrastructure.Http.PluginApiEndpointDataSource>());
+
 app.MapAuthEndpoints();
 app.MapEntitlementSyncEndpoints();
 app.MapJobEndpoints();
