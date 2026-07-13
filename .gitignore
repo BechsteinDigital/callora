@@ -91,6 +91,8 @@ _site/
 docs
 *.md
 !README.md
+# Betriebsrunbooks sind Teil des Repos (PLAT-235).
+!ops/**/*.md
 
 .worktrees/
 dashboard-vue/
