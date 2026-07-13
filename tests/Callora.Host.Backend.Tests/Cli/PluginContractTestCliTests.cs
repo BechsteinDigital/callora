@@ -1,20 +1,20 @@
-using System.Diagnostics;
 using Callora.Host.Cli.Application;
 
 namespace Callora.Host.Backend.Tests.Cli;
 
-// Baut pro Test ein komplettes dotnet-Projekt — lokal filterbar via
-// --filter "Category!=Slow" für eine schnelle Feedback-Schleife.
+// Nutzt das einmal pro Lauf gebaute Scaffold-Plugin aus der Collection-Fixture
+// (PLAT-221) — lokal filterbar via --filter "Category!=Slow".
+[Collection(ScaffoldedPluginCollection.Name)]
 [Trait("Category", "Slow")]
-public sealed class PluginContractTestCliTests
+public sealed class PluginContractTestCliTests(ScaffoldedPluginFixture fixture)
 {
     [Fact]
     public async Task PluginTestContract_ReferenceVoipPlugin_PassesMandatoryChecks()
     {
-        var repositoryRoot = ResolveRepositoryRoot();
+        var repositoryRoot = fixture.RepositoryRoot;
         var voipProjectPath = Path.Combine(repositoryRoot, "custom", "plugins", "Voip", "Callora.Plugins.Voip.csproj");
-        var buildResult = await BuildProjectAsync(voipProjectPath, repositoryRoot).ConfigureAwait(false);
-        Assert.True(buildResult.success, buildResult.output);
+        var buildResult = await ScaffoldedPluginFixture.BuildProjectAsync(voipProjectPath, repositoryRoot).ConfigureAwait(false);
+        Assert.True(buildResult.Success, buildResult.Output);
 
         var assemblyPath = Path.Combine(
             repositoryRoot,
@@ -43,35 +43,13 @@ public sealed class PluginContractTestCliTests
     [Fact]
     public async Task PluginTestContract_WithValidPlugin_ReturnsSuccess()
     {
-        var repositoryRoot = ResolveRepositoryRoot();
-        var scaffoldDirectory = Path.Combine(
-            Path.GetTempPath(),
-            $"callora-contract-test-{Guid.NewGuid():N}",
-            "AcmeVoice");
-
-        using var scaffoldStdout = new StringWriter();
-        using var scaffoldStderr = new StringWriter();
-        var scaffoldExitCode = await CalloraCliApplication.RunAsync(
-            ["plugin", "new", "Acme Voice", "--output", scaffoldDirectory],
-            scaffoldStdout,
-            scaffoldStderr,
-            repositoryRoot,
-            CancellationToken.None).ConfigureAwait(false);
-        Assert.Equal(0, scaffoldExitCode);
-
-        var csprojPath = Path.Combine(scaffoldDirectory, "Callora.Plugins.AcmeVoice.csproj");
-        var buildResult = await BuildProjectAsync(csprojPath, repositoryRoot).ConfigureAwait(false);
-        Assert.True(buildResult.success, buildResult.output);
-
-        var assemblyPath = Path.Combine(scaffoldDirectory, "bin", "Debug", "net10.0", "Callora.Plugins.AcmeVoice.dll");
-
         using var stdout = new StringWriter();
         using var stderr = new StringWriter();
         var exitCode = await CalloraCliApplication.RunAsync(
-            ["plugin", "test-contract", "--assembly", assemblyPath],
+            ["plugin", "test-contract", "--assembly", fixture.AssemblyPath],
             stdout,
             stderr,
-            repositoryRoot,
+            fixture.RepositoryRoot,
             CancellationToken.None).ConfigureAwait(false);
 
         Assert.Equal(0, exitCode);
@@ -82,23 +60,13 @@ public sealed class PluginContractTestCliTests
     [Fact]
     public async Task PluginTestContract_WithInvalidManifest_ReturnsActionableError()
     {
-        var repositoryRoot = ResolveRepositoryRoot();
-        var scaffoldDirectory = Path.Combine(
+        // Nutzt die bereits gebaute Assembly der Fixture und legt nur eine
+        // eigene, defekte registry.json daneben — kein zweiter Build nötig.
+        var invalidRegistryDirectory = Path.Combine(
             Path.GetTempPath(),
-            $"callora-contract-invalid-{Guid.NewGuid():N}",
-            "AcmeVoice");
-
-        using var scaffoldStdout = new StringWriter();
-        using var scaffoldStderr = new StringWriter();
-        var scaffoldExitCode = await CalloraCliApplication.RunAsync(
-            ["plugin", "new", "Acme Voice", "--output", scaffoldDirectory],
-            scaffoldStdout,
-            scaffoldStderr,
-            repositoryRoot,
-            CancellationToken.None).ConfigureAwait(false);
-        Assert.Equal(0, scaffoldExitCode);
-
-        var registryPath = Path.Combine(scaffoldDirectory, "registry.json");
+            $"callora-contract-invalid-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(invalidRegistryDirectory);
+        var registryPath = Path.Combine(invalidRegistryDirectory, "registry.json");
         var invalidRegistry = """
 {
   "contractVersion": "v1",
@@ -109,70 +77,28 @@ public sealed class PluginContractTestCliTests
   "entryTypeName": "Callora.Plugins.AcmeVoice.Application.AcmeVoicePlugin"
 }
 """;
-        await File.WriteAllTextAsync(registryPath, invalidRegistry, CancellationToken.None).ConfigureAwait(false);
 
-        var csprojPath = Path.Combine(scaffoldDirectory, "Callora.Plugins.AcmeVoice.csproj");
-        var buildResult = await BuildProjectAsync(csprojPath, repositoryRoot).ConfigureAwait(false);
-        Assert.True(buildResult.success, buildResult.output);
-
-        var assemblyPath = Path.Combine(scaffoldDirectory, "bin", "Debug", "net10.0", "Callora.Plugins.AcmeVoice.dll");
-
-        using var stdout = new StringWriter();
-        using var stderr = new StringWriter();
-        var exitCode = await CalloraCliApplication.RunAsync(
-            ["plugin", "test-contract", "--assembly", assemblyPath, "--registry", registryPath],
-            stdout,
-            stderr,
-            repositoryRoot,
-            CancellationToken.None).ConfigureAwait(false);
-
-        Assert.Equal(1, exitCode);
-        var errorOutput = stderr.ToString();
-        Assert.Contains("MANIFEST_PLUGIN_ID_MISSING", errorOutput, StringComparison.Ordinal);
-        Assert.Contains("registry.json field 'pluginId' is required", errorOutput, StringComparison.Ordinal);
-    }
-
-    private static string ResolveRepositoryRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-        while (current is not null)
+        try
         {
-            var solutionPath = Path.Combine(current.FullName, "Callora.Host.sln");
-            if (File.Exists(solutionPath))
-                return current.FullName;
+            await File.WriteAllTextAsync(registryPath, invalidRegistry, CancellationToken.None).ConfigureAwait(false);
 
-            current = current.Parent;
+            using var stdout = new StringWriter();
+            using var stderr = new StringWriter();
+            var exitCode = await CalloraCliApplication.RunAsync(
+                ["plugin", "test-contract", "--assembly", fixture.AssemblyPath, "--registry", registryPath],
+                stdout,
+                stderr,
+                fixture.RepositoryRoot,
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.Equal(1, exitCode);
+            var errorOutput = stderr.ToString();
+            Assert.Contains("MANIFEST_PLUGIN_ID_MISSING", errorOutput, StringComparison.Ordinal);
+            Assert.Contains("registry.json field 'pluginId' is required", errorOutput, StringComparison.Ordinal);
         }
-
-        throw new InvalidOperationException("Could not resolve repository root from test base directory.");
-    }
-
-    private static async Task<(bool success, string output)> BuildProjectAsync(string projectPath, string workingDirectory)
-    {
-        using var process = new Process
+        finally
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments = $"build \"{projectPath}\" --nologo --verbosity minimal",
-                WorkingDirectory = workingDirectory,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
-        };
-
-        process.Start();
-
-        var outputTask = process.StandardOutput.ReadToEndAsync();
-        var errorTask = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync().ConfigureAwait(false);
-
-        var output = await outputTask.ConfigureAwait(false);
-        var error = await errorTask.ConfigureAwait(false);
-        var combined = string.Concat(output, Environment.NewLine, error);
-
-        return (process.ExitCode == 0, combined);
+            Directory.Delete(invalidRegistryDirectory, recursive: true);
+        }
     }
 }
