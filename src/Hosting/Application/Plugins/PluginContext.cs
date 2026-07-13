@@ -7,7 +7,9 @@ internal sealed class PluginContext(
     string pluginId,
     Action<string, Type, object> registerExport) : IHostPluginContext
 {
-    public IServiceProvider Services { get; } = services;
+    // Kuratierte Oberfläche statt Root-Provider: Plugins sehen nur
+    // veröffentlichte Verträge und plugin-gebundene Dienste (PLAT-252).
+    public IServiceProvider Services { get; } = new CuratedPluginServiceProvider(services, pluginId);
 
     public void Export(Type contractType, object service)
     {
