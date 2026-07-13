@@ -35,10 +35,11 @@ public sealed class WorkspaceEndpointsTests
 
         var listClient = app.GetTestClient();
         listClient.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.read");
-        var members = await listClient.GetFromJsonAsync<WorkspaceMemberApiResponse[]>(
+        var members = await listClient.GetFromJsonAsync<PagedApiResponse<WorkspaceMemberApiResponse>>(
             "/api/workspaces/workspace-a/members");
         Assert.NotNull(members);
-        Assert.Contains(members!, x => x.UserId == "alice" && x.Role == "owner");
+        Assert.Contains(members!.Items, x => x.UserId == "alice" && x.Role == "owner");
+        Assert.Equal(members.Items.Count, members.Total);
 
         var deleteMemberClient = app.GetTestClient();
         deleteMemberClient.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
