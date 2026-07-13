@@ -17,11 +17,20 @@ public static class WebhookEndpoints
         group.MapGet("/", async (
                 IWebhookSubscriptionStore store,
                 string? workspaceKey,
+                int? limit,
+                string? cursor,
                 CancellationToken cancellationToken) =>
             {
                 var subscriptions = await store.ListAsync(workspaceKey, cancellationToken);
-                return Results.Ok(subscriptions.Select(ToPublicShape));
+                var ordered = subscriptions
+                    .OrderByDescending(static x => x.CreatedAtUtc)
+                    .ThenBy(static x => x.Id)
+                    .Select(ToPublicShape)
+                    .ToArray();
+                return Results.Ok(ListPagination.Page(
+                    ordered, limit, cursor, static x => x.Id.ToString()));
             })
+            .Produces<PagedApiResponse<WebhookSubscriptionApiResponse>>()
             .RequirePermission(BackendPermissionKeys.WebhookRead)
             .RequireWorkspaceScope();
 
@@ -100,14 +109,12 @@ public static class WebhookEndpoints
         return app;
     }
 
-    private static object ToPublicShape(WebhookSubscriptionSnapshot subscription) => new
-    {
+    private static WebhookSubscriptionApiResponse ToPublicShape(WebhookSubscriptionSnapshot subscription) => new(
         subscription.Id,
         subscription.WorkspaceKey,
         subscription.EventName,
         subscription.TargetUrl,
         subscription.IsActive,
         subscription.IncludeSensitiveData,
-        subscription.CreatedAtUtc
-    };
+        subscription.CreatedAtUtc);
 }

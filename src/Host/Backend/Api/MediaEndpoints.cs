@@ -19,8 +19,19 @@ public static class MediaEndpoints
                 IMediaStore store,
                 string workspaceKey,
                 string? folder,
+                int? limit,
+                string? cursor,
                 CancellationToken cancellationToken) =>
-                Results.Ok(await store.ListAsync(workspaceKey, folder, cancellationToken)))
+            {
+                var items = await store.ListAsync(workspaceKey, folder, cancellationToken);
+                var ordered = items
+                    .OrderByDescending(static x => x.CreatedAtUtc)
+                    .ThenBy(static x => x.Id)
+                    .ToArray();
+                return Results.Ok(ListPagination.Page(
+                    ordered, limit, cursor, static x => x.Id.ToString()));
+            })
+            .Produces<PagedApiResponse<MediaItemSnapshot>>()
             .RequirePermission(BackendPermissionKeys.MediaRead)
             .RequireWorkspaceScope();
 

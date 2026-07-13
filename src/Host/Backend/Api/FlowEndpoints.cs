@@ -17,8 +17,19 @@ public static class FlowEndpoints
         group.MapGet("/", async (
                 IFlowStore store,
                 string workspaceKey,
+                int? limit,
+                string? cursor,
                 CancellationToken cancellationToken) =>
-                Results.Ok(await store.ListAsync(workspaceKey, cancellationToken)))
+            {
+                var flows = await store.ListAsync(workspaceKey, cancellationToken);
+                var ordered = flows
+                    .OrderByDescending(static x => x.CreatedAtUtc)
+                    .ThenBy(static x => x.Id)
+                    .ToArray();
+                return Results.Ok(ListPagination.Page(
+                    ordered, limit, cursor, static x => x.Id.ToString()));
+            })
+            .Produces<PagedApiResponse<FlowSnapshot>>()
             .RequirePermission(BackendPermissionKeys.FlowRead)
             .RequireWorkspaceScope();
 

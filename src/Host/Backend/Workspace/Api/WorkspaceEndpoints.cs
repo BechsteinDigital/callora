@@ -114,6 +114,8 @@ public static class WorkspaceEndpoints
 
         group.MapGet("/{workspaceKey}/members", async (
             string workspaceKey,
+            int? limit,
+            string? cursor,
             BackendHostOptions hostOptions,
             IWorkspaceManagementStore workspaceStore,
             CancellationToken cancellationToken) =>
@@ -131,8 +133,14 @@ public static class WorkspaceEndpoints
             }
 
             var members = await workspaceStore.ListMembersAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
-            return Results.Ok(members.Select(ToResponse).ToArray());
+            var ordered = members
+                .Select(ToResponse)
+                .OrderBy(static x => x.UserId, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            return Results.Ok(ListPagination.Page(
+                ordered, limit, cursor, static x => x.UserId));
         }).WithName("Workspaces_Members_List")
+            .Produces<PagedApiResponse<WorkspaceMemberApiResponse>>()
             .RequirePermission(BackendPermissionKeys.WorkspaceRead);
 
         group.MapPut("/{workspaceKey}/members/{userId}", async (
