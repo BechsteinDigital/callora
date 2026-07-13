@@ -207,6 +207,7 @@ builder.Services.AddBackendApiSecurity(backendOptions);
 builder.Services.AddBackendRateLimiting(backendOptions);
 builder.Services.AddScoped<IPluginLifecycleService, PluginLifecycleService>();
 builder.Services.AddScoped<IWorkspacePluginActivationReader, EfWorkspacePluginActivationReader>();
+builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationStore, EfWorkspacePluginActivationStore>();
 builder.Services.AddScoped<WorkspaceUiChainResolver>();
 builder.Services.AddScoped<WorkspacePublicThemeResolver>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Configuration.ISystemConfigStore, EfSystemConfigStore>();

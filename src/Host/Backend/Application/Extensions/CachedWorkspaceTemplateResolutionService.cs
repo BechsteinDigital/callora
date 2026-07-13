@@ -85,7 +85,7 @@ public sealed class CachedWorkspaceTemplateResolutionService(
         using var scope = scopeFactory.CreateScope();
         var workspaceStore = scope.ServiceProvider.GetRequiredService<IWorkspaceManagementStore>();
         var templateRegistryStore = scope.ServiceProvider.GetRequiredService<IWorkspaceTemplateRegistryStore>();
-        var entitlementStore = scope.ServiceProvider.GetRequiredService<IPluginEntitlementStore>();
+        var activationReader = scope.ServiceProvider.GetRequiredService<Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader>();
 
         var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         if (workspace is null || !workspace.IsActive || !workspace.TenantIsActive)
@@ -110,7 +110,7 @@ public sealed class CachedWorkspaceTemplateResolutionService(
         }
 
         var entitledDefinitions = await FilterEntitledDefinitionsAsync(
-                entitlementStore,
+                activationReader,
                 workspace,
                 definitions,
                 cancellationToken)
@@ -306,7 +306,7 @@ public sealed class CachedWorkspaceTemplateResolutionService(
     }
 
     private static async Task<IReadOnlyList<WorkspaceTemplateDefinitionSnapshot>> FilterEntitledDefinitionsAsync(
-        IPluginEntitlementStore entitlementStore,
+        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader activationReader,
         WorkspaceSnapshot workspace,
         IReadOnlyList<WorkspaceTemplateDefinitionSnapshot> definitions,
         CancellationToken cancellationToken)
@@ -320,17 +320,17 @@ public sealed class CachedWorkspaceTemplateResolutionService(
             return [];
         }
 
-        var entitlementByPlugin = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-        foreach (var pluginId in pluginIds)
-        {
-            var entitled = await entitlementStore
-                .IsEntitledAsync(pluginId, workspace.WorkspaceKey, workspace.TenantKey, cancellationToken)
-                .ConfigureAwait(false);
-            entitlementByPlugin[pluginId] = entitled;
-        }
+        // Sichtbarkeit folgt der AKTIVIERUNG im Workspace, nicht dem
+        // Entitlement — "darf nutzen" und "hat eingeschaltet" sind getrennte
+        // Zustände (PLAT-253).
+        var activePluginIds = new HashSet<string>(
+            await activationReader
+                .ListActivePluginIdsAsync(workspace.WorkspaceKey, cancellationToken)
+                .ConfigureAwait(false),
+            StringComparer.OrdinalIgnoreCase);
 
         return definitions
-            .Where(x => entitlementByPlugin.TryGetValue(x.PluginId, out var entitled) && entitled)
+            .Where(x => activePluginIds.Contains(x.PluginId))
             .ToArray();
     }
 }

@@ -234,6 +234,9 @@ public sealed class WorkspaceTemplateEndpointsTests
         var entitlementStore = new TemplateTestPluginEntitlementStore();
         await entitlementStore.SetEntitledAsync("template-alpha", true, "workspace-a", "tenant-a");
         await entitlementStore.SetEntitledAsync("template-beta", true, "workspace-a", "tenant-a");
+        var activationStore = new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
+        await activationStore.SetActiveAsync("template-alpha", "workspace-a", "tenant-a", true);
+        await activationStore.SetActiveAsync("template-beta", "workspace-a", "tenant-a", true);
 
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
@@ -251,6 +254,7 @@ public sealed class WorkspaceTemplateEndpointsTests
         builder.Services.AddSingleton<IWorkspaceThemeSettingsStore, InMemoryWorkspaceThemeSettingsStore>();
         builder.Services.AddSingleton<IWorkspaceManagementStore>(workspaceStore);
         builder.Services.AddSingleton<IPluginEntitlementStore>(entitlementStore);
+        builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader>(activationStore);
 
         builder.Services.AddSingleton<CachedWorkspaceTemplateResolutionService>();
         builder.Services.AddSingleton<IWorkspaceTemplateResolutionService>(

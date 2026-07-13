@@ -151,6 +151,7 @@ public sealed class PluginLifecycleServiceTests
             RequireAllowlistForActivation = false
         };
         var entitlementStore = new InMemoryPluginEntitlementStore(options);
+        var activationStore = new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
         var policy = new AllowlistPluginActivationPolicy(options);
         var audit = new InMemoryHostAuditStore();
         var installations = new InMemoryPluginInstallationRepository();
@@ -171,12 +172,13 @@ public sealed class PluginLifecycleServiceTests
             new StaticPluginPackageRegistryReader(),
             new StaticPluginPackageSignatureVerifier(),
             new StaticNuGetPluginAssemblyResolver(),
-            new RecordingHostApplicationEventPublisher());
+            new RecordingHostApplicationEventPublisher(),
+            workspaceActivationStore: activationStore);
 
         var result = await sut.ActivateAsync(new PluginLifecycleCommand("plugin-x", "tester", "workspace-a"));
 
         Assert.Equal(PluginLifecycleServiceStatus.Ok, result.Status);
-        Assert.True(await entitlementStore.IsEntitledAsync("plugin-x", "workspace-a"));
+        Assert.Contains("plugin-x", await activationStore.ListActivePluginIdsAsync("workspace-a"));
         Assert.Equal(0, lifecycle.ActivateCallCount);
     }
 
@@ -239,6 +241,7 @@ public sealed class PluginLifecycleServiceTests
             RequireAllowlistForActivation = false
         };
         var entitlementStore = new InMemoryPluginEntitlementStore(options);
+        var activationStore = new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
         await entitlementStore.SetEntitledAsync("plugin-x", true, "workspace-a");
         var policy = new AllowlistPluginActivationPolicy(options);
         var audit = new InMemoryHostAuditStore();
@@ -260,12 +263,13 @@ public sealed class PluginLifecycleServiceTests
             new StaticPluginPackageRegistryReader(),
             new StaticPluginPackageSignatureVerifier(),
             new StaticNuGetPluginAssemblyResolver(),
-            new RecordingHostApplicationEventPublisher());
+            new RecordingHostApplicationEventPublisher(),
+            workspaceActivationStore: activationStore);
 
         var result = await sut.DeactivateAsync(new PluginLifecycleCommand("plugin-x", "tester", "workspace-a"));
 
         Assert.Equal(PluginLifecycleServiceStatus.Ok, result.Status);
-        Assert.False(await entitlementStore.IsEntitledAsync("plugin-x", "workspace-a"));
+        Assert.DoesNotContain("plugin-x", await activationStore.ListActivePluginIdsAsync("workspace-a"));
         Assert.Equal(0, lifecycle.DeactivateCallCount);
     }
 
@@ -278,6 +282,7 @@ public sealed class PluginLifecycleServiceTests
             RequireAllowlistForActivation = false
         };
         var entitlementStore = new InMemoryPluginEntitlementStore(options);
+        var activationStore = new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
         var policy = new AllowlistPluginActivationPolicy(options);
         var audit = new InMemoryHostAuditStore();
         var installations = new InMemoryPluginInstallationRepository();
@@ -298,14 +303,15 @@ public sealed class PluginLifecycleServiceTests
             new StaticPluginPackageRegistryReader(),
             new StaticPluginPackageSignatureVerifier(),
             new StaticNuGetPluginAssemblyResolver(),
-            new RecordingHostApplicationEventPublisher());
+            new RecordingHostApplicationEventPublisher(),
+            workspaceActivationStore: activationStore);
 
         var first = await sut.ActivateAsync(new PluginLifecycleCommand("plugin-x", "tester", "workspace-a"));
         var second = await sut.ActivateAsync(new PluginLifecycleCommand("plugin-x", "tester", "workspace-a"));
 
         Assert.Equal(PluginLifecycleServiceStatus.Ok, first.Status);
         Assert.Equal(PluginLifecycleServiceStatus.Ok, second.Status);
-        Assert.True(await entitlementStore.IsEntitledAsync("plugin-x", "workspace-a"));
+        Assert.Contains("plugin-x", await activationStore.ListActivePluginIdsAsync("workspace-a"));
         Assert.Equal(0, lifecycle.ActivateCallCount);
     }
 
@@ -318,6 +324,7 @@ public sealed class PluginLifecycleServiceTests
             RequireAllowlistForActivation = false
         };
         var entitlementStore = new InMemoryPluginEntitlementStore(options);
+        var activationStore = new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
         await entitlementStore.SetEntitledAsync("plugin-x", true, "workspace-a");
         var policy = new AllowlistPluginActivationPolicy(options);
         var audit = new InMemoryHostAuditStore();
@@ -339,14 +346,15 @@ public sealed class PluginLifecycleServiceTests
             new StaticPluginPackageRegistryReader(),
             new StaticPluginPackageSignatureVerifier(),
             new StaticNuGetPluginAssemblyResolver(),
-            new RecordingHostApplicationEventPublisher());
+            new RecordingHostApplicationEventPublisher(),
+            workspaceActivationStore: activationStore);
 
         var first = await sut.DeactivateAsync(new PluginLifecycleCommand("plugin-x", "tester", "workspace-a"));
         var second = await sut.DeactivateAsync(new PluginLifecycleCommand("plugin-x", "tester", "workspace-a"));
 
         Assert.Equal(PluginLifecycleServiceStatus.Ok, first.Status);
         Assert.Equal(PluginLifecycleServiceStatus.Ok, second.Status);
-        Assert.False(await entitlementStore.IsEntitledAsync("plugin-x", "workspace-a"));
+        Assert.DoesNotContain("plugin-x", await activationStore.ListActivePluginIdsAsync("workspace-a"));
         Assert.Equal(0, lifecycle.DeactivateCallCount);
     }
 
@@ -359,6 +367,7 @@ public sealed class PluginLifecycleServiceTests
             RequireAllowlistForActivation = false
         };
         var entitlementStore = new InMemoryPluginEntitlementStore(options);
+        var activationStore = new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
         var policy = new AllowlistPluginActivationPolicy(options);
         var audit = new InMemoryHostAuditStore();
         var installations = new InMemoryPluginInstallationRepository();
@@ -379,14 +388,15 @@ public sealed class PluginLifecycleServiceTests
             new StaticPluginPackageRegistryReader(),
             new StaticPluginPackageSignatureVerifier(),
             new StaticNuGetPluginAssemblyResolver(),
-            new RecordingHostApplicationEventPublisher());
+            new RecordingHostApplicationEventPublisher(),
+            workspaceActivationStore: activationStore);
 
         await Task.WhenAll(
             sut.ActivateAsync(new PluginLifecycleCommand("plugin-x", "tester-a", "workspace-a")),
             sut.ActivateAsync(new PluginLifecycleCommand("plugin-x", "tester-b", "workspace-a")),
             sut.ActivateAsync(new PluginLifecycleCommand("plugin-x", "tester-c", "workspace-a")));
 
-        Assert.True(await entitlementStore.IsEntitledAsync("plugin-x", "workspace-a"));
+        Assert.Contains("plugin-x", await activationStore.ListActivePluginIdsAsync("workspace-a"));
         Assert.Equal(0, lifecycle.ActivateCallCount);
     }
 
@@ -399,6 +409,7 @@ public sealed class PluginLifecycleServiceTests
             RequireAllowlistForActivation = false
         };
         var entitlementStore = new InMemoryPluginEntitlementStore(options);
+        var activationStore = new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
         await entitlementStore.SetEntitledAsync("plugin-x", true, "workspace-a");
         var policy = new AllowlistPluginActivationPolicy(options);
         var audit = new InMemoryHostAuditStore();
@@ -420,14 +431,15 @@ public sealed class PluginLifecycleServiceTests
             new StaticPluginPackageRegistryReader(),
             new StaticPluginPackageSignatureVerifier(),
             new StaticNuGetPluginAssemblyResolver(),
-            new RecordingHostApplicationEventPublisher());
+            new RecordingHostApplicationEventPublisher(),
+            workspaceActivationStore: activationStore);
 
         await Task.WhenAll(
             sut.DeactivateAsync(new PluginLifecycleCommand("plugin-x", "tester-a", "workspace-a")),
             sut.DeactivateAsync(new PluginLifecycleCommand("plugin-x", "tester-b", "workspace-a")),
             sut.DeactivateAsync(new PluginLifecycleCommand("plugin-x", "tester-c", "workspace-a")));
 
-        Assert.False(await entitlementStore.IsEntitledAsync("plugin-x", "workspace-a"));
+        Assert.DoesNotContain("plugin-x", await activationStore.ListActivePluginIdsAsync("workspace-a"));
         Assert.Equal(0, lifecycle.DeactivateCallCount);
     }
 

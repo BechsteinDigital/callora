@@ -11,7 +11,7 @@ namespace Callora.Host.Backend.Application.Lifecycle;
 public sealed class WorkspaceScopedActivationService(
     IPluginInstallationRepository installationRepository,
     IWorkspaceManagementStore workspaceStore,
-    IPluginEntitlementStore entitlementStore,
+    Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationStore activationStore,
     PluginLifecycleReporter reporter,
     WorkspaceLifecycleLockRegistry lockRegistry,
     PluginCapabilityGuard capabilityGuard)
@@ -176,8 +176,10 @@ public sealed class WorkspaceScopedActivationService(
                         : PluginLifecycleErrorCodes.PluginCapabilityInUse);
             }
 
-            await entitlementStore
-                .SetEntitledAsync(normalizedPluginId, isActive, normalizedWorkspaceKey, workspace.TenantKey, cancellationToken)
+            // Aktivierung ist ein eigener Domänenzustand — sie erzeugt kein
+            // Entitlement mehr (PLAT-253); "darf?" prüft der CapabilityGuard.
+            await activationStore
+                .SetActiveAsync(normalizedPluginId, normalizedWorkspaceKey, workspace.TenantKey, isActive, cancellationToken)
                 .ConfigureAwait(false);
             await reporter.ReportAsync(
                     action: action,

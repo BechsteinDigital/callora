@@ -98,6 +98,14 @@ public sealed class BackendHostOptions
     /// </summary>
     public string ProblemTypeBaseUri { get; set; } = "urn:callora:problem:";
 
+    /// <summary>
+    /// Entitlement verdict when no explicit plugin_entitlements row exists.
+    /// True suits self-hosted installs (every installed plugin usable);
+    /// cloud/marketplace deployments set false so grants are explicit
+    /// (PLAT-253).
+    /// </summary>
+    public bool DefaultPluginEntitlement { get; set; } = true;
+
     public string[] TrustedSignerThumbprints { get; set; } = [];
 
     public BackendTrustedSignerOptions[] TrustedSigners { get; set; } = [];

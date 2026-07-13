@@ -1,10 +1,19 @@
 using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Domain.Plugins;
+using Callora.Host.Backend.Application.Policies;
+using Callora.Host.Backend.Domain.Entitlements;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Host.Backend.Infrastructure.Persistence;
 
-public sealed class EfPluginEntitlementStore(HostPersistenceDbContext dbContext) : IPluginEntitlementStore
+/// <summary>
+/// Entitlement decisions in plugin_entitlements — separate from workspace
+/// activation (PLAT-253). Resolution precedence: workspace row > tenant
+/// row > platform row > configured default
+/// (<see cref="BackendHostOptions.DefaultPluginEntitlement"/>).
+/// </summary>
+public sealed class EfPluginEntitlementStore(
+    HostPersistenceDbContext dbContext,
+    BackendHostOptions options) : IPluginEntitlementStore
 {
     public async ValueTask<bool> IsEntitledAsync(
         string pluginId,
@@ -21,23 +30,36 @@ public sealed class EfPluginEntitlementStore(HostPersistenceDbContext dbContext)
         var normalizedWorkspaceKey = string.IsNullOrWhiteSpace(workspaceKey) ? null : workspaceKey.Trim();
         var normalizedTenantKey = string.IsNullOrWhiteSpace(tenantKey) ? null : tenantKey.Trim();
 
-        var query = dbContext.WorkspacePluginActivations
+        var rows = await dbContext.PluginEntitlements
             .AsNoTracking()
-            .Where(x => x.IsActive && x.PluginId == normalizedPluginId);
-
-        if (!string.IsNullOrWhiteSpace(normalizedWorkspaceKey))
-        {
-            query = query.Where(x => x.WorkspaceKey == normalizedWorkspaceKey);
-        }
-
-        if (!string.IsNullOrWhiteSpace(normalizedTenantKey))
-        {
-            query = query.Where(x => x.TenantKey == normalizedTenantKey);
-        }
-
-        return await query
-            .AnyAsync(cancellationToken)
+            .Where(x => x.PluginId == normalizedPluginId)
+            .Where(x =>
+                (x.WorkspaceKey == null && x.TenantKey == null) ||
+                (normalizedTenantKey != null && x.WorkspaceKey == null && x.TenantKey == normalizedTenantKey) ||
+                (normalizedWorkspaceKey != null && x.WorkspaceKey == normalizedWorkspaceKey))
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        var workspaceRow = normalizedWorkspaceKey is null
+            ? null
+            : rows.FirstOrDefault(x => string.Equals(x.WorkspaceKey, normalizedWorkspaceKey, StringComparison.OrdinalIgnoreCase));
+        if (workspaceRow is not null)
+        {
+            return workspaceRow.IsEntitled;
+        }
+
+        var tenantRow = normalizedTenantKey is null
+            ? null
+            : rows.FirstOrDefault(x =>
+                x.WorkspaceKey is null &&
+                string.Equals(x.TenantKey, normalizedTenantKey, StringComparison.OrdinalIgnoreCase));
+        if (tenantRow is not null)
+        {
+            return tenantRow.IsEntitled;
+        }
+
+        var platformRow = rows.FirstOrDefault(x => x.WorkspaceKey is null && x.TenantKey is null);
+        return platformRow?.IsEntitled ?? options.DefaultPluginEntitlement;
     }
 
     public async ValueTask SetEntitledAsync(
@@ -47,19 +69,17 @@ public sealed class EfPluginEntitlementStore(HostPersistenceDbContext dbContext)
         string? tenantKey = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(pluginId) ||
-            string.IsNullOrWhiteSpace(workspaceKey) ||
-            string.IsNullOrWhiteSpace(tenantKey))
+        if (string.IsNullOrWhiteSpace(pluginId))
         {
             return;
         }
 
         var normalizedPluginId = pluginId.Trim();
-        var normalizedWorkspaceKey = workspaceKey.Trim();
-        var normalizedTenantKey = tenantKey.Trim();
+        var normalizedWorkspaceKey = string.IsNullOrWhiteSpace(workspaceKey) ? null : workspaceKey.Trim();
+        var normalizedTenantKey = string.IsNullOrWhiteSpace(tenantKey) ? null : tenantKey.Trim();
         var nowUtc = DateTimeOffset.UtcNow;
 
-        var row = await dbContext.WorkspacePluginActivations
+        var row = await dbContext.PluginEntitlements
             .SingleOrDefaultAsync(
                 x => x.PluginId == normalizedPluginId &&
                      x.TenantKey == normalizedTenantKey &&
@@ -69,22 +89,21 @@ public sealed class EfPluginEntitlementStore(HostPersistenceDbContext dbContext)
 
         if (row is null)
         {
-            row = new WorkspacePluginActivation
+            dbContext.PluginEntitlements.Add(new PluginEntitlement
             {
                 Id = Guid.NewGuid(),
+                PluginId = normalizedPluginId,
                 TenantKey = normalizedTenantKey,
                 WorkspaceKey = normalizedWorkspaceKey,
-                PluginId = normalizedPluginId,
-                IsActive = isEntitled,
+                IsEntitled = isEntitled,
+                Source = "marketplace",
                 CreatedAtUtc = nowUtc,
                 UpdatedAtUtc = nowUtc
-            };
-            dbContext.WorkspacePluginActivations.Add(row);
+            });
         }
         else
         {
-            row.TenantKey = normalizedTenantKey;
-            row.IsActive = isEntitled;
+            row.IsEntitled = isEntitled;
             row.UpdatedAtUtc = nowUtc;
         }
 
@@ -101,7 +120,7 @@ public sealed class EfPluginEntitlementStore(HostPersistenceDbContext dbContext)
         }
 
         var normalizedPluginId = pluginId.Trim();
-        await dbContext.WorkspacePluginActivations
+        await dbContext.PluginEntitlements
             .Where(x => x.PluginId == normalizedPluginId)
             .ExecuteDeleteAsync(cancellationToken)
             .ConfigureAwait(false);

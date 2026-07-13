@@ -43,7 +43,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         IHostApplicationEventPublisher eventPublisher,
         IWorkspaceManagementStore workspaceStore,
         ICalloraPluginCatalog? pluginCatalog = null,
-        ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null)
+        ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null,
+        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null)
     {
         _lifecycle = lifecycle;
         _activationPolicy = activationPolicy;
@@ -80,7 +81,7 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         _workspaceActivation = new WorkspaceScopedActivationService(
             installationRepository,
             workspaceStore,
-            entitlementStore,
+            workspaceActivationStore ?? new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore(),
             _reporter,
             _workspaceLifecycleLocks,
             _capabilityGuard);
@@ -97,7 +98,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         IPluginPackageSignatureVerifier packageSignatureVerifier,
         INuGetPluginAssemblyResolver nuGetAssemblyResolver,
         IHostApplicationEventPublisher eventPublisher,
-        ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null)
+        ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null,
+        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null)
         : this(
             lifecycle,
             activationPolicy,
@@ -112,7 +114,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
             new EmptyPluginExtensionRegistrationStore(),
             eventPublisher,
             new EmptyWorkspaceManagementStore(),
-            localPluginInstallSourceResolver: localPluginInstallSourceResolver)
+            localPluginInstallSourceResolver: localPluginInstallSourceResolver,
+            workspaceActivationStore: workspaceActivationStore)
     {
     }
 
