@@ -6,6 +6,7 @@ namespace Callora.Contracts.Communication;
 /// </summary>
 public sealed class IncomingCallEventArgs : EventArgs
 {
+    /// <summary>Creates the payload for one inbound call.</summary>
     public IncomingCallEventArgs(ICall call)
     {
         ArgumentNullException.ThrowIfNull(call);

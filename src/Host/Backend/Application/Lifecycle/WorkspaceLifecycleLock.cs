@@ -7,5 +7,7 @@ public sealed class WorkspaceLifecycleLock
 {
     public SemaphoreSlim Semaphore { get; } = new(1, 1);
 
-    public int ReferenceCount;
+    // Feld statt Property, weil Interlocked.Increment/Decrement eine
+    // ref-Übergabe braucht; internal hält es aus der öffentlichen API.
+    internal int ReferenceCount;
 }

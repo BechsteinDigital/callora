@@ -11,6 +11,13 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>10.0-recommended</AnalysisLevel>
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
+    <!-- PLAT-201: Warnungen sind Build-Fehler; Ausnahmen unten sind begründet. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);CS1573;CS1574;CS1734;CA1001;CA1068;CA1305;CA1510;CA1513;CA1716;CA1805;CA1806;CA1822;CA1832;CA1848;CA1859;CA1861;CA1865;CA2012;CA2016;CA2208;CA2249;CA5350;CA5351</NoWarn>
+    <!-- CA1711: Domänen-Suffixe (AudioStream, JobQueue, …) sind fachlich korrekt,
+         die Typen erben nicht von den gleichnamigen BCL-Typen.
+         CA1873: Logging liegt ausschließlich auf Cold-Paths (Call-Start, Purge,
+         Plugin-Load); LoggerMessage-SourceGen erst bei echtem Hot-Path-Bedarf. -->
+    <NoWarn>$(NoWarn);CA1711;CA1873</NoWarn>
   </PropertyGroup>
 </Project>

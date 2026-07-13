@@ -10,6 +10,8 @@ namespace Callora.Host.Backend.Tests.Application.Mail;
 
 public sealed class MailSubsystemTests
 {
+    private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
+
     [Fact]
     public void TemplateRenderer_ReplacesKnownTokens_KeepsUnknownLiteral()
     {
@@ -27,7 +29,7 @@ public sealed class MailSubsystemTests
         var handler = new MailSendJobHandler(sender, NullLogger<MailSendJobHandler>.Instance);
         var payload = JsonSerializer.Serialize(
             new MailJobPayload(new MailMessage("user@example.org", "Willkommen", "Hallo!")),
-            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            WebJsonOptions);
 
         await handler.ExecuteAsync(new BackgroundJobExecutionContext(
             Guid.NewGuid(), MailSendJobHandler.JobTypeName, payload, null, Attempt: 1));

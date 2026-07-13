@@ -5,6 +5,7 @@ namespace Callora.Contracts.Communication;
 /// </summary>
 public sealed class AudioFrameReceivedEventArgs : EventArgs
 {
+    /// <summary>Creates the payload for one received frame.</summary>
     public AudioFrameReceivedEventArgs(AudioFrame frame)
     {
         Frame = frame;

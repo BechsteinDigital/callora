@@ -10,6 +10,8 @@ namespace Callora.Host.Backend.Tests.Application.Webhooks;
 
 public sealed class WebhookDeliveryTests
 {
+    private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
+
     [Fact]
     public void Signature_IsDeterministicHmacSha256()
     {
@@ -31,7 +33,7 @@ public sealed class WebhookDeliveryTests
         var jobHandler = new WebhookDeliveryJobHandler(store, new StaticHttpClientFactory(handler), TestGuard());
         var payload = JsonSerializer.Serialize(
             new WebhookDeliveryPayload(subscription.Id, "call.ringing", "{\"callId\":\"c1\"}"),
-            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            WebJsonOptions);
 
         await jobHandler.ExecuteAsync(new BackgroundJobExecutionContext(
             Guid.NewGuid(), WebhookDispatcher.DeliveryJobType, payload, "workspace-a", Attempt: 1));
@@ -56,7 +58,7 @@ public sealed class WebhookDeliveryTests
             TestGuard());
         var payload = JsonSerializer.Serialize(
             new WebhookDeliveryPayload(subscription.Id, "call.ended", "{}"),
-            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            WebJsonOptions);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             jobHandler.ExecuteAsync(new BackgroundJobExecutionContext(
@@ -73,7 +75,7 @@ public sealed class WebhookDeliveryTests
         var jobHandler = new WebhookDeliveryJobHandler(store, new StaticHttpClientFactory(handler), TestGuard());
         var payload = JsonSerializer.Serialize(
             new WebhookDeliveryPayload(subscription.Id, "call.ended", "{}"),
-            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            WebJsonOptions);
 
         await jobHandler.ExecuteAsync(new BackgroundJobExecutionContext(
             Guid.NewGuid(), WebhookDispatcher.DeliveryJobType, payload, null, Attempt: 1));
