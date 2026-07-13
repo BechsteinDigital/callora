@@ -9,4 +9,6 @@ public static class CallEventTypes
     public const string Placed = "call.placed";
     public const string StateChanged = "call.state-changed";
     public const string Ended = "call.ended";
+    public const string ConsentGranted = "call.consent-granted";
+    public const string ConsentDenied = "call.consent-denied";
 }

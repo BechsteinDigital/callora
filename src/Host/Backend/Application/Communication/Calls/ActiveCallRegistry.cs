@@ -76,6 +76,13 @@ public sealed class ActiveCallRegistry(CallEventBroadcaster broadcaster)
         handler = (_, args) => HandleStateChanged(tracked, handler!, args);
         call.StateChanged += handler;
 
+        // Consent-fähige Calls speisen die Flow-Events call.consent-*
+        // (Recording-Einwilligung, PLAT-241).
+        if (call is IRecordingConsentCall consentCall)
+        {
+            consentCall.ConsentChanged += (_, args) => HandleConsentChanged(tracked, args);
+        }
+
         // The call may have terminated between placement and subscription;
         // drop it immediately instead of leaking a dead entry.
         if (call.State == CallState.Terminated)
@@ -86,6 +93,21 @@ public sealed class ActiveCallRegistry(CallEventBroadcaster broadcaster)
 
         broadcaster.Publish(new CallEvent(eventType, tracked.ToSnapshot()));
         return tracked.ToSnapshot();
+    }
+
+    private void HandleConsentChanged(TrackedCall tracked, RecordingConsentChangedEventArgs args)
+    {
+        var eventType = args.CurrentState switch
+        {
+            RecordingConsentState.Granted => CallEventTypes.ConsentGranted,
+            RecordingConsentState.Denied => CallEventTypes.ConsentDenied,
+            _ => null
+        };
+
+        if (eventType is not null)
+        {
+            broadcaster.Publish(new CallEvent(eventType, tracked.ToSnapshot()));
+        }
     }
 
     private void HandleStateChanged(
