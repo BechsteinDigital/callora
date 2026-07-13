@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
 using Callora.Host.Backend.Api;
@@ -16,7 +17,29 @@ namespace Callora.Host.Backend.Tests.Api;
 public sealed class AuthAndUserEndpointsTests
 {
     [Fact]
-    public async Task ApiLogin_WithValidCredentials_ReturnsBearerToken()
+    public async Task ApiLogin_WithOperatorRole_ReturnsPlatformScopedToken()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginApiRequest("root", "pass-root"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<LoginApiResponse>();
+        Assert.NotNull(payload);
+        Assert.False(string.IsNullOrWhiteSpace(payload!.AccessToken));
+        Assert.Equal("Bearer", payload.TokenType);
+        Assert.Equal("root", payload.UserId);
+
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(payload.AccessToken);
+        Assert.Contains(token.Claims, x =>
+            x.Type == BackendClaimTypes.CalloraScope && x.Value == BackendAuthScopes.Platform);
+    }
+
+    [Fact]
+    public async Task ApiLogin_WithoutOperatorRole_ReturnsForbidden()
     {
         await using var app = await CreateAppAsync();
         var client = app.GetTestClient();
@@ -25,12 +48,7 @@ public sealed class AuthAndUserEndpointsTests
             "/api/auth/login",
             new LoginApiRequest("alice", "pass-1"));
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<LoginApiResponse>();
-        Assert.NotNull(payload);
-        Assert.False(string.IsNullOrWhiteSpace(payload!.AccessToken));
-        Assert.Equal("Bearer", payload.TokenType);
-        Assert.Equal("alice", payload.UserId);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -61,6 +79,10 @@ public sealed class AuthAndUserEndpointsTests
         Assert.NotNull(payload);
         Assert.False(string.IsNullOrWhiteSpace(payload!.AccessToken));
         Assert.Equal("workspace-a", payload.WorkspaceKey);
+
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(payload.AccessToken);
+        Assert.Contains(token.Claims, x =>
+            x.Type == BackendClaimTypes.CalloraScope && x.Value == BackendAuthScopes.Workspace);
     }
 
     [Fact]
@@ -100,11 +122,16 @@ public sealed class AuthAndUserEndpointsTests
         {
             JwtIssuer = "callora-tests",
             JwtAudience = "callora-host-api",
-            JwtSigningKey = "callora-tests-signing-key-callora-tests-signing-key"
+            JwtSigningKey = "callora-tests-signing-key-callora-tests-signing-key",
+            RbacUserAssignments =
+            [
+                new BackendRbacUserAssignmentOptions { UserId = "root", Role = BackendRoles.Admin }
+            ]
         };
 
         var userStore = new InMemoryBackendUserStore();
         await userStore.UpsertCredentialsAsync("alice", "alice@example.test", "Alice", "pass-1");
+        await userStore.UpsertCredentialsAsync("root", "root@example.test", "Root", "pass-root");
         userStore.AddWorkspaceMember("workspace-a", "alice");
 
         var builder = WebApplication.CreateBuilder();

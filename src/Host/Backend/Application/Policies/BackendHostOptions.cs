@@ -84,6 +84,13 @@ public sealed class BackendHostOptions
 
     public BackendRbacUserAssignmentOptions[] RbacUserAssignments { get; set; } = [];
 
+    /// <summary>
+    /// RBAC roles whose members may sign in through the platform-operator
+    /// login (/api/auth/login). Workspace members without one of these
+    /// roles must use the workspace login.
+    /// </summary>
+    public string[] PlatformOperatorRoles { get; set; } = ["admin"];
+
     public string[] TrustedSignerThumbprints { get; set; } = [];
 
     public BackendTrustedSignerOptions[] TrustedSigners { get; set; } = [];

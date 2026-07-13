@@ -20,4 +20,11 @@ public static class BackendClaimTypes
     /// carrying it are locked to that workspace.
     /// </summary>
     public const string WorkspaceKey = "workspace_key";
+
+    /// <summary>
+    /// Authorization tier of the session (see <see cref="BackendAuthScopes"/>).
+    /// Stamped at token issuance; a principal without it never gains
+    /// platform-wide access.
+    /// </summary>
+    public const string CalloraScope = "callora_scope";
 }

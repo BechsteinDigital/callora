@@ -11,8 +11,8 @@ public static class WorkspaceScopeAuthorizationExtensions
 
     /// <summary>
     /// Rejects requests whose workspaceKey does not match the workspace bound
-    /// to the caller's token. Principals without a workspace binding
-    /// (operators, admins) pass unchanged.
+    /// to the caller's token. Only platform-scoped sessions and admins pass
+    /// unconstrained; principals without scope or binding are rejected.
     /// </summary>
     public static TBuilder RequireWorkspaceScope<TBuilder>(this TBuilder builder)
         where TBuilder : IEndpointConventionBuilder

@@ -31,6 +31,11 @@ public static class AuthEndpoints
             }
 
             var role = await rbacStore.GetUserRoleAsync(user.ExternalId, cancellationToken).ConfigureAwait(false);
+            if (!IsPlatformOperatorRole(options, role))
+            {
+                return Results.Forbid();
+            }
+
             var roles = string.IsNullOrWhiteSpace(role) ? Array.Empty<string>() : [role];
             var token = BackendJwtTokenIssuer.Issue(
                 options,
@@ -38,6 +43,10 @@ public static class AuthEndpoints
                 displayName: user.DisplayName,
                 email: user.Email,
                 roles: roles,
+                customClaims: new Dictionary<string, string>
+                {
+                    [BackendClaimTypes.CalloraScope] = BackendAuthScopes.Platform
+                },
                 lifetime: AccessTokenLifetime);
 
             BackendAuthCookieService.AppendAuthCookie(
@@ -129,6 +138,7 @@ public static class AuthEndpoints
                 roles: roles,
                 customClaims: new Dictionary<string, string>
                 {
+                    [BackendClaimTypes.CalloraScope] = BackendAuthScopes.Workspace,
                     [BackendClaimTypes.WorkspaceKey] = request.WorkspaceKey.Trim()
                 },
                 lifetime: AccessTokenLifetime);
@@ -151,5 +161,23 @@ public static class AuthEndpoints
                 WorkspaceKey: request.WorkspaceKey.Trim()));
         }).WithName("Auth_Workspace_Login")
             .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
+    }
+
+    private static bool IsPlatformOperatorRole(BackendHostOptions options, string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return false;
+        }
+
+        foreach (var operatorRole in options.PlatformOperatorRoles ?? [])
+        {
+            if (string.Equals(operatorRole?.Trim(), role.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -3,28 +3,30 @@ using System.Security.Claims;
 namespace Callora.Host.Backend.Infrastructure.Security;
 
 /// <summary>
-/// Decides whether a principal may act on a workspace. Workspace logins carry
-/// a <see cref="BackendClaimTypes.WorkspaceKey"/> claim and are locked to that
-/// workspace; operator logins without the claim keep platform-wide access.
+/// Decides whether a principal may act on a workspace. Fail-closed: platform
+/// access requires an explicit positive signal (admin role or a
+/// <see cref="BackendClaimTypes.CalloraScope"/> claim of "platform"); a
+/// principal carrying neither that nor a workspace binding is rejected.
 /// </summary>
 public static class WorkspaceScopeEvaluator
 {
     /// <summary>
-    /// True for platform operators: admins and principals without a
-    /// workspace binding. Required for global- and tenant-scoped mutations.
+    /// True for platform operators: admins and sessions stamped with the
+    /// platform scope at issuance. Required for global- and tenant-scoped
+    /// mutations. A missing scope claim never grants operator access.
     /// </summary>
     public static bool IsOperator(ClaimsPrincipal user)
     {
         ArgumentNullException.ThrowIfNull(user);
         return user.IsInRole(BackendRoles.Admin) ||
-               string.IsNullOrWhiteSpace(user.FindFirst(BackendClaimTypes.WorkspaceKey)?.Value);
+               user.HasClaim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Platform);
     }
 
     public static bool HasWorkspaceAccess(ClaimsPrincipal user, string? requestedWorkspaceKey)
     {
         ArgumentNullException.ThrowIfNull(user);
 
-        if (user.IsInRole(BackendRoles.Admin))
+        if (IsOperator(user))
         {
             return true;
         }
@@ -32,7 +34,7 @@ public static class WorkspaceScopeEvaluator
         var boundWorkspaceKey = user.FindFirst(BackendClaimTypes.WorkspaceKey)?.Value;
         if (string.IsNullOrWhiteSpace(boundWorkspaceKey))
         {
-            return true;
+            return false;
         }
 
         return !string.IsNullOrWhiteSpace(requestedWorkspaceKey) &&

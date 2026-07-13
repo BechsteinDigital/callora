@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using Callora.Host.Backend.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -8,6 +9,12 @@ namespace Callora.Host.Backend.Tests.Support;
 
 public sealed class HeaderAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
+    /// <summary>
+    /// X-Test-Callora-Scope value that suppresses the scope claim entirely,
+    /// simulating a legacy/unscoped principal for fail-closed tests.
+    /// </summary>
+    public const string NoScope = "none";
+
     public HeaderAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
@@ -26,12 +33,34 @@ public sealed class HeaderAuthenticationHandler : AuthenticationHandler<Authenti
         AddClaimsFromHeader(claims, "X-Test-Roles", ClaimTypes.Role);
         AddClaimsFromHeader(claims, "X-Test-Permissions", "permission");
         AddClaimsFromHeader(claims, "X-Test-Scopes", "scope");
-        AddClaimsFromHeader(claims, "X-Test-Workspace-Key", "workspace_key");
+        AddClaimsFromHeader(claims, "X-Test-Workspace-Key", BackendClaimTypes.WorkspaceKey);
+
+        AddCalloraScopeClaim(claims);
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, Scheme.Name);
         return Task.FromResult(AuthenticateResult.Success(ticket));
+    }
+
+    private void AddCalloraScopeClaim(List<Claim> claims)
+    {
+        if (Request.Headers.TryGetValue("X-Test-Callora-Scope", out var explicitScope))
+        {
+            var value = explicitScope.ToString().Trim();
+            if (!string.Equals(value, NoScope, StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(value))
+            {
+                claims.Add(new Claim(BackendClaimTypes.CalloraScope, value));
+            }
+
+            return;
+        }
+
+        var scope = claims.Any(x => x.Type == BackendClaimTypes.WorkspaceKey)
+            ? BackendAuthScopes.Workspace
+            : BackendAuthScopes.Platform;
+        claims.Add(new Claim(BackendClaimTypes.CalloraScope, scope));
     }
 
     private void AddClaimsFromHeader(List<Claim> claims, string headerName, string claimType)

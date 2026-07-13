@@ -57,6 +57,7 @@ public sealed class ApiKeyAuthenticationHandler(
                 new Claim(ClaimTypes.Name, identityName),
                 new Claim(ClaimTypes.Role, BackendRoles.HostApi),
                 new Claim(ClaimTypes.Role, BackendRoles.Admin),
+                new Claim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Platform),
                 new Claim(BackendClaimTypes.Permission, "*")
             ],
             authenticationType: ApiKeyAuthenticationDefaults.Scheme);
