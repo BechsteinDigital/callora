@@ -99,7 +99,7 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
             Assert.Equal(3, second.Count);
             Assert.Equal(2, firstVersionSettings.Count);
             Assert.Single(secondSettings);
-            var latestDefinition = Assert.Single(second.Where(x => string.Equals(x.Version, "1.1.0", StringComparison.OrdinalIgnoreCase)));
+            var latestDefinition = Assert.Single(second, x => string.Equals(x.Version, "1.1.0", StringComparison.OrdinalIgnoreCase));
             Assert.Equal("workspace.settings", latestDefinition.TemplateKey);
             Assert.Equal("1.1.0", latestDefinition.Version);
             Assert.Equal("headline", secondSettings[0].SettingKey);

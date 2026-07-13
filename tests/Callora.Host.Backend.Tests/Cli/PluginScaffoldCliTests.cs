@@ -16,7 +16,7 @@ public sealed class PluginScaffoldCliTests(ScaffoldedPluginFixture fixture)
         Assert.True(File.Exists(pluginClassPath));
         Assert.True(File.Exists(fixture.RegistryPath));
 
-        var registry = await File.ReadAllTextAsync(fixture.RegistryPath).ConfigureAwait(false);
+        var registry = await File.ReadAllTextAsync(fixture.RegistryPath);
         Assert.Contains("\"pluginId\": \"acme-voice\"", registry, StringComparison.Ordinal);
         Assert.Contains("\"extensions\"", registry, StringComparison.Ordinal);
         Assert.Contains("\"workspace.navigation.main\"", registry, StringComparison.Ordinal);

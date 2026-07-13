@@ -13,7 +13,7 @@ public sealed class PluginContractTestCliTests(ScaffoldedPluginFixture fixture)
     {
         var repositoryRoot = fixture.RepositoryRoot;
         var voipProjectPath = Path.Combine(repositoryRoot, "custom", "plugins", "Voip", "Callora.Plugins.Voip.csproj");
-        var buildResult = await ScaffoldedPluginFixture.BuildProjectAsync(voipProjectPath, repositoryRoot).ConfigureAwait(false);
+        var buildResult = await ScaffoldedPluginFixture.BuildProjectAsync(voipProjectPath, repositoryRoot);
         Assert.True(buildResult.Success, buildResult.Output);
 
         var assemblyPath = Path.Combine(
@@ -34,7 +34,7 @@ public sealed class PluginContractTestCliTests(ScaffoldedPluginFixture fixture)
             stdout,
             stderr,
             repositoryRoot,
-            CancellationToken.None).ConfigureAwait(false);
+            CancellationToken.None);
 
         Assert.Equal(0, exitCode);
         Assert.Contains("All contract checks passed", stdout.ToString(), StringComparison.Ordinal);
@@ -50,7 +50,7 @@ public sealed class PluginContractTestCliTests(ScaffoldedPluginFixture fixture)
             stdout,
             stderr,
             fixture.RepositoryRoot,
-            CancellationToken.None).ConfigureAwait(false);
+            CancellationToken.None);
 
         Assert.Equal(0, exitCode);
         Assert.Contains("All contract checks passed", stdout.ToString(), StringComparison.Ordinal);
@@ -80,7 +80,7 @@ public sealed class PluginContractTestCliTests(ScaffoldedPluginFixture fixture)
 
         try
         {
-            await File.WriteAllTextAsync(registryPath, invalidRegistry, CancellationToken.None).ConfigureAwait(false);
+            await File.WriteAllTextAsync(registryPath, invalidRegistry, CancellationToken.None);
 
             using var stdout = new StringWriter();
             using var stderr = new StringWriter();
@@ -89,7 +89,7 @@ public sealed class PluginContractTestCliTests(ScaffoldedPluginFixture fixture)
                 stdout,
                 stderr,
                 fixture.RepositoryRoot,
-                CancellationToken.None).ConfigureAwait(false);
+                CancellationToken.None);
 
             Assert.Equal(1, exitCode);
             var errorOutput = stderr.ToString();

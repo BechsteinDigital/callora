@@ -37,7 +37,7 @@ public sealed class ScaffoldedPluginFixture : IAsyncLifetime
             stdout,
             stderr,
             RepositoryRoot,
-            CancellationToken.None).ConfigureAwait(false);
+            CancellationToken.None);
 
         if (exitCode != 0)
         {
@@ -49,7 +49,7 @@ public sealed class ScaffoldedPluginFixture : IAsyncLifetime
         RegistryPath = Path.Combine(ScaffoldDirectory, "registry.json");
         AssemblyPath = Path.Combine(ScaffoldDirectory, "bin", "Debug", "net10.0", "Callora.Plugins.AcmeVoice.dll");
 
-        var (success, output) = await BuildProjectAsync(CsprojPath, RepositoryRoot).ConfigureAwait(false);
+        var (success, output) = await BuildProjectAsync(CsprojPath, RepositoryRoot);
         BuildOutput = output;
         if (!success)
         {
@@ -108,10 +108,10 @@ public sealed class ScaffoldedPluginFixture : IAsyncLifetime
 
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync().ConfigureAwait(false);
+        await process.WaitForExitAsync();
 
-        var output = await outputTask.ConfigureAwait(false);
-        var error = await errorTask.ConfigureAwait(false);
+        var output = await outputTask;
+        var error = await errorTask;
         var combined = string.Concat(output, Environment.NewLine, error);
 
         return (process.ExitCode == 0, combined);

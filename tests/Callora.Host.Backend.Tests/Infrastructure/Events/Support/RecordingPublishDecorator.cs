@@ -17,12 +17,12 @@ internal sealed class RecordingPublishDecorator(
     {
         if (appEvent is not PublishPipelineTestEvent publishEvent)
         {
-            await next(appEvent, cancellationToken).ConfigureAwait(false);
+            await next(appEvent, cancellationToken);
             return;
         }
 
         publishEvent.Steps.Add($"{name}.before");
-        await next(appEvent, cancellationToken).ConfigureAwait(false);
+        await next(appEvent, cancellationToken);
         publishEvent.Steps.Add($"{name}.after");
     }
 }
