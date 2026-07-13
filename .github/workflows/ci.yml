@@ -44,6 +44,23 @@ jobs:
       - name: Test
         run: dotnet test Callora.Host.sln --no-build --configuration Release --logger "console;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory ./test-results
 
+      # Ratchet-Gate (PLAT-220): Baseline am 2026-07-13 lag bei 28,3 % Line-
+      # Coverage; das Gate hält 25 % und wird mit wachsender Abdeckung angehoben.
+      - name: Enforce coverage threshold
+        run: |
+          REPORT=$(find ./test-results -name coverage.cobertura.xml | head -1)
+          if [ -z "$REPORT" ]; then
+            echo "No coverage report found." && exit 1
+          fi
+          python3 - "$REPORT" <<'EOF'
+          import sys
+          import xml.etree.ElementTree as ET
+          threshold = 0.25
+          rate = float(ET.parse(sys.argv[1]).getroot().get("line-rate"))
+          print(f"line coverage: {rate:.1%} (threshold {threshold:.0%})")
+          sys.exit(0 if rate >= threshold else 1)
+          EOF
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
