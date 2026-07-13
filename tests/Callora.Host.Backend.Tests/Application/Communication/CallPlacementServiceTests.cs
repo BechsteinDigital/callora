@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Callora.Contracts.Communication;
 using Callora.Host.Backend.Application.Communication;
 using Callora.Host.Backend.Application.Communication.Calls;
@@ -15,7 +16,7 @@ public sealed class CallPlacementServiceTests
         var channel = new StaticCommunicationChannel("fake-voice");
         channelRegistry.Register("workspace-a", channel);
         var callRegistry = new ActiveCallRegistry(new CallEventBroadcaster());
-        var service = new CallPlacementService(channelRegistry, callRegistry);
+        var service = new CallPlacementService(channelRegistry, callRegistry, NullLogger<CallPlacementService>.Instance);
 
         var snapshot = await service.PlaceCallAsync("workspace-a", channelId: null, new CallTarget("+4930111"));
 
@@ -33,7 +34,7 @@ public sealed class CallPlacementServiceTests
         var second = new StaticCommunicationChannel("voice-2");
         channelRegistry.Register("workspace-a", first);
         channelRegistry.Register("workspace-a", second);
-        var service = new CallPlacementService(channelRegistry, new ActiveCallRegistry(new CallEventBroadcaster()));
+        var service = new CallPlacementService(channelRegistry, new ActiveCallRegistry(new CallEventBroadcaster()), NullLogger<CallPlacementService>.Instance);
 
         await service.PlaceCallAsync("workspace-a", "voice-2", new CallTarget("+4930111"));
 
@@ -46,7 +47,8 @@ public sealed class CallPlacementServiceTests
     {
         var service = new CallPlacementService(
             new CommunicationChannelRegistry(),
-            new ActiveCallRegistry(new CallEventBroadcaster()));
+            new ActiveCallRegistry(new CallEventBroadcaster()),
+            NullLogger<CallPlacementService>.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.PlaceCallAsync("workspace-a", channelId: null, new CallTarget("+4930111")));
@@ -57,7 +59,7 @@ public sealed class CallPlacementServiceTests
     {
         var channelRegistry = new CommunicationChannelRegistry();
         channelRegistry.Register("workspace-a", new StaticCommunicationChannel("voice-1"));
-        var service = new CallPlacementService(channelRegistry, new ActiveCallRegistry(new CallEventBroadcaster()));
+        var service = new CallPlacementService(channelRegistry, new ActiveCallRegistry(new CallEventBroadcaster()), NullLogger<CallPlacementService>.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.PlaceCallAsync("workspace-a", "voice-99", new CallTarget("+4930111")));

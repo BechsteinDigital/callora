@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Callora.Contracts.Communication;
+using Microsoft.Extensions.Logging;
 
 namespace Callora.Host.Backend.Application.Communication.Calls;
 
@@ -9,7 +10,8 @@ namespace Callora.Host.Backend.Application.Communication.Calls;
 /// </summary>
 public sealed class IncomingCallMonitor(
     CommunicationChannelRegistry channelRegistry,
-    ActiveCallRegistry callRegistry) : IHostedService
+    ActiveCallRegistry callRegistry,
+    ILogger<IncomingCallMonitor> logger) : IHostedService
 {
     private readonly ConcurrentDictionary<ICommunicationChannel, EventHandler<IncomingCallEventArgs>> _handlers = new();
 
@@ -44,11 +46,22 @@ public sealed class IncomingCallMonitor(
     private void AttachChannel(string workspaceKey, ICommunicationChannel channel)
     {
         EventHandler<IncomingCallEventArgs> handler = (_, args) =>
+        {
+            logger.LogInformation(
+                "Incoming call {CallId} on channel {ChannelId} (workspace {WorkspaceKey}).",
+                args.Call.CallId,
+                channel.ChannelId,
+                workspaceKey);
             callRegistry.TrackIncoming(workspaceKey, channel.ChannelId, args.Call);
+        };
 
         if (_handlers.TryAdd(channel, handler))
         {
             channel.IncomingCall += handler;
+            logger.LogDebug(
+                "Attached incoming-call handler to channel {ChannelId} (workspace {WorkspaceKey}).",
+                channel.ChannelId,
+                workspaceKey);
         }
     }
 
@@ -57,6 +70,7 @@ public sealed class IncomingCallMonitor(
         if (_handlers.TryRemove(channel, out var handler))
         {
             channel.IncomingCall -= handler;
+            logger.LogDebug("Detached incoming-call handler from channel {ChannelId}.", channel.ChannelId);
         }
     }
 }

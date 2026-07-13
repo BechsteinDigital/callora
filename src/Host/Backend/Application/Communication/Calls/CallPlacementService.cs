@@ -1,4 +1,5 @@
 using Callora.Contracts.Communication;
+using Microsoft.Extensions.Logging;
 
 namespace Callora.Host.Backend.Application.Communication.Calls;
 
@@ -8,7 +9,8 @@ namespace Callora.Host.Backend.Application.Communication.Calls;
 /// </summary>
 public sealed class CallPlacementService(
     ICommunicationChannelRegistry channelRegistry,
-    ActiveCallRegistry callRegistry)
+    ActiveCallRegistry callRegistry,
+    ILogger<CallPlacementService> logger)
 {
     public async Task<ActiveCallSnapshot> PlaceCallAsync(
         string workspaceKey,
@@ -20,8 +22,26 @@ public sealed class CallPlacementService(
         ArgumentNullException.ThrowIfNull(target);
 
         var channel = ResolveChannel(workspaceKey, channelId);
-        var call = await channel.PlaceCallAsync(target, cancellationToken).ConfigureAwait(false);
-        return callRegistry.TrackPlaced(workspaceKey, channel.ChannelId, call);
+        try
+        {
+            var call = await channel.PlaceCallAsync(target, cancellationToken).ConfigureAwait(false);
+            logger.LogInformation(
+                "Placed call {CallId} on channel {ChannelId} (workspace {WorkspaceKey}).",
+                call.CallId,
+                channel.ChannelId,
+                workspaceKey);
+            return callRegistry.TrackPlaced(workspaceKey, channel.ChannelId, call);
+        }
+        catch (Exception exception)
+        {
+            // Rufnummer bleibt bewusst außerhalb des Logs (PII).
+            logger.LogWarning(
+                exception,
+                "Placing a call on channel {ChannelId} (workspace {WorkspaceKey}) failed.",
+                channel.ChannelId,
+                workspaceKey);
+            throw;
+        }
     }
 
     private ICommunicationChannel ResolveChannel(string workspaceKey, string? channelId)

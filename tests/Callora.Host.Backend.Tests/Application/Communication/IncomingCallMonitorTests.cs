@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Callora.Contracts.Communication;
 using Callora.Host.Backend.Application.Communication;
 using Callora.Host.Backend.Application.Communication.Calls;
@@ -13,7 +14,7 @@ public sealed class IncomingCallMonitorTests
     {
         var channelRegistry = new CommunicationChannelRegistry();
         var callRegistry = new ActiveCallRegistry(new CallEventBroadcaster());
-        var monitor = new IncomingCallMonitor(channelRegistry, callRegistry);
+        var monitor = new IncomingCallMonitor(channelRegistry, callRegistry, NullLogger<IncomingCallMonitor>.Instance);
         await monitor.StartAsync(CancellationToken.None);
 
         var channel = new StaticCommunicationChannel("fake-voice");
@@ -33,7 +34,7 @@ public sealed class IncomingCallMonitorTests
         var channel = new StaticCommunicationChannel("fake-voice");
         channelRegistry.Register("workspace-a", channel);
 
-        var monitor = new IncomingCallMonitor(channelRegistry, callRegistry);
+        var monitor = new IncomingCallMonitor(channelRegistry, callRegistry, NullLogger<IncomingCallMonitor>.Instance);
         await monitor.StartAsync(CancellationToken.None);
         channel.SimulateIncomingCall(new CallTarget("+4930111"));
 
@@ -45,7 +46,7 @@ public sealed class IncomingCallMonitorTests
     {
         var channelRegistry = new CommunicationChannelRegistry();
         var callRegistry = new ActiveCallRegistry(new CallEventBroadcaster());
-        var monitor = new IncomingCallMonitor(channelRegistry, callRegistry);
+        var monitor = new IncomingCallMonitor(channelRegistry, callRegistry, NullLogger<IncomingCallMonitor>.Instance);
         await monitor.StartAsync(CancellationToken.None);
 
         var channel = new StaticCommunicationChannel("fake-voice");
@@ -61,7 +62,7 @@ public sealed class IncomingCallMonitorTests
     {
         var channelRegistry = new CommunicationChannelRegistry();
         var callRegistry = new ActiveCallRegistry(new CallEventBroadcaster());
-        var monitor = new IncomingCallMonitor(channelRegistry, callRegistry);
+        var monitor = new IncomingCallMonitor(channelRegistry, callRegistry, NullLogger<IncomingCallMonitor>.Instance);
         await monitor.StartAsync(CancellationToken.None);
         var channel = new StaticCommunicationChannel("fake-voice");
         channelRegistry.Register("workspace-a", channel);

@@ -162,11 +162,16 @@ var openTelemetry = builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource.AddService(observabilityOptions.ServiceName))
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddEntityFrameworkCoreInstrumentation()
         .AddSource(PluginLifecycleTelemetry.ActivitySourceName))
     .WithMetrics(metrics => metrics
         .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
         .AddMeter(PluginLifecycleTelemetry.MeterName)
-        .AddMeter(BackgroundJobTelemetry.MeterName));
+        .AddMeter(BackgroundJobTelemetry.MeterName)
+        .AddMeter(Callora.Host.Backend.Application.Communication.Calls.CallTelemetry.MeterName)
+        .AddMeter(Callora.Host.Backend.Application.Webhooks.WebhookTelemetry.MeterName));
 if (!string.IsNullOrWhiteSpace(observabilityOptions.OtlpEndpoint))
 {
     openTelemetry.UseOtlpExporter(

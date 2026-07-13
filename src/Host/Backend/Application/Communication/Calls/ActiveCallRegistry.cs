@@ -64,6 +64,8 @@ public sealed class ActiveCallRegistry(CallEventBroadcaster broadcaster)
                 : tracked.ToSnapshot();
         }
 
+        CallTelemetry.RecordStarted(tracked.WorkspaceKey, DirectionTag(call));
+
         EventHandler<CallStateChangedEventArgs>? handler = null;
         handler = (_, args) => HandleStateChanged(tracked, handler!, args);
         call.StateChanged += handler;
@@ -101,7 +103,13 @@ public sealed class ActiveCallRegistry(CallEventBroadcaster broadcaster)
 
         if (_calls.TryRemove(tracked.Call.CallId, out _))
         {
+            CallTelemetry.RecordEnded(
+                tracked.WorkspaceKey,
+                DirectionTag(tracked.Call),
+                DateTimeOffset.UtcNow - tracked.StartedAtUtc);
             broadcaster.Publish(new CallEvent(CallEventTypes.Ended, tracked.ToSnapshot()));
         }
     }
+
+    private static string DirectionTag(ICall call) => call.Direction.ToString().ToLowerInvariant();
 }

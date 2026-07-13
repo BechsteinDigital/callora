@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 using Callora.Host.Backend.Application.Mail;
 using Callora.Host.Backend.Tests.Support;
@@ -23,7 +24,7 @@ public sealed class MailSubsystemTests
     public async Task MailJobHandler_SendsParsedMessage()
     {
         var sender = new RecordingMailSender();
-        var handler = new MailSendJobHandler(sender);
+        var handler = new MailSendJobHandler(sender, NullLogger<MailSendJobHandler>.Instance);
         var payload = JsonSerializer.Serialize(
             new MailJobPayload(new MailMessage("user@example.org", "Willkommen", "Hallo!")),
             new JsonSerializerOptions(JsonSerializerDefaults.Web));

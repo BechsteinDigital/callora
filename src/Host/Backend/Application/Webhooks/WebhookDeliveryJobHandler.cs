@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Callora.Host.Backend.Application.Abstractions.Webhooks;
@@ -45,11 +46,28 @@ public sealed class WebhookDeliveryJobHandler(
             WebhookSignature.HeaderName,
             WebhookSignature.Compute(subscription.Secret, payload.BodyJson));
 
-        using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        var startedAt = Stopwatch.GetTimestamp();
+        try
         {
-            throw new InvalidOperationException(
-                $"Webhook delivery to '{subscription.TargetUrl}' failed with status {(int)response.StatusCode}.");
+            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"Webhook delivery to '{subscription.TargetUrl}' failed with status {(int)response.StatusCode}.");
+            }
+
+            WebhookTelemetry.RecordDelivery(
+                payload.EventName,
+                "success",
+                Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
+        }
+        catch
+        {
+            WebhookTelemetry.RecordDelivery(
+                payload.EventName,
+                "failure",
+                Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
+            throw;
         }
     }
 }
