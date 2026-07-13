@@ -78,6 +78,9 @@ public sealed class HostPersistenceDbContext(DbContextOptions<HostPersistenceDbC
     public DbSet<Callora.Host.Backend.Domain.Flows.FlowDefinition> Flows =>
         Set<Callora.Host.Backend.Domain.Flows.FlowDefinition>();
 
+    public DbSet<Callora.Host.Backend.Domain.Entitlements.PluginEntitlement> PluginEntitlements =>
+        Set<Callora.Host.Backend.Domain.Entitlements.PluginEntitlement>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
