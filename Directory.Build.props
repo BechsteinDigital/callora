@@ -1,7 +1,10 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <Version Condition="'$(Version)' == ''">$(VersionPrefix)</Version>
+    <!-- PLAT-224: MinVer versioniert aus Git-Tags (v*); ohne Tag fällt es auf
+         0.1.0-preview.0.<höhe> zurück. Release = Tag pushen. -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerMinimumMajorMinor>0.1</MinVerMinimumMajorMinor>
+    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
     <Authors>Bechstein Digital</Authors>
     <Company>Bechstein Digital</Company>
     <Product>Callora.Host</Product>
@@ -20,4 +23,8 @@
          Plugin-Load); LoggerMessage-SourceGen erst bei echtem Hot-Path-Bedarf. -->
     <NoWarn>$(NoWarn);CA1711;CA1873</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="all" />
+  </ItemGroup>
 </Project>
