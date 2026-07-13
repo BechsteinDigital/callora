@@ -7,4 +7,5 @@ public sealed record WebhookSubscriptionSnapshot(
     string TargetUrl,
     string Secret,
     bool IsActive,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    bool IncludeSensitiveData = false);

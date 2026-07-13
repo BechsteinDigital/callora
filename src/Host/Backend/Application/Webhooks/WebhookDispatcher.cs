@@ -48,12 +48,19 @@ public sealed class WebhookDispatcher(
             data = payload
         }, JsonOptions);
 
+        // Datenminimierung: maskierte Variante ist der Default; Abos mit
+        // explizitem Opt-in erhalten den vollen Payload (PLAT-244).
+        string? minimizedBody = null;
+
         foreach (var subscription in subscriptions)
         {
             try
             {
+                var subscriptionBody = subscription.IncludeSensitiveData
+                    ? body
+                    : minimizedBody ??= WebhookPayloadMinimizer.Minimize(body);
                 var jobPayload = JsonSerializer.Serialize(
-                    new WebhookDeliveryPayload(subscription.Id, eventName, body), JsonOptions);
+                    new WebhookDeliveryPayload(subscription.Id, eventName, subscriptionBody), JsonOptions);
                 await jobQueue.EnqueueAsync(
                         new BackgroundJobRequest(
                             DeliveryJobType,

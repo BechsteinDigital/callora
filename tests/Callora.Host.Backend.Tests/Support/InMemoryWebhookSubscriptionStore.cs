@@ -40,6 +40,7 @@ public sealed class InMemoryWebhookSubscriptionStore : IWebhookSubscriptionStore
         string eventName,
         string targetUrl,
         string secret,
+        bool includeSensitiveData = false,
         CancellationToken cancellationToken = default)
     {
         var snapshot = new WebhookSubscriptionSnapshot(
@@ -49,7 +50,8 @@ public sealed class InMemoryWebhookSubscriptionStore : IWebhookSubscriptionStore
             targetUrl,
             secret,
             IsActive: true,
-            DateTimeOffset.UtcNow);
+            DateTimeOffset.UtcNow,
+            includeSensitiveData);
         _subscriptions.Add(snapshot);
         return Task.FromResult(snapshot);
     }

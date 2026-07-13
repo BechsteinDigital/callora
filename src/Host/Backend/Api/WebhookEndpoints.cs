@@ -56,6 +56,7 @@ public static class WebhookEndpoints
                     request.EventName,
                     request.TargetUrl,
                     request.Secret,
+                    request.IncludeSensitiveData,
                     cancellationToken);
                 return Results.Created($"/api/webhooks/{created.Id}", ToPublicShape(created));
             })
@@ -106,6 +107,7 @@ public static class WebhookEndpoints
         subscription.EventName,
         subscription.TargetUrl,
         subscription.IsActive,
+        subscription.IncludeSensitiveData,
         subscription.CreatedAtUtc
     };
 }

@@ -19,6 +19,7 @@ public interface IWebhookSubscriptionStore
         string eventName,
         string targetUrl,
         string secret,
+        bool includeSensitiveData = false,
         CancellationToken cancellationToken = default);
 
     Task<bool> SetActiveAsync(Guid id, bool isActive, CancellationToken cancellationToken = default);

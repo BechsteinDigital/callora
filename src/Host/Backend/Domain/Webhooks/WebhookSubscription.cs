@@ -21,6 +21,13 @@ public sealed class WebhookSubscription
 
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Opt-in for unmasked payloads: by default phone numbers, display names
+    /// and e-mail addresses are masked before leaving the platform
+    /// (data minimization, PLAT-244).
+    /// </summary>
+    public bool IncludeSensitiveData { get; set; }
+
     public DateTimeOffset CreatedAtUtc { get; set; }
 
     public DateTimeOffset UpdatedAtUtc { get; set; }

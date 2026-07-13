@@ -4,4 +4,5 @@ public sealed record CreateWebhookSubscriptionApiRequest(
     string EventName,
     string TargetUrl,
     string Secret,
-    string? WorkspaceKey);
+    string? WorkspaceKey,
+    bool IncludeSensitiveData = false);

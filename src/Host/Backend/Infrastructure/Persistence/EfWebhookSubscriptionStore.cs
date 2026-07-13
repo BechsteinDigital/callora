@@ -61,6 +61,7 @@ public sealed class EfWebhookSubscriptionStore(
         string eventName,
         string targetUrl,
         string secret,
+        bool includeSensitiveData = false,
         CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
@@ -72,6 +73,7 @@ public sealed class EfWebhookSubscriptionStore(
             TargetUrl = targetUrl.Trim(),
             Secret = dataProtector.Protect(ProtectionScope, secret),
             IsActive = true,
+            IncludeSensitiveData = includeSensitiveData,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
@@ -118,7 +120,8 @@ public sealed class EfWebhookSubscriptionStore(
         entity.TargetUrl,
         UnprotectSecret(entity.Secret),
         entity.IsActive,
-        entity.CreatedAtUtc);
+        entity.CreatedAtUtc,
+        entity.IncludeSensitiveData);
 
     private string UnprotectSecret(string storedSecret) =>
         dataProtector.TryUnprotect(ProtectionScope, storedSecret, out var plaintext)
