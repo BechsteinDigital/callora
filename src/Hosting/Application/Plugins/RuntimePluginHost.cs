@@ -166,7 +166,13 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
             var activation = await ActivateInternalAsync(record, cancellationToken).ConfigureAwait(false);
             if (!activation.IsSuccess)
+            {
+                // Fehlgeschlagene Aktivierung ist sichtbar Faulted, nicht
+                // stillschweigend "installiert" (PLAT-255).
+                record.State = RuntimePluginState.Faulted;
+                _installed[record.PluginId] = record;
                 return activation;
+            }
 
             record.State = RuntimePluginState.Active;
             _installed[record.PluginId] = record;
@@ -211,7 +217,13 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
             var deactivation = await DeactivateInternalAsync(activeHandle, cancellationToken).ConfigureAwait(false);
             if (!deactivation.IsSuccess)
+            {
+                // Teardown-Fehler pinnen ggf. Ressourcen bis zum Neustart —
+                // als UnloadFailed ausgewiesen statt verschluckt (PLAT-255).
+                record.State = RuntimePluginState.UnloadFailed;
+                _installed[record.PluginId] = record;
                 return deactivation;
+            }
 
             record.State = RuntimePluginState.Inactive;
             _installed[record.PluginId] = record;
