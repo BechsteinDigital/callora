@@ -142,6 +142,7 @@ public sealed class AuthAndUserEndpointsTests
         builder.Services.AddAuthorization();
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton<IBackendUserStore>(userStore);
+        builder.Services.AddSingleton<IUserDataSubjectService>(new InMemoryUserDataSubjectService(userStore));
         builder.Services.AddSingleton<IBackendRbacStore>(new InMemoryBackendRbacStore(options));
 
         var app = builder.Build();

@@ -80,13 +80,28 @@ public static class UserEndpoints
 
         group.MapDelete("/{userId}", async (
             string userId,
-            IBackendUserStore userStore,
+            IUserDataSubjectService dataSubjectService,
             CancellationToken cancellationToken) =>
         {
-            var removed = await userStore.RemoveAsync(userId, cancellationToken).ConfigureAwait(false);
+            // Art. 17: Löschung inklusive Anonymisierung des Audit-Trails
+            // (PLAT-243).
+            var removed = await dataSubjectService.EraseAsync(userId, cancellationToken).ConfigureAwait(false);
             return removed ? Results.NoContent() : Results.NotFound();
         }).WithName("Users_Delete")
             .RequirePermission(BackendPermissionKeys.UserDelete);
+
+        group.MapGet("/{userId}/data-export", async (
+            string userId,
+            IUserDataSubjectService dataSubjectService,
+            CancellationToken cancellationToken) =>
+        {
+            var export = await dataSubjectService.ExportAsync(userId, cancellationToken).ConfigureAwait(false);
+            return export is null
+                ? ApiProblems.NotFound($"User '{userId}' not found.")
+                : Results.Ok(export);
+        }).WithName("Users_DataExport")
+            .Produces<UserDataExport>()
+            .RequirePermission(BackendPermissionKeys.UserRead);
     }
 
     private static BackendUserApiResponse ToResponse(BackendUser user)
