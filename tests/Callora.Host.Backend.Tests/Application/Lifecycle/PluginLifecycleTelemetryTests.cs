@@ -37,8 +37,11 @@ public sealed class PluginLifecycleTelemetryTests
         using var activityListener = CreateActivityListener(activities);
         ActivitySource.AddActivityListener(activityListener);
 
-        var metricMeasurements = new List<(string InstrumentName, string Action, string Scope, string Outcome, string CorrelationId)>();
-        using var meterListener = CreateMeterListener(metricMeasurements);
+        // Der Meter ist statisch und prozessweit: parallel laufende Tests emittieren
+        // in denselben Listener. Deshalb wird thread-sicher gesammelt und auf die
+        // eigene plugin.id gefiltert (PLAT-222).
+        var recordedMeasurements = new List<(string InstrumentName, string Action, string Scope, string Outcome, string CorrelationId)>();
+        using var meterListener = CreateMeterListener(recordedMeasurements, ownPluginId: "plugin-telemetry");
 
         await sut.InstallAsync(new InstallPluginCommand("/tmp/plugin-telemetry.dll", null, "tester"));
         await sut.ActivateAsync(new PluginLifecycleCommand("plugin-telemetry", "tester", "workspace-a"));
@@ -47,6 +50,12 @@ public sealed class PluginLifecycleTelemetryTests
 
         activityListener.Dispose();
         meterListener.Dispose();
+
+        List<(string InstrumentName, string Action, string Scope, string Outcome, string CorrelationId)> metricMeasurements;
+        lock (recordedMeasurements)
+        {
+            metricMeasurements = [.. recordedMeasurements];
+        }
 
         Assert.Contains(activities, x => x.OperationName == "plugin.lifecycle.install");
         Assert.Contains(activities, x => x.OperationName == "plugin.lifecycle.activate");
@@ -137,7 +146,8 @@ public sealed class PluginLifecycleTelemetryTests
     }
 
     private static MeterListener CreateMeterListener(
-        List<(string InstrumentName, string Action, string Scope, string Outcome, string CorrelationId)> metricMeasurements)
+        List<(string InstrumentName, string Action, string Scope, string Outcome, string CorrelationId)> metricMeasurements,
+        string ownPluginId)
     {
         var listener = new MeterListener
         {
@@ -150,28 +160,46 @@ public sealed class PluginLifecycleTelemetryTests
 
         listener.SetMeasurementEventCallback<long>((instrument, _, tags, _) =>
         {
-            if (TryReadTags(tags, out var action, out var scope, out var outcome, out var correlationId))
-                metricMeasurements.Add((instrument.Name, action, scope, outcome, correlationId));
+            RecordMeasurement(metricMeasurements, ownPluginId, instrument.Name, tags);
         });
         listener.SetMeasurementEventCallback<double>((instrument, _, tags, _) =>
         {
-            if (TryReadTags(tags, out var action, out var scope, out var outcome, out var correlationId))
-                metricMeasurements.Add((instrument.Name, action, scope, outcome, correlationId));
+            RecordMeasurement(metricMeasurements, ownPluginId, instrument.Name, tags);
         });
 
         listener.Start();
         return listener;
     }
 
+    private static void RecordMeasurement(
+        List<(string InstrumentName, string Action, string Scope, string Outcome, string CorrelationId)> metricMeasurements,
+        string ownPluginId,
+        string instrumentName,
+        ReadOnlySpan<KeyValuePair<string, object?>> tags)
+    {
+        if (!TryReadTags(tags, out var action, out var scope, out var pluginId, out var outcome, out var correlationId))
+            return;
+
+        if (!string.Equals(pluginId, ownPluginId, StringComparison.Ordinal))
+            return;
+
+        lock (metricMeasurements)
+        {
+            metricMeasurements.Add((instrumentName, action, scope, outcome, correlationId));
+        }
+    }
+
     private static bool TryReadTags(
         ReadOnlySpan<KeyValuePair<string, object?>> tags,
         out string action,
         out string scope,
+        out string pluginId,
         out string outcome,
         out string correlationId)
     {
         action = string.Empty;
         scope = string.Empty;
+        pluginId = string.Empty;
         outcome = string.Empty;
         correlationId = string.Empty;
 
@@ -185,6 +213,11 @@ public sealed class PluginLifecycleTelemetryTests
             if (tag.Key == "plugin.lifecycle.scope")
             {
                 scope = tag.Value?.ToString() ?? string.Empty;
+            }
+
+            if (tag.Key == "plugin.id")
+            {
+                pluginId = tag.Value?.ToString() ?? string.Empty;
             }
 
             if (tag.Key == "plugin.lifecycle.outcome")

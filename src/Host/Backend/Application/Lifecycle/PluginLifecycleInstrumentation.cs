@@ -38,6 +38,7 @@ public static class PluginLifecycleInstrumentation
             PluginLifecycleTelemetry.CompleteOperation(
                 action,
                 scope,
+                result?.PluginId ?? pluginId,
                 activity,
                 result?.IsSuccess ?? false,
                 result?.ErrorCode,

@@ -45,6 +45,7 @@ public static class PluginLifecycleTelemetry
     public static void CompleteOperation(
         string action,
         string scope,
+        string? pluginId,
         Activity? activity,
         bool isSuccess,
         string? errorCode,
@@ -61,6 +62,7 @@ public static class PluginLifecycleTelemetry
         [
             new KeyValuePair<string, object?>("plugin.lifecycle.action", action),
             new KeyValuePair<string, object?>("plugin.lifecycle.scope", scope),
+            new KeyValuePair<string, object?>("plugin.id", pluginId),
             new KeyValuePair<string, object?>("plugin.lifecycle.outcome", outcome),
             new KeyValuePair<string, object?>("correlation.id", correlationId)
         ];
