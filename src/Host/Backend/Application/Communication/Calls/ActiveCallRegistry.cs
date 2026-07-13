@@ -17,6 +17,12 @@ public sealed class ActiveCallRegistry(CallEventBroadcaster broadcaster)
     public ActiveCallSnapshot TrackPlaced(string workspaceKey, string channelId, ICall call) =>
         Track(workspaceKey, channelId, call, CallEventTypes.Placed);
 
+    /// <summary>
+    /// All live calls across workspaces — used by the graceful-shutdown
+    /// path to hang up remaining calls (PLAT-234).
+    /// </summary>
+    public IReadOnlyList<TrackedCall> ListAllTracked() => [.. _calls.Values];
+
     public IReadOnlyList<ActiveCallSnapshot> List(string workspaceKey)
     {
         if (string.IsNullOrWhiteSpace(workspaceKey))

@@ -33,6 +33,12 @@ public sealed class CallEventSubscription : IDisposable
 
     internal void Write(CallEvent callEvent) => _channel.Writer.TryWrite(callEvent);
 
+    /// <summary>
+    /// Completes the channel so the consuming stream ends gracefully
+    /// (host shutdown, PLAT-234).
+    /// </summary>
+    internal void Complete() => _channel.Writer.TryComplete();
+
     public void Dispose()
     {
         _channel.Writer.TryComplete();

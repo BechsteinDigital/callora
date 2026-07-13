@@ -121,6 +121,9 @@ builder.Services.AddSingleton<CallEventBroadcaster>();
 builder.Services.AddSingleton<ActiveCallRegistry>();
 builder.Services.AddSingleton<CallPlacementService>();
 builder.Services.AddHostedService<IncomingCallMonitor>();
+// Nach dem Monitor registriert: StopAsync läuft in umgekehrter Reihenfolge,
+// die Hangups passieren also, solange der Monitor noch angehängt ist.
+builder.Services.AddHostedService<Callora.Host.Backend.Application.Communication.Calls.CallGracefulShutdownService>();
 builder.Services.AddScoped<EfPluginDataStore>();
 builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
 

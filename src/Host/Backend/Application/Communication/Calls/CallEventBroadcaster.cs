@@ -40,5 +40,17 @@ public sealed class CallEventBroadcaster
         }
     }
 
+    /// <summary>
+    /// Completes every open subscription so SSE streams end gracefully
+    /// instead of being aborted mid-write (host shutdown, PLAT-234).
+    /// </summary>
+    public void CompleteAll()
+    {
+        foreach (var subscription in _subscriptions.Values)
+        {
+            subscription.Complete();
+        }
+    }
+
     private void Remove(Guid subscriptionId) => _subscriptions.TryRemove(subscriptionId, out _);
 }
