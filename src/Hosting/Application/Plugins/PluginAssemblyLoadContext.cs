@@ -3,7 +3,9 @@ using System.Runtime.Loader;
 
 namespace Callora.Hosting.Application.Plugins;
 
-internal sealed class PluginAssemblyLoadContext(string pluginAssemblyPath) : AssemblyLoadContext(
+internal sealed class PluginAssemblyLoadContext(
+    string pluginAssemblyPath,
+    SharedContractAssemblyRegistry? sharedContracts = null) : AssemblyLoadContext(
     name: $"CalloraPlugin:{Path.GetFileNameWithoutExtension(pluginAssemblyPath)}",
     isCollectible: true)
 {
@@ -18,6 +20,14 @@ internal sealed class PluginAssemblyLoadContext(string pluginAssemblyPath) : Ass
              name.StartsWith("Callora.", StringComparison.Ordinal)))
         {
             return null;
+        }
+
+        // Von Plugins mitgebrachte Contract-Assemblies teilen ihre Typidentität
+        // über die Shared-Registry (PLAT-256) statt pro Plugin geladen zu werden.
+        var sharedContract = sharedContracts?.TryResolve(assemblyName);
+        if (sharedContract is not null)
+        {
+            return sharedContract;
         }
 
         var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);

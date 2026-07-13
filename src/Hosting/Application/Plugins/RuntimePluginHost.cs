@@ -20,6 +20,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     private readonly ConcurrentDictionary<string, ActivePluginHandle> _active = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<Type, ImmutableArray<PluginExportRegistration>> _exports = new();
     private readonly SemaphoreSlim _mutationLock = new(1, 1);
+    private readonly SharedContractAssemblyRegistry _sharedContracts;
     private long _exportSequence;
 
     /// <summary>
@@ -33,6 +34,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         _services = services;
         _options = options;
         _logger = logger;
+        _sharedContracts = new SharedContractAssemblyRegistry(logger);
     }
 
     /// <inheritdoc />
@@ -303,7 +305,8 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
         try
         {
-            loadContext = new PluginAssemblyLoadContext(record.AssemblyPath);
+            RegisterDeclaredContracts(record.AssemblyPath);
+            loadContext = new PluginAssemblyLoadContext(record.AssemblyPath, _sharedContracts);
             var assembly = loadContext.LoadFromAssemblyPath(record.AssemblyPath);
             var pluginType = ResolvePluginType(assembly, record.EntryTypeName);
             if (pluginType is null)
@@ -401,7 +404,8 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
         try
         {
-            loadContext = new PluginAssemblyLoadContext(fullPath);
+            RegisterDeclaredContracts(fullPath);
+            loadContext = new PluginAssemblyLoadContext(fullPath, _sharedContracts);
             var assembly = loadContext.LoadFromAssemblyPath(fullPath);
             var pluginType = ResolvePluginType(assembly, entryTypeName);
             if (pluginType is null)
@@ -497,6 +501,19 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         }
 
         return null;
+    }
+
+    private void RegisterDeclaredContracts(string pluginAssemblyPath)
+    {
+        var declaredContracts = PluginContractManifestReader.ReadDeclaredContracts(pluginAssemblyPath);
+        if (declaredContracts.Count == 0)
+        {
+            return;
+        }
+
+        var pluginDirectory = Path.GetDirectoryName(Path.GetFullPath(pluginAssemblyPath))
+            ?? throw new InvalidOperationException($"Plugin path '{pluginAssemblyPath}' has no directory.");
+        _sharedContracts.RegisterContracts(pluginDirectory, declaredContracts);
     }
 
     private static Type? ResolvePluginType(Assembly assembly, string? entryTypeName)
