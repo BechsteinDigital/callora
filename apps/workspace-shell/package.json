@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "sass": "^1.80.0",
-    "@vue/language-core": "^2.2.12",
-    "vue-tsc": "^2.2.12"
+    "@vue/language-core": "^3.3.7",
+    "vue-tsc": "^3.3.7"
   }
 }
