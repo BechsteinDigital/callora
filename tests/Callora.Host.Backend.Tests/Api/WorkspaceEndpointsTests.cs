@@ -173,6 +173,8 @@ public sealed class WorkspaceEndpointsTests
             .AddScheme<AuthenticationSchemeOptions, HeaderAuthenticationHandler>("Header", _ => { });
         builder.Services.AddAuthorization();
         builder.Services.AddSingleton<IWorkspaceManagementStore>(workspaceStore);
+        builder.Services.AddSingleton<IWorkspaceDataPurgeService>(
+            new InMemoryWorkspaceDataPurgeService(workspaceStore));
         builder.Services.AddSingleton(new BackendHostOptions
         {
             DefaultTenantKey = "tenant-a"

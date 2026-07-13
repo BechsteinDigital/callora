@@ -16,5 +16,11 @@ public sealed class CustomFieldValue
 
     public string ValueJson { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Owning workspace for workspace-bound values; null for operator-level
+    /// entities. Enables cascading deletion (GDPR, PLAT-245).
+    /// </summary>
+    public string? WorkspaceKey { get; set; }
+
     public DateTimeOffset UpdatedAtUtc { get; set; }
 }

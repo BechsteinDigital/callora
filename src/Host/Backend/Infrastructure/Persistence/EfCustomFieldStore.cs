@@ -94,6 +94,12 @@ public sealed class EfCustomFieldStore(HostPersistenceDbContext dbContext) : ICu
         var normalizedEntity = entityName.Trim().ToLowerInvariant();
         var normalizedId = entityId.Trim();
 
+        // Workspace-Entitäten tragen ihren Besitzer als Spalte, damit die
+        // Workspace-Löschkaskade die Werte findet (PLAT-245).
+        var workspaceKey = string.Equals(normalizedEntity, "workspace", StringComparison.Ordinal)
+            ? normalizedId
+            : null;
+
         var existing = await dbContext.CustomFieldValues
             .Where(x => x.EntityName == normalizedEntity && x.EntityId == normalizedId)
             .ToDictionaryAsync(x => x.FieldKey, StringComparer.OrdinalIgnoreCase, cancellationToken)
@@ -115,6 +121,7 @@ public sealed class EfCustomFieldStore(HostPersistenceDbContext dbContext) : ICu
             if (existing.TryGetValue(normalizedKey, out var current))
             {
                 current.ValueJson = valueJson;
+                current.WorkspaceKey = workspaceKey;
                 current.UpdatedAtUtc = now;
             }
             else
@@ -126,6 +133,7 @@ public sealed class EfCustomFieldStore(HostPersistenceDbContext dbContext) : ICu
                     EntityId = normalizedId,
                     FieldKey = normalizedKey,
                     ValueJson = valueJson,
+                    WorkspaceKey = workspaceKey,
                     UpdatedAtUtc = now
                 });
             }

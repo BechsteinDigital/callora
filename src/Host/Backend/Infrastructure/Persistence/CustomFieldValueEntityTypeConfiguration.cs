@@ -16,5 +16,7 @@ public sealed class CustomFieldValueEntityTypeConfiguration : IEntityTypeConfigu
         builder.Property(x => x.EntityId).HasMaxLength(200).IsRequired();
         builder.Property(x => x.FieldKey).HasMaxLength(200).IsRequired();
         builder.Property(x => x.ValueJson).IsRequired();
+        builder.Property(x => x.WorkspaceKey).HasMaxLength(120);
+        builder.HasIndex(x => x.WorkspaceKey);
     }
 }

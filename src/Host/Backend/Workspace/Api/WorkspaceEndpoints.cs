@@ -1,5 +1,6 @@
 using Callora.Host.Backend.Api;
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Infrastructure.Persistence;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Security;
 
@@ -89,6 +90,7 @@ public static class WorkspaceEndpoints
             string workspaceKey,
             BackendHostOptions hostOptions,
             IWorkspaceManagementStore workspaceStore,
+            IWorkspaceDataPurgeService purgeService,
             CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
@@ -103,7 +105,9 @@ public static class WorkspaceEndpoints
                 return Results.NotFound();
             }
 
-            var removed = await workspaceStore.RemoveAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            // Kaskadierende Löschung: Workspace + alle workspace-gebundenen
+            // Daten in einer Transaktion (DSGVO, PLAT-242).
+            var removed = await purgeService.PurgeAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
             return removed ? Results.NoContent() : Results.NotFound();
         }).WithName("Workspaces_Delete")
             .RequirePermission(BackendPermissionKeys.WorkspaceDelete);
