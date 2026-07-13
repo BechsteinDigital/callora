@@ -150,9 +150,9 @@ builder.Services.AddSingleton<ISecretStore>(sp => new ChainedSecretStore(
 ]));
 builder.Services.AddDataProtection()
     .SetApplicationName("callora-host")
-    // Durable key ring: without it, restarts orphan every protected secret
-    // (SIP passwords, webhook secrets, config secrets).
-    .PersistKeysToFileSystem(new DirectoryInfo(backendOptions.DataProtectionKeysPath));
+    // Datenbank-Keyring: mehrinstanzfähig; Alt-Keys aus dem Dateisystem
+    // importiert der DB-Init-Service einmalig (PLAT-232).
+    .PersistKeysToDbContext<HostPersistenceDbContext>();
 builder.Services.AddSingleton<IPluginDataProtector, DataProtectionPluginDataProtector>();
 builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
 builder.Services.AddScoped<MarketplaceEntitlementApplier>();

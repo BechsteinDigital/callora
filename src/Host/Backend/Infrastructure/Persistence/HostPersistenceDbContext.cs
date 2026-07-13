@@ -3,13 +3,17 @@ using Callora.Host.Backend.Domain.Plugins;
 using Callora.Host.Backend.Domain.Security;
 using Callora.Host.Backend.Domain.Tenants;
 using Callora.Host.Backend.Domain.Workspaces;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WorkspaceEntity = Callora.Host.Backend.Domain.Workspaces.Workspace;
 
 namespace Callora.Host.Backend.Infrastructure.Persistence;
 
-public sealed class HostPersistenceDbContext(DbContextOptions<HostPersistenceDbContext> options) : DbContext(options)
+public sealed class HostPersistenceDbContext(DbContextOptions<HostPersistenceDbContext> options) : DbContext(options), IDataProtectionKeyContext
 {
+    // Datenbank-Keyring statt Dateisystem: mehrinstanzfähig (PLAT-232).
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+
     public DbSet<PluginInstallation> PluginInstallations => Set<PluginInstallation>();
 
     public DbSet<WorkspacePluginActivation> WorkspacePluginActivations => Set<WorkspacePluginActivation>();
