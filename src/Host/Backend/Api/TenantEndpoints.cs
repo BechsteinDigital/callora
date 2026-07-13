@@ -44,7 +44,7 @@ public static class TenantEndpoints
                 TenantCreateStatus.Created when result.Tenant is not null =>
                     Results.Created($"/api/tenants/{result.Tenant.TenantKey}", ToResponse(result.Tenant)),
                 TenantCreateStatus.AlreadyExists =>
-                    Results.Conflict(new { message = $"Tenant '{request.TenantKey}' already exists." }),
+                    ApiProblems.Conflict($"Tenant '{request.TenantKey}' already exists."),
                 _ => Results.BadRequest()
             };
         }).WithName("Tenants_Create")
@@ -62,7 +62,7 @@ public static class TenantEndpoints
             return result.Status switch
             {
                 TenantSetStateStatus.Updated when result.Tenant is not null => Results.Ok(ToResponse(result.Tenant)),
-                TenantSetStateStatus.NotFound => Results.NotFound(new { message = $"Tenant '{tenantKey}' not found." }),
+                TenantSetStateStatus.NotFound => ApiProblems.NotFound($"Tenant '{tenantKey}' not found."),
                 _ => Results.BadRequest()
             };
         }).WithName("Tenants_Activate")
@@ -80,7 +80,7 @@ public static class TenantEndpoints
             return result.Status switch
             {
                 TenantSetStateStatus.Updated when result.Tenant is not null => Results.Ok(ToResponse(result.Tenant)),
-                TenantSetStateStatus.NotFound => Results.NotFound(new { message = $"Tenant '{tenantKey}' not found." }),
+                TenantSetStateStatus.NotFound => ApiProblems.NotFound($"Tenant '{tenantKey}' not found."),
                 _ => Results.BadRequest()
             };
         }).WithName("Tenants_Suspend")
@@ -95,8 +95,8 @@ public static class TenantEndpoints
             return result.Status switch
             {
                 TenantDeleteStatus.Deleted => Results.NoContent(),
-                TenantDeleteStatus.NotFound => Results.NotFound(new { message = $"Tenant '{tenantKey}' not found." }),
-                TenantDeleteStatus.HasWorkspaces => Results.Conflict(new { message = $"Tenant '{tenantKey}' still has workspaces." }),
+                TenantDeleteStatus.NotFound => ApiProblems.NotFound($"Tenant '{tenantKey}' not found."),
+                TenantDeleteStatus.HasWorkspaces => ApiProblems.Conflict($"Tenant '{tenantKey}' still has workspaces."),
                 _ => Results.BadRequest()
             };
         }).WithName("Tenants_Delete")

@@ -29,7 +29,7 @@ public static class FlowEndpoints
                 CancellationToken cancellationToken) =>
             {
                 if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.TriggerEvent))
-                    return Results.BadRequest(new { error = "name and triggerEvent are required." });
+                    return ApiProblems.BadRequest("name and triggerEvent are required.");
 
                 var created = await store.UpsertAsync(
                     new FlowSnapshot(
@@ -43,7 +43,7 @@ public static class FlowEndpoints
                         request.Priority,
                         DateTimeOffset.UtcNow),
                     cancellationToken);
-                return Results.Ok(created);
+                return Results.Created($"/api/flows/{created.Id}", created);
             })
             .RequirePermission(BackendPermissionKeys.FlowManage)
             .RequireWorkspaceScope();

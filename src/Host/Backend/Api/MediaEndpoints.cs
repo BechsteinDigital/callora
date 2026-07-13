@@ -34,9 +34,9 @@ public static class MediaEndpoints
                 CancellationToken cancellationToken) =>
             {
                 if (!MediaUploadPolicy.IsAllowedContentType(file.ContentType))
-                    return Results.BadRequest(new { error = $"Content type '{file.ContentType}' is not allowed." });
+                    return ApiProblems.BadRequest($"Content type '{file.ContentType}' is not allowed.");
                 if (!MediaUploadPolicy.IsAllowedSize(file.Length))
-                    return Results.BadRequest(new { error = $"File size must be between 1 byte and {MediaUploadPolicy.MaxSizeBytes} bytes." });
+                    return ApiProblems.BadRequest($"File size must be between 1 byte and {MediaUploadPolicy.MaxSizeBytes} bytes.");
 
                 var item = await store.AddAsync(
                     workspaceKey,
@@ -49,7 +49,7 @@ public static class MediaEndpoints
 
                 await using var content = file.OpenReadStream();
                 await storage.WriteAsync(item.Id, content, cancellationToken);
-                return Results.Ok(item);
+                return Results.Created($"/api/media/{item.Id}", item);
             })
             .RequirePermission(BackendPermissionKeys.MediaManage)
             .RequireWorkspaceScope()

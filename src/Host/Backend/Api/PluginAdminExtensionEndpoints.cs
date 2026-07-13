@@ -58,7 +58,7 @@ public static class PluginAdminExtensionEndpoints
 
         if (match is null)
         {
-            return Results.NotFound(new { message = $"No plugin admin route found for '{pluginId}/{routePath}'." });
+            return ApiProblems.NotFound($"No plugin admin route found for '{pluginId}/{routePath}'.");
         }
 
         if (!EndpointAuthorizationExtensions.UserHasPermission(httpContext.User, match.Route.RequiredPermission))

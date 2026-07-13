@@ -87,7 +87,7 @@ public static class ThemeEndpoints
         {
             if (!await IsWorkspaceInConfiguredTenantAsync(workspaceKey, hostOptions, workspaceStore, cancellationToken).ConfigureAwait(false))
             {
-                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
             var assignment = await workspaceStore.GetThemeAssignmentAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
@@ -106,7 +106,7 @@ public static class ThemeEndpoints
         {
             if (!await IsWorkspaceInConfiguredTenantAsync(workspaceKey, hostOptions, workspaceStore, cancellationToken).ConfigureAwait(false))
             {
-                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
             var definitionExists = (await store.ListDefinitionsAsync(surface: "workspace", isActive: true, cancellationToken)
@@ -134,7 +134,7 @@ public static class ThemeEndpoints
 
             if (assignment is null)
             {
-                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
             cache.InvalidateWorkspace(workspaceKey);
@@ -151,13 +151,13 @@ public static class ThemeEndpoints
         {
             if (!await IsWorkspaceInConfiguredTenantAsync(workspaceKey, hostOptions, workspaceStore, cancellationToken).ConfigureAwait(false))
             {
-                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
             var cleared = await workspaceStore.ClearThemeAssignmentAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
             if (!cleared)
             {
-                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
             cache.InvalidateWorkspace(workspaceKey);
@@ -174,7 +174,7 @@ public static class ThemeEndpoints
         {
             if (!await IsWorkspaceInConfiguredTenantAsync(workspaceKey, hostOptions, workspaceStore, cancellationToken).ConfigureAwait(false))
             {
-                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
             var effective = await resolver.ResolveAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
@@ -191,7 +191,7 @@ public static class ThemeEndpoints
         {
             if (!await IsWorkspaceInConfiguredTenantAsync(workspaceKey, hostOptions, workspaceStore, cancellationToken).ConfigureAwait(false))
             {
-                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
             var assignment = await workspaceStore.GetThemeAssignmentAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
@@ -235,7 +235,7 @@ public static class ThemeEndpoints
         {
             if (!await IsWorkspaceInConfiguredTenantAsync(workspaceKey, hostOptions, workspaceStore, cancellationToken).ConfigureAwait(false))
             {
-                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
             var assignment = await workspaceStore.GetThemeAssignmentAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
@@ -243,7 +243,7 @@ public static class ThemeEndpoints
                 string.IsNullOrWhiteSpace(assignment.ThemePluginId) ||
                 string.IsNullOrWhiteSpace(assignment.ThemeVersion))
             {
-                return Results.BadRequest(new { message = "No theme assigned to this workspace." });
+                return ApiProblems.BadRequest("No theme assigned to this workspace.");
             }
 
             var definitions = await settingsStore

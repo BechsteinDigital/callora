@@ -1,3 +1,4 @@
+using Callora.Host.Backend.Api;
 using System.Security.Claims;
 using Callora.Host.Backend.Application.Abstractions.Extensions;
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
@@ -24,7 +25,7 @@ public static class WorkspaceThemeEndpoints
         {
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
             {
-                return Results.BadRequest(new { message = "Workspace host default tenant key is not configured." });
+                return ApiProblems.BadRequest("Workspace host default tenant key is not configured.");
             }
 
             var resolvedWorkspaceKey = string.IsNullOrWhiteSpace(workspaceKey)
@@ -33,7 +34,7 @@ public static class WorkspaceThemeEndpoints
 
             if (string.IsNullOrWhiteSpace(resolvedWorkspaceKey))
             {
-                return Results.BadRequest(new { message = "workspaceKey query parameter or workspace claim is required." });
+                return ApiProblems.BadRequest("workspaceKey query parameter or workspace claim is required.");
             }
 
             if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(user, resolvedWorkspaceKey))
@@ -45,7 +46,7 @@ public static class WorkspaceThemeEndpoints
             if (workspace is null ||
                 !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
             {
-                return Results.NotFound(new { message = $"Workspace '{resolvedWorkspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{resolvedWorkspaceKey}' not found.");
             }
 
             var effective = await resolver.ResolveAsync(resolvedWorkspaceKey, cancellationToken).ConfigureAwait(false);

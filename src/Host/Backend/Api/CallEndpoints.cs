@@ -40,7 +40,7 @@ public static class CallEndpoints
             CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(request.Target))
-                return Results.BadRequest(new { error = "target is required." });
+                return ApiProblems.BadRequest("target is required.");
 
             try
             {
@@ -53,7 +53,7 @@ public static class CallEndpoints
             }
             catch (InvalidOperationException exception)
             {
-                return Results.Conflict(new { error = exception.Message });
+                return ApiProblems.Conflict(exception.Message);
             }
         }).RequirePermission(BackendPermissionKeys.CallExecute)
             .RequireWorkspaceScope();
@@ -70,7 +70,7 @@ public static class CallEndpoints
             CancellationToken cancellationToken) =>
         {
             if (request.Tone is not { Length: 1 })
-                return Results.BadRequest(new { error = "tone must be exactly one character." });
+                return ApiProblems.BadRequest("tone must be exactly one character.");
 
             if (!registry.TryGet(workspaceKey, callId, out var tracked) || tracked is null)
                 return Results.NotFound();
@@ -108,7 +108,7 @@ public static class CallEndpoints
             }
             catch (InvalidOperationException exception)
             {
-                return Results.Conflict(new { error = exception.Message });
+                return ApiProblems.Conflict(exception.Message);
             }
         }).RequirePermission(BackendPermissionKeys.CallExecute)
             .RequireWorkspaceScope();

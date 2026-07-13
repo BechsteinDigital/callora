@@ -91,6 +91,13 @@ public sealed class BackendHostOptions
     /// </summary>
     public string[] PlatformOperatorRoles { get; set; } = ["admin"];
 
+    /// <summary>
+    /// Base URI for RFC 9457 problem types. Defaults to a URN so no
+    /// registered domain is required; point it at a documentation host
+    /// (ending with "/") once one exists.
+    /// </summary>
+    public string ProblemTypeBaseUri { get; set; } = "urn:callora:problem:";
+
     public string[] TrustedSignerThumbprints { get; set; } = [];
 
     public BackendTrustedSignerOptions[] TrustedSigners { get; set; } = [];

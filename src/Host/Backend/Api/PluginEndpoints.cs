@@ -109,14 +109,14 @@ public static class PluginEndpoints
         {
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
             {
-                return Results.BadRequest(new { message = "BackendHost.DefaultTenantKey is not configured." });
+                return ApiProblems.BadRequest("BackendHost.DefaultTenantKey is not configured.");
             }
 
             var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
             if (workspace is null ||
                 !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
             {
-                return Results.NotFound(new { message = $"Workspace '{workspaceKey}' not found." });
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
             var isEntitled = await entitlementStore
@@ -142,12 +142,12 @@ public static class PluginEndpoints
         {
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
             {
-                return Results.BadRequest(new { message = "BackendHost.DefaultTenantKey is not configured." });
+                return ApiProblems.BadRequest("BackendHost.DefaultTenantKey is not configured.");
             }
 
             if (!string.Equals(tenantId, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
             {
-                return Results.NotFound(new { message = $"Tenant '{tenantId}' not found." });
+                return ApiProblems.NotFound($"Tenant '{tenantId}' not found.");
             }
 
             var isEntitled = await entitlementStore

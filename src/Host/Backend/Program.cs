@@ -50,6 +50,10 @@ builder.Services.AddMemoryCache();
 var backendOptions = new BackendHostOptions();
 builder.Configuration.GetSection("BackendHost").Bind(backendOptions);
 builder.Services.AddSingleton(backendOptions);
+if (!string.IsNullOrWhiteSpace(backendOptions.ProblemTypeBaseUri))
+{
+    Callora.Host.Backend.Api.ApiProblems.TypeBaseUri = backendOptions.ProblemTypeBaseUri;
+}
 
 builder.Services.AddSwaggerGen(options =>
 {

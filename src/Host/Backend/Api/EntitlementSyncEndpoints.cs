@@ -30,12 +30,12 @@ public static class EntitlementSyncEndpoints
                 string.IsNullOrWhiteSpace(payload.PluginId) ||
                 string.IsNullOrWhiteSpace(payload.TenantKey))
             {
-                return Results.BadRequest(new { message = "eventId, pluginId and tenantKey are required." });
+                return ApiProblems.BadRequest("eventId, pluginId and tenantKey are required.");
             }
 
             if (!MarketplaceEntitlementActions.IsSupported(payload.Action))
             {
-                return Results.BadRequest(new { message = $"Unsupported action '{payload.Action}'. Supported: grant, revoke." });
+                return ApiProblems.BadRequest($"Unsupported action '{payload.Action}'. Supported: grant, revoke.");
             }
 
             var jobId = await jobQueue.EnqueueAsync(

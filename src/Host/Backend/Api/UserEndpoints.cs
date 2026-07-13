@@ -49,7 +49,7 @@ public static class UserEndpoints
             }
             catch (InvalidOperationException ex)
             {
-                return Results.BadRequest(new { message = ex.Message });
+                return ApiProblems.BadRequest(ex.Message);
             }
         }).WithName("Users_Create")
             .RequirePermission(BackendPermissionKeys.UserCreate);
@@ -73,7 +73,7 @@ public static class UserEndpoints
             }
             catch (InvalidOperationException ex)
             {
-                return Results.BadRequest(new { message = ex.Message });
+                return ApiProblems.BadRequest(ex.Message);
             }
         }).WithName("Users_Update")
             .RequirePermission(BackendPermissionKeys.UserUpdate);
