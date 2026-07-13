@@ -73,4 +73,25 @@ public sealed class InMemoryBackgroundJobStore : IBackgroundJobStore
             return Task.FromResult(jobs);
         }
     }
+
+    public Task<int> DeleteCompletedBeforeAsync(DateTimeOffset cutoffUtc, CancellationToken cancellationToken = default)
+    {
+        lock (_syncLock)
+        {
+            var expiredIds = _jobs.Values
+                .Where(x =>
+                    x.Status is BackgroundJobStatus.Succeeded or BackgroundJobStatus.Failed &&
+                    x.CompletedAtUtc is not null &&
+                    x.CompletedAtUtc < cutoffUtc)
+                .Select(x => x.Id)
+                .ToArray();
+
+            foreach (var id in expiredIds)
+            {
+                _jobs.Remove(id);
+            }
+
+            return Task.FromResult(expiredIds.Length);
+        }
+    }
 }

@@ -129,6 +129,13 @@ builder.Services.AddScoped<BackgroundJobProcessor>();
 builder.Services.AddSingleton<IBackgroundJobQueue, ScopedBackgroundJobQueue>();
 builder.Services.AddSingleton<RecurringJobEnqueuer>();
 
+var retentionOptions = new Callora.Host.Backend.Application.Retention.RetentionOptions();
+builder.Configuration.GetSection("Retention").Bind(retentionOptions);
+builder.Services.AddSingleton(retentionOptions);
+builder.Services.AddScoped<IBackgroundJobHandler, Callora.Host.Backend.Application.Retention.RetentionCleanupJobHandler>();
+builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Jobs.IRecurringJobProvider,
+    Callora.Host.Backend.Application.Retention.RetentionRecurringJobProvider>();
+
 builder.Services.AddSingleton<ISecretStore>(sp => new ChainedSecretStore(
 [
     new EnvironmentSecretStore(),

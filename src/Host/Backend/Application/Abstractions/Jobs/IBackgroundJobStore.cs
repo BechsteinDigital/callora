@@ -29,4 +29,10 @@ public interface IBackgroundJobStore
     /// Lists the most recently created jobs.
     /// </summary>
     Task<IReadOnlyList<BackgroundJob>> ListRecentAsync(int limit, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes succeeded and failed jobs completed before the cutoff and
+    /// returns the number of removed rows (retention, PLAT-240).
+    /// </summary>
+    Task<int> DeleteCompletedBeforeAsync(DateTimeOffset cutoffUtc, CancellationToken cancellationToken = default);
 }

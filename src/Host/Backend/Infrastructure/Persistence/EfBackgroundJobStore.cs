@@ -83,4 +83,16 @@ public sealed class EfBackgroundJobStore(HostPersistenceDbContext dbContext) : I
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
+
+    public Task<int> DeleteCompletedBeforeAsync(
+        DateTimeOffset cutoffUtc,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.BackgroundJobs
+            .Where(x =>
+                (x.Status == BackgroundJobStatus.Succeeded || x.Status == BackgroundJobStatus.Failed) &&
+                x.CompletedAtUtc != null &&
+                x.CompletedAtUtc < cutoffUtc)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
 }

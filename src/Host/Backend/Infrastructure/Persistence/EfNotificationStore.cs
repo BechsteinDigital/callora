@@ -78,6 +78,15 @@ public sealed class EfNotificationStore(HostPersistenceDbContext dbContext) : IN
         return true;
     }
 
+    public Task<int> DeleteCreatedBeforeAsync(
+        DateTimeOffset cutoffUtc,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.Notifications
+            .Where(x => x.CreatedAtUtc < cutoffUtc)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     private static NotificationSnapshot ToSnapshot(NotificationEntry entity) => new(
         entity.Id,
         entity.WorkspaceKey,
