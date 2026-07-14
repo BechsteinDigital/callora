@@ -1,3 +1,4 @@
+using Callora.Host.Backend.Application.Entitlements;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Builder;

@@ -13,6 +13,7 @@ using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Events;
 using Callora.Host.Backend.Application.Lifecycle;
 using Callora.Host.Backend.Application.Policies;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Infrastructure.DependencyInjection;
 using Callora.Host.Backend.Infrastructure.Events;
 using Callora.Host.Backend.Infrastructure.Extensions;
