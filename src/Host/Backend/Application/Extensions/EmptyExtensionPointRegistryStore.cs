@@ -1,7 +1,7 @@
 using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Domain.Extensions;
 
-namespace Callora.Host.Backend.Application.Lifecycle;
+namespace Callora.Host.Backend.Application.Extensions;
 
 internal sealed class EmptyExtensionPointRegistryStore : IExtensionPointRegistryStore
 {

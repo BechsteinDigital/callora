@@ -1,6 +1,6 @@
 using Callora.Host.Backend.Application.Workspaces;
 
-namespace Callora.Host.Backend.Application.Lifecycle;
+namespace Callora.Host.Backend.Application.Workspaces;
 
 internal sealed class EmptyWorkspaceManagementStore : IWorkspaceManagementStore
 {
