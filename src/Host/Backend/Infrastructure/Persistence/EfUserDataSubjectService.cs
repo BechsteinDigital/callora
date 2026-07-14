@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Security;
+using Callora.Host.Backend.Application.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Host.Backend.Infrastructure.Persistence;

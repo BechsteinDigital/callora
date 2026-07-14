@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Features;
+using Callora.Host.Backend.Application.Features;
 
 namespace Callora.Host.Backend.Api;
 

@@ -11,7 +11,7 @@ namespace Callora.Host.Backend.Infrastructure.Persistence;
 
 public sealed class HostPersistenceDbContext(
     DbContextOptions<HostPersistenceDbContext> options,
-    Callora.Host.Backend.Application.Abstractions.Security.IWorkspaceScopeContext? workspaceScope = null)
+    Callora.Host.Backend.Application.Security.IWorkspaceScopeContext? workspaceScope = null)
     : DbContext(options), IDataProtectionKeyContext
 {
     // Datenbank-Keyring statt Dateisystem: mehrinstanzfähig (PLAT-232).

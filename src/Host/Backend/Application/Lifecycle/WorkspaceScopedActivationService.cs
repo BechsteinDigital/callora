@@ -1,6 +1,5 @@
-using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Persistence;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Persistence;
+using Callora.Host.Backend.Application.Workspaces;
 using Callora.Host.Backend.Domain.Plugins;
 
 namespace Callora.Host.Backend.Application.Lifecycle;

@@ -1,6 +1,7 @@
-using Callora.Host.Backend.Application.Abstractions;
+using Callora.Host.Backend.Application.Entitlements;
+using Callora.Host.Backend.Application.Audit;
 using Callora.Host.Backend.Application.Plugins;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Workspaces;
 using Callora.Host.Backend.Application.Lifecycle;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Security;

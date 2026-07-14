@@ -1,9 +1,10 @@
-using Callora.Host.Backend.Application.Abstractions;
+using Callora.Host.Backend.Application.Entitlements;
+using Callora.Host.Backend.Application.Audit;
 using Callora.Host.Backend.Application.Events;
 using Callora.Host.Backend.Application.Extensions;
-using Callora.Host.Backend.Application.Abstractions.Persistence;
+using Callora.Host.Backend.Application.Persistence;
 using Callora.Host.Backend.Application.Plugins;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Workspaces;
 using Callora.Host.PluginContracts.Application.Plugins;
 using Callora.Hosting.Application.Plugins;
 

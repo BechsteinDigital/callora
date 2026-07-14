@@ -1,5 +1,5 @@
+using Callora.Host.Backend.Application.Entitlements;
 using System.Collections.Concurrent;
-using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Policies;
 
 namespace Callora.Host.Backend.Application.Entitlements;

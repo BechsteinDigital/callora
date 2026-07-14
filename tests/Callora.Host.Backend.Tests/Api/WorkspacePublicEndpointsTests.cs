@@ -1,5 +1,5 @@
 using System.Net;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Workspaces;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Tests.Support;
 using Callora.Host.Workspace.Api;

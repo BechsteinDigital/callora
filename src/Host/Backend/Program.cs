@@ -1,6 +1,5 @@
 using Callora.Contracts.Communication;
 using Callora.Host.Backend.Api;
-using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Entitlements;
 using Callora.Host.Backend.Application.Jobs;
@@ -67,7 +66,7 @@ ServiceCollectionExtensions.AddCalloraHosting(
 builder.Services.AddSingleton<CommunicationChannelRegistry>();
 builder.Services.AddSingleton<ICommunicationChannelRegistry>(sp => sp.GetRequiredService<CommunicationChannelRegistry>());
 // Zentrale Feature-Flags (PLAT-263), aus BackendHost:FeatureFlags.
-builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Features.IFeatureFlagService,
+builder.Services.AddSingleton<Callora.Host.Backend.Application.Features.IFeatureFlagService,
     Callora.Host.Backend.Infrastructure.Features.ConfiguredFeatureFlagService>();
 builder.Services.AddScoped<EfPluginDataStore>();
 builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
@@ -203,15 +202,15 @@ builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Mail.IMai
         sp.GetRequiredService<Callora.Hosting.Application.Plugins.ICalloraPluginCatalog>()));
 builder.Services.AddScoped<IBackgroundJobHandler, Callora.Host.Backend.Application.Mail.MailSendJobHandler>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Media.IMediaStore, EfMediaStore>();
-builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Workspaces.IWorkspaceDataPurgeService, WorkspaceDataPurgeService>();
-builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Security.IUserDataSubjectService, EfUserDataSubjectService>();
+builder.Services.AddScoped<Callora.Host.Backend.Application.Workspaces.IWorkspaceDataPurgeService, WorkspaceDataPurgeService>();
+builder.Services.AddScoped<Callora.Host.Backend.Application.Security.IUserDataSubjectService, EfUserDataSubjectService>();
 builder.Services.AddSingleton<Callora.Host.Backend.Application.Media.IMediaStorage, Callora.Host.Backend.Infrastructure.Media.FileSystemMediaStorage>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Media.IMediaLibrary, Callora.Host.Backend.Application.Media.ScopedMediaLibrary>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Migrations.IPluginMigrationRunner, Callora.Host.Backend.Infrastructure.Plugins.ScopedPluginMigrationRunner>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.CustomFields.ICustomFieldStore, EfCustomFieldStore>();
 builder.Services.AddScoped<Callora.Host.Backend.Infrastructure.CustomFields.RegistryCustomFieldSyncService>();
 builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginCustomFieldSyncSubscriber>();
-builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Persistence.IPluginSchemaDropper,
+builder.Services.AddScoped<Callora.Host.Backend.Application.Persistence.IPluginSchemaDropper,
     EfPluginSchemaDropper>();
 builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>,
     Callora.Host.Backend.Infrastructure.Events.PluginSchemaCleanupSubscriber>();

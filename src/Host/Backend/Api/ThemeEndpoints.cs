@@ -1,6 +1,6 @@
 using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Policies;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Workspaces;
 using Callora.Host.Backend.Infrastructure.Security;
 using Callora.Host.Workspace.Api;
 using System.Text.Json;

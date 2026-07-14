@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Security;
+using Callora.Host.Backend.Application.Security;
 using Callora.Host.Backend.Infrastructure.Security;
 using Callora.Hosting.Application.Plugins;
 using Microsoft.AspNetCore.Mvc;
