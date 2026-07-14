@@ -76,6 +76,16 @@ public sealed class PluginApiEndpointDataSource(
                     continue;
                 }
 
+                if (ReservedHostRoutePrefixes.Collides(route.PathTemplate))
+                {
+                    logger.LogWarning(
+                        "Rejected plugin route {Method} {Path} on {ControllerType}: it collides with a reserved host route namespace.",
+                        route.HttpMethod,
+                        route.PathTemplate,
+                        controllerType.FullName);
+                    continue;
+                }
+
                 try
                 {
                     endpoints.Add(BuildEndpoint(controller, method, route));
@@ -96,7 +106,7 @@ public sealed class PluginApiEndpointDataSource(
         return endpoints;
     }
 
-    private static Endpoint BuildEndpoint(object controller, MethodInfo method, CalloraRouteAttribute route)
+    private Endpoint BuildEndpoint(object controller, MethodInfo method, CalloraRouteAttribute route)
     {
         var isStream = IsStreamAction(method);
         if (!isStream && !IsResultAction(method))
@@ -120,7 +130,7 @@ public sealed class PluginApiEndpointDataSource(
         return builder.Build();
     }
 
-    private static RequestDelegate BuildRequestDelegate(
+    private RequestDelegate BuildRequestDelegate(
         object controller,
         MethodInfo method,
         CalloraRouteAttribute route,
@@ -131,7 +141,8 @@ public sealed class PluginApiEndpointDataSource(
         {
             if (httpContext.User.Identity?.IsAuthenticated != true)
             {
-                httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await WriteProblemAsync(httpContext, StatusCodes.Status401Unauthorized,
+                    "Unauthorized", "Authentication is required.").ConfigureAwait(false);
                 return;
             }
 
@@ -139,7 +150,8 @@ public sealed class PluginApiEndpointDataSource(
                 !httpContext.User.HasClaim(BackendClaimTypes.Permission, route.Permission) &&
                 !httpContext.User.HasClaim(BackendClaimTypes.Permission, "*"))
             {
-                httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await WriteProblemAsync(httpContext, StatusCodes.Status403Forbidden,
+                    "Forbidden", $"The permission '{route.Permission}' is required.").ConfigureAwait(false);
                 return;
             }
 
@@ -147,7 +159,8 @@ public sealed class PluginApiEndpointDataSource(
             if (requiresWorkspaceScope &&
                 !WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, request.WorkspaceKey))
             {
-                httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await WriteProblemAsync(httpContext, StatusCodes.Status403Forbidden,
+                    "Forbidden", "The caller is not scoped to the requested workspace.").ConfigureAwait(false);
                 return;
             }
 
@@ -169,34 +182,73 @@ public sealed class PluginApiEndpointDataSource(
                 {
                     // Consumer disconnected — expected stream end.
                 }
+                catch (Exception exception)
+                {
+                    // The response has already started, so the status cannot be
+                    // rewritten — a plugin fault must still be recorded, not swallowed.
+                    logger.LogError(Unwrap(exception),
+                        "Plugin stream action {Action} on {Path} failed.", method.Name, route.PathTemplate);
+                }
 
                 return;
             }
 
-            var result = await ((Task<ApiResult>)method.Invoke(
-                    controller,
-                    [request, httpContext.RequestAborted])!)
-                .ConfigureAwait(false);
+            ApiResult result;
+            try
+            {
+                result = await ((Task<ApiResult>)method.Invoke(
+                        controller,
+                        [request, httpContext.RequestAborted])!)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return; // Client disconnected before the action completed.
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(Unwrap(exception),
+                    "Plugin action {Action} on {Path} threw.", method.Name, route.PathTemplate);
+                await WriteProblemAsync(httpContext, StatusCodes.Status500InternalServerError,
+                    "Plugin error", "The plugin action failed to process the request.").ConfigureAwait(false);
+                return;
+            }
+
             await WriteResultAsync(httpContext, result).ConfigureAwait(false);
         };
+    }
+
+    /// <summary>Unwraps the reflection wrapper so logs show the real plugin fault.</summary>
+    private static Exception Unwrap(Exception exception) =>
+        exception is TargetInvocationException { InnerException: { } inner } ? inner : exception;
+
+    private static async Task WriteProblemAsync(HttpContext httpContext, int status, string title, string? detail)
+    {
+        if (httpContext.Response.HasStarted)
+        {
+            return;
+        }
+
+        httpContext.Response.StatusCode = status;
+        httpContext.Response.ContentType = "application/problem+json";
+        var slug = title.ToLowerInvariant().Replace(' ', '-');
+        await httpContext.Response.WriteAsync(
+            JsonSerializer.Serialize(new
+            {
+                type = ApiProblems.TypeBaseUri + slug,
+                title,
+                status,
+                detail
+            }, JsonOptions),
+            httpContext.RequestAborted).ConfigureAwait(false);
     }
 
     private static async Task WriteResultAsync(HttpContext httpContext, ApiResult result)
     {
         if (result.Problem is not null)
         {
-            httpContext.Response.StatusCode = result.Problem.Status;
-            httpContext.Response.ContentType = "application/problem+json";
-            var slug = result.Problem.Title.ToLowerInvariant().Replace(' ', '-');
-            await httpContext.Response.WriteAsync(
-                JsonSerializer.Serialize(new
-                {
-                    type = ApiProblems.TypeBaseUri + slug,
-                    title = result.Problem.Title,
-                    status = result.Problem.Status,
-                    detail = result.Problem.Detail
-                }, JsonOptions),
-                httpContext.RequestAborted).ConfigureAwait(false);
+            await WriteProblemAsync(httpContext, result.Problem.Status, result.Problem.Title, result.Problem.Detail)
+                .ConfigureAwait(false);
             return;
         }
 
