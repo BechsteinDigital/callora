@@ -25,7 +25,7 @@ using Callora.Host.Workspace.Api;
 using Callora.Hosting.Infrastructure.DependencyInjection;
 using Microsoft.AspNetCore.DataProtection;
 using Callora.Host.Backend.Application.Monitoring;
-using Microsoft.OpenApi.Models;
+using Callora.Host.Backend.Api.OpenApi;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -58,56 +58,7 @@ if (!string.IsNullOrWhiteSpace(backendOptions.ProblemTypeBaseUri))
     Callora.Host.Backend.Api.ApiProblems.TypeBaseUri = backendOptions.ProblemTypeBaseUri;
 }
 
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("api", new OpenApiInfo
-    {
-        Title = "Callora Host Backend API",
-        Version = "v1"
-    });
-    options.SwaggerDoc("workspace", new OpenApiInfo
-    {
-        Title = "Callora Workspace API",
-        Version = "v1"
-    });
-
-    options.DocInclusionPredicate((documentName, apiDescription) =>
-    {
-        var relativePath = apiDescription.RelativePath ?? string.Empty;
-        var normalizedPath = "/" + relativePath.TrimStart('/');
-        var isWorkspaceEndpoint = normalizedPath.StartsWith("/workspace/", StringComparison.OrdinalIgnoreCase);
-
-        return documentName switch
-        {
-            "workspace" => isWorkspaceEndpoint,
-            "api" => !isWorkspaceEndpoint,
-            _ => false
-        };
-    });
-
-    options.AddSecurityDefinition(ApiKeyAuthenticationDefaults.Scheme, new OpenApiSecurityScheme
-    {
-        Description = $"API key required in header '{backendOptions.ApiKeyHeaderName}'.",
-        Name = backendOptions.ApiKeyHeaderName,
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = ApiKeyAuthenticationDefaults.Scheme
-                }
-            },
-            []
-        }
-    });
-});
+builder.Services.AddBackendOpenApi();
 
 var hostRegistry = new ServiceCollectionHostRegistry(builder.Services);
 ServiceCollectionExtensions.AddCalloraHosting(
@@ -307,26 +258,7 @@ builder.Services.AddHostedService<PluginUiAssetPublishHostedService>();
 
 var app = builder.Build();
 
-app.UseSwagger(options =>
-{
-    options.RouteTemplate = "swagger/{documentName}/swagger.json";
-});
-app.Map("/swagger/api", apiSwagger =>
-{
-    apiSwagger.UseSwaggerUI(options =>
-    {
-        options.RoutePrefix = string.Empty;
-        options.SwaggerEndpoint("/swagger/api/swagger.json", "Callora Host Backend API v1");
-    });
-});
-app.Map("/swagger/workspace", workspaceSwagger =>
-{
-    workspaceSwagger.UseSwaggerUI(options =>
-    {
-        options.RoutePrefix = string.Empty;
-        options.SwaggerEndpoint("/swagger/workspace/swagger.json", "Callora Workspace API v1");
-    });
-});
+app.MapBackendOpenApi();
 app.Use(async (context, next) =>
 {
     // Browsers must not MIME-sniff plugin assets or media streams.
