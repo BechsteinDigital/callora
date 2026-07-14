@@ -1,0 +1,75 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docfx/**"
+      - "src/**"
+      - "custom/plugins/**"
+      - ".config/dotnet-tools.json"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docfx/**"
+      - ".config/dotnet-tools.json"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup .NET (global.json)
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          global-json-file: global.json
+
+      - name: Restore .NET tools (docfx)
+        run: dotnet tool restore
+
+      - name: Build DocFX site
+        # No --warningsAsErrors: docfx 2.78 emits a harmless
+        # FailedToLoadAnalyzer (Razor) warning against the newer .NET 10 SDK.
+        run: dotnet docfx docfx/docfx.json
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    # Deploy only from main and only once opted in via the DOCS_DEPLOY repo
+    # variable. The repository is private today; enable Pages (Settings ->
+    # Pages -> Source: GitHub Actions) and set DOCS_DEPLOY=true for the public
+    # Community Edition. Until then this job is skipped, keeping CI green.
+    if: github.ref == 'refs/heads/main' && vars.DOCS_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

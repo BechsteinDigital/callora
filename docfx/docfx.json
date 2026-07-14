@@ -1,0 +1,48 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "..",
+          "files": [
+            "src/**/*.csproj",
+            "custom/plugins/**/*.csproj"
+          ],
+          "exclude": [
+            "**/bin/**",
+            "**/obj/**",
+            "**/*.Tests.csproj",
+            "tests/**"
+          ]
+        }
+      ],
+      "dest": "api",
+      "namespaceLayout": "nested",
+      "memberLayout": "separatePages"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [ "api/**.yml", "api/index.md" ]
+      },
+      {
+        "files": [ "*.md", "toc.yml" ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [ "images/**" ]
+      }
+    ],
+    "output": "../_site",
+    "template": [ "default", "modern" ],
+    "globalMetadata": {
+      "_appName": "Callora",
+      "_appTitle": "Callora Documentation",
+      "_description": "API reference and guides for the Callora host platform and first-party plugins.",
+      "_enableSearch": true,
+      "_disableContribution": true
+    }
+  }
+}
