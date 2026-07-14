@@ -65,6 +65,7 @@ public sealed class PluginApiEndpointDataSource(
     private IReadOnlyList<Endpoint> BuildEndpoints()
     {
         var endpoints = new List<Endpoint>();
+        var claimedRoutes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var controller in pluginCatalog.GetExports<IApiController>())
         {
             var controllerType = controller.GetType();
@@ -86,9 +87,24 @@ public sealed class PluginApiEndpointDataSource(
                     continue;
                 }
 
+                // Kollisionsschutz zwischen Plugins (first-wins): zwei Plugins mit
+                // identischer Methode+Route würden sonst zur Request-Zeit in eine
+                // AmbiguousMatchException laufen statt bei der Registrierung.
+                var routeKey = $"{route.HttpMethod}:{route.PathTemplate.Trim('/')}";
+                if (claimedRoutes.Contains(routeKey))
+                {
+                    logger.LogWarning(
+                        "Rejected plugin route {Method} {Path} on {ControllerType}: another plugin already registered this route (first-wins).",
+                        route.HttpMethod,
+                        route.PathTemplate,
+                        controllerType.FullName);
+                    continue;
+                }
+
                 try
                 {
                     endpoints.Add(BuildEndpoint(controller, method, route));
+                    claimedRoutes.Add(routeKey);
                 }
                 catch (Exception exception)
                 {

@@ -9,6 +9,8 @@ public sealed class ReservedHostRoutePrefixesTests
     [InlineData("/api/auth/login")]
     [InlineData("/api/users/{userId}/data-export")]
     [InlineData("/api/security/rbac/roles")]
+    [InlineData("/api/security/integrations")]
+    [InlineData("/api/security/integrations/{id}")]
     [InlineData("/workspace/auth/login")]
     [InlineData("/API/AUTH/login")]
     [InlineData("/api/auth/")]

@@ -20,11 +20,14 @@ public sealed class EfBackgroundJobStore(HostPersistenceDbContext dbContext) : I
 
     public async Task<BackgroundJob?> TryClaimNextDueAsync(
         DateTimeOffset nowUtc,
+        TimeSpan leaseDuration,
         CancellationToken cancellationToken = default)
     {
         var candidateId = await dbContext.BackgroundJobs
             .AsNoTracking()
-            .Where(x => x.Status == BackgroundJobStatus.Pending && x.ScheduledAtUtc <= nowUtc)
+            .Where(x =>
+                (x.Status == BackgroundJobStatus.Pending && x.ScheduledAtUtc <= nowUtc) ||
+                (x.Status == BackgroundJobStatus.Running && x.LeaseExpiresAtUtc != null && x.LeaseExpiresAtUtc < nowUtc && x.AttemptCount < x.MaxAttempts))
             .OrderBy(x => x.ScheduledAtUtc)
             .ThenBy(x => x.CreatedAtUtc)
             .Select(x => (Guid?)x.Id)
@@ -34,13 +37,19 @@ public sealed class EfBackgroundJobStore(HostPersistenceDbContext dbContext) : I
         if (candidateId is null)
             return null;
 
+        var leaseExpiresAtUtc = nowUtc + leaseDuration;
+        var leaseToken = Guid.NewGuid();
         var claimed = await dbContext.BackgroundJobs
-            .Where(x => x.Id == candidateId && x.Status == BackgroundJobStatus.Pending)
+            .Where(x => x.Id == candidateId &&
+                (x.Status == BackgroundJobStatus.Pending ||
+                 (x.Status == BackgroundJobStatus.Running && x.LeaseExpiresAtUtc != null && x.LeaseExpiresAtUtc < nowUtc && x.AttemptCount < x.MaxAttempts)))
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(x => x.Status, BackgroundJobStatus.Running)
                     .SetProperty(x => x.AttemptCount, x => x.AttemptCount + 1)
-                    .SetProperty(x => x.StartedAtUtc, nowUtc),
+                    .SetProperty(x => x.StartedAtUtc, nowUtc)
+                    .SetProperty(x => x.LeaseExpiresAtUtc, leaseExpiresAtUtc)
+                    .SetProperty(x => x.LeaseToken, leaseToken),
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -52,13 +61,40 @@ public sealed class EfBackgroundJobStore(HostPersistenceDbContext dbContext) : I
             .ConfigureAwait(false);
     }
 
-    public Task SaveAsync(BackgroundJob job, CancellationToken cancellationToken = default)
+    public async Task<bool> SaveAsync(BackgroundJob job, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(job);
-        return dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // The lease was reclaimed by another worker (fencing token changed);
+            // this worker's result must not overwrite the new owner.
+            return false;
+        }
     }
 
-    public Task<bool> HasActiveJobAsync(string jobType, CancellationToken cancellationToken = default)
+    public Task<int> FailExpiredExhaustedAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    {
+        return dbContext.BackgroundJobs
+            .Where(x =>
+                x.Status == BackgroundJobStatus.Running &&
+                x.LeaseExpiresAtUtc != null &&
+                x.LeaseExpiresAtUtc < nowUtc &&
+                x.AttemptCount >= x.MaxAttempts)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.Status, BackgroundJobStatus.Failed)
+                    .SetProperty(x => x.CompletedAtUtc, nowUtc)
+                    .SetProperty(x => x.LeaseExpiresAtUtc, (DateTimeOffset?)null)
+                    .SetProperty(x => x.LastError, "Lease expired after exhausting the attempt budget."),
+                cancellationToken);
+    }
+
+    public Task<bool> HasActiveJobAsync(string jobType, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(jobType))
             return Task.FromResult(false);
@@ -68,7 +104,8 @@ public sealed class EfBackgroundJobStore(HostPersistenceDbContext dbContext) : I
             .AsNoTracking()
             .AnyAsync(
                 x => x.JobType == normalizedJobType &&
-                     (x.Status == BackgroundJobStatus.Pending || x.Status == BackgroundJobStatus.Running),
+                     (x.Status == BackgroundJobStatus.Pending ||
+                      (x.Status == BackgroundJobStatus.Running && x.LeaseExpiresAtUtc != null && x.LeaseExpiresAtUtc >= nowUtc)),
                 cancellationToken);
     }
 

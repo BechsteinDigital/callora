@@ -33,5 +33,10 @@ public sealed class PluginUiAssetPublishSubscriber(
     private static bool IsPublishTrigger(string? action) =>
         string.Equals(action, "plugin.install", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(action, "plugin.update", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(action, "plugin.uninstall", StringComparison.OrdinalIgnoreCase);
+        string.Equals(action, "plugin.uninstall", StringComparison.OrdinalIgnoreCase) ||
+        // Activation and deactivation change which plugins are Active, so the
+        // published asset set must be rebuilt too — otherwise a deactivated
+        // plugin keeps serving stale UI assets (§9.3 teardown).
+        string.Equals(action, "plugin.activate", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(action, "plugin.deactivate", StringComparison.OrdinalIgnoreCase);
 }

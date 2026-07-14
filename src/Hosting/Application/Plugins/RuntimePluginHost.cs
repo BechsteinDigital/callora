@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Callora.Host.PluginContracts.Application.Plugins;
 using Callora.Host.PluginContracts.Domain.Plugins;
@@ -208,14 +209,14 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                     $"Plugin '{pluginId}' is not installed.");
             }
 
-            if (!_active.TryGetValue(pluginId, out var activeHandle))
+            if (!_active.ContainsKey(pluginId))
             {
                 return new RuntimePluginDeactivateResult(
                     RuntimePluginDeactivateStatus.AlreadyInactive,
                     pluginId);
             }
 
-            var deactivation = await DeactivateInternalAsync(activeHandle, cancellationToken).ConfigureAwait(false);
+            var deactivation = await DeactivateInternalAsync(pluginId, cancellationToken).ConfigureAwait(false);
             if (!deactivation.IsSuccess)
             {
                 // Teardown-Fehler pinnen ggf. Ressourcen bis zum Neustart —
@@ -259,9 +260,9 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                     $"Plugin '{pluginId}' is not installed.");
             }
 
-            if (_active.TryGetValue(pluginId, out var activeHandle))
+            if (_active.ContainsKey(pluginId))
             {
-                var deactivate = await DeactivateInternalAsync(activeHandle, cancellationToken).ConfigureAwait(false);
+                var deactivate = await DeactivateInternalAsync(pluginId, cancellationToken).ConfigureAwait(false);
                 if (!deactivate.IsSuccess)
                 {
                     return new RuntimePluginUninstallResult(
@@ -297,8 +298,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         {
             foreach (var pluginId in _active.Keys.ToArray())
             {
-                if (_active.TryGetValue(pluginId, out var handle))
-                    await DeactivateInternalAsync(handle, CancellationToken.None).ConfigureAwait(false);
+                await DeactivateInternalAsync(pluginId, CancellationToken.None).ConfigureAwait(false);
             }
         }
         finally
@@ -389,27 +389,56 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     }
 
     private async Task<RuntimePluginDeactivateResult> DeactivateInternalAsync(
-        ActivePluginHandle handle,
+        string pluginId,
         CancellationToken cancellationToken)
     {
+        if (!_active.TryRemove(pluginId, out var handle))
+        {
+            return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.AlreadyInactive, pluginId);
+        }
+
+        WeakReference loadContextReference;
         try
         {
-            RemoveExportsByPlugin(handle.PluginId);
+            RemoveExportsByPlugin(pluginId);
             await SafeStopAsync(handle.Plugin, cancellationToken).ConfigureAwait(false);
-            handle.LoadContext.Unload();
-            _active.TryRemove(handle.PluginId, out _);
-
-            if (_logger.IsEnabled(LogLevel.Information))
-            {
-                _logger.LogInformation("Deactivated plugin {PluginId}.", handle.PluginId);
-            }
-            return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.Deactivated, handle.PluginId);
+            loadContextReference = UnloadAndTrack(handle);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Plugin deactivation failed for {PluginId}.", handle.PluginId);
-            return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.Failed, handle.PluginId, ex.Message);
+            _logger.LogError(ex, "Plugin deactivation failed for {PluginId}.", pluginId);
+            return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.Failed, pluginId, ex.Message);
         }
+
+        // Drop the last strong reference before verifying collection; otherwise
+        // this frame would pin the context and always report a false failure.
+        handle = null!;
+
+        if (!AssemblyLoadContextUnload.WaitForCollection(loadContextReference))
+        {
+            _logger.LogError(
+                "Plugin {PluginId} was stopped but its assembly load context is still pinned after unload.",
+                pluginId);
+            return new RuntimePluginDeactivateResult(
+                RuntimePluginDeactivateStatus.Failed,
+                pluginId,
+                "Plugin was stopped, but its assembly load context is still pinned after unload; a host restart is required to fully release it.");
+        }
+
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("Deactivated plugin {PluginId}.", pluginId);
+        }
+        return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.Deactivated, pluginId);
+    }
+
+    // Non-inlined so no caller-frame local keeps the load context alive while we
+    // verify it was collected.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference UnloadAndTrack(ActivePluginHandle handle)
+    {
+        handle.LoadContext.Unload();
+        return new WeakReference(handle.LoadContext);
     }
 
     private (InstalledPluginRecord? Record, RuntimePluginInstallResult? Result) InspectPluginAssembly(

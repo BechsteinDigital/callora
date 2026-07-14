@@ -1,5 +1,6 @@
 using Callora.Host.Backend.Application.Security;
 using Callora.Host.Backend.Domain.Media;
+using Callora.Host.Backend.Domain.Notifications;
 using Callora.Host.Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
@@ -76,6 +77,44 @@ public sealed class WorkspaceQueryFilterIntegrationTests : IAsyncLifetime
             Assert.Equal(3, await unscoped.Set<MediaItem>().CountAsync());
         }
     }
+
+    [SkippableFact]
+    public async Task WorkspaceScopedContext_SeesOwnAndGlobalNotifications_NotForeign()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+
+        var options = new DbContextOptionsBuilder<HostPersistenceDbContext>()
+            .UseNpgsql(_postgres.GetConnectionString())
+            .Options;
+
+        await using (var seed = new HostPersistenceDbContext(options))
+        {
+            await seed.Database.EnsureCreatedAsync();
+            seed.Set<NotificationEntry>().AddRange(
+                NewNotification("workspace-a", "own"),
+                NewNotification(null, "global"),
+                NewNotification("workspace-b", "foreign"));
+            await seed.SaveChangesAsync();
+        }
+
+        await using (var scoped = new HostPersistenceDbContext(options, new StubScope("workspace-a")))
+        {
+            var titles = await scoped.Set<NotificationEntry>().Select(x => x.Title).ToListAsync();
+            Assert.Contains("own", titles);
+            Assert.Contains("global", titles);
+            Assert.DoesNotContain("foreign", titles);
+        }
+    }
+
+    private static NotificationEntry NewNotification(string? workspaceKey, string title) => new()
+    {
+        Id = Guid.NewGuid(),
+        WorkspaceKey = workspaceKey,
+        Title = title,
+        Message = "test",
+        Level = "info",
+        CreatedAtUtc = DateTimeOffset.UtcNow
+    };
 
     private static MediaItem NewItem(string workspaceKey, string fileName) => new()
     {

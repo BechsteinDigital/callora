@@ -69,7 +69,7 @@ public sealed class RetentionCleanupJobHandlerTests
             maxAttempts: 1,
             workspaceKey: null,
             nowUtc: completedAtUtc.AddMinutes(-5));
-        job.MarkRunning(completedAtUtc.AddMinutes(-1));
+        job.MarkRunning(completedAtUtc.AddMinutes(-1), TimeSpan.FromMinutes(5));
 
         if (succeeded)
         {

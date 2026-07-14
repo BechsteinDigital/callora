@@ -11,6 +11,7 @@ public sealed class BackgroundJobEntityTypeConfiguration : IEntityTypeConfigurat
         builder.ToTable("background_jobs");
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => new { x.Status, x.ScheduledAtUtc });
+        builder.HasIndex(x => new { x.Status, x.LeaseExpiresAtUtc });
         builder.HasIndex(x => x.JobType);
 
         builder.Property(x => x.JobType).HasMaxLength(200).IsRequired();
@@ -22,5 +23,7 @@ public sealed class BackgroundJobEntityTypeConfiguration : IEntityTypeConfigurat
         builder.Property(x => x.ScheduledAtUtc).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.Property(x => x.LastError).HasMaxLength(4000);
+        // Fencing token: a reclaimed job's previous owner must fail to save.
+        builder.Property(x => x.LeaseToken).IsConcurrencyToken();
     }
 }

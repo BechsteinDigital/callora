@@ -21,6 +21,7 @@ public static class ReservedHostRoutePrefixes
         "/api/media",
         "/api/notifications",
         "/api/plugins",
+        "/api/security/integrations",
         "/api/security/rbac",
         "/api/tenants",
         "/api/themes",

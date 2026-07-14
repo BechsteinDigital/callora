@@ -22,12 +22,17 @@ public sealed class InMemoryBackgroundJobStore : IBackgroundJobStore
         return Task.CompletedTask;
     }
 
-    public Task<BackgroundJob?> TryClaimNextDueAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    public Task<BackgroundJob?> TryClaimNextDueAsync(
+        DateTimeOffset nowUtc,
+        TimeSpan leaseDuration,
+        CancellationToken cancellationToken = default)
     {
         lock (_syncLock)
         {
             var job = _jobs.Values
-                .Where(x => x.Status == BackgroundJobStatus.Pending && x.ScheduledAtUtc <= nowUtc)
+                .Where(x =>
+                    (x.Status == BackgroundJobStatus.Pending && x.ScheduledAtUtc <= nowUtc) ||
+                    (x.Status == BackgroundJobStatus.Running && x.LeaseExpiresAtUtc is not null && x.LeaseExpiresAtUtc < nowUtc && x.AttemptCount < x.MaxAttempts))
                 .OrderBy(x => x.ScheduledAtUtc)
                 .ThenBy(x => x.CreatedAtUtc)
                 .FirstOrDefault();
@@ -35,29 +40,53 @@ public sealed class InMemoryBackgroundJobStore : IBackgroundJobStore
             if (job is null)
                 return Task.FromResult<BackgroundJob?>(null);
 
-            job.MarkRunning(nowUtc);
+            job.MarkRunning(nowUtc, leaseDuration);
             return Task.FromResult<BackgroundJob?>(job);
         }
     }
 
-    public Task SaveAsync(BackgroundJob job, CancellationToken cancellationToken = default)
+    public Task<bool> SaveAsync(BackgroundJob job, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(job);
         lock (_syncLock)
         {
+            // Single-process store: the tracked job is the only instance, so
+            // there is no lost-lease race — the save always applies.
             _jobs[job.Id] = job;
         }
 
-        return Task.CompletedTask;
+        return Task.FromResult(true);
     }
 
-    public Task<bool> HasActiveJobAsync(string jobType, CancellationToken cancellationToken = default)
+    public Task<int> FailExpiredExhaustedAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    {
+        lock (_syncLock)
+        {
+            var exhausted = _jobs.Values
+                .Where(x =>
+                    x.Status == BackgroundJobStatus.Running &&
+                    x.LeaseExpiresAtUtc is not null &&
+                    x.LeaseExpiresAtUtc < nowUtc &&
+                    x.AttemptCount >= x.MaxAttempts)
+                .ToArray();
+
+            foreach (var job in exhausted)
+            {
+                job.MarkFailedAttempt("Lease expired after exhausting the attempt budget.", TimeSpan.Zero, nowUtc);
+            }
+
+            return Task.FromResult(exhausted.Length);
+        }
+    }
+
+    public Task<bool> HasActiveJobAsync(string jobType, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
     {
         lock (_syncLock)
         {
             var hasActive = _jobs.Values.Any(x =>
                 string.Equals(x.JobType, jobType, StringComparison.OrdinalIgnoreCase) &&
-                x.Status is BackgroundJobStatus.Pending or BackgroundJobStatus.Running);
+                (x.Status == BackgroundJobStatus.Pending ||
+                 (x.Status == BackgroundJobStatus.Running && x.LeaseExpiresAtUtc is not null && x.LeaseExpiresAtUtc >= nowUtc)));
             return Task.FromResult(hasActive);
         }
     }
