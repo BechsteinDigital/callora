@@ -1,5 +1,5 @@
-using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Abstractions.Persistence;
+using Callora.Host.Backend.Application.Abstractions.Plugins;
 using Callora.Host.Backend.Domain.Plugins;
 
 namespace Callora.Host.Backend.Application.Lifecycle;
@@ -11,18 +11,18 @@ namespace Callora.Host.Backend.Application.Lifecycle;
 /// </summary>
 public sealed class PluginCapabilityGuard(
     IPluginInstallationRepository installationRepository,
-    IPluginEntitlementStore entitlementStore)
+    IWorkspacePluginActivationReader activationReader)
 {
     /// <summary>
     /// Checks whether all required capabilities of one plugin are provided in the target scope.
     /// Global scope (<paramref name="workspaceKey"/> null) requires globally active providers;
-    /// workspace scope requires providers entitled in the same workspace.
+    /// workspace scope requires providers actually activated in the same workspace. Activation —
+    /// not entitlement — decides who is running here (PLAT-253).
     /// </summary>
     public async Task<CapabilityCheckResult> CheckActivationAsync(
         string pluginId,
         string? workspaceKey,
-        CancellationToken cancellationToken,
-        string? tenantKey = null)
+        CancellationToken cancellationToken)
     {
         var installation = await installationRepository
             .GetByPluginIdAsync(pluginId, cancellationToken)
@@ -34,14 +34,12 @@ public sealed class PluginCapabilityGuard(
         if (required.Count == 0)
             return CapabilityCheckResult.Allowed;
 
+        var activeInScope = await LoadActiveInScopeAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         var installations = await installationRepository.ListAsync(cancellationToken).ConfigureAwait(false);
         foreach (var capability in required)
         {
-            if (await HasActiveProviderAsync(installations, pluginId, capability, workspaceKey, tenantKey, cancellationToken)
-                    .ConfigureAwait(false))
-            {
+            if (HasActiveProvider(installations, pluginId, capability, workspaceKey, activeInScope))
                 continue;
-            }
 
             var scopeSuffix = workspaceKey is null ? "." : $" in workspace '{workspaceKey}'.";
             return CapabilityCheckResult.Denied(
@@ -62,8 +60,7 @@ public sealed class PluginCapabilityGuard(
     public async Task<CapabilityCheckResult> CheckDeactivationAsync(
         string pluginId,
         string? workspaceKey,
-        CancellationToken cancellationToken,
-        string? tenantKey = null)
+        CancellationToken cancellationToken)
     {
         var installation = await installationRepository
             .GetByPluginIdAsync(pluginId, cancellationToken)
@@ -75,6 +72,7 @@ public sealed class PluginCapabilityGuard(
         if (provided.Count == 0)
             return CapabilityCheckResult.Allowed;
 
+        var activeInScope = await LoadActiveInScopeAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         var installations = await installationRepository.ListAsync(cancellationToken).ConfigureAwait(false);
         foreach (var dependent in installations)
         {
@@ -85,7 +83,7 @@ public sealed class PluginCapabilityGuard(
             if (requiredByDependent.Count == 0)
                 continue;
 
-            if (!await IsActiveInScopeAsync(dependent, workspaceKey, tenantKey, cancellationToken).ConfigureAwait(false))
+            if (!IsActiveInScope(dependent, workspaceKey, activeInScope))
                 continue;
 
             foreach (var capability in requiredByDependent)
@@ -93,14 +91,12 @@ public sealed class PluginCapabilityGuard(
                 if (!provided.Contains(capability, StringComparer.OrdinalIgnoreCase))
                     continue;
 
-                var hasAlternative = await HasActiveProviderAsync(
-                        installations,
-                        excludedPluginId: pluginId,
-                        capability: capability,
-                        workspaceKey: workspaceKey,
-                        tenantKey: tenantKey,
-                        cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
+                var hasAlternative = HasActiveProvider(
+                    installations,
+                    excludedPluginId: pluginId,
+                    capability: capability,
+                    workspaceKey: workspaceKey,
+                    activeInScope: activeInScope);
                 if (hasAlternative)
                     continue;
 
@@ -118,13 +114,29 @@ public sealed class PluginCapabilityGuard(
         return CapabilityCheckResult.Allowed;
     }
 
-    private async Task<bool> HasActiveProviderAsync(
+    /// <summary>
+    /// Loads the plugins actually activated in the workspace. Returns <c>null</c> for global
+    /// scope, where activation is read from the installation state instead.
+    /// </summary>
+    private async Task<IReadOnlySet<string>?> LoadActiveInScopeAsync(
+        string? workspaceKey,
+        CancellationToken cancellationToken)
+    {
+        if (workspaceKey is null)
+            return null;
+
+        var active = await activationReader
+            .ListActivePluginIdsAsync(workspaceKey, cancellationToken)
+            .ConfigureAwait(false);
+        return active.ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool HasActiveProvider(
         IReadOnlyList<PluginInstallation> installations,
         string excludedPluginId,
         string capability,
         string? workspaceKey,
-        string? tenantKey,
-        CancellationToken cancellationToken)
+        IReadOnlySet<string>? activeInScope)
     {
         foreach (var candidate in installations)
         {
@@ -137,25 +149,22 @@ public sealed class PluginCapabilityGuard(
             if (!candidate.GetProvidedCapabilities().Contains(capability, StringComparer.OrdinalIgnoreCase))
                 continue;
 
-            if (await IsActiveInScopeAsync(candidate, workspaceKey, tenantKey, cancellationToken).ConfigureAwait(false))
+            if (IsActiveInScope(candidate, workspaceKey, activeInScope))
                 return true;
         }
 
         return false;
     }
 
-    private async Task<bool> IsActiveInScopeAsync(
+    private static bool IsActiveInScope(
         PluginInstallation installation,
         string? workspaceKey,
-        string? tenantKey,
-        CancellationToken cancellationToken)
+        IReadOnlySet<string>? activeInScope)
     {
         if (workspaceKey is null)
             return installation.State == PluginInstallationState.Active;
 
-        return await entitlementStore
-            .IsEntitledAsync(installation.PluginId, workspaceKey, tenantKey, cancellationToken)
-            .ConfigureAwait(false);
+        return activeInScope is not null && activeInScope.Contains(installation.PluginId);
     }
 
     private static bool IsSamePlugin(string left, string right) =>

@@ -44,7 +44,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         IWorkspaceManagementStore workspaceStore,
         ICalloraPluginCatalog? pluginCatalog = null,
         ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null,
-        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null)
+        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null,
+        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader? workspaceActivationReader = null)
     {
         _lifecycle = lifecycle;
         _activationPolicy = activationPolicy;
@@ -76,12 +77,19 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
             _recorder,
             _reporter,
             _extensionSynchronizer);
-        _capabilityGuard = new PluginCapabilityGuard(installationRepository, entitlementStore);
+        var activationStore = workspaceActivationStore
+            ?? new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
+        // The guard must read the same activations the service writes; in-memory hosts share one
+        // instance, EF hosts get store + reader over the same scoped DbContext (PLAT-253).
+        var activationReader = workspaceActivationReader
+            ?? activationStore as Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader
+            ?? new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
+        _capabilityGuard = new PluginCapabilityGuard(installationRepository, activationReader);
         _workspaceLifecycleLocks = new WorkspaceLifecycleLockRegistry();
         _workspaceActivation = new WorkspaceScopedActivationService(
             installationRepository,
             workspaceStore,
-            workspaceActivationStore ?? new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore(),
+            activationStore,
             _reporter,
             _workspaceLifecycleLocks,
             _capabilityGuard);

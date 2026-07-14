@@ -1,6 +1,5 @@
-using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Lifecycle;
-using Callora.Host.Backend.Application.Policies;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Domain.Plugins;
 using Callora.Host.Backend.Tests.Support;
 using Xunit;
@@ -14,44 +13,73 @@ public sealed class PluginCapabilityGuardTests
     [Fact]
     public async Task CheckActivation_NoRequirements_IsAllowed()
     {
-        var (guard, installations, _) = await CreateGuardAsync();
+        var (guard, installations, _) = CreateGuard();
         await installations.AddAsync(CreateInstallation("dialer"));
 
-        var result = await guard.CheckActivationAsync("dialer", "workspace-a", CancellationToken.None, "tenant-1");
+        var result = await guard.CheckActivationAsync("dialer", "workspace-a", CancellationToken.None);
 
         Assert.True(result.IsAllowed);
     }
 
     [Fact]
-    public async Task CheckActivation_WorkspaceScope_DeniedWhenNoProviderEntitled()
+    public async Task CheckActivation_WorkspaceScope_DeniedWhenNoProviderActive()
     {
-        var (guard, installations, _) = await CreateGuardAsync();
+        var (guard, installations, _) = CreateGuard();
         await installations.AddAsync(CreateInstallation("voice", provides: [VoiceCapability]));
         await installations.AddAsync(CreateInstallation("dialer", requires: [VoiceCapability]));
 
-        var result = await guard.CheckActivationAsync("dialer", "workspace-a", CancellationToken.None, "tenant-1");
+        var result = await guard.CheckActivationAsync("dialer", "workspace-a", CancellationToken.None);
 
         Assert.False(result.IsAllowed);
         Assert.Contains(VoiceCapability, result.Message);
     }
 
     [Fact]
-    public async Task CheckActivation_WorkspaceScope_AllowedWhenProviderEntitled()
+    public async Task CheckActivation_WorkspaceScope_AllowedWhenProviderActive()
     {
-        var (guard, installations, entitlements) = await CreateGuardAsync();
+        var (guard, installations, activations) = CreateGuard();
         await installations.AddAsync(CreateInstallation("voice", provides: [VoiceCapability]));
         await installations.AddAsync(CreateInstallation("dialer", requires: [VoiceCapability]));
-        await entitlements.SetEntitledAsync("voice", true, "workspace-a", "tenant-1");
+        await activations.SetActiveAsync("voice", "workspace-a", "tenant-1", true);
 
-        var result = await guard.CheckActivationAsync("dialer", "workspace-a", CancellationToken.None, "tenant-1");
+        var result = await guard.CheckActivationAsync("dialer", "workspace-a", CancellationToken.None);
 
         Assert.True(result.IsAllowed);
     }
 
     [Fact]
+    public async Task CheckActivation_WorkspaceScope_IgnoresProviderInstalledButNotActivated()
+    {
+        // PLAT-253: a provider merely installed (or entitled) but not activated in the workspace
+        // does not satisfy a capability requirement — only actual activation counts.
+        var (guard, installations, activations) = CreateGuard();
+        await installations.AddAsync(CreateInstallation("voice", provides: [VoiceCapability]));
+        await installations.AddAsync(CreateInstallation("dialer", requires: [VoiceCapability]));
+        await activations.SetActiveAsync("voice", "workspace-a", "tenant-1", false);
+
+        var result = await guard.CheckActivationAsync("dialer", "workspace-a", CancellationToken.None);
+
+        Assert.False(result.IsAllowed);
+    }
+
+    [Fact]
+    public async Task CheckActivation_WorkspaceScope_IgnoresProviderActiveInOtherWorkspace()
+    {
+        // Activation is per-workspace; a provider active only in another workspace must not count.
+        var (guard, installations, activations) = CreateGuard();
+        await installations.AddAsync(CreateInstallation("voice", provides: [VoiceCapability]));
+        await installations.AddAsync(CreateInstallation("dialer", requires: [VoiceCapability]));
+        await activations.SetActiveAsync("voice", "workspace-b", "tenant-1", true);
+
+        var result = await guard.CheckActivationAsync("dialer", "workspace-a", CancellationToken.None);
+
+        Assert.False(result.IsAllowed);
+    }
+
+    [Fact]
     public async Task CheckActivation_GlobalScope_RequiresGloballyActiveProvider()
     {
-        var (guard, installations, _) = await CreateGuardAsync();
+        var (guard, installations, _) = CreateGuard();
         await installations.AddAsync(CreateInstallation("voice", provides: [VoiceCapability]));
         await installations.AddAsync(CreateInstallation("dialer", requires: [VoiceCapability]));
 
@@ -66,57 +94,56 @@ public sealed class PluginCapabilityGuardTests
     }
 
     [Fact]
-    public async Task CheckDeactivation_DeniedWhileEntitledDependentNeedsCapability()
+    public async Task CheckDeactivation_DeniedWhileActiveDependentNeedsCapability()
     {
-        var (guard, installations, entitlements) = await CreateGuardAsync();
+        var (guard, installations, activations) = CreateGuard();
         await installations.AddAsync(CreateInstallation("voice", provides: [VoiceCapability]));
         await installations.AddAsync(CreateInstallation("dialer", requires: [VoiceCapability]));
-        await entitlements.SetEntitledAsync("voice", true, "workspace-a", "tenant-1");
-        await entitlements.SetEntitledAsync("dialer", true, "workspace-a", "tenant-1");
+        await activations.SetActiveAsync("voice", "workspace-a", "tenant-1", true);
+        await activations.SetActiveAsync("dialer", "workspace-a", "tenant-1", true);
 
-        var result = await guard.CheckDeactivationAsync("voice", "workspace-a", CancellationToken.None, "tenant-1");
+        var result = await guard.CheckDeactivationAsync("voice", "workspace-a", CancellationToken.None);
 
         Assert.False(result.IsAllowed);
         Assert.Contains("dialer", result.Message);
     }
 
     [Fact]
-    public async Task CheckDeactivation_AllowedWhenAlternativeProviderIsEntitled()
+    public async Task CheckDeactivation_AllowedWhenAlternativeProviderIsActive()
     {
-        var (guard, installations, entitlements) = await CreateGuardAsync();
+        var (guard, installations, activations) = CreateGuard();
         await installations.AddAsync(CreateInstallation("voice", provides: [VoiceCapability]));
         await installations.AddAsync(CreateInstallation("voice-backup", provides: [VoiceCapability]));
         await installations.AddAsync(CreateInstallation("dialer", requires: [VoiceCapability]));
-        await entitlements.SetEntitledAsync("voice", true, "workspace-a", "tenant-1");
-        await entitlements.SetEntitledAsync("voice-backup", true, "workspace-a", "tenant-1");
-        await entitlements.SetEntitledAsync("dialer", true, "workspace-a", "tenant-1");
+        await activations.SetActiveAsync("voice", "workspace-a", "tenant-1", true);
+        await activations.SetActiveAsync("voice-backup", "workspace-a", "tenant-1", true);
+        await activations.SetActiveAsync("dialer", "workspace-a", "tenant-1", true);
 
-        var result = await guard.CheckDeactivationAsync("voice", "workspace-a", CancellationToken.None, "tenant-1");
+        var result = await guard.CheckDeactivationAsync("voice", "workspace-a", CancellationToken.None);
 
         Assert.True(result.IsAllowed);
     }
 
     [Fact]
-    public async Task CheckDeactivation_AllowedWhenDependentIsNotEntitled()
+    public async Task CheckDeactivation_AllowedWhenDependentIsNotActive()
     {
-        var (guard, installations, entitlements) = await CreateGuardAsync();
+        var (guard, installations, activations) = CreateGuard();
         await installations.AddAsync(CreateInstallation("voice", provides: [VoiceCapability]));
         await installations.AddAsync(CreateInstallation("dialer", requires: [VoiceCapability]));
-        await entitlements.SetEntitledAsync("voice", true, "workspace-a", "tenant-1");
+        await activations.SetActiveAsync("voice", "workspace-a", "tenant-1", true);
 
-        var result = await guard.CheckDeactivationAsync("voice", "workspace-a", CancellationToken.None, "tenant-1");
+        var result = await guard.CheckDeactivationAsync("voice", "workspace-a", CancellationToken.None);
 
         Assert.True(result.IsAllowed);
     }
 
-    private static Task<(PluginCapabilityGuard Guard, InMemoryPluginInstallationRepository Installations, IPluginEntitlementStore Entitlements)>
-        CreateGuardAsync()
+    private static (PluginCapabilityGuard Guard, InMemoryPluginInstallationRepository Installations, InMemoryWorkspacePluginActivationStore Activations)
+        CreateGuard()
     {
         var installations = new InMemoryPluginInstallationRepository();
-        var entitlements = new InMemoryPluginEntitlementStore(new BackendHostOptions());
-        var guard = new PluginCapabilityGuard(installations, entitlements);
-        return Task.FromResult<(PluginCapabilityGuard, InMemoryPluginInstallationRepository, IPluginEntitlementStore)>(
-            (guard, installations, entitlements));
+        var activations = new InMemoryWorkspacePluginActivationStore();
+        var guard = new PluginCapabilityGuard(installations, activations);
+        return (guard, installations, activations);
     }
 
     private static PluginInstallation CreateInstallation(

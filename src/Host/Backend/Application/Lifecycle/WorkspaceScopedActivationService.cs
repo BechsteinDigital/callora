@@ -138,8 +138,8 @@ public sealed class WorkspaceScopedActivationService(
             }
 
             var capabilityCheck = isActive
-                ? await capabilityGuard.CheckActivationAsync(normalizedPluginId, normalizedWorkspaceKey, cancellationToken, workspace.TenantKey).ConfigureAwait(false)
-                : await capabilityGuard.CheckDeactivationAsync(normalizedPluginId, normalizedWorkspaceKey, cancellationToken, workspace.TenantKey).ConfigureAwait(false);
+                ? await capabilityGuard.CheckActivationAsync(normalizedPluginId, normalizedWorkspaceKey, cancellationToken).ConfigureAwait(false)
+                : await capabilityGuard.CheckDeactivationAsync(normalizedPluginId, normalizedWorkspaceKey, cancellationToken).ConfigureAwait(false);
             if (!capabilityCheck.IsAllowed)
             {
                 var capabilityMetadata = new Dictionary<string, string>
