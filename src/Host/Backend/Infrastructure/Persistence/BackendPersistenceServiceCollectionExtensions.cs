@@ -1,5 +1,6 @@
 using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Abstractions.Extensions;
+using Callora.Host.Backend.Application.Abstractions.Integrations;
 using Callora.Host.Backend.Application.Abstractions.Persistence;
 using Callora.Host.Backend.Application.Abstractions.Security;
 using Callora.Host.Backend.Application.Abstractions.Tenants;
@@ -32,6 +33,7 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddScoped<IPluginAuditLogRepository, EfPluginAuditLogRepository>();
         services.AddScoped<IHostUnitOfWork, EfHostUnitOfWork>();
         services.AddScoped<IBackendRbacStore, EfBackendRbacStore>();
+        services.AddScoped<IIntegrationCredentialStore, EfIntegrationCredentialStore>();
         services.AddScoped<IBackendUserStore, EfBackendUserStore>();
         services.AddScoped<ITenantManagementStore, EfTenantManagementStore>();
         services.AddScoped<IWorkspaceManagementStore, EfWorkspaceManagementStore>();

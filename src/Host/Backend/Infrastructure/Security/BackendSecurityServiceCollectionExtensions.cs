@@ -46,11 +46,11 @@ public static class BackendSecurityServiceCollectionExtensions
             {
                 policyOptions.ForwardDefaultSelector = context =>
                 {
-                    if (options.EnableBootstrapApiKeys &&
-                        context.Request.Headers.ContainsKey(options.ApiKeyHeaderName))
-                    {
+                    // An API-key header routes to the ApiKey handler regardless of the
+                    // bootstrap configuration: named integrations authenticate here too
+                    // (PLAT-264), even when bootstrap keys are disabled.
+                    if (context.Request.Headers.ContainsKey(options.ApiKeyHeaderName))
                         return ApiKeyAuthenticationDefaults.Scheme;
-                    }
 
                     return JwtBearerDefaults.AuthenticationScheme;
                 };

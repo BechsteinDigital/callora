@@ -37,4 +37,6 @@ public static class BackendPermissionKeys
     public const string WorkspaceRead = "workspace.read";
     public const string WorkspaceUpdate = "workspace.update";
     public const string WorkspaceDelete = "workspace.delete";
+    public const string IntegrationRead = "integration.read";
+    public const string IntegrationManage = "integration.manage";
 }
