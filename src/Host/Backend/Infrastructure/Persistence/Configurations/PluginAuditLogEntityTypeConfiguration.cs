@@ -2,7 +2,7 @@ using Callora.Host.Backend.Domain.Audit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Callora.Host.Backend.Infrastructure.Persistence;
+namespace Callora.Host.Backend.Infrastructure.Persistence.Configurations;
 
 public sealed class PluginAuditLogEntityTypeConfiguration : IEntityTypeConfiguration<PluginAuditLog>
 {
