@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Events;
+using Callora.Host.Backend.Application.Events;
 using Callora.Host.Backend.Tests.Support;
 using Callora.Host.Backend.Infrastructure.Events;
 using Callora.Host.Backend.Tests.Infrastructure.Events.Support;

@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Extensions;
+using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -85,7 +85,7 @@ public sealed class CachedWorkspaceTemplateResolutionService(
         using var scope = scopeFactory.CreateScope();
         var workspaceStore = scope.ServiceProvider.GetRequiredService<IWorkspaceManagementStore>();
         var templateRegistryStore = scope.ServiceProvider.GetRequiredService<IWorkspaceTemplateRegistryStore>();
-        var activationReader = scope.ServiceProvider.GetRequiredService<Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader>();
+        var activationReader = scope.ServiceProvider.GetRequiredService<Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationReader>();
 
         var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         if (workspace is null || !workspace.IsActive || !workspace.TenantIsActive)
@@ -306,7 +306,7 @@ public sealed class CachedWorkspaceTemplateResolutionService(
     }
 
     private static async Task<IReadOnlyList<WorkspaceTemplateDefinitionSnapshot>> FilterEntitledDefinitionsAsync(
-        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader activationReader,
+        Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationReader activationReader,
         WorkspaceSnapshot workspace,
         IReadOnlyList<WorkspaceTemplateDefinitionSnapshot> definitions,
         CancellationToken cancellationToken)

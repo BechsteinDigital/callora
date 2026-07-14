@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Extensions;
+using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Domain.Extensions;
 
 namespace Callora.Host.Backend.Infrastructure.Extensions;

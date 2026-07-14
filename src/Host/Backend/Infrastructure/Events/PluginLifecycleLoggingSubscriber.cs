@@ -1,4 +1,3 @@
-using Callora.Host.Backend.Application.Abstractions.Events;
 using Callora.Host.Backend.Application.Events;
 
 namespace Callora.Host.Backend.Infrastructure.Events;

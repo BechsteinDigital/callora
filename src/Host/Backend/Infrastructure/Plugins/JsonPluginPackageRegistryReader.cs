@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Callora.Host.Backend.Application.Abstractions.Plugins;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Domain.Extensions;
 
 namespace Callora.Host.Backend.Infrastructure.Plugins;

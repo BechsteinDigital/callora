@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Extensions;
+using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
 using Callora.Host.Backend.Infrastructure.Security;

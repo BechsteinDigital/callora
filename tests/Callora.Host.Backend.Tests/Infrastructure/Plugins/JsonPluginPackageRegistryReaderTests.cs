@@ -1,5 +1,5 @@
 using System.Text;
-using Callora.Host.Backend.Application.Abstractions.Plugins;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Infrastructure.Plugins;
 
 namespace Callora.Host.Backend.Tests.Infrastructure.Plugins;

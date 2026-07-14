@@ -1,6 +1,6 @@
 using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Extensions;
-using Callora.Host.Backend.Application.Abstractions.Integrations;
+using Callora.Host.Backend.Application.Extensions;
+using Callora.Host.Backend.Application.Integrations;
 using Callora.Host.Backend.Application.Abstractions.Persistence;
 using Callora.Host.Backend.Application.Abstractions.Security;
 using Callora.Host.Backend.Application.Abstractions.Tenants;

@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using Callora.Host.Backend.Api;
 using Callora.Host.Workspace.Api;
 using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Plugins;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
 using Callora.Host.Backend.Application.Lifecycle;
 using Callora.Host.Backend.Application.Policies;

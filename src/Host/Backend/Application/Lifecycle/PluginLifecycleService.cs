@@ -1,8 +1,8 @@
 using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Events;
-using Callora.Host.Backend.Application.Abstractions.Extensions;
+using Callora.Host.Backend.Application.Events;
+using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Abstractions.Persistence;
-using Callora.Host.Backend.Application.Abstractions.Plugins;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
 using Callora.Host.PluginContracts.Application.Plugins;
 using Callora.Hosting.Application.Plugins;
@@ -44,8 +44,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         IWorkspaceManagementStore workspaceStore,
         ICalloraPluginCatalog? pluginCatalog = null,
         ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null,
-        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null,
-        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader? workspaceActivationReader = null)
+        Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null,
+        Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationReader? workspaceActivationReader = null)
     {
         _lifecycle = lifecycle;
         _activationPolicy = activationPolicy;
@@ -82,7 +82,7 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         // The guard must read the same activations the service writes; in-memory hosts share one
         // instance, EF hosts get store + reader over the same scoped DbContext (PLAT-253).
         var activationReader = workspaceActivationReader
-            ?? activationStore as Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader
+            ?? activationStore as Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationReader
             ?? new Callora.Host.Backend.Application.Plugins.InMemoryWorkspacePluginActivationStore();
         _capabilityGuard = new PluginCapabilityGuard(installationRepository, activationReader);
         _workspaceLifecycleLocks = new WorkspaceLifecycleLockRegistry();
@@ -107,7 +107,7 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         INuGetPluginAssemblyResolver nuGetAssemblyResolver,
         IHostApplicationEventPublisher eventPublisher,
         ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null,
-        Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null)
+        Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null)
         : this(
             lifecycle,
             activationPolicy,

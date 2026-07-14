@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Entitlements;
+using Callora.Host.Backend.Application.Entitlements;
 using Callora.Host.Backend.Domain.Entitlements;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Configuration;
+using Callora.Host.Backend.Application.Configuration;
 using Callora.Host.Backend.Domain.Configuration;
 using Callora.Host.PluginContracts.Application.Secrets;
 using Microsoft.EntityFrameworkCore;
