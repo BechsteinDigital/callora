@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using Callora.Host.Backend.Application.Abstractions.Tenants;
+using Callora.Host.Backend.Application.Tenants;
 using Callora.Host.Backend.Domain.Tenants;
 using Microsoft.EntityFrameworkCore;
 

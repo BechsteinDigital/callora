@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
-using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Extensions;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Workspaces;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Callora.Host.Backend.Application.Extensions;

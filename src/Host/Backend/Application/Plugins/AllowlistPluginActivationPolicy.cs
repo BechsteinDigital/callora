@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Application.Policies;
 
 namespace Callora.Host.Backend.Application.Plugins;

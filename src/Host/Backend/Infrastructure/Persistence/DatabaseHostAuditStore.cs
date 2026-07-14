@@ -1,6 +1,5 @@
 using System.Text.Json;
-using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Persistence;
+using Callora.Host.Backend.Application.Persistence;
 using Callora.Host.Backend.Application.Audit;
 using Callora.Host.Backend.Domain.Audit;
 

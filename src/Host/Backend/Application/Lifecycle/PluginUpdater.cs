@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Persistence;
+using Callora.Host.Backend.Application.Persistence;
 using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Domain.Plugins;
 using Callora.Host.PluginContracts.Application.Plugins;

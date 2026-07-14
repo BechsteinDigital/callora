@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Persistence;
+using Callora.Host.Backend.Application.Persistence;
 
 namespace Callora.Host.Backend.Tests.Support;
 

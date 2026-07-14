@@ -1,10 +1,10 @@
-using Callora.Host.Backend.Application.Abstractions;
+using Callora.Host.Backend.Application.Audit;
 using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Integrations;
-using Callora.Host.Backend.Application.Abstractions.Persistence;
-using Callora.Host.Backend.Application.Abstractions.Security;
-using Callora.Host.Backend.Application.Abstractions.Tenants;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Persistence;
+using Callora.Host.Backend.Application.Security;
+using Callora.Host.Backend.Application.Tenants;
+using Callora.Host.Backend.Application.Workspaces;
 using Callora.Host.Backend.Domain.Security;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Security;

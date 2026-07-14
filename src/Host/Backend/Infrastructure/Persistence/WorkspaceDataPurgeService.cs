@@ -1,5 +1,5 @@
 using Callora.Host.Backend.Application.Media;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Workspaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Host.Backend.Infrastructure.Persistence;

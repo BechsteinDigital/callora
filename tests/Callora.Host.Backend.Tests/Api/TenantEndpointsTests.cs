@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Callora.Host.Backend.Api;
 using Callora.Host.Workspace.Api;
-using Callora.Host.Backend.Application.Abstractions.Tenants;
+using Callora.Host.Backend.Application.Tenants;
 using Callora.Host.Backend.Tests.Support;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;

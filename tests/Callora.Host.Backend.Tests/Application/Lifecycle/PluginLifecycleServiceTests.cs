@@ -1,6 +1,5 @@
 using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Application.Entitlements;
-using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Lifecycle;
 using Callora.Host.Backend.Application.Policies;

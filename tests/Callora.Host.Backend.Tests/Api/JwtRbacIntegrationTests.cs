@@ -1,3 +1,4 @@
+using Callora.Host.Backend.Application.Audit;
 using Callora.Host.Backend.Application.Entitlements;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -7,7 +8,6 @@ using System.Security.Claims;
 using System.Text;
 using Callora.Host.Backend.Api;
 using Callora.Host.Workspace.Api;
-using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Application.Lifecycle;
 using Callora.Host.Backend.Application.Policies;

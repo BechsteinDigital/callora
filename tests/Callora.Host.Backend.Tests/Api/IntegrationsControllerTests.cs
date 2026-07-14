@@ -1,3 +1,4 @@
+using Callora.Host.Backend.Application.Audit;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -6,7 +7,6 @@ using System.Security.Claims;
 using System.Text;
 using Callora.Host.Backend.Api;
 using Callora.Host.Backend.Api.Admin.Integrations;
-using Callora.Host.Backend.Application.Abstractions;
 using Callora.Host.Backend.Application.Integrations;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Security;

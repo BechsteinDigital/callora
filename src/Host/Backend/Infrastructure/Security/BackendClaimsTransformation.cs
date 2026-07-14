@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Callora.Host.Backend.Application.Abstractions.Security;
+using Callora.Host.Backend.Application.Security;
 using Microsoft.AspNetCore.Authentication;
 
 namespace Callora.Host.Backend.Infrastructure.Security;

@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Tenants;
+using Callora.Host.Backend.Application.Tenants;
 using Callora.Host.Backend.Infrastructure.Security;
 
 namespace Callora.Host.Backend.Api;

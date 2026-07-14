@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Workspaces;
 
 namespace Callora.Host.Backend.Tests.Support;
 

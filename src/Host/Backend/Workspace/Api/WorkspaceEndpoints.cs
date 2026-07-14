@@ -1,5 +1,5 @@
 using Callora.Host.Backend.Api;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Workspaces;
 using Callora.Host.Backend.Infrastructure.Persistence;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Security;

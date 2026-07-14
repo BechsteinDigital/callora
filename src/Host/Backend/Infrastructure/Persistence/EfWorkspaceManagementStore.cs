@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
+using Callora.Host.Backend.Application.Workspaces;
 using Callora.Host.Backend.Domain.Workspaces;
 using Microsoft.EntityFrameworkCore;
 using WorkspaceEntity = Callora.Host.Backend.Domain.Workspaces.Workspace;

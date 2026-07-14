@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Callora.Host.Backend.Application.Abstractions.Security;
+using Callora.Host.Backend.Application.Security;
 using Callora.Host.Backend.Domain.Security;
 using Microsoft.AspNetCore.Identity;
 
