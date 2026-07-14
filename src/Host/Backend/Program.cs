@@ -259,10 +259,18 @@ builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFl
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Host.Backend.Application.Flows.Actions.WebhookSendActionHandler>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Flows.FlowActionRegistry>();
 builder.Services.AddScoped<IBackgroundJobHandler, Callora.Host.Backend.Application.Flows.FlowExecuteJobHandler>();
-builder.Services.AddSingleton<Callora.Host.Backend.Application.Flows.FlowTrigger>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<Callora.Host.Backend.Application.Flows.FlowTrigger>());
-builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>,
-    Callora.Host.Backend.Application.Flows.FlowTriggerRebindSubscriber>();
+
+// Business-Event-Bus (PLAT-270): benannte Events, an die sich Flows,
+// Webhooks und Plugins generisch hängen. Der Bus ist auch für Plugins
+// auflösbar (PluginContract), damit sie Events publizieren können.
+builder.Services.AddSingleton<Callora.Host.Backend.Application.Events.Business.BusinessEventBus>();
+builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Events.IBusinessEventBus>(
+    sp => sp.GetRequiredService<Callora.Host.Backend.Application.Events.Business.BusinessEventBus>());
+builder.Services.AddSingleton<Callora.Host.Backend.Application.Events.Business.BusinessEventRegistry>();
+builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Events.IBusinessEventListener,
+    Callora.Host.Backend.Application.Events.Business.FlowBusinessEventListener>();
+builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Events.IBusinessEventListener,
+    Callora.Host.Backend.Application.Events.Business.WebhookBusinessEventListener>();
 builder.Services.AddSingleton<CachedWorkspaceTemplateResolutionService>();
 builder.Services.AddSingleton<IWorkspaceTemplateResolutionService>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());
 builder.Services.AddSingleton<IWorkspaceTemplateResolutionCache>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());
@@ -331,6 +339,7 @@ app.MapEntitlementSyncEndpoints();
 app.MapJobEndpoints();
 app.MapSystemConfigEndpoints();
 app.MapWebhookEndpoints();
+app.MapBusinessEventEndpoints();
 app.MapNotificationEndpoints();
 app.MapMediaEndpoints();
 app.MapCustomFieldEndpoints();

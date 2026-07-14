@@ -16,7 +16,7 @@ public sealed class FlowExecuteJobHandler(
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public string JobType => FlowTrigger.ExecuteJobType;
+    public string JobType => FlowJobs.ExecuteJobType;
 
     public async Task ExecuteAsync(BackgroundJobExecutionContext context, CancellationToken cancellationToken = default)
     {
