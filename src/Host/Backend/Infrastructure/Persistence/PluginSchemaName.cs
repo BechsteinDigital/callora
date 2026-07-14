@@ -11,11 +11,11 @@ namespace Callora.Host.Backend.Infrastructure.Persistence;
 public static class PluginSchemaName
 {
     private static readonly Regex SafeIdentifier =
-        new("^[a-z][a-z0-9_]{0,48}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        new("^[a-z][a-z0-9_]{0,60}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// Returns the schema name for the plugin, or null when the id contains
-    /// characters that are not safe for an unquoted-style identifier.
+    /// Returns the convention schema name <c>plugin_&lt;id&gt;</c>, or null
+    /// when the id is not safe for an unquoted-style identifier.
     /// </summary>
     public static string? TryResolve(string pluginId)
     {
@@ -25,6 +25,21 @@ public static class PluginSchemaName
         }
 
         var normalized = pluginId.Trim().ToLowerInvariant().Replace('-', '_');
-        return SafeIdentifier.IsMatch(normalized) ? $"plugin_{normalized}" : null;
+        return normalized.Length <= 48 && SafeIdentifier.IsMatch(normalized) ? $"plugin_{normalized}" : null;
+    }
+
+    /// <summary>
+    /// Validates an already-complete schema name (e.g. one declared in a
+    /// plugin manifest). Returns the normalized name or null when unsafe.
+    /// </summary>
+    public static string? Sanitize(string? schemaName)
+    {
+        if (string.IsNullOrWhiteSpace(schemaName))
+        {
+            return null;
+        }
+
+        var normalized = schemaName.Trim().ToLowerInvariant();
+        return SafeIdentifier.IsMatch(normalized) ? normalized : null;
     }
 }

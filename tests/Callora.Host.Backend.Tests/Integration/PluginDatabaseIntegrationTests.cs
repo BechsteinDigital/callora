@@ -1,0 +1,136 @@
+using Callora.Host.Backend.Application.Policies;
+using Callora.Host.Backend.Infrastructure.Persistence;
+using Callora.Hosting.Application.Plugins;
+using Callora.Plugins.Voip.Application.Accounts;
+using Callora.Plugins.Voip.Application.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Testcontainers.PostgreSql;
+using Xunit;
+
+namespace Callora.Host.Backend.Tests.Integration;
+
+/// <summary>
+/// End-to-end proof of the plugin-owned EF database against a real Postgres
+/// (PLAT-260): applies the plugin migration into its schema, exercises the
+/// EF-backed SIP account store, and drops the schema on uninstall. Requires
+/// Docker; skipped automatically when unavailable so the normal suite stays
+/// green.
+/// </summary>
+[Trait("Category", "Slow")]
+public sealed class PluginDatabaseIntegrationTests : IAsyncLifetime
+{
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine")
+        .Build();
+
+    private bool _started;
+
+    public async Task InitializeAsync()
+    {
+        try
+        {
+            await _postgres.StartAsync();
+            _started = true;
+        }
+        catch (Exception)
+        {
+            // No Docker available — tests below skip themselves.
+            _started = false;
+        }
+    }
+
+    public async Task DisposeAsync()
+    {
+        if (_started)
+        {
+            await _postgres.DisposeAsync();
+        }
+    }
+
+    [SkippableFact]
+    public async Task Migrate_CreatesPluginSchema_AndSipAccountStoreRoundTrips()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+
+        var factory = BuildFactory();
+        await factory.MigrateAsync();
+
+        // Schema and table exist.
+        await using (var db = factory.CreateDbContext())
+        {
+            var schema = db.Model.FindEntityType(typeof(SipAccount))!.GetSchema();
+            Assert.Equal(VoipDbContext.SchemaName, schema);
+            Assert.Empty(await db.SipAccounts.ToListAsync());
+        }
+
+        var store = new EfSipAccountStore(factory, new PassthroughDataProtector());
+
+        var created = await store.CreateAsync(
+            "workspace-a",
+            new UpsertSipAccountRequest("alice", "example.org", "Alice", "s3cret", true));
+        Assert.Equal("s3cret", created.Secret);
+
+        var fetched = await store.GetAsync("workspace-a", created.SipAccountId);
+        Assert.NotNull(fetched);
+        Assert.Equal("Alice", fetched!.DisplayName);
+
+        var updated = await store.UpdateAsync(
+            "workspace-a",
+            created.SipAccountId,
+            new UpsertSipAccountRequest("alice", "example.org", "Alice Renamed", "s3cret", false));
+        Assert.Equal("Alice Renamed", updated!.DisplayName);
+        Assert.False(updated.IsActive);
+
+        Assert.Single(await store.ListAsync("workspace-a"));
+        Assert.Contains("workspace-a", await store.ListWorkspaceKeysAsync());
+
+        Assert.True(await store.DeleteAsync("workspace-a", created.SipAccountId));
+        Assert.Empty(await store.ListAsync("workspace-a"));
+    }
+
+    [SkippableFact]
+    public async Task DropSchema_RemovesAllPluginTables()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+
+        var factory = BuildFactory();
+        await factory.MigrateAsync();
+
+        await using var db = factory.CreateDbContext();
+        var connection = db.Database.GetDbConnection();
+        await connection.OpenAsync();
+
+        var schema = PluginSchemaName.TryResolve("voip")!;
+        await using (var drop = connection.CreateCommand())
+        {
+            drop.CommandText = "DROP SCHEMA IF EXISTS \"" + schema + "\" CASCADE;";
+            await drop.ExecuteNonQueryAsync();
+        }
+
+        await using var check = connection.CreateCommand();
+        check.CommandText = "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = @s;";
+        var param = check.CreateParameter();
+        param.ParameterName = "s";
+        param.Value = schema;
+        check.Parameters.Add(param);
+        var remaining = (long)(await check.ExecuteScalarAsync())!;
+        Assert.Equal(0, remaining);
+    }
+
+    private PluginDbContextFactory<VoipDbContext> BuildFactory()
+    {
+        var provider = new NpgsqlPluginDbContextProvider(
+            new BackendHostOptions { DatabaseConnectionString = _postgres.GetConnectionString() });
+        return new PluginDbContextFactory<VoipDbContext>(provider, "voip");
+    }
+
+    private sealed class PassthroughDataProtector : Callora.Host.PluginContracts.Application.Secrets.IPluginDataProtector
+    {
+        public string Protect(string scope, string plaintext) => plaintext;
+
+        public bool TryUnprotect(string scope, string protectedValue, out string plaintext)
+        {
+            plaintext = protectedValue;
+            return true;
+        }
+    }
+}

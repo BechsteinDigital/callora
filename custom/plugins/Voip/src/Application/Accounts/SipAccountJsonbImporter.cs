@@ -4,10 +4,13 @@ namespace Callora.Plugins.Voip.Application.Accounts;
 
 /// <summary>
 /// One-time migration of SIP accounts from the legacy jsonb plugin data
-/// store into the plugin's EF database (PLAT-260). Runs at activation:
-/// per account it writes to EF first, then removes the jsonb copy, so an
-/// interrupted run never loses data and re-running is idempotent (an already
-/// imported account is skipped, an already deleted jsonb copy is a no-op).
+/// store into the plugin's EF database (PLAT-260). Runs at activation.
+/// Per account it writes to EF first, then removes the jsonb copy, so an
+/// interrupted run never loses data and re-running is idempotent. The
+/// per-account insert-before-delete is kept deliberately over a per-workspace
+/// batch: SIP accounts are few per workspace, and the safety of not losing an
+/// account on a partial failure outweighs fewer transactions. The existing
+/// target ids are read once per workspace to avoid a lookup per account.
 /// </summary>
 public sealed class SipAccountJsonbImporter(
     ISipAccountStore legacyStore,
@@ -31,11 +34,20 @@ public sealed class SipAccountJsonbImporter(
         foreach (var workspaceKey in workspaceKeys)
         {
             var legacyAccounts = await legacyStore.ListAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            if (legacyAccounts.Count == 0)
+            {
+                continue;
+            }
+
+            var existingIds = (await targetStore.ListAsync(workspaceKey, cancellationToken).ConfigureAwait(false))
+                .Select(static account => account.SipAccountId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             foreach (var account in legacyAccounts)
             {
                 try
                 {
-                    if (await targetStore.GetAsync(workspaceKey, account.SipAccountId, cancellationToken).ConfigureAwait(false) is null)
+                    if (!existingIds.Contains(account.SipAccountId))
                     {
                         await targetStore.CreateAsync(
                                 workspaceKey,
