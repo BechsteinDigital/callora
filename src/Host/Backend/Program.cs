@@ -258,6 +258,8 @@ builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Migration
 builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.CustomFields.ICustomFieldStore, EfCustomFieldStore>();
 builder.Services.AddScoped<Callora.Host.Backend.Infrastructure.CustomFields.RegistryCustomFieldSyncService>();
 builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginCustomFieldSyncSubscriber>();
+builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Persistence.IPluginSchemaDropper,
+    EfPluginSchemaDropper>();
 builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>,
     Callora.Host.Backend.Infrastructure.Events.PluginSchemaCleanupSubscriber>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.CustomFields.ICustomFieldAccessor, Callora.Host.Backend.Application.CustomFields.ScopedCustomFieldAccessor>();

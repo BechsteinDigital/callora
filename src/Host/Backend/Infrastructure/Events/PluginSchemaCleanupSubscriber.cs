@@ -2,20 +2,19 @@ using Callora.Host.Backend.Application.Abstractions.Events;
 using Callora.Host.Backend.Application.Abstractions.Persistence;
 using Callora.Host.Backend.Application.Events;
 using Callora.Host.Backend.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Host.Backend.Infrastructure.Events;
 
 /// <summary>
 /// Drops a plugin's dedicated database schema when it is uninstalled
 /// (PLAT-260): the plugin's own EF tables live in a dedicated schema, so a
-/// single <c>DROP SCHEMA ... CASCADE</c> removes all of its data cleanly.
-/// The schema name is taken from the plugin manifest's "databaseSchema"
-/// field when present, otherwise from the plugin_&lt;id&gt; convention.
-/// Idempotent — a plugin without a schema is a no-op.
+/// single DROP SCHEMA removes all of its data cleanly. The schema name is
+/// taken from the plugin manifest's "databaseSchema" field when present,
+/// otherwise from the plugin_&lt;id&gt; convention. Idempotent — a plugin
+/// without a schema is a no-op.
 /// </summary>
 public sealed class PluginSchemaCleanupSubscriber(
-    HostPersistenceDbContext dbContext,
+    IPluginSchemaDropper schemaDropper,
     IPluginInstallationRepository installationRepository,
     ILogger<PluginSchemaCleanupSubscriber> logger) : IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>
 {
@@ -37,13 +36,7 @@ public sealed class PluginSchemaCleanupSubscriber(
 
         try
         {
-            // Schema name is validated to a safe identifier (PluginSchemaName)
-            // and built via concatenation — a DDL identifier cannot be a bound
-            // parameter, so this is intentional raw SQL.
-            var dropSql = "DROP SCHEMA IF EXISTS \"" + schema + "\" CASCADE;";
-            await dbContext.Database
-                .ExecuteSqlRawAsync(dropSql, cancellationToken)
-                .ConfigureAwait(false);
+            await schemaDropper.DropAsync(schema, cancellationToken).ConfigureAwait(false);
             logger.LogInformation("Dropped schema {Schema} for uninstalled plugin {PluginId}.", schema, pluginId);
         }
         catch (Exception ex)
