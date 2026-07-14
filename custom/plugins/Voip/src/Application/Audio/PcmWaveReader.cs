@@ -1,6 +1,6 @@
 using System.Buffers.Binary;
 
-namespace Callora.Host.Backend.Application.Flows.Audio;
+namespace Callora.Plugins.Voip.Application.Audio;
 
 /// <summary>
 /// Minimal RIFF/WAV reader for announcement files: accepts PCM 16-bit mono

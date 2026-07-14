@@ -13,8 +13,6 @@ public static class BackendPermissionKeys
     public const string PluginRead = "plugin.read";
     public const string PluginDelete = "plugin.delete";
     public const string PluginExecute = "plugin.execute";
-    public const string CallRead = "call.read";
-    public const string CallExecute = "call.execute";
     public const string ConfigRead = "config.read";
     public const string ConfigUpdate = "config.update";
     public const string WebhookRead = "webhook.read";

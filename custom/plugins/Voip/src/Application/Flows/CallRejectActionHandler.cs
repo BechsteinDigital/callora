@@ -1,10 +1,10 @@
 using Callora.Contracts.Communication;
-using Callora.Host.Backend.Application.Communication.Calls;
+using Callora.Plugins.Voip.Application.Calls;
 
-namespace Callora.Host.Backend.Application.Flows.Actions;
+namespace Callora.Plugins.Voip.Application.Flows;
 
 /// <summary>Rejects the ringing inbound call of the triggering event.</summary>
-public sealed class CallRejectActionHandler(ActiveCallRegistry callRegistry) : CallFlowActionHandlerBase(callRegistry)
+public sealed class CallRejectActionHandler(VoipCallHub callHub) : VoipCallFlowActionHandlerBase(callHub)
 {
     public override string Type => "call.reject";
 

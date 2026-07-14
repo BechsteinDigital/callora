@@ -5,7 +5,6 @@ using Callora.Host.Backend.Application.Abstractions.Extensions;
 using Callora.Host.Backend.Application.Abstractions.Entitlements;
 using Callora.Host.Backend.Application.Abstractions.Jobs;
 using Callora.Host.Backend.Application.Communication;
-using Callora.Host.Backend.Application.Communication.Calls;
 using Callora.Host.Backend.Application.Entitlements;
 using Callora.Host.Backend.Application.Jobs;
 using Callora.Host.Backend.Application.Abstractions.Events;
@@ -117,13 +116,6 @@ ServiceCollectionExtensions.AddCalloraHosting(
 
 builder.Services.AddSingleton<CommunicationChannelRegistry>();
 builder.Services.AddSingleton<ICommunicationChannelRegistry>(sp => sp.GetRequiredService<CommunicationChannelRegistry>());
-builder.Services.AddSingleton<CallEventBroadcaster>();
-builder.Services.AddSingleton<ActiveCallRegistry>();
-builder.Services.AddSingleton<CallPlacementService>();
-builder.Services.AddHostedService<IncomingCallMonitor>();
-// Nach dem Monitor registriert: StopAsync läuft in umgekehrter Reihenfolge,
-// die Hangups passieren also, solange der Monitor noch angehängt ist.
-builder.Services.AddHostedService<Callora.Host.Backend.Application.Communication.Calls.CallGracefulShutdownService>();
 builder.Services.AddScoped<EfPluginDataStore>();
 builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
 
@@ -173,7 +165,9 @@ var openTelemetry = builder.Services.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddMeter(PluginLifecycleTelemetry.MeterName)
         .AddMeter(BackgroundJobTelemetry.MeterName)
-        .AddMeter(Callora.Host.Backend.Application.Communication.Calls.CallTelemetry.MeterName)
+        // Call-Metriken kommen aus dem Voice-Plugin (PLAT-257); Meter-Name als
+        // Literal, damit der Host das Plugin nicht referenziert.
+        .AddMeter("Callora.Voip.Calls")
         .AddMeter(Callora.Host.Backend.Application.Webhooks.WebhookTelemetry.MeterName));
 if (!string.IsNullOrWhiteSpace(observabilityOptions.OtlpEndpoint))
 {
@@ -221,7 +215,8 @@ builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Configura
 builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Webhooks.IWebhookSubscriptionStore, EfWebhookSubscriptionStore>();
 builder.Services.AddScoped<IBackgroundJobHandler, Callora.Host.Backend.Application.Webhooks.WebhookDeliveryJobHandler>();
 builder.Services.AddSingleton<Callora.Host.Backend.Application.Webhooks.WebhookDispatcher>();
-builder.Services.AddHostedService<Callora.Host.Backend.Application.Webhooks.WebhookCallEventRelay>();
+builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Webhooks.IWebhookEventPublisher,
+    Callora.Host.Backend.Application.Webhooks.ScopedWebhookEventPublisher>();
 builder.Services.AddSingleton<Callora.Host.Backend.Application.Webhooks.WebhookEgressGuard>();
 builder.Services.AddHttpClient(Callora.Host.Backend.Application.Webhooks.WebhookDeliveryJobHandler.HttpClientName, client =>
     {
@@ -259,16 +254,15 @@ builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IRu
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IRuleConditionEvaluator, Callora.Host.Backend.Application.Flows.Conditions.WorkspaceKeyConditionEvaluator>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IRuleConditionEvaluator, Callora.Host.Backend.Application.Flows.Conditions.TimeWindowConditionEvaluator>();
 builder.Services.AddSingleton<Callora.Host.Backend.Application.Flows.RuleEvaluator>();
-builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Host.Backend.Application.Flows.Actions.CallAcceptActionHandler>();
-builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Host.Backend.Application.Flows.Actions.CallRejectActionHandler>();
-builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Host.Backend.Application.Flows.Actions.CallHangupActionHandler>();
-builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Host.Backend.Application.Flows.Actions.AudioPlayActionHandler>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Host.Backend.Application.Flows.Actions.NotificationCreateActionHandler>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Host.Backend.Application.Flows.Actions.MailSendActionHandler>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Host.Backend.Application.Flows.Actions.WebhookSendActionHandler>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Flows.FlowActionRegistry>();
 builder.Services.AddScoped<IBackgroundJobHandler, Callora.Host.Backend.Application.Flows.FlowExecuteJobHandler>();
-builder.Services.AddHostedService<Callora.Host.Backend.Application.Flows.FlowTrigger>();
+builder.Services.AddSingleton<Callora.Host.Backend.Application.Flows.FlowTrigger>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<Callora.Host.Backend.Application.Flows.FlowTrigger>());
+builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>,
+    Callora.Host.Backend.Application.Flows.FlowTriggerRebindSubscriber>();
 builder.Services.AddSingleton<CachedWorkspaceTemplateResolutionService>();
 builder.Services.AddSingleton<IWorkspaceTemplateResolutionService>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());
 builder.Services.AddSingleton<IWorkspaceTemplateResolutionCache>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());
@@ -335,7 +329,6 @@ app.MapHealthChecks("/ready");
 app.MapAuthEndpoints();
 app.MapEntitlementSyncEndpoints();
 app.MapJobEndpoints();
-app.MapCallEndpoints();
 app.MapSystemConfigEndpoints();
 app.MapWebhookEndpoints();
 app.MapNotificationEndpoints();

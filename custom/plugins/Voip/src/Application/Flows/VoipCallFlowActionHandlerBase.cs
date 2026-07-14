@@ -1,14 +1,14 @@
 using Callora.Contracts.Communication;
-using Callora.Host.Backend.Application.Communication.Calls;
 using Callora.Host.PluginContracts.Application.Flows;
+using Callora.Plugins.Voip.Application.Calls;
 
-namespace Callora.Host.Backend.Application.Flows.Actions;
+namespace Callora.Plugins.Voip.Application.Flows;
 
 /// <summary>
-/// Base for actions operating on the live call referenced by the event's
-/// "callId" data field.
+/// Base for flow actions operating on the live call referenced by the
+/// event's "callId" data field. Exported by the voice plugin (PLAT-257).
 /// </summary>
-public abstract class CallFlowActionHandlerBase(ActiveCallRegistry callRegistry) : IFlowActionHandler
+public abstract class VoipCallFlowActionHandlerBase(VoipCallHub callHub) : IFlowActionHandler
 {
     public abstract string Type { get; }
 
@@ -19,14 +19,14 @@ public abstract class CallFlowActionHandlerBase(ActiveCallRegistry callRegistry)
     {
         if (!context.Data.TryGetValue("callId", out var callId) ||
             string.IsNullOrWhiteSpace(context.WorkspaceKey) ||
-            !callRegistry.TryGet(context.WorkspaceKey, callId, out var tracked) ||
-            tracked is null)
+            !callHub.TryGet(context.WorkspaceKey, callId, out var call) ||
+            call is null)
         {
             throw new InvalidOperationException(
                 $"Flow action '{Type}' requires a live call; call '{context.Data.GetValueOrDefault("callId")}' was not found.");
         }
 
-        return ExecuteOnCallAsync(tracked.Call, parameters, cancellationToken);
+        return ExecuteOnCallAsync(call, parameters, cancellationToken);
     }
 
     protected abstract Task ExecuteOnCallAsync(

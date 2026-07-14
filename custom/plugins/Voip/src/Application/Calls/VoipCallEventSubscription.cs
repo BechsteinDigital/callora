@@ -1,15 +1,16 @@
 using System.Threading.Channels;
+using Callora.Contracts.Communication;
 
-namespace Callora.Host.Backend.Application.Communication.Calls;
+namespace Callora.Plugins.Voip.Application.Calls;
 
 /// <summary>
-/// One workspace-scoped subscription on the call event stream. Events are
+/// Workspace-scoped subscription on the hub's event stream. Events are
 /// buffered in a bounded channel; slow consumers lose the oldest events
 /// instead of blocking publishers.
 /// </summary>
-public sealed class CallEventSubscription : IDisposable
+public sealed class VoipCallEventSubscription : ICallEventSubscription
 {
-    private readonly Channel<CallEvent> _channel = Channel.CreateBounded<CallEvent>(
+    private readonly Channel<CallStreamEvent> _channel = Channel.CreateBounded<CallStreamEvent>(
         new BoundedChannelOptions(capacity: 64)
         {
             FullMode = BoundedChannelFullMode.DropOldest,
@@ -18,7 +19,7 @@ public sealed class CallEventSubscription : IDisposable
 
     private readonly Action<Guid> _onDispose;
 
-    internal CallEventSubscription(Guid id, string workspaceKey, Action<Guid> onDispose)
+    internal VoipCallEventSubscription(Guid id, string workspaceKey, Action<Guid> onDispose)
     {
         Id = id;
         WorkspaceKey = workspaceKey;
@@ -29,14 +30,10 @@ public sealed class CallEventSubscription : IDisposable
 
     public string WorkspaceKey { get; }
 
-    public ChannelReader<CallEvent> Reader => _channel.Reader;
+    public ChannelReader<CallStreamEvent> Reader => _channel.Reader;
 
-    internal void Write(CallEvent callEvent) => _channel.Writer.TryWrite(callEvent);
+    internal void Write(CallStreamEvent callEvent) => _channel.Writer.TryWrite(callEvent);
 
-    /// <summary>
-    /// Completes the channel so the consuming stream ends gracefully
-    /// (host shutdown, PLAT-234).
-    /// </summary>
     internal void Complete() => _channel.Writer.TryComplete();
 
     public void Dispose()

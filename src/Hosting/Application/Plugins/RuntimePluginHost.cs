@@ -563,11 +563,22 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             assemblyTypes = exception.Types.Where(static type => type is not null).ToArray()!;
         }
 
+        var manuallyExported = GetExports(typeof(Callora.Host.PluginContracts.Application.Http.IApiController))
+            .Select(static export => export.GetType())
+            .ToHashSet();
+
         foreach (var controllerType in assemblyTypes)
         {
             if (controllerType.IsAbstract ||
                 controllerType.IsInterface ||
                 !typeof(Callora.Host.PluginContracts.Application.Http.IApiController).IsAssignableFrom(controllerType))
+            {
+                continue;
+            }
+
+            // Vom Plugin in StartAsync selbst exportierte Controller (eigene
+            // Ctor-Abhängigkeiten) werden nicht doppelt instanziiert.
+            if (manuallyExported.Contains(controllerType))
             {
                 continue;
             }

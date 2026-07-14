@@ -1,17 +1,21 @@
 using System.Text.Json;
+using Callora.Contracts.Communication;
 using Callora.Host.Backend.Application.Abstractions.Flows;
-using Callora.Host.Backend.Application.Communication.Calls;
 using Callora.Host.PluginContracts.Application.Flows;
 using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Hosting.Application.Plugins;
 
 namespace Callora.Host.Backend.Application.Flows;
 
 /// <summary>
-/// Listens to live call events, matches active flows (trigger + conditions)
-/// and enqueues one durable "flow.execute" job per match.
+/// Listens to live call events exported by communication plugins
+/// (<see cref="ICallEventStream"/>), matches active flows (trigger +
+/// conditions) and enqueues one durable "flow.execute" job per match. The
+/// host holds no call logic — it binds to the exported streams and rebinds
+/// when plugins activate or deactivate (PLAT-257).
 /// </summary>
 public sealed class FlowTrigger(
-    CallEventBroadcaster broadcaster,
+    ICalloraPluginCatalog pluginCatalog,
     IServiceScopeFactory scopeFactory,
     IBackgroundJobQueue jobQueue,
     RuleEvaluator ruleEvaluator,
@@ -21,24 +25,56 @@ public sealed class FlowTrigger(
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    private readonly object _bindingLock = new();
+    private readonly HashSet<ICallEventStream> _boundStreams = [];
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        broadcaster.EventPublished += HandleCallEvent;
+        RefreshBindings();
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        broadcaster.EventPublished -= HandleCallEvent;
+        lock (_bindingLock)
+        {
+            foreach (var stream in _boundStreams)
+            {
+                stream.EventPublished -= HandleCallEvent;
+            }
+
+            _boundStreams.Clear();
+        }
+
         return Task.CompletedTask;
     }
 
-    private void HandleCallEvent(CallEvent callEvent)
+    /// <summary>Binds to newly exported streams and drops vanished ones.</summary>
+    public void RefreshBindings()
+    {
+        var current = pluginCatalog.GetExports<ICallEventStream>().ToHashSet();
+        lock (_bindingLock)
+        {
+            foreach (var stale in _boundStreams.Where(stream => !current.Contains(stream)).ToArray())
+            {
+                stale.EventPublished -= HandleCallEvent;
+                _boundStreams.Remove(stale);
+            }
+
+            foreach (var stream in current.Where(stream => !_boundStreams.Contains(stream)))
+            {
+                stream.EventPublished += HandleCallEvent;
+                _boundStreams.Add(stream);
+            }
+        }
+    }
+
+    private void HandleCallEvent(CallStreamEvent callEvent)
     {
         _ = DispatchAsync(callEvent);
     }
 
-    private async Task DispatchAsync(CallEvent callEvent)
+    private async Task DispatchAsync(CallStreamEvent callEvent)
     {
         try
         {
@@ -89,7 +125,7 @@ public sealed class FlowTrigger(
             ? null
             : JsonSerializer.Deserialize<RuleConditionNode>(flow.ConditionsJson, JsonOptions);
 
-    internal static RuleContext BuildContext(CallEvent callEvent) => new(
+    internal static RuleContext BuildContext(CallStreamEvent callEvent) => new(
         callEvent.Type,
         callEvent.Call.WorkspaceKey,
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

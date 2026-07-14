@@ -1,12 +1,12 @@
 using Callora.Contracts.Communication;
 
-namespace Callora.Host.Backend.Application.Communication.Calls;
+namespace Callora.Plugins.Voip.Application.Calls;
 
 /// <summary>
-/// One live call held by the <see cref="ActiveCallRegistry"/>, pairing the
-/// contract call handle with its workspace and channel origin.
+/// One live call held by the <see cref="VoipCallHub"/>, pairing the contract
+/// call handle with its workspace and channel origin.
 /// </summary>
-public sealed class TrackedCall(
+public sealed class VoipTrackedCall(
     string workspaceKey,
     string channelId,
     ICall call,
@@ -20,7 +20,7 @@ public sealed class TrackedCall(
 
     public DateTimeOffset StartedAtUtc { get; } = startedAtUtc;
 
-    public ActiveCallSnapshot ToSnapshot() => new(
+    public CallSummary ToSummary() => new(
         Call.CallId,
         WorkspaceKey,
         ChannelId,
