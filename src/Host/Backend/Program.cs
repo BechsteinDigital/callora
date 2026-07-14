@@ -116,6 +116,9 @@ ServiceCollectionExtensions.AddCalloraHosting(
 
 builder.Services.AddSingleton<CommunicationChannelRegistry>();
 builder.Services.AddSingleton<ICommunicationChannelRegistry>(sp => sp.GetRequiredService<CommunicationChannelRegistry>());
+// Zentrale Feature-Flags (PLAT-263), aus BackendHost:FeatureFlags.
+builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Features.IFeatureFlagService,
+    Callora.Host.Backend.Infrastructure.Features.ConfiguredFeatureFlagService>();
 builder.Services.AddScoped<EfPluginDataStore>();
 builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
 // Plugin-eigene EF-Datenbanken (PLAT-260): Plugins bringen echte Entities +
@@ -353,6 +356,7 @@ app.MapAuthEndpoints();
 app.MapEntitlementSyncEndpoints();
 app.MapJobEndpoints();
 app.MapSystemConfigEndpoints();
+app.MapFeatureEndpoints();
 app.MapWebhookEndpoints();
 app.MapBusinessEventEndpoints();
 app.MapNotificationEndpoints();

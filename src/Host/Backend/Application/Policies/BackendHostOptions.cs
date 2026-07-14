@@ -113,4 +113,10 @@ public sealed class BackendHostOptions
     public bool AllowUnsignedPlugins { get; set; }
 
     public BackendDemoAdminUserOptions DemoAdminUser { get; set; } = new();
+
+    /// <summary>
+    /// Central feature flags (PLAT-263): a name→enabled map for gating risky
+    /// features and cloud rollouts, queried via <c>/api/features</c>.
+    /// </summary>
+    public Dictionary<string, bool> FeatureFlags { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
