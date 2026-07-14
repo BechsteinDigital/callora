@@ -45,6 +45,9 @@ builder.Host.UseDefaultServiceProvider(static options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
+// MVC controllers run alongside the remaining minimal-API endpoints during the
+// endpoint-to-controller migration (CODE_STRUCTURE_RULES.md, Phase C).
+builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
 
 var backendOptions = new BackendHostOptions();
@@ -369,7 +372,7 @@ app.MapPluginAssetEndpoints(backendOptions);
 app.MapPluginAdminExtensionEndpoints();
 app.MapThemeEndpoints();
 app.MapRbacEndpoints();
-app.MapIntegrationEndpoints();
+app.MapControllers();
 if (backendOptions.EnableTenantManagementApi)
 {
     app.MapTenantEndpoints();
