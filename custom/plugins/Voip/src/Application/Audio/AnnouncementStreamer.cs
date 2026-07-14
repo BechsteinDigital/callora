@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 
 namespace Callora.Plugins.Voip.Application.Audio;
 

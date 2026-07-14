@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Plugins.Voip.Application.Calls;

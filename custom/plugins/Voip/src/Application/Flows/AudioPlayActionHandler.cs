@@ -1,7 +1,8 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Host.PluginContracts.Application.Media;
 using Callora.Plugins.Voip.Application.Audio;
 using Callora.Plugins.Voip.Application.Calls;
+using Callora.Plugins.Voip.Application.Channels;
 
 namespace Callora.Plugins.Voip.Application.Flows;
 
@@ -30,7 +31,12 @@ public sealed class AudioPlayActionHandler(
         using var buffer = new MemoryStream();
         await content.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
 
-        await using var audioStream = await call.OpenAudioAsync(cancellationToken).ConfigureAwait(false);
+        if (call is not IVoipCall voipCall)
+        {
+            throw new InvalidOperationException("audio.play requires a voice-plugin call that exposes audio media.");
+        }
+
+        await using var audioStream = await voipCall.OpenAudioAsync(cancellationToken).ConfigureAwait(false);
         await AnnouncementStreamer.StreamAsync(audioStream, buffer.ToArray(), cancellationToken).ConfigureAwait(false);
     }
 }

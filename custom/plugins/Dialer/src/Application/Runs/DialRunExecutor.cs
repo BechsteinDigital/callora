@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugins.Dialer.Application.Numbers;
 
 namespace Callora.Plugins.Dialer.Application.Runs;

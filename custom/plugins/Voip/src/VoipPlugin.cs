@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Host.PluginContracts.Application.Data;
 using Callora.Host.PluginContracts.Application.Plugins;
 using Callora.Host.PluginContracts.Application.Secrets;

@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Host.PluginContracts.Application.Events;
 using Microsoft.Extensions.Logging;
 

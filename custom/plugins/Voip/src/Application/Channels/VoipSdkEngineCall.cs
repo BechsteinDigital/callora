@@ -1,4 +1,5 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugins.Voip.Application.Audio;
 using CalloraVoipSdk.Core.Application.Media;
 using SdkCall = CalloraVoipSdk.Core.Domain.Calls.ICall;
 using SdkCallDirection = CalloraVoipSdk.Core.Domain.Calls.CallDirection;

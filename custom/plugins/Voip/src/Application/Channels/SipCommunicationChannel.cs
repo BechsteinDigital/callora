@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugins.Voip.Application.Accounts;
 
 namespace Callora.Plugins.Voip.Application.Channels;

@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Channel-neutral handle for one call. Implementations are provided by
@@ -49,11 +49,8 @@ public interface ICall
     /// </summary>
     Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Opens the bidirectional audio stream of the call. Requires
-    /// <see cref="CallState.Connected"/> — throws
-    /// <see cref="InvalidOperationException"/> otherwise. Multiple streams can
-    /// be open in parallel; each observes every inbound frame.
-    /// </summary>
-    Task<ICallAudioStream> OpenAudioAsync(CancellationToken cancellationToken = default);
+    // Media access (audio/video/webrtc streams) is modality-specific and lives
+    // on the communication plugin's own call type, not on this modality-neutral
+    // contract — voice exposes audio, a future video plugin exposes video, etc.
+    // (REV2 §10.1 C, ADR-012).
 }
