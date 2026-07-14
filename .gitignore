@@ -93,6 +93,8 @@ docs
 !README.md
 # Betriebsrunbooks sind Teil des Repos (PLAT-235).
 !ops/**/*.md
+# GitHub community health files (security policy etc.) belong in the repo.
+!.github/**/*.md
 
 .worktrees/
 dashboard-vue/
