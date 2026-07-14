@@ -1,3 +1,4 @@
+using Callora.Host.Backend.Application.Entitlements;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Callora.Host.Backend.Application.Abstractions;

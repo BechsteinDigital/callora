@@ -1,3 +1,4 @@
+using Callora.Host.Backend.Application.Entitlements;
 using System.Net;
 using System.Net.Http.Json;
 using Callora.Host.Backend.Api;

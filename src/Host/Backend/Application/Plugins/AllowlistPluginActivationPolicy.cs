@@ -1,6 +1,7 @@
 using Callora.Host.Backend.Application.Abstractions;
+using Callora.Host.Backend.Application.Policies;
 
-namespace Callora.Host.Backend.Application.Policies;
+namespace Callora.Host.Backend.Application.Plugins;
 
 public sealed class AllowlistPluginActivationPolicy(BackendHostOptions options) : IPluginActivationPolicy
 {
