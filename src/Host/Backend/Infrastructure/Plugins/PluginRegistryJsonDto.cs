@@ -16,6 +16,9 @@ public sealed class PluginRegistryJsonDto
 
     public string? EntryTypeName { get; set; }
 
+    /// <summary>Deployment tier: "system" (foundation) or "application" (default).</summary>
+    public string? Tier { get; set; }
+
     public string[]? Capabilities { get; set; }
 
     public string[]? RequiresCapabilities { get; set; }

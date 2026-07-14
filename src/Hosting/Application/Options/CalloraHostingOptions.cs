@@ -11,9 +11,16 @@ public sealed class CalloraHostingOptions
     public bool AutoLoadPlugins { get; set; }
 
     /// <summary>
-    /// Directory scanned for runtime plugins when <see cref="AutoLoadPlugins"/> is enabled.
+    /// Directory scanned for Application-tier runtime plugins when
+    /// <see cref="AutoLoadPlugins"/> is enabled.
     /// </summary>
     public string PluginDirectory { get; set; } = Path.Combine(AppContext.BaseDirectory, "custom", "plugins");
+
+    /// <summary>
+    /// Directory scanned for bundled System/Foundation-tier plugins. Scanned
+    /// before <see cref="PluginDirectory"/>, so foundation plugins load first.
+    /// </summary>
+    public string StaticPluginDirectory { get; set; } = Path.Combine(AppContext.BaseDirectory, "custom", "static-plugins");
 
     /// <summary>
     /// Automatically activates installed plugins marked as active in runtime state.
