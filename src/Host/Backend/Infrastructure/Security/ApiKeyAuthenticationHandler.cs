@@ -2,7 +2,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.Encodings.Web;
 using System.Text;
-using Callora.Host.Backend.Application.Abstractions.Integrations;
 using Callora.Host.Backend.Application.Integrations;
 using Callora.Host.Backend.Application.Policies;
 using Microsoft.AspNetCore.Authentication;

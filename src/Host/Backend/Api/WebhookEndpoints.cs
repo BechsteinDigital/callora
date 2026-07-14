@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Webhooks;
+using Callora.Host.Backend.Application.Webhooks;
 using Callora.Host.Backend.Infrastructure.Security;
 
 namespace Callora.Host.Backend.Api;

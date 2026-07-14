@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Flows;
+using Callora.Host.Backend.Application.Flows;
 
 namespace Callora.Host.Backend.Tests.Support;
 

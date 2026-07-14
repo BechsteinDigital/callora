@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Callora.Host.Backend.Application.Abstractions.Configuration;
-using Callora.Host.Backend.Application.Abstractions.Extensions;
+using Callora.Host.Backend.Application.Configuration;
+using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
 
 namespace Callora.Host.Backend.Application.Extensions;

@@ -1,4 +1,3 @@
-using Callora.Host.Backend.Application.Abstractions.Extensions;
 using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Tests.Support;
 using Xunit;

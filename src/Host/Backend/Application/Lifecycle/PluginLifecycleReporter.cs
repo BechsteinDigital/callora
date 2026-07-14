@@ -1,7 +1,6 @@
 using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Events;
-using Callora.Host.Backend.Application.Audit;
 using Callora.Host.Backend.Application.Events;
+using Callora.Host.Backend.Application.Audit;
 
 namespace Callora.Host.Backend.Application.Lifecycle;
 

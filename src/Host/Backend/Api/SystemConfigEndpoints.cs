@@ -1,4 +1,3 @@
-using Callora.Host.Backend.Application.Abstractions.Configuration;
 using Callora.Host.Backend.Application.Configuration;
 using Callora.Host.Backend.Infrastructure.Security;
 

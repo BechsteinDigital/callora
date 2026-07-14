@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Notifications;
+using Callora.Host.Backend.Application.Notifications;
 using Callora.Host.Backend.Infrastructure.Security;
 
 namespace Callora.Host.Backend.Api;

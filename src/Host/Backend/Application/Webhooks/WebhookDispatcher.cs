@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Callora.Host.Backend.Application.Abstractions.Webhooks;
+using Callora.Host.Backend.Application.Webhooks;
 using Callora.Host.PluginContracts.Application.Jobs;
 
 namespace Callora.Host.Backend.Application.Webhooks;

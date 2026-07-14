@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Media;
+using Callora.Host.Backend.Application.Media;
 using Callora.Host.Backend.Domain.Media;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Webhooks;
+using Callora.Host.Backend.Application.Webhooks;
 using Callora.Host.Backend.Domain.Webhooks;
 using Callora.Host.PluginContracts.Application.Secrets;
 using Microsoft.EntityFrameworkCore;

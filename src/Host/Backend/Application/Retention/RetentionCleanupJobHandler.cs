@@ -1,5 +1,5 @@
-using Callora.Host.Backend.Application.Abstractions.Jobs;
-using Callora.Host.Backend.Application.Abstractions.Notifications;
+using Callora.Host.Backend.Application.Jobs;
+using Callora.Host.Backend.Application.Notifications;
 using Callora.Host.PluginContracts.Application.Jobs;
 using Microsoft.Extensions.Logging;
 

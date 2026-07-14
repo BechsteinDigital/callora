@@ -3,9 +3,8 @@ using System.Net.Http.Json;
 using Callora.Host.Backend.Api;
 using Callora.Host.Workspace.Api;
 using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Extensions;
-using Callora.Host.Backend.Application.Abstractions.Workspaces;
 using Callora.Host.Backend.Application.Extensions;
+using Callora.Host.Backend.Application.Abstractions.Workspaces;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Extensions;
 using Callora.Host.Backend.Tests.Support;
@@ -254,7 +253,7 @@ public sealed class WorkspaceTemplateEndpointsTests
         builder.Services.AddSingleton<IWorkspaceThemeSettingsStore, InMemoryWorkspaceThemeSettingsStore>();
         builder.Services.AddSingleton<IWorkspaceManagementStore>(workspaceStore);
         builder.Services.AddSingleton<IPluginEntitlementStore>(entitlementStore);
-        builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader>(activationStore);
+        builder.Services.AddSingleton<Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationReader>(activationStore);
 
         builder.Services.AddSingleton<CachedWorkspaceTemplateResolutionService>();
         builder.Services.AddSingleton<IWorkspaceTemplateResolutionService>(

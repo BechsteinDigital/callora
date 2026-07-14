@@ -1,6 +1,5 @@
-using Callora.Host.Backend.Application.Abstractions.Events;
-using Callora.Host.Backend.Application.Abstractions.Persistence;
 using Callora.Host.Backend.Application.Events;
+using Callora.Host.Backend.Application.Abstractions.Persistence;
 using Callora.Host.Backend.Infrastructure.Persistence;
 
 namespace Callora.Host.Backend.Infrastructure.Events;

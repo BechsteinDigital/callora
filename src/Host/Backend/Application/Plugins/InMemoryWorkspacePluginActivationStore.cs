@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Callora.Host.Backend.Application.Abstractions.Plugins;
+using Callora.Host.Backend.Application.Plugins;
 
 namespace Callora.Host.Backend.Application.Plugins;
 

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Callora.Host.Backend.Application.Abstractions.CustomFields;
+using Callora.Host.Backend.Application.CustomFields;
 
 namespace Callora.Host.Backend.Infrastructure.CustomFields;
 

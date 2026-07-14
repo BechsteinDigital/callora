@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Webhooks;
+using Callora.Host.Backend.Application.Webhooks;
 
 namespace Callora.Host.Backend.Tests.Support;
 

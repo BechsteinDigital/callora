@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.CustomFields;
+using Callora.Host.Backend.Application.CustomFields;
 using Callora.Host.PluginContracts.Application.CustomFields;
 
 namespace Callora.Host.Backend.Application.CustomFields;

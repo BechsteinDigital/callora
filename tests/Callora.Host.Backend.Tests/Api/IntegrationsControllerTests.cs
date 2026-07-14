@@ -7,7 +7,6 @@ using System.Text;
 using Callora.Host.Backend.Api;
 using Callora.Host.Backend.Api.Admin.Integrations;
 using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Integrations;
 using Callora.Host.Backend.Application.Integrations;
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Security;

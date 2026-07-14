@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Notifications;
+using Callora.Host.Backend.Application.Notifications;
 using Callora.Host.Backend.Domain.Notifications;
 using Microsoft.EntityFrameworkCore;
 

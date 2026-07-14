@@ -1,8 +1,7 @@
 using Callora.Host.Backend.Application.Abstractions;
-using Callora.Host.Backend.Application.Abstractions.Integrations;
+using Callora.Host.Backend.Application.Integrations;
 using Callora.Host.Backend.Application.Abstractions.Security;
 using Callora.Host.Backend.Application.Audit;
-using Callora.Host.Backend.Application.Integrations;
 using Callora.Host.Backend.Domain.Integrations;
 using Callora.Host.Backend.Infrastructure.Security;
 using Microsoft.AspNetCore.Authorization;

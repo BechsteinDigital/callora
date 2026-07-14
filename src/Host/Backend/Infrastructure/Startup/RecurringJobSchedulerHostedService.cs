@@ -1,4 +1,3 @@
-using Callora.Host.Backend.Application.Abstractions.Jobs;
 using Callora.Host.Backend.Application.Jobs;
 
 namespace Callora.Host.Backend.Infrastructure.Startup;

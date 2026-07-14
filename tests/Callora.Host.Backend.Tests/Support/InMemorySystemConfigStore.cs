@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Configuration;
+using Callora.Host.Backend.Application.Configuration;
 
 namespace Callora.Host.Backend.Tests.Support;
 

@@ -224,11 +224,11 @@ public sealed class WorkspacePublicEndpointsTests
             AdminShellBaseUrl = "https://admin-shell.local/admin/",
             WorkspaceShellBaseUrl = "https://workspace-shell.local/"
         });
-        builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Extensions.IWorkspaceTemplateResolutionService>(
+        builder.Services.AddSingleton<Callora.Host.Backend.Application.Extensions.IWorkspaceTemplateResolutionService>(
             new StaticWorkspaceTemplateResolutionService([]));
-        builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationReader>(
+        builder.Services.AddSingleton<Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationReader>(
             new StaticWorkspacePluginActivationReader(["dialer", "voip"]));
-        builder.Services.AddSingleton<Callora.Host.Backend.Application.Abstractions.Extensions.IWorkspaceThemeSettingsStore>(
+        builder.Services.AddSingleton<Callora.Host.Backend.Application.Extensions.IWorkspaceThemeSettingsStore>(
             new InMemoryWorkspaceThemeSettingsStore());
         builder.Services.AddScoped<Callora.Host.Backend.Application.Extensions.WorkspaceUiChainResolver>();
         builder.Services.AddScoped<Callora.Host.Backend.Application.Extensions.WorkspacePublicThemeResolver>();

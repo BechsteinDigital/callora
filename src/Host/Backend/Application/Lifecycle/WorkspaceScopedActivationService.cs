@@ -11,7 +11,7 @@ namespace Callora.Host.Backend.Application.Lifecycle;
 public sealed class WorkspaceScopedActivationService(
     IPluginInstallationRepository installationRepository,
     IWorkspaceManagementStore workspaceStore,
-    Callora.Host.Backend.Application.Abstractions.Plugins.IWorkspacePluginActivationStore activationStore,
+    Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationStore activationStore,
     PluginLifecycleReporter reporter,
     WorkspaceLifecycleLockRegistry lockRegistry,
     PluginCapabilityGuard capabilityGuard)

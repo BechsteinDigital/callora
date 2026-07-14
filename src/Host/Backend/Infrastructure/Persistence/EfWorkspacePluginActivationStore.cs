@@ -1,4 +1,4 @@
-using Callora.Host.Backend.Application.Abstractions.Plugins;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Domain.Plugins;
 using Microsoft.EntityFrameworkCore;
 

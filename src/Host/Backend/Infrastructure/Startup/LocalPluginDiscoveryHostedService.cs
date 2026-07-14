@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Callora.Host.Backend.Application.Abstractions.Persistence;
-using Callora.Host.Backend.Application.Abstractions.Plugins;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Application.Lifecycle;
 using Callora.Hosting.Application.Options;
 using Callora.Host.Backend.Infrastructure.Plugins;

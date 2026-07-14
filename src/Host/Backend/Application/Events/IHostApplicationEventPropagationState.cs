@@ -1,0 +1,10 @@
+using Callora.Host.PluginContracts.Application.Events;
+
+namespace Callora.Host.Backend.Application.Events;
+
+/// <summary>
+/// Exposes propagation state for events that can stop further subscriber execution.
+/// </summary>
+public interface IHostApplicationEventPropagationState : IHostEventPropagationState
+{
+}

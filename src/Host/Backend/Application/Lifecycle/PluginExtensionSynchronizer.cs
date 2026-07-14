@@ -1,5 +1,5 @@
-using Callora.Host.Backend.Application.Abstractions.Extensions;
-using Callora.Host.Backend.Application.Abstractions.Plugins;
+using Callora.Host.Backend.Application.Extensions;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Domain.Extensions;
 using Callora.Host.PluginContracts.Application.Plugins;
 using Callora.Hosting.Application.Plugins;
