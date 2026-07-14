@@ -20,6 +20,7 @@ namespace Callora.Host.Backend.Api.Admin.Integrations;
 [Authorize]
 [Route("api/security/integrations")]
 [Produces("application/json")]
+[Tags("Security")]
 public sealed class IntegrationsController : ControllerBase
 {
     [HttpGet]
