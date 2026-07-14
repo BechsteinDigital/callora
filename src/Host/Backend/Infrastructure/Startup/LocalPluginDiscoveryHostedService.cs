@@ -23,24 +23,22 @@ public sealed class LocalPluginDiscoveryHostedService(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        if (!hostingOptions.AutoLoadPlugins || string.IsNullOrWhiteSpace(hostingOptions.PluginDirectory))
+        if (!hostingOptions.AutoLoadPlugins)
         {
             return;
         }
 
-        var pluginDirectory = CalloraHostingPathResolver.ResolvePluginDirectory(hostingOptions.PluginDirectory);
-        if (!Directory.Exists(pluginDirectory))
-        {
-            logger.LogInformation("Plugin directory '{PluginDirectory}' does not exist. Skipping local plugin discovery.", pluginDirectory);
-            return;
-        }
-
-        var registryFiles = Directory
-            .EnumerateFiles(pluginDirectory, "registry.json", SearchOption.AllDirectories)
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+        // Foundation (System-tier) plugins are scanned before Application-tier
+        // plugins, so a foundation loads before anything depending on it.
+        var registryEntries = BuildScanRoots()
+            .Where(root => Directory.Exists(root.Directory))
+            .SelectMany(root => Directory
+                .EnumerateFiles(root.Directory, "registry.json", SearchOption.AllDirectories)
+                .OrderBy(file => file, StringComparer.OrdinalIgnoreCase)
+                .Select(file => (RegistryFile: file, root.DefaultTier)))
             .ToArray();
 
-        if (registryFiles.Length == 0)
+        if (registryEntries.Length == 0)
         {
             return;
         }
@@ -49,7 +47,7 @@ public sealed class LocalPluginDiscoveryHostedService(
         var installationRepository = scope.ServiceProvider.GetRequiredService<IPluginInstallationRepository>();
         var lifecycleService = scope.ServiceProvider.GetRequiredService<IPluginLifecycleService>();
 
-        foreach (var registryFile in registryFiles)
+        foreach (var (registryFile, defaultTier) in registryEntries)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -61,6 +59,11 @@ public sealed class LocalPluginDiscoveryHostedService(
             }
 
             var pluginId = manifest.PluginId.Trim();
+            var tier = PluginTierResolver.Resolve(manifest.Tier, defaultTier);
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("Discovered {Tier}-tier plugin {PluginId} from {RegistryFile}.", tier, pluginId, registryFile);
+            }
             var existing = await installationRepository.GetByPluginIdAsync(pluginId, cancellationToken).ConfigureAwait(false);
             if (existing is not null)
             {
@@ -152,6 +155,26 @@ public sealed class LocalPluginDiscoveryHostedService(
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    private IReadOnlyList<(string Directory, PluginTier DefaultTier)> BuildScanRoots()
+    {
+        var roots = new List<(string Directory, PluginTier DefaultTier)>();
+        if (!string.IsNullOrWhiteSpace(hostingOptions.StaticPluginDirectory))
+        {
+            roots.Add((
+                CalloraHostingPathResolver.ResolvePluginDirectory(hostingOptions.StaticPluginDirectory),
+                PluginTier.System));
+        }
+
+        if (!string.IsNullOrWhiteSpace(hostingOptions.PluginDirectory))
+        {
+            roots.Add((
+                CalloraHostingPathResolver.ResolvePluginDirectory(hostingOptions.PluginDirectory),
+                PluginTier.Application));
+        }
+
+        return roots;
+    }
 
     private static async Task<PluginRegistryJsonDto?> ReadManifestAsync(string registryFile, CancellationToken cancellationToken)
     {
