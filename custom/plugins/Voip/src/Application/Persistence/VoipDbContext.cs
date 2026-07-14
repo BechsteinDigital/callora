@@ -14,6 +14,8 @@ public sealed class VoipDbContext(DbContextOptions<VoipDbContext> options) : DbC
 
     public DbSet<CallLog> CallLogs => Set<CallLog>();
 
+    public DbSet<SipAccount> SipAccounts => Set<SipAccount>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(SchemaName);
@@ -29,6 +31,18 @@ public sealed class VoipDbContext(DbContextOptions<VoipDbContext> options) : DbC
             entity.Property(x => x.TargetValue).HasMaxLength(200).IsRequired();
             entity.Property(x => x.TargetDisplayName).HasMaxLength(200);
             entity.HasIndex(x => new { x.WorkspaceKey, x.StartedAtUtc });
+        });
+
+        modelBuilder.Entity<SipAccount>(entity =>
+        {
+            entity.ToTable("sip_accounts");
+            entity.HasKey(x => new { x.WorkspaceKey, x.SipAccountId });
+            entity.Property(x => x.WorkspaceKey).HasMaxLength(120);
+            entity.Property(x => x.SipAccountId).HasMaxLength(200);
+            entity.Property(x => x.Username).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Domain).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.DisplayName).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.ProtectedSecret).IsRequired();
         });
     }
 }
