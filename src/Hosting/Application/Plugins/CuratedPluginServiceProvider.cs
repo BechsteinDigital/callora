@@ -1,4 +1,5 @@
 using Callora.Host.PluginContracts.Application.Data;
+using Callora.Host.PluginContracts.Application.Persistence;
 using Callora.Host.PluginContracts.Application.Plugins;
 using Microsoft.Extensions.Logging;
 
@@ -27,6 +28,21 @@ internal sealed class CuratedPluginServiceProvider(
             return rootServices.GetService(typeof(IPluginDataStore)) is IPluginDataStore inner
                 ? new PluginBoundDataStore(inner, pluginId)
                 : null;
+        }
+
+        // IPluginDbContextFactory<TContext>: the plugin's own EF context on
+        // the host database, in its dedicated schema (PLAT-260).
+        if (serviceType.IsGenericType &&
+            serviceType.GetGenericTypeDefinition() == typeof(IPluginDbContextFactory<>))
+        {
+            if (rootServices.GetService(typeof(IPluginDbContextProvider)) is not IPluginDbContextProvider provider)
+            {
+                return null;
+            }
+
+            var contextType = serviceType.GetGenericArguments()[0];
+            var factoryType = typeof(PluginDbContextFactory<>).MakeGenericType(contextType);
+            return Activator.CreateInstance(factoryType, provider, pluginId);
         }
 
         return IsAllowed(serviceType) ? rootServices.GetService(serviceType) : null;
