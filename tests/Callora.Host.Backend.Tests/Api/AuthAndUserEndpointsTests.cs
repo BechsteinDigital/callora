@@ -125,7 +125,7 @@ public sealed class AuthAndUserEndpointsTests
             JwtSigningKey = "callora-tests-signing-key-callora-tests-signing-key",
             RbacUserAssignments =
             [
-                new BackendRbacUserAssignmentOptions { UserId = "root", Role = BackendRoles.Admin }
+                new BackendRbacUserAssignmentOptions { UserId = "root", Role = BackendRoles.SuperAdmin }
             ]
         };
 

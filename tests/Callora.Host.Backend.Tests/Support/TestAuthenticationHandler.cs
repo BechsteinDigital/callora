@@ -22,7 +22,7 @@ public sealed class TestAuthenticationHandler : AuthenticationHandler<Authentica
         var identity = new ClaimsIdentity(
             [
                 new Claim(ClaimTypes.Name, "test-user"),
-                new Claim(ClaimTypes.Role, BackendRoles.Admin),
+                new Claim(ClaimTypes.Role, BackendRoles.SuperAdmin),
                 new Claim(BackendClaimTypes.Permission, "*")
             ],
             Scheme.Name);
