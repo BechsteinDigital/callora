@@ -6,6 +6,7 @@
   "version": "0.2.0",
   "assemblyFileName": "Callora.Plugins.Voip.dll",
   "entryTypeName": "Callora.Plugins.Voip.Application.VoipPlugin",
+  "databaseSchema": "plugin_voip",
   "capabilities": [
     "communication.voice"
   ],

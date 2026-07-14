@@ -24,4 +24,23 @@ public sealed class PluginSchemaNameTests
     {
         Assert.Null(PluginSchemaName.TryResolve(pluginId));
     }
+
+    [Theory]
+    [InlineData("plugin_voip", "plugin_voip")]
+    [InlineData("PLUGIN_VOIP", "plugin_voip")]
+    public void Sanitize_ValidSchemaNames_PassThroughNormalized(string declared, string expected)
+    {
+        Assert.Equal(expected, PluginSchemaName.Sanitize(declared));
+    }
+
+    [Theory]
+    [InlineData("drop table")]
+    [InlineData("a;b")]
+    [InlineData("\"x\"")]
+    [InlineData("9start")]
+    [InlineData(null)]
+    public void Sanitize_UnsafeSchemaNames_ReturnNull(string? declared)
+    {
+        Assert.Null(PluginSchemaName.Sanitize(declared));
+    }
 }
