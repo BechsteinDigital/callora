@@ -3,6 +3,7 @@ using System;
 using Callora.Plugins.Voip.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Callora.Plugins.Voip.src.Application.Persistence.Migrations
 {
     [DbContext(typeof(VoipDbContext))]
-    partial class VoipDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260714105657_AddSipAccounts")]
+    partial class AddSipAccounts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

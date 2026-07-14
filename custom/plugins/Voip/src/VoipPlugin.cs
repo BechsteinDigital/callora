@@ -46,7 +46,30 @@ public sealed class VoipPlugin : IHostManagedPlugin
 
         var loggerFactory = context.Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
 
-        var accountStore = new DataStoreSipAccountStore(dataStore, dataProtector);
+        // Plugin-eigene EF-Datenbank (PLAT-260): Schema/Migrationen zuerst,
+        // dann SIP-Accounts aus dem alten jsonb-Store einmalig übernehmen.
+        var dbContextFactory = context.Services.GetService(typeof(IPluginDbContextFactory<VoipDbContext>))
+            as IPluginDbContextFactory<VoipDbContext>;
+
+        ISipAccountStore accountStore;
+        if (dbContextFactory is not null)
+        {
+            await dbContextFactory.MigrateAsync(cancellationToken).ConfigureAwait(false);
+            var efStore = new EfSipAccountStore(dbContextFactory, dataProtector);
+            await new SipAccountJsonbImporter(
+                    new DataStoreSipAccountStore(dataStore, dataProtector),
+                    efStore,
+                    loggerFactory?.CreateLogger("Callora.Voip.Persistence"))
+                .ImportAsync(cancellationToken)
+                .ConfigureAwait(false);
+            accountStore = efStore;
+        }
+        else
+        {
+            // Fallback ohne Host-DB-Provider: alter jsonb-Store.
+            accountStore = new DataStoreSipAccountStore(dataStore, dataProtector);
+        }
+
         _engine = new VoipSdkVoiceEngine();
         _channelManager = new SipChannelManager(
             channelRegistry,
@@ -89,13 +112,9 @@ public sealed class VoipPlugin : IHostManagedPlugin
             _businessEventRelay.Attach();
         }
 
-        // Plugin-eigene Datenbank (PLAT-260): Schema/Migrationen anwenden und
-        // beendete Calls als typisierte Entities protokollieren.
-        var dbContextFactory = context.Services.GetService(typeof(IPluginDbContextFactory<VoipDbContext>))
-            as IPluginDbContextFactory<VoipDbContext>;
+        // Beendete Calls als typisierte Entities protokollieren (PLAT-260).
         if (dbContextFactory is not null)
         {
-            await dbContextFactory.MigrateAsync(cancellationToken).ConfigureAwait(false);
             _callLogWriter = new CallLogWriter(
                 _callHub,
                 dbContextFactory,
