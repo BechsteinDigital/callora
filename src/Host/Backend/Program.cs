@@ -368,6 +368,7 @@ app.MapPluginAssetEndpoints(backendOptions);
 app.MapPluginAdminExtensionEndpoints();
 app.MapThemeEndpoints();
 app.MapRbacEndpoints();
+app.MapIntegrationEndpoints();
 if (backendOptions.EnableTenantManagementApi)
 {
     app.MapTenantEndpoints();

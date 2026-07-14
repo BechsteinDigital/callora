@@ -84,6 +84,9 @@ public sealed class HostPersistenceDbContext(
     public DbSet<Callora.Host.Backend.Domain.Entitlements.PluginEntitlement> PluginEntitlements =>
         Set<Callora.Host.Backend.Domain.Entitlements.PluginEntitlement>();
 
+    public DbSet<Callora.Host.Backend.Domain.Integrations.IntegrationCredential> IntegrationCredentials =>
+        Set<Callora.Host.Backend.Domain.Integrations.IntegrationCredential>();
+
     // Workspace-Isolation als Backstop (PLAT-267): ein workspace-gebundener
     // Aufrufer liest nur Zeilen seines Workspace, auch wenn ein Store das
     // explizite Where vergisst. Operatoren und Nicht-Request-Kontexte (Jobs,

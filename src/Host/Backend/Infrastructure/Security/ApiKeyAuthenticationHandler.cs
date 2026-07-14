@@ -2,8 +2,11 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.Encodings.Web;
 using System.Text;
+using Callora.Host.Backend.Application.Abstractions.Integrations;
+using Callora.Host.Backend.Application.Integrations;
 using Callora.Host.Backend.Application.Policies;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Callora.Host.Backend.Infrastructure.Security;
@@ -14,22 +17,43 @@ public sealed class ApiKeyAuthenticationHandler(
     UrlEncoder encoder,
     BackendHostOptions hostOptions) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (!hostOptions.EnableBootstrapApiKeys)
-            return Task.FromResult(AuthenticateResult.Fail("Bootstrap API key authentication is disabled."));
+        if (!Request.Headers.TryGetValue(hostOptions.ApiKeyHeaderName, out var providedValues))
+            return AuthenticateResult.NoResult();
 
-        if (!Request.Headers.TryGetValue(hostOptions.ApiKeyHeaderName, out var providedKey))
-            return Task.FromResult(AuthenticateResult.Fail($"Missing '{hostOptions.ApiKeyHeaderName}' header."));
+        var providedKey = providedValues.ToString();
+        if (string.IsNullOrWhiteSpace(providedKey))
+            return AuthenticateResult.Fail($"Missing '{hostOptions.ApiKeyHeaderName}' header.");
 
-        if (hostOptions.RequireApiKeyAuthentication && !IsKnownApiKey(providedKey.ToString()))
-            return Task.FromResult(AuthenticateResult.Fail("Invalid API key."));
+        // 1) Named integration (PLAT-264): a hashed lookup resolves the credential
+        // to its own RBAC role and scope — never platform super-admin.
+        var integrationStore = Context.RequestServices.GetService<IIntegrationCredentialStore>();
+        if (integrationStore is not null)
+        {
+            var keyHash = IntegrationApiKey.ComputeHash(providedKey);
+            var integration = await integrationStore.FindActiveByKeyHashAsync(keyHash, Context.RequestAborted)
+                .ConfigureAwait(false);
+            if (integration is not null)
+            {
+                var principal = IntegrationPrincipalFactory.Create(integration);
+                return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name));
+            }
+        }
 
-        var principal = CreatePrincipal("bootstrap-api-key");
-        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name)));
+        // 2) Global bootstrap keys: the operator break-glass credential, kept for
+        // first-run setup. Grants super-admin, so it stays gated behind opt-in.
+        if (hostOptions.EnableBootstrapApiKeys &&
+            (!hostOptions.RequireApiKeyAuthentication || IsKnownBootstrapKey(providedKey)))
+        {
+            var principal = CreateBootstrapPrincipal("bootstrap-api-key");
+            return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name));
+        }
+
+        return AuthenticateResult.Fail("Invalid API key.");
     }
 
-    private bool IsKnownApiKey(string provided)
+    private bool IsKnownBootstrapKey(string provided)
     {
         if (string.IsNullOrWhiteSpace(provided))
             return false;
@@ -50,7 +74,7 @@ public sealed class ApiKeyAuthenticationHandler(
         return CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
     }
 
-    private static ClaimsPrincipal CreatePrincipal(string identityName)
+    private static ClaimsPrincipal CreateBootstrapPrincipal(string identityName)
     {
         var identity = new ClaimsIdentity(
             [
