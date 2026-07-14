@@ -8,7 +8,7 @@ namespace Callora.Host.Backend.Infrastructure.Security;
 public static class EndpointAuthorizationExtensions
 {
     /// <summary>
-    /// Requires one permission key, unless the caller has admin role.
+    /// Requires one permission key, unless the caller is a super administrator.
     /// </summary>
     public static TBuilder RequirePermission<TBuilder>(this TBuilder builder, string permissionKey)
         where TBuilder : IEndpointConventionBuilder
@@ -34,7 +34,7 @@ public static class EndpointAuthorizationExtensions
 
     private static bool HasPermission(ClaimsPrincipal user, string permissionKey)
     {
-        if (user.IsInRole(BackendRoles.Admin))
+        if (user.IsInRole(BackendRoles.SuperAdmin))
         {
             return true;
         }

@@ -64,11 +64,24 @@ public sealed class WorkspaceScopeEvaluatorTests
     }
 
     [Fact]
-    public void AdminRole_OverridesWorkspaceBinding()
+    public void SuperAdminRole_OverridesWorkspaceBinding()
     {
+        var user = BuildUser(workspaceKey: "workspace-a", role: BackendRoles.SuperAdmin);
+
+        Assert.True(WorkspaceScopeEvaluator.IsOperator(user));
+        Assert.True(WorkspaceScopeEvaluator.HasWorkspaceAccess(user, "workspace-b"));
+    }
+
+    [Fact]
+    public void AdminRole_DoesNotOverrideWorkspaceBinding()
+    {
+        // Admin is a workspace role now, not a platform operator (RBAC redesign):
+        // it must stay locked to its own workspace.
         var user = BuildUser(workspaceKey: "workspace-a", role: BackendRoles.Admin);
 
-        Assert.True(WorkspaceScopeEvaluator.HasWorkspaceAccess(user, "workspace-b"));
+        Assert.False(WorkspaceScopeEvaluator.IsOperator(user));
+        Assert.True(WorkspaceScopeEvaluator.HasWorkspaceAccess(user, "workspace-a"));
+        Assert.False(WorkspaceScopeEvaluator.HasWorkspaceAccess(user, "workspace-b"));
     }
 
     private static ClaimsPrincipal BuildUser(

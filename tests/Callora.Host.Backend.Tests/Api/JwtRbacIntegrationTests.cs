@@ -27,7 +27,7 @@ public sealed class JwtRbacIntegrationTests
         var options = CreateOptions();
         await using var app = await CreateAppAsync(options);
         var client = app.GetTestClient();
-        AuthenticateWithBearer(client, CreateJwt(options, "admin-user", [BackendRoles.Admin]));
+        AuthenticateWithBearer(client, CreateJwt(options, "admin-user", [BackendRoles.SuperAdmin]));
 
         var apiResponse = await client.GetAsync("/api/plugins/contracts/compatibility");
         Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
@@ -101,7 +101,7 @@ public sealed class JwtRbacIntegrationTests
 
         await using var app = await CreateAppAsync(options);
         var adminClient = app.GetTestClient();
-        AuthenticateWithBearer(adminClient, CreateJwt(options, "admin-user", [BackendRoles.Admin]));
+        AuthenticateWithBearer(adminClient, CreateJwt(options, "admin-user", [BackendRoles.SuperAdmin]));
 
         var aliceClient = app.GetTestClient();
         AuthenticateWithBearer(aliceClient, CreateJwt(options, "alice", []));

@@ -15,7 +15,8 @@ public static class BackendJwtTokenIssuer
         string? email,
         IReadOnlyCollection<string> roles,
         IReadOnlyDictionary<string, string>? customClaims = null,
-        TimeSpan? lifetime = null)
+        TimeSpan? lifetime = null,
+        IReadOnlyCollection<string>? permissions = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentException.ThrowIfNullOrWhiteSpace(subject);
@@ -51,6 +52,17 @@ public static class BackendJwtTokenIssuer
                 if (!string.IsNullOrWhiteSpace(key) && value is not null)
                 {
                     claims.Add(new Claim(key, value));
+                }
+            }
+        }
+
+        if (permissions is not null)
+        {
+            foreach (var permission in permissions)
+            {
+                if (!string.IsNullOrWhiteSpace(permission))
+                {
+                    claims.Add(new Claim(BackendClaimTypes.Permission, permission.Trim()));
                 }
             }
         }
