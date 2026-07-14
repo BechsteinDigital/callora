@@ -235,21 +235,24 @@ public sealed class VoipCallHub(
 
         VoipCallTelemetry.RecordStarted(tracked.WorkspaceKey, DirectionTag(call));
 
-        EventHandler<CallStateChangedEventArgs>? handler = null;
-        handler = (_, args) => HandleStateChanged(tracked, handler!, args);
-        call.StateChanged += handler;
+        EventHandler<CallStateChangedEventArgs> stateHandler = (_, args) => HandleStateChanged(tracked, args);
+        tracked.StateChangedHandler = stateHandler;
+        call.StateChanged += stateHandler;
 
         // Consent-fähige Calls speisen die Flow-Events call.consent-* (PLAT-241).
         if (call is IRecordingConsentCall consentCall)
         {
-            consentCall.ConsentChanged += (_, args) => HandleConsentChanged(tracked, args);
+            EventHandler<RecordingConsentChangedEventArgs> consentHandler =
+                (_, args) => HandleConsentChanged(tracked, args);
+            tracked.ConsentChangedHandler = consentHandler;
+            consentCall.ConsentChanged += consentHandler;
         }
 
         // The call may have terminated between placement and subscription;
         // drop it immediately instead of leaking a dead entry.
         if (call.State == CallState.Terminated)
         {
-            RemoveTerminated(tracked, handler);
+            RemoveTerminated(tracked);
             return tracked.ToSummary();
         }
 
@@ -272,24 +275,30 @@ public sealed class VoipCallHub(
         }
     }
 
-    private void HandleStateChanged(
-        VoipTrackedCall tracked,
-        EventHandler<CallStateChangedEventArgs> handler,
-        CallStateChangedEventArgs args)
+    private void HandleStateChanged(VoipTrackedCall tracked, CallStateChangedEventArgs args)
     {
         if (args.CurrentState == CallState.Terminated)
         {
-            RemoveTerminated(tracked, handler);
+            RemoveTerminated(tracked);
             return;
         }
 
         Publish(new CallStreamEvent(CallEventTypes.StateChanged, tracked.ToSummary()));
     }
 
-    private void RemoveTerminated(VoipTrackedCall tracked, EventHandler<CallStateChangedEventArgs> handler)
+    private void RemoveTerminated(VoipTrackedCall tracked)
     {
-        // Detach so long-lived channel/call objects cannot pin tracked entries.
-        tracked.Call.StateChanged -= handler;
+        // Detach every handler so long-lived channel/call objects cannot pin
+        // tracked entries — state and consent alike (audit finding H5).
+        if (tracked.StateChangedHandler is not null)
+        {
+            tracked.Call.StateChanged -= tracked.StateChangedHandler;
+        }
+
+        if (tracked.Call is IRecordingConsentCall consentCall && tracked.ConsentChangedHandler is not null)
+        {
+            consentCall.ConsentChanged -= tracked.ConsentChangedHandler;
+        }
 
         if (_calls.TryRemove(tracked.Call.CallId, out _))
         {
