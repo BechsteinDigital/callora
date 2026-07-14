@@ -236,7 +236,14 @@ builder.Services.AddHttpClient(Callora.Host.Backend.Application.Webhooks.Webhook
     });
 builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Notifications.INotificationStore, EfNotificationStore>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Notifications.INotificationPublisher, Callora.Host.Backend.Application.Notifications.ScopedNotificationPublisher>();
-builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Mail.IMailSender, Callora.Host.Backend.Infrastructure.Mail.SmtpMailSender>();
+// Dekorierbarer Host-Service (PLAT-266): Plugins können den Mailversand
+// umhüllen (z. B. Suppression-Listen, Provider-Wechsel), indem sie einen
+// IServiceDecorator<IMailSender> exportieren.
+builder.Services.AddSingleton<Callora.Host.Backend.Infrastructure.Mail.SmtpMailSender>();
+builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Mail.IMailSender>(sp =>
+    Callora.Hosting.Application.Plugins.PluginServiceDecoration.Decorate(
+        (Callora.Host.PluginContracts.Application.Mail.IMailSender)sp.GetRequiredService<Callora.Host.Backend.Infrastructure.Mail.SmtpMailSender>(),
+        sp.GetRequiredService<Callora.Hosting.Application.Plugins.ICalloraPluginCatalog>()));
 builder.Services.AddScoped<IBackgroundJobHandler, Callora.Host.Backend.Application.Mail.MailSendJobHandler>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Media.IMediaStore, EfMediaStore>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Abstractions.Workspaces.IWorkspaceDataPurgeService, WorkspaceDataPurgeService>();
