@@ -13,19 +13,35 @@ public static class UserEndpoints
             .RequireAuthorization();
 
         group.MapGet("/", async (
+            HttpContext httpContext,
             IBackendUserStore userStore,
             CancellationToken cancellationToken) =>
         {
-            var users = await userStore.ListAsync(cancellationToken).ConfigureAwait(false);
+            var (isOperator, workspaceKey) = ResolveScope(httpContext);
+
+            // Operators (super admins) see every user; a workspace-scoped
+            // caller only sees the users of its own workspace (H1).
+            var users = isOperator
+                ? await userStore.ListAsync(cancellationToken).ConfigureAwait(false)
+                : string.IsNullOrWhiteSpace(workspaceKey)
+                    ? []
+                    : await userStore.ListByWorkspaceAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+
             return Results.Ok(users.Select(ToResponse).ToArray());
         }).WithName("Users_List")
             .RequirePermission(BackendPermissionKeys.UserRead);
 
         group.MapGet("/{userId}", async (
             string userId,
+            HttpContext httpContext,
             IBackendUserStore userStore,
             CancellationToken cancellationToken) =>
         {
+            if (!await CallerMayAccessAsync(httpContext, userStore, userId, cancellationToken).ConfigureAwait(false))
+            {
+                return Results.NotFound();
+            }
+
             var user = await userStore.GetByExternalIdAsync(userId, cancellationToken).ConfigureAwait(false);
             return user is null ? Results.NotFound() : Results.Ok(ToResponse(user));
         }).WithName("Users_Get")
@@ -33,9 +49,17 @@ public static class UserEndpoints
 
         group.MapPost("/", async (
             CreateBackendUserApiRequest request,
+            HttpContext httpContext,
             IBackendUserStore userStore,
             CancellationToken cancellationToken) =>
         {
+            // Creating a global user record is a platform operation; workspace
+            // admins manage membership of existing users, not global identities.
+            if (!WorkspaceScopeEvaluator.IsOperator(httpContext.User))
+            {
+                return Results.Forbid();
+            }
+
             try
             {
                 var user = await userStore.UpsertCredentialsAsync(
@@ -57,9 +81,15 @@ public static class UserEndpoints
         group.MapPut("/{userId}", async (
             string userId,
             UpdateBackendUserApiRequest request,
+            HttpContext httpContext,
             IBackendUserStore userStore,
             CancellationToken cancellationToken) =>
         {
+            if (!await CallerMayAccessAsync(httpContext, userStore, userId, cancellationToken).ConfigureAwait(false))
+            {
+                return Results.NotFound();
+            }
+
             try
             {
                 var user = await userStore.UpsertCredentialsAsync(
@@ -80,9 +110,16 @@ public static class UserEndpoints
 
         group.MapDelete("/{userId}", async (
             string userId,
+            HttpContext httpContext,
+            IBackendUserStore userStore,
             IUserDataSubjectService dataSubjectService,
             CancellationToken cancellationToken) =>
         {
+            if (!await CallerMayAccessAsync(httpContext, userStore, userId, cancellationToken).ConfigureAwait(false))
+            {
+                return Results.NotFound();
+            }
+
             // Art. 17: Löschung inklusive Anonymisierung des Audit-Trails
             // (PLAT-243).
             var removed = await dataSubjectService.EraseAsync(userId, cancellationToken).ConfigureAwait(false);
@@ -92,9 +129,16 @@ public static class UserEndpoints
 
         group.MapGet("/{userId}/data-export", async (
             string userId,
+            HttpContext httpContext,
+            IBackendUserStore userStore,
             IUserDataSubjectService dataSubjectService,
             CancellationToken cancellationToken) =>
         {
+            if (!await CallerMayAccessAsync(httpContext, userStore, userId, cancellationToken).ConfigureAwait(false))
+            {
+                return ApiProblems.NotFound($"User '{userId}' not found.");
+            }
+
             var export = await dataSubjectService.ExportAsync(userId, cancellationToken).ConfigureAwait(false);
             return export is null
                 ? ApiProblems.NotFound($"User '{userId}' not found.")
@@ -102,6 +146,39 @@ public static class UserEndpoints
         }).WithName("Users_DataExport")
             .Produces<UserDataExport>()
             .RequirePermission(BackendPermissionKeys.UserRead);
+    }
+
+    /// <summary>
+    /// Reads the caller's operator status and bound workspace from its claims.
+    /// Operators act platform-wide; everyone else is confined to a workspace.
+    /// </summary>
+    private static (bool IsOperator, string? WorkspaceKey) ResolveScope(HttpContext httpContext)
+    {
+        var isOperator = WorkspaceScopeEvaluator.IsOperator(httpContext.User);
+        var workspaceKey = httpContext.User.FindFirst(BackendClaimTypes.WorkspaceKey)?.Value;
+        return (isOperator, workspaceKey);
+    }
+
+    /// <summary>
+    /// True when the caller may act on <paramref name="userId"/>: operators
+    /// always, workspace-scoped callers only for members of their own
+    /// workspace. Returns false (surfaced as 404) for cross-workspace access,
+    /// so foreign users are not even revealed to exist (H1).
+    /// </summary>
+    private static async Task<bool> CallerMayAccessAsync(
+        HttpContext httpContext,
+        IBackendUserStore userStore,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var (isOperator, workspaceKey) = ResolveScope(httpContext);
+        if (isOperator)
+        {
+            return true;
+        }
+
+        return !string.IsNullOrWhiteSpace(workspaceKey) &&
+               await userStore.IsWorkspaceMemberAsync(userId, workspaceKey, cancellationToken).ConfigureAwait(false);
     }
 
     private static BackendUserApiResponse ToResponse(BackendUser user)
