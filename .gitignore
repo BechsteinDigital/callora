@@ -100,6 +100,9 @@ docfx/api/.manifest
 !.github/**/*.md
 # DocFX-Quellen (konzeptuelle Docs) gehören ins Repo.
 !docfx/**/*.md
+# Verbindliche Entwicklungsregeln — Standard für Host und Plugins.
+!ENGINEERING_RULES.md
+!CODE_STRUCTURE_RULES.md
 
 .worktrees/
 dashboard-vue/
