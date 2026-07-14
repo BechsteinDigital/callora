@@ -2,7 +2,7 @@ using Callora.Host.Backend.Domain.Jobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Callora.Host.Backend.Infrastructure.Persistence;
+namespace Callora.Host.Backend.Infrastructure.Persistence.Configurations;
 
 public sealed class BackgroundJobEntityTypeConfiguration : IEntityTypeConfiguration<BackgroundJob>
 {

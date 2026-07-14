@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WorkspaceEntity = Callora.Host.Backend.Domain.Workspaces.Workspace;
 
-namespace Callora.Host.Backend.Infrastructure.Persistence;
+namespace Callora.Host.Backend.Infrastructure.Persistence.Configurations;
 
 public sealed class WorkspaceEntityTypeConfiguration : IEntityTypeConfiguration<WorkspaceEntity>
 {
