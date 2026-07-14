@@ -86,6 +86,105 @@ public sealed class AuthAndUserEndpointsTests
     }
 
     [Fact]
+    public async Task WorkspaceLogin_AsWorkspaceAdmin_IssuesScopedPermissions()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/workspace/auth/login",
+            new WorkspaceLoginApiRequest("carol", "pass-carol", "workspace-a"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<LoginApiResponse>();
+        Assert.Equal(BackendRoles.Admin, payload!.Role);
+
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(payload.AccessToken);
+        var permissions = token.Claims
+            .Where(x => x.Type == BackendClaimTypes.Permission)
+            .Select(x => x.Value)
+            .ToArray();
+
+        Assert.Contains(BackendPermissionKeys.FlowManage, permissions);
+        Assert.Contains(BackendPermissionKeys.UserRead, permissions);
+        Assert.DoesNotContain("*", permissions);
+        Assert.DoesNotContain(BackendPermissionKeys.TenantCreate, permissions);
+    }
+
+    [Fact]
+    public async Task Users_List_AsWorkspaceUser_OnlyShowsOwnWorkspace()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "user.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "workspace-a");
+
+        var users = await client.GetFromJsonAsync<BackendUserApiResponse[]>("/api/users");
+
+        var ids = users!.Select(x => x.ExternalId).ToArray();
+        Assert.Contains("alice", ids);
+        Assert.Contains("carol", ids);
+        Assert.DoesNotContain("dave", ids);
+        Assert.DoesNotContain("root", ids);
+    }
+
+    [Fact]
+    public async Task Users_Get_ForeignWorkspaceUser_ReturnsNotFound()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "user.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "workspace-a");
+
+        var response = await client.GetAsync("/api/users/dave");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Users_DataExport_ForeignWorkspaceUser_IsDenied()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "user.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "workspace-a");
+
+        var response = await client.GetAsync("/api/users/dave/data-export");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Users_List_AsOperator_ShowsAllUsers()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "user.read");
+        client.DefaultRequestHeaders.Add("X-Test-Callora-Scope", "platform");
+
+        var users = await client.GetFromJsonAsync<BackendUserApiResponse[]>("/api/users");
+
+        var ids = users!.Select(x => x.ExternalId).ToArray();
+        Assert.Contains("dave", ids);
+        Assert.Contains("root", ids);
+    }
+
+    [Fact]
+    public async Task Users_Create_AsWorkspaceUser_IsForbidden()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "user.create");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "workspace-a");
+
+        var response = await client.PostAsJsonAsync(
+            "/api/users",
+            new CreateBackendUserApiRequest("mallory", "mallory@example.test", "Mallory", "pass-m"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task UserCrud_WithPermissions_WorksEndToEnd()
     {
         await using var app = await CreateAppAsync();
@@ -125,14 +224,18 @@ public sealed class AuthAndUserEndpointsTests
             JwtSigningKey = "callora-tests-signing-key-callora-tests-signing-key",
             RbacUserAssignments =
             [
-                new BackendRbacUserAssignmentOptions { UserId = "root", Role = BackendRoles.Admin }
+                new BackendRbacUserAssignmentOptions { UserId = "root", Role = BackendRoles.SuperAdmin }
             ]
         };
 
         var userStore = new InMemoryBackendUserStore();
         await userStore.UpsertCredentialsAsync("alice", "alice@example.test", "Alice", "pass-1");
+        await userStore.UpsertCredentialsAsync("carol", "carol@example.test", "Carol", "pass-carol");
+        await userStore.UpsertCredentialsAsync("dave", "dave@example.test", "Dave", "pass-dave");
         await userStore.UpsertCredentialsAsync("root", "root@example.test", "Root", "pass-root");
         userStore.AddWorkspaceMember("workspace-a", "alice");
+        userStore.AddWorkspaceMember("workspace-a", "carol", BackendRoles.Admin);
+        userStore.AddWorkspaceMember("workspace-b", "dave");
 
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();

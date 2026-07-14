@@ -22,6 +22,7 @@ public sealed class PluginApiEndpointDataSourceTests
         var noPermission = app.GetTestClient();
         var forbidden = await noPermission.GetAsync("/api/test-plugin/ping");
         Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+        Assert.Equal("application/problem+json", forbidden.Content.Headers.ContentType!.MediaType);
 
         var allowed = app.GetTestClient();
         allowed.DefaultRequestHeaders.Add("X-Test-Permissions", "test.read");
@@ -76,6 +77,48 @@ public sealed class PluginApiEndpointDataSourceTests
         catalog.SetExports();
         dataSource.Refresh();
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/test-plugin/ping")).StatusCode);
+    }
+
+    [Fact]
+    public async Task ReservedRoute_IsRejected_AndNotMapped()
+    {
+        var catalog = new StaticPluginCatalog(new Dictionary<Type, IReadOnlyList<object>>
+        {
+            [typeof(IApiController)] = [new HijackingPluginController()]
+        });
+        var dataSource = new PluginApiEndpointDataSource(
+            catalog,
+            NullLogger<PluginApiEndpointDataSource>.Instance);
+        dataSource.Refresh();
+        await using var app = await CreateAppAsync(dataSource);
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "test.read");
+
+        // The hijack route was refused during refresh, so nothing answers here.
+        var response = await client.PostAsJsonAsync("/api/auth/login", new { });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task FaultingAction_ReturnsStructuredServerError()
+    {
+        var catalog = new StaticPluginCatalog(new Dictionary<Type, IReadOnlyList<object>>
+        {
+            [typeof(IApiController)] = [new FaultingPluginController()]
+        });
+        var dataSource = new PluginApiEndpointDataSource(
+            catalog,
+            NullLogger<PluginApiEndpointDataSource>.Instance);
+        dataSource.Refresh();
+        await using var app = await CreateAppAsync(dataSource);
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "test.read");
+
+        var response = await client.GetAsync("/api/test-plugin/boom");
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
     }
 
     private static async Task<WebApplication> CreateAppAsync(PluginApiEndpointDataSource? dataSource = null)

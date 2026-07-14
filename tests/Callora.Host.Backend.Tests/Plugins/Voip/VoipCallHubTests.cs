@@ -37,6 +37,38 @@ public sealed class VoipCallHubTests
     }
 
     [Fact]
+    public void Termination_DetachesConsentHandler()
+    {
+        var hub = new VoipCallHub(new CommunicationChannelRegistry());
+        var call = new ConsentAwareStaticCall(new CallTarget("+4930111"));
+        hub.TrackPlaced("workspace-a", "channel-1", call);
+        Assert.Equal(1, call.ConsentSubscriberCount);
+
+        call.TransitionTo(CallState.Terminated);
+
+        // The hub must release its consent handler on termination, otherwise a
+        // long-lived call object pins the tracked entry indefinitely (H5).
+        Assert.Equal(0, call.ConsentSubscriberCount);
+    }
+
+    [Fact]
+    public void ConsentChange_AfterTermination_IsNotPublished()
+    {
+        var hub = new VoipCallHub(new CommunicationChannelRegistry());
+        var events = new List<CallStreamEvent>();
+        hub.EventPublished += events.Add;
+
+        var call = new ConsentAwareStaticCall(new CallTarget("+4930111"));
+        hub.TrackPlaced("workspace-a", "channel-1", call);
+        call.TransitionTo(CallState.Terminated);
+        events.Clear();
+
+        call.RaiseConsent(RecordingConsentState.Granted);
+
+        Assert.Empty(events);
+    }
+
+    [Fact]
     public void StateChange_PublishesStateChangedEvent()
     {
         var hub = new VoipCallHub(new CommunicationChannelRegistry());

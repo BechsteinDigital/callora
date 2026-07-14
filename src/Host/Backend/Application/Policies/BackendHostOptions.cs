@@ -64,7 +64,7 @@ public sealed class BackendHostOptions
 
     public string JwtAudience { get; set; } = "callora-host-api";
 
-    public string JwtSigningKey { get; set; } = "callora-local-dev-signing-key-change-me";
+    public string JwtSigningKey { get; set; } = BackendSecretHygiene.DefaultJwtSigningKey;
 
     public string? OidcAuthority { get; set; }
 
@@ -89,7 +89,7 @@ public sealed class BackendHostOptions
     /// login (/api/auth/login). Workspace members without one of these
     /// roles must use the workspace login.
     /// </summary>
-    public string[] PlatformOperatorRoles { get; set; } = ["admin"];
+    public string[] PlatformOperatorRoles { get; set; } = ["superadmin"];
 
     /// <summary>
     /// Base URI for RFC 9457 problem types. Defaults to a URN so no

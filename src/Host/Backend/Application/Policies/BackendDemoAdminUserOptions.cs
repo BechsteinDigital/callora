@@ -10,5 +10,5 @@ public sealed class BackendDemoAdminUserOptions
 
     public string DisplayName { get; set; } = "Callora Admin";
 
-    public string Password { get; set; } = "admin123!";
+    public string Password { get; set; } = BackendSecretHygiene.DefaultDemoAdminPassword;
 }

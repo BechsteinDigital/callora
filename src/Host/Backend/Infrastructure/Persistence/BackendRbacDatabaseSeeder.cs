@@ -16,17 +16,17 @@ public sealed class BackendRbacDatabaseSeeder(
     {
         ArgumentNullException.ThrowIfNull(dbContext);
 
-        var adminRole = await dbContext.BackendRbacRoles
+        var superAdminRole = await dbContext.BackendRbacRoles
             .Include(x => x.Permissions)
-            .SingleOrDefaultAsync(x => x.Name == BackendRoles.Admin, cancellationToken)
+            .SingleOrDefaultAsync(x => x.Name == BackendRoles.SuperAdmin, cancellationToken)
             .ConfigureAwait(false);
 
-        if (adminRole is null)
+        if (superAdminRole is null)
         {
-            adminRole = new BackendRbacRole
+            superAdminRole = new BackendRbacRole
             {
                 Id = Guid.NewGuid(),
-                Name = BackendRoles.Admin,
+                Name = BackendRoles.SuperAdmin,
                 IsSystem = true,
                 CreatedAtUtc = DateTimeOffset.UtcNow,
                 UpdatedAtUtc = DateTimeOffset.UtcNow,
@@ -40,32 +40,32 @@ public sealed class BackendRbacDatabaseSeeder(
                 ]
             };
 
-            dbContext.BackendRbacRoles.Add(adminRole);
+            dbContext.BackendRbacRoles.Add(superAdminRole);
             await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         else
         {
-            adminRole.IsSystem = true;
-            adminRole.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            superAdminRole.IsSystem = true;
+            superAdminRole.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
-            if (!adminRole.Permissions.Any(x => x.PermissionKey == "*"))
+            if (!superAdminRole.Permissions.Any(x => x.PermissionKey == "*"))
             {
-                adminRole.Permissions.Add(new BackendRbacRoleGrant
+                superAdminRole.Permissions.Add(new BackendRbacRoleGrant
                 {
                     Id = Guid.NewGuid(),
-                    RoleId = adminRole.Id,
+                    RoleId = superAdminRole.Id,
                     PermissionKey = "*"
                 });
             }
         }
 
-        await EnsureDemoAdminUserAsync(dbContext, adminRole, cancellationToken).ConfigureAwait(false);
+        await EnsureDemoAdminUserAsync(dbContext, superAdminRole, cancellationToken).ConfigureAwait(false);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task EnsureDemoAdminUserAsync(
         HostPersistenceDbContext dbContext,
-        BackendRbacRole adminRole,
+        BackendRbacRole superAdminRole,
         CancellationToken cancellationToken)
     {
         var demoUser = options.DemoAdminUser;
@@ -114,13 +114,13 @@ public sealed class BackendRbacDatabaseSeeder(
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
-                RoleId = adminRole.Id,
+                RoleId = superAdminRole.Id,
                 AssignedAtUtc = nowUtc
             });
             return;
         }
 
-        assignment.RoleId = adminRole.Id;
+        assignment.RoleId = superAdminRole.Id;
         assignment.AssignedAtUtc = nowUtc;
     }
 }

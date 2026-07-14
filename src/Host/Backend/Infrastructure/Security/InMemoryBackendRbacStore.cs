@@ -16,11 +16,11 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        _rolePermissions[BackendRoles.Admin] = ["*"];
+        _rolePermissions[BackendRoles.SuperAdmin] = ["*"];
 
         foreach (var (role, permissions) in BackendRbacPermissionCatalog.Build(options))
         {
-            if (string.Equals(role, BackendRoles.Admin, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(role, BackendRoles.SuperAdmin, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             _rolePermissions[role] = permissions;
@@ -64,8 +64,8 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         ArgumentException.ThrowIfNullOrWhiteSpace(role);
         ArgumentNullException.ThrowIfNull(permissions);
 
-        if (string.Equals(role, BackendRoles.Admin, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Role 'admin' is fixed and cannot be modified.");
+        if (string.Equals(role, BackendRoles.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Role 'superadmin' is fixed and cannot be modified.");
 
         var normalizedPermissions = NormalizePermissions(permissions, role);
         lock (_sync)
@@ -81,7 +81,7 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         cancellationToken.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrWhiteSpace(role);
 
-        if (string.Equals(role, BackendRoles.Admin, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(role, BackendRoles.SuperAdmin, StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(false);
 
         lock (_sync)

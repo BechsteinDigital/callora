@@ -110,7 +110,6 @@ public static class AuthEndpoints
             WorkspaceLoginApiRequest request,
             BackendHostOptions options,
             IBackendUserStore userStore,
-            IBackendRbacStore rbacStore,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
@@ -120,16 +119,20 @@ public static class AuthEndpoints
                 return Results.Unauthorized();
             }
 
-            var isMember = await userStore
-                .IsWorkspaceMemberAsync(user.ExternalId, request.WorkspaceKey, cancellationToken)
+            var workspaceKey = request.WorkspaceKey.Trim();
+
+            // The workspace role (WorkspaceMembership.Role), not a global RBAC
+            // role, drives what the session may do inside this workspace.
+            var role = await userStore
+                .GetWorkspaceRoleAsync(user.ExternalId, workspaceKey, cancellationToken)
                 .ConfigureAwait(false);
-            if (!isMember)
+            if (role is null)
             {
                 return Results.Forbid();
             }
 
-            var role = await rbacStore.GetUserRoleAsync(user.ExternalId, cancellationToken).ConfigureAwait(false);
             var roles = string.IsNullOrWhiteSpace(role) ? Array.Empty<string>() : [role];
+            var permissions = WorkspaceRolePermissions.ForRole(role);
             var token = BackendJwtTokenIssuer.Issue(
                 options,
                 subject: user.ExternalId,
@@ -139,9 +142,10 @@ public static class AuthEndpoints
                 customClaims: new Dictionary<string, string>
                 {
                     [BackendClaimTypes.CalloraScope] = BackendAuthScopes.Workspace,
-                    [BackendClaimTypes.WorkspaceKey] = request.WorkspaceKey.Trim()
+                    [BackendClaimTypes.WorkspaceKey] = workspaceKey
                 },
-                lifetime: AccessTokenLifetime);
+                lifetime: AccessTokenLifetime,
+                permissions: permissions);
 
             BackendAuthCookieService.AppendAuthCookie(
                 httpContext.Response,
@@ -158,7 +162,7 @@ public static class AuthEndpoints
                 DisplayName: user.DisplayName,
                 Email: user.Email,
                 Role: role,
-                WorkspaceKey: request.WorkspaceKey.Trim()));
+                WorkspaceKey: workspaceKey));
         }).WithName("Auth_Workspace_Login")
             .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
     }

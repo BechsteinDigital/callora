@@ -20,6 +20,15 @@ public sealed class VoipTrackedCall(
 
     public DateTimeOffset StartedAtUtc { get; } = startedAtUtc;
 
+    /// <summary>
+    /// Event handlers attached to <see cref="Call"/>, held so the hub can
+    /// detach every one of them on termination — otherwise a long-lived call
+    /// object keeps the tracked entry (and the hub) alive (audit finding H5).
+    /// </summary>
+    public EventHandler<CallStateChangedEventArgs>? StateChangedHandler { get; set; }
+
+    public EventHandler<RecordingConsentChangedEventArgs>? ConsentChangedHandler { get; set; }
+
     public CallSummary ToSummary() => new(
         Call.CallId,
         WorkspaceKey,

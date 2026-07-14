@@ -6,12 +6,21 @@ namespace Callora.Host.Backend.Infrastructure.Security;
 public static class BackendRoles
 {
     /// <summary>
-    /// Administrative role with full backend access.
+    /// Platform super administrator: unrestricted, global backend access
+    /// across every workspace. The only role that satisfies permission
+    /// checks unconditionally and counts as a platform operator.
+    /// </summary>
+    public const string SuperAdmin = "superadmin";
+
+    /// <summary>
+    /// Workspace administrator. Not a global operator — it grants
+    /// workspace-scoped rights only, carried per workspace through
+    /// <see cref="Callora.Host.Backend.Domain.Workspaces.WorkspaceMembership"/>.
     /// </summary>
     public const string Admin = "admin";
 
     /// <summary>
-    /// Role used by API-key based host access.
+    /// Role used by API-key based host access; treated as a platform operator.
     /// </summary>
     public const string HostApi = "host.api";
 }
