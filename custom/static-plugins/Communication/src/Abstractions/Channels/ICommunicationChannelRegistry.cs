@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Workspace-scoped registry of communication channels. The host provides the

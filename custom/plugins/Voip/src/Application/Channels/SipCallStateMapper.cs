@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;
 
 namespace Callora.Plugins.Voip.Application.Channels;

@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugins.Voip.Application.Audio;
 
 /// <summary>
 /// Encoding of the audio frames flowing over one <see cref="ICallAudioStream"/>.

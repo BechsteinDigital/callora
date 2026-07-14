@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 
 namespace Callora.Host.Backend.Tests.Support;
 
@@ -66,9 +66,6 @@ public sealed class ConsentAwareStaticCall : ICall, IRecordingConsentCall
     }
 
     public Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default) => Task.CompletedTask;
-
-    public Task<ICallAudioStream> OpenAudioAsync(CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
 
     public Task<RecordingConsentResult> RequestRecordingConsentAsync(
         RecordingConsentRequest request,

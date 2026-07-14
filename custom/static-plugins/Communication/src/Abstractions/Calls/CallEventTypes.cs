@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Stable event type codes on the live call stream. Part of the public

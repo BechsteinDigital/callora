@@ -1,5 +1,5 @@
 using System.Buffers.Binary;
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugins.Voip.Application.Audio;
 using Callora.Host.Backend.Tests.Support;
 using Xunit;

@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Plugins.Voip", "cus
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Host.Cli", "src\Host\Cli\Callora.Host.Cli.csproj", "{40078453-39EA-412C-A87F-DEBAE50E87F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Contracts.Communication", "src\Contracts\Communication\Callora.Contracts.Communication.csproj", "{839B888F-FA90-4BC4-9614-AEC98BEFCF9C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Plugin.Communication.Abstractions", "custom\static-plugins\Communication\Callora.Plugin.Communication.Abstractions.csproj", "{839B888F-FA90-4BC4-9614-AEC98BEFCF9C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{07D57EEB-2F50-60C4-C011-FE4FA775C9A8}"
 EndProject

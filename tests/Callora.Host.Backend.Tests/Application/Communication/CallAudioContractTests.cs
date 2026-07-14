@@ -1,4 +1,5 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugins.Voip.Application.Audio;
 using Callora.Host.Backend.Tests.Support;
 using Xunit;
 
@@ -35,8 +36,9 @@ public sealed class CallAudioContractTests
     [Fact]
     public async Task OpeningAudio_OnNotConnectedCall_Throws()
     {
-        var channel = new StaticCommunicationChannel("fake-voice");
-        var call = await channel.PlaceCallAsync(new CallTarget("+4930111"));
+        // Audio is voip-specific media, no longer on the neutral ICall contract,
+        // so this exercises it on the concrete call in a not-connected state.
+        var call = new StaticCall(new CallTarget("+4930111"), initialState: CallState.Connecting);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => call.OpenAudioAsync());
     }

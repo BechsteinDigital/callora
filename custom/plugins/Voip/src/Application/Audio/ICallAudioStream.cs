@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugins.Voip.Application.Audio;
 
 /// <summary>
 /// Bidirectional audio stream of one connected call, obtained via

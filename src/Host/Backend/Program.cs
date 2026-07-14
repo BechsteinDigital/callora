@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Host.Backend.Api;
 using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Entitlements;
@@ -158,6 +158,8 @@ builder.Services.AddBackendRateLimiting(backendOptions);
 builder.Services.AddScoped<IPluginLifecycleService, PluginLifecycleService>();
 builder.Services.AddScoped<IWorkspacePluginActivationReader, EfWorkspacePluginActivationReader>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationStore, EfWorkspacePluginActivationStore>();
+builder.Services.AddScoped<Callora.Host.Backend.Application.Lifecycle.PluginCapabilityGuard>();
+builder.Services.AddScoped<Callora.Host.Backend.Application.Plugins.PluginAvailabilityEvaluator>();
 builder.Services.AddScoped<WorkspaceUiChainResolver>();
 builder.Services.AddScoped<WorkspacePublicThemeResolver>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Configuration.ISystemConfigStore, EfSystemConfigStore>();
@@ -212,6 +214,8 @@ builder.Services.AddScoped<Callora.Host.Backend.Infrastructure.CustomFields.Regi
 builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginCustomFieldSyncSubscriber>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Persistence.IPluginSchemaDropper,
     EfPluginSchemaDropper>();
+builder.Services.AddScoped<Callora.Host.Backend.Application.Persistence.IPluginDataDocumentCleaner,
+    EfPluginDataDocumentCleaner>();
 builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>,
     Callora.Host.Backend.Infrastructure.Events.PluginSchemaCleanupSubscriber>();
 builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.CustomFields.ICustomFieldAccessor, Callora.Host.Backend.Application.CustomFields.ScopedCustomFieldAccessor>();

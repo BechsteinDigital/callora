@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Host.Backend.Application.Communication;
 using Callora.Host.Backend.Tests.Support;
 using Callora.Plugins.Voip.Application.Calls;

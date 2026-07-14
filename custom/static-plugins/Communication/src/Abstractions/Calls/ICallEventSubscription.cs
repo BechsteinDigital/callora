@@ -1,6 +1,6 @@
 using System.Threading.Channels;
 
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// One workspace-scoped subscription on a call event stream. Disposing

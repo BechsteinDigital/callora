@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Consent state for recording one call (§ 201 StGB / Art. 6 GDPR). Kept

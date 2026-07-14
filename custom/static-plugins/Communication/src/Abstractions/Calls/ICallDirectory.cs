@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Live-call surface exported by communication plugins (PLAT-257). The host

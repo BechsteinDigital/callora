@@ -12,6 +12,6 @@
   ],
   "dependencies": {
     "Callora.Host.PluginContracts": ">=0.1.0",
-    "Callora.Contracts.Communication": ">=0.1.0"
+    "Callora.Plugin.Communication.Abstractions": ">=0.1.0"
   }
 }

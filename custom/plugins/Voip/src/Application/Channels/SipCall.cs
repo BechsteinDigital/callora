@@ -1,4 +1,5 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugins.Voip.Application.Audio;
 using SdkCallDirection = CalloraVoipSdk.Core.Domain.Calls.CallDirection;
 using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;
 
@@ -8,7 +9,7 @@ namespace Callora.Plugins.Voip.Application.Channels;
 /// Adapts one engine call onto the platform call contract. Pure delegation
 /// plus state mapping; no SIP behavior is duplicated here.
 /// </summary>
-public sealed class SipCall : ICall
+public sealed class SipCall : IVoipCall
 {
     private readonly IEngineCall _inner;
     private readonly object _stateLock = new();

@@ -1,4 +1,4 @@
-using Callora.Contracts.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugins.Voip.Application.Accounts;
 using CalloraVoipSdk;
 using CalloraVoipSdk.Core.Domain.Lines;

@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Payload of <see cref="ICommunicationChannel.IncomingCall"/>. The call is

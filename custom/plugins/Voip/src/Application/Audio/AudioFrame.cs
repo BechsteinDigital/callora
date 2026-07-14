@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugins.Voip.Application.Audio;
 
 /// <summary>
 /// One encoded audio frame on a <see cref="ICallAudioStream"/>. The payload is

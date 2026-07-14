@@ -11,7 +11,7 @@
 
   <!-- Beweis der Vertragsschicht: ausschließlich Contracts-Referenzen, kein CalloraVoipSdk. -->
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Contracts\Communication\Callora.Contracts.Communication.csproj" />
+    <ProjectReference Include="..\..\..\custom\static-plugins\Communication\Callora.Plugin.Communication.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Host\PluginContracts\Callora.Host.PluginContracts.csproj" />
   </ItemGroup>
 

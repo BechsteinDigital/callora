@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugins.Voip.Application.Audio;
 
 /// <summary>
 /// Payload of <see cref="ICallAudioStream.FrameReceived"/>.

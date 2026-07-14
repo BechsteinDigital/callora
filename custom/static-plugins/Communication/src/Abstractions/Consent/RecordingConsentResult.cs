@@ -1,4 +1,4 @@
-namespace Callora.Contracts.Communication;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Outcome of one <see cref="IRecordingConsentCall.RequestRecordingConsentAsync"/> run.
