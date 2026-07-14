@@ -9,7 +9,10 @@ using WorkspaceEntity = Callora.Host.Backend.Domain.Workspaces.Workspace;
 
 namespace Callora.Host.Backend.Infrastructure.Persistence;
 
-public sealed class HostPersistenceDbContext(DbContextOptions<HostPersistenceDbContext> options) : DbContext(options), IDataProtectionKeyContext
+public sealed class HostPersistenceDbContext(
+    DbContextOptions<HostPersistenceDbContext> options,
+    Callora.Host.Backend.Application.Abstractions.Security.IWorkspaceScopeContext? workspaceScope = null)
+    : DbContext(options), IDataProtectionKeyContext
 {
     // Datenbank-Keyring statt Dateisystem: mehrinstanzfähig (PLAT-232).
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
@@ -81,9 +84,28 @@ public sealed class HostPersistenceDbContext(DbContextOptions<HostPersistenceDbC
     public DbSet<Callora.Host.Backend.Domain.Entitlements.PluginEntitlement> PluginEntitlements =>
         Set<Callora.Host.Backend.Domain.Entitlements.PluginEntitlement>();
 
+    // Workspace-Isolation als Backstop (PLAT-267): ein workspace-gebundener
+    // Aufrufer liest nur Zeilen seines Workspace, auch wenn ein Store das
+    // explizite Where vergisst. Operatoren und Nicht-Request-Kontexte (Jobs,
+    // Seeding, Migrationen) haben keinen Scope -> Filter inaktiv.
+    private bool WorkspaceFilterActive => workspaceScope?.IsWorkspaceScoped == true;
+
+    private string WorkspaceFilterKey => workspaceScope?.WorkspaceKey ?? string.Empty;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(HostPersistenceDbContext).Assembly);
+
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Media.MediaItem>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Flows.FlowDefinition>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Extensions.WorkspaceThemeSettingValue>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Plugins.WorkspacePluginActivation>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Plugins.PluginDataDocument>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
     }
 }

@@ -6,6 +6,7 @@ using Callora.Host.Backend.Application.Abstractions.Tenants;
 using Callora.Host.Backend.Application.Abstractions.Workspaces;
 using Callora.Host.Backend.Domain.Security;
 using Callora.Host.Backend.Application.Policies;
+using Callora.Host.Backend.Infrastructure.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,11 @@ public static class BackendPersistenceServiceCollectionExtensions
 
         services.AddDbContext<HostPersistenceDbContext>(db =>
             db.UseNpgsql(options.DatabaseConnectionString));
+
+        // Trägt den Workspace-Scope des Requests in den globalen Query-Filter
+        // des DbContext (PLAT-267). Operatoren/Nicht-Requests umgehen ihn.
+        services.AddHttpContextAccessor();
+        services.AddScoped<IWorkspaceScopeContext, HttpWorkspaceScopeContext>();
 
         services.AddScoped<IPluginInstallationRepository, EfPluginInstallationRepository>();
         services.AddScoped<IPluginAuditLogRepository, EfPluginAuditLogRepository>();
