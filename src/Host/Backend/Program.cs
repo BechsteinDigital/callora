@@ -118,6 +118,10 @@ builder.Services.AddSingleton<CommunicationChannelRegistry>();
 builder.Services.AddSingleton<ICommunicationChannelRegistry>(sp => sp.GetRequiredService<CommunicationChannelRegistry>());
 builder.Services.AddScoped<EfPluginDataStore>();
 builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
+// Plugin-eigene EF-Datenbanken (PLAT-260): Plugins bringen echte Entities +
+// EF-Migrationen in ihrem eigenen Schema mit.
+builder.Services.AddSingleton<Callora.Hosting.Application.Plugins.IPluginDbContextProvider,
+    NpgsqlPluginDbContextProvider>();
 
 var backgroundJobOptions = new BackgroundJobOptions();
 builder.Configuration.GetSection("BackgroundJobs").Bind(backgroundJobOptions);

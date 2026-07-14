@@ -11,6 +11,8 @@ using Callora.Plugins.Voip.Application.Accounts;
 using Callora.Plugins.Voip.Application.Admin;
 using Callora.Plugins.Voip.Application.Calls;
 using Callora.Plugins.Voip.Application.Channels;
+using Callora.Plugins.Voip.Application.Persistence;
+using Callora.Host.PluginContracts.Application.Persistence;
 using Callora.Plugins.Voip.Application.Flows;
 using Microsoft.Extensions.Logging;
 
@@ -28,6 +30,7 @@ public sealed class VoipPlugin : IHostManagedPlugin
     private IVoiceEngine? _engine;
     private VoipCallHub? _callHub;
     private VoipCallBusinessEventRelay? _businessEventRelay;
+    private CallLogWriter? _callLogWriter;
 
     public string PluginId => Id;
 
@@ -85,10 +88,27 @@ public sealed class VoipPlugin : IHostManagedPlugin
                 loggerFactory?.CreateLogger("Callora.Voip.Events"));
             _businessEventRelay.Attach();
         }
+
+        // Plugin-eigene Datenbank (PLAT-260): Schema/Migrationen anwenden und
+        // beendete Calls als typisierte Entities protokollieren.
+        var dbContextFactory = context.Services.GetService(typeof(IPluginDbContextFactory<VoipDbContext>))
+            as IPluginDbContextFactory<VoipDbContext>;
+        if (dbContextFactory is not null)
+        {
+            await dbContextFactory.MigrateAsync(cancellationToken).ConfigureAwait(false);
+            _callLogWriter = new CallLogWriter(
+                _callHub,
+                dbContextFactory,
+                loggerFactory?.CreateLogger("Callora.Voip.Persistence"));
+            _callLogWriter.Attach();
+        }
     }
 
     public async ValueTask StopAsync(CancellationToken cancellationToken = default)
     {
+        _callLogWriter?.Dispose();
+        _callLogWriter = null;
+
         _businessEventRelay?.Dispose();
         _businessEventRelay = null;
 
