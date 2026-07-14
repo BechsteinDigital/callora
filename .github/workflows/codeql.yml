@@ -20,6 +20,9 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      # Required by the analyze step to read workflow-run metadata
+      # (get-a-workflow-run); missing on private repos otherwise.
+      actions: read
     strategy:
       fail-fast: false
       matrix:
