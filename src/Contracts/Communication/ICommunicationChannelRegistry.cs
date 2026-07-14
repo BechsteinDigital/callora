@@ -27,4 +27,21 @@ public interface ICommunicationChannelRegistry
     /// Tries to resolve one channel by id within one workspace.
     /// </summary>
     bool TryGetChannel(string workspaceKey, string channelId, out ICommunicationChannel? channel);
+
+    /// <summary>
+    /// Raised when a channel is registered — consumers attach their
+    /// incoming-call handling here (PLAT-257).
+    /// </summary>
+    event Action<string, ICommunicationChannel>? ChannelRegistered;
+
+    /// <summary>
+    /// Raised when a channel registration is removed.
+    /// </summary>
+    event Action<string, ICommunicationChannel>? ChannelUnregistered;
+
+    /// <summary>
+    /// Snapshot of all current registrations across workspaces — lets late
+    /// consumers attach to channels registered before them.
+    /// </summary>
+    IReadOnlyList<(string WorkspaceKey, ICommunicationChannel Channel)> GetAllRegistrations();
 }

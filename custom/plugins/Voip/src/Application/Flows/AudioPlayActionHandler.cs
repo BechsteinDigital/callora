@@ -1,17 +1,17 @@
 using Callora.Contracts.Communication;
-using Callora.Host.Backend.Application.Communication.Calls;
-using Callora.Host.Backend.Application.Flows.Audio;
 using Callora.Host.PluginContracts.Application.Media;
+using Callora.Plugins.Voip.Application.Audio;
+using Callora.Plugins.Voip.Application.Calls;
 
-namespace Callora.Host.Backend.Application.Flows.Actions;
+namespace Callora.Plugins.Voip.Application.Flows;
 
 /// <summary>
 /// Plays an announcement from the media library ("mediaId") into the call —
 /// the call must be connected (combine with a preceding call.accept).
 /// </summary>
 public sealed class AudioPlayActionHandler(
-    ActiveCallRegistry callRegistry,
-    IMediaLibrary mediaLibrary) : CallFlowActionHandlerBase(callRegistry)
+    VoipCallHub callHub,
+    IMediaLibrary mediaLibrary) : VoipCallFlowActionHandlerBase(callHub)
 {
     public override string Type => "audio.play";
 

@@ -1,4 +1,4 @@
-namespace Callora.Host.Backend.Application.Flows.Audio;
+namespace Callora.Plugins.Voip.Application.Audio;
 
 /// <summary>
 /// G.711 A-law/µ-law encoding of 16-bit PCM samples (ITU-T G.711) — used to

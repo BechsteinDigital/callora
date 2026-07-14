@@ -1,13 +1,13 @@
 using System.Diagnostics.Metrics;
 
-namespace Callora.Host.Backend.Application.Communication.Calls;
+namespace Callora.Plugins.Voip.Application.Calls;
 
 /// <summary>
-/// Metrics for the live-call stack (PLAT-230).
+/// Metrics for the live-call stack, emitted by the voice plugin (PLAT-257).
 /// </summary>
-public static class CallTelemetry
+public static class VoipCallTelemetry
 {
-    public const string MeterName = "Callora.Host.Backend.Calls";
+    public const string MeterName = "Callora.Voip.Calls";
 
     private static readonly Meter CallMeter = new(MeterName);
 

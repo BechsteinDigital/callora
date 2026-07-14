@@ -1,10 +1,10 @@
 using Callora.Contracts.Communication;
-using Callora.Host.Backend.Application.Communication.Calls;
+using Callora.Plugins.Voip.Application.Calls;
 
-namespace Callora.Host.Backend.Application.Flows.Actions;
+namespace Callora.Plugins.Voip.Application.Flows;
 
 /// <summary>Accepts the ringing inbound call of the triggering event.</summary>
-public sealed class CallAcceptActionHandler(ActiveCallRegistry callRegistry) : CallFlowActionHandlerBase(callRegistry)
+public sealed class CallAcceptActionHandler(VoipCallHub callHub) : VoipCallFlowActionHandlerBase(callHub)
 {
     public override string Type => "call.accept";
 

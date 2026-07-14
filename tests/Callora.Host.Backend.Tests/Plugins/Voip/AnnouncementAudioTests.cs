@@ -1,6 +1,6 @@
 using System.Buffers.Binary;
 using Callora.Contracts.Communication;
-using Callora.Host.Backend.Application.Flows.Audio;
+using Callora.Plugins.Voip.Application.Audio;
 using Callora.Host.Backend.Tests.Support;
 using Xunit;
 

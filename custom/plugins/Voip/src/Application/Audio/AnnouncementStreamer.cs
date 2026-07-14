@@ -1,6 +1,6 @@
 using Callora.Contracts.Communication;
 
-namespace Callora.Host.Backend.Application.Flows.Audio;
+namespace Callora.Plugins.Voip.Application.Audio;
 
 /// <summary>
 /// Streams a PCM16 mono WAV announcement into a call audio stream: encodes to
