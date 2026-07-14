@@ -3,7 +3,7 @@ using Callora.Host.PluginContracts.Application.Data;
 using Callora.Host.PluginContracts.Application.Plugins;
 using Callora.Host.PluginContracts.Application.Secrets;
 using Callora.Host.PluginContracts.Domain.Plugins;
-using Callora.Host.PluginContracts.Application.Webhooks;
+using Callora.Host.PluginContracts.Application.Events;
 using Callora.Host.PluginContracts.Application.Flows;
 using Callora.Host.PluginContracts.Application.Http;
 using Callora.Host.PluginContracts.Application.Media;
@@ -27,7 +27,7 @@ public sealed class VoipPlugin : IHostManagedPlugin
     private SipChannelManager? _channelManager;
     private IVoiceEngine? _engine;
     private VoipCallHub? _callHub;
-    private VoipCallWebhookRelay? _webhookRelay;
+    private VoipCallBusinessEventRelay? _businessEventRelay;
 
     public string PluginId => Id;
 
@@ -73,21 +73,24 @@ public sealed class VoipPlugin : IHostManagedPlugin
             context.Export<IFlowActionHandler>(new AudioPlayActionHandler(_callHub, mediaLibrary));
         }
 
-        var webhookPublisher = context.Services.GetService(typeof(IWebhookEventPublisher)) as IWebhookEventPublisher;
-        if (webhookPublisher is not null)
+        // Call-Events laufen über den Business-Event-Bus (PLAT-270): Flows und
+        // Webhooks konsumieren sie dort generisch.
+        context.Export<IBusinessEventProvider>(new CallBusinessEventProvider());
+        var businessEventBus = context.Services.GetService(typeof(IBusinessEventBus)) as IBusinessEventBus;
+        if (businessEventBus is not null)
         {
-            _webhookRelay = new VoipCallWebhookRelay(
+            _businessEventRelay = new VoipCallBusinessEventRelay(
                 _callHub,
-                webhookPublisher,
-                loggerFactory?.CreateLogger("Callora.Voip.Webhooks"));
-            _webhookRelay.Attach();
+                businessEventBus,
+                loggerFactory?.CreateLogger("Callora.Voip.Events"));
+            _businessEventRelay.Attach();
         }
     }
 
     public async ValueTask StopAsync(CancellationToken cancellationToken = default)
     {
-        _webhookRelay?.Dispose();
-        _webhookRelay = null;
+        _businessEventRelay?.Dispose();
+        _businessEventRelay = null;
 
         if (_callHub is not null)
         {

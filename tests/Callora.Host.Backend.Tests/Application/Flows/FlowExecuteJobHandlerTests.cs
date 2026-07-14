@@ -74,7 +74,7 @@ public sealed class FlowExecuteJobHandlerTests
 
     private static BackgroundJobExecutionContext BuildJobContext(Guid flowId) => new(
         Guid.NewGuid(),
-        FlowTrigger.ExecuteJobType,
+        FlowJobs.ExecuteJobType,
         JsonSerializer.Serialize(
             new FlowExecutePayload(flowId, "call.ringing", "test", new Dictionary<string, string> { ["callId"] = "c1" }),
             JsonOptions),
