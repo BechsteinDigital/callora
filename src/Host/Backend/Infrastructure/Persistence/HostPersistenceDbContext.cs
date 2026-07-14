@@ -100,6 +100,8 @@ public sealed class HostPersistenceDbContext(
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(HostPersistenceDbContext).Assembly);
 
+        // Strikt workspace-gebundene Entities (WorkspaceKey nicht nullable):
+        // ein scoped Aufrufer sieht ausschließlich Zeilen seines Workspace.
         modelBuilder.Entity<Callora.Host.Backend.Domain.Media.MediaItem>()
             .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
         modelBuilder.Entity<Callora.Host.Backend.Domain.Flows.FlowDefinition>()
@@ -110,5 +112,74 @@ public sealed class HostPersistenceDbContext(
             .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
         modelBuilder.Entity<Callora.Host.Backend.Domain.Plugins.PluginDataDocument>()
             .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+
+        // Entities mit nullable WorkspaceKey: null bedeutet plattformweite Zeile
+        // (z. B. globale Notifications). Ein scoped Aufrufer sieht seine Zeilen
+        // plus die globalen, aber keine fremden Workspaces (PLAT-267).
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Notifications.NotificationEntry>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Webhooks.WebhookSubscription>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Integrations.IntegrationCredential>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.CustomFields.CustomFieldValue>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Entitlements.PluginEntitlement>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Entitlements.MarketplaceEntitlementEventRecord>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+        modelBuilder.Entity<Callora.Host.Backend.Domain.Jobs.BackgroundJob>()
+            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+    }
+
+    /// <inheritdoc />
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        EnforceWorkspaceWriteScope();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    /// <inheritdoc />
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        EnforceWorkspaceWriteScope();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    // Write-Backstop (PLAT-267): ein workspace-gebundener Aufrufer darf nur
+    // Zeilen seines eigenen Workspace schreiben — auch wenn ein Store den
+    // WorkspaceKey aus Client-Eingabe übernimmt. Operatoren/Jobs/Seeding haben
+    // keinen Scope -> Enforcement inaktiv. Greift nur für Change-Tracker-Writes,
+    // nicht für set-basierte ExecuteUpdate/ExecuteDelete (die laufen in
+    // System-Kontexten ohne Scope).
+    private void EnforceWorkspaceWriteScope()
+    {
+        if (!WorkspaceFilterActive)
+        {
+            return;
+        }
+
+        var scopedKey = WorkspaceFilterKey;
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State is not (Microsoft.EntityFrameworkCore.EntityState.Added or Microsoft.EntityFrameworkCore.EntityState.Modified))
+            {
+                continue;
+            }
+
+            var workspaceProperty = entry.Metadata.FindProperty("WorkspaceKey");
+            if (workspaceProperty is null)
+            {
+                continue;
+            }
+
+            var value = entry.CurrentValues[workspaceProperty] as string;
+            if (!string.Equals(value, scopedKey, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Workspace-scoped write to '{entry.Metadata.DisplayName()}' targets workspace " +
+                    $"'{value ?? "<global>"}' but the caller is scoped to '{scopedKey}'.");
+            }
+        }
     }
 }

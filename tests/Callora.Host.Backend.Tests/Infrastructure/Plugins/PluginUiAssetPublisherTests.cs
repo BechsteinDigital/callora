@@ -149,6 +149,68 @@ public sealed class PluginUiAssetPublisherTests
     }
 
     [Fact]
+    public async Task PublishAllAsync_DeactivatedLocalPlugin_IsNotResurrectedFromDisk()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"callora-plugin-assets-{Guid.NewGuid():N}");
+        var pluginDirectory = Path.Combine(tempRoot, "custom", "plugins");
+        var webRoot = Path.Combine(tempRoot, "wwwroot");
+        Directory.CreateDirectory(pluginDirectory);
+        Directory.CreateDirectory(webRoot);
+
+        try
+        {
+            var pluginRoot = CreatePlugin(
+                pluginDirectory,
+                pluginFolderName: "TemplateAlpha",
+                pluginId: "template-alpha",
+                createAdmin: true,
+                createWorkspace: false,
+                createWorkspaceTemplate: false);
+
+            var assemblyPath = Path.Combine(pluginRoot, "bin", "Release", "net10.0", "Callora.Plugins.TemplateAlpha.dll");
+            Directory.CreateDirectory(Path.GetDirectoryName(assemblyPath)!);
+            await File.WriteAllTextAsync(assemblyPath, "placeholder");
+
+            var installations = new InMemoryPluginInstallationRepository();
+            var nowUtc = DateTimeOffset.UtcNow;
+            var installed = PluginInstallation.CreateInstalled(
+                pluginId: "template-alpha",
+                displayName: "Template Alpha",
+                assemblyPath,
+                entryTypeName: null,
+                nowUtc);
+            installed.MarkActivated(nowUtc);
+            installed.MarkDeactivated(nowUtc);
+            await installations.AddAsync(installed);
+
+            var sut = new PluginUiAssetPublisher(
+                installations,
+                new TestWebHostEnvironment { WebRootPath = webRoot, ContentRootPath = tempRoot },
+                new CalloraHostingOptions { PluginDirectory = pluginDirectory },
+                NullLogger<PluginUiAssetPublisher>.Instance);
+
+            await sut.PublishAllAsync();
+
+            var manifestPath = Path.Combine(webRoot, "plugin-assets", ".build", "ui-assets.manifest.json");
+            using var document = JsonDocument.Parse(await File.ReadAllTextAsync(manifestPath));
+            var pluginIds = document.RootElement.GetProperty("entries").EnumerateArray()
+                .Select(x => x.GetProperty("pluginId").GetString())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            Assert.DoesNotContain("template-alpha", pluginIds);
+            Assert.False(Directory.Exists(Path.Combine(webRoot, "plugin-assets", "template-alpha")));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task PublishAllAsync_FlattensSrcWrapper_ManifestContainsOnlyFinalPaths()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), $"callora-plugin-assets-{Guid.NewGuid():N}");

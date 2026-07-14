@@ -10,20 +10,38 @@ public interface IBackgroundJobStore
     Task AddAsync(BackgroundJob job, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Atomically claims the next due pending job and marks it running.
-    /// Returns null when no job is due or the claim was lost to a competitor.
+    /// Atomically claims the next runnable job and leases it for
+    /// <paramref name="leaseDuration"/>. Runnable means a due pending job or a
+    /// running job whose lease has expired (orphaned by a crashed worker), so
+    /// this method also recovers stuck jobs. Returns null when nothing is
+    /// runnable or the claim was lost to a competitor.
     /// </summary>
-    Task<BackgroundJob?> TryClaimNextDueAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
+    Task<BackgroundJob?> TryClaimNextDueAsync(
+        DateTimeOffset nowUtc,
+        TimeSpan leaseDuration,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Persists state changes of one previously claimed job.
+    /// Persists state changes of one previously claimed job. Returns false when
+    /// the lease was lost meanwhile (another worker reclaimed the job); the
+    /// caller must then drop the result instead of overwriting the new owner.
     /// </summary>
-    Task SaveAsync(BackgroundJob job, CancellationToken cancellationToken = default);
+    Task<bool> SaveAsync(BackgroundJob job, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// True when a pending or running job of the given type exists.
+    /// Fails running jobs whose lease expired after the attempt budget was
+    /// exhausted, so a job that repeatedly crashes its worker is not reclaimed
+    /// forever. Returns the number of jobs failed.
     /// </summary>
-    Task<bool> HasActiveJobAsync(string jobType, CancellationToken cancellationToken = default);
+    Task<int> FailExpiredExhaustedAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// True when a pending job, or a running job with a still-valid lease, of
+    /// the given type exists. A running job with an expired lease is treated as
+    /// orphaned and does not count as active, so recurring scheduling is not
+    /// blocked forever by a crashed run.
+    /// </summary>
+    Task<bool> HasActiveJobAsync(string jobType, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Lists the most recently created jobs.

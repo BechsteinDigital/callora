@@ -71,11 +71,13 @@ public sealed class HostPluginLifecycle(ICalloraPluginRuntime runtime) : IHostPl
             result.Message);
     }
 
-    private static HostPluginState ToHostState(RuntimePluginState state) =>
+    internal static HostPluginState ToHostState(RuntimePluginState state) =>
         state switch
         {
             RuntimePluginState.Active => HostPluginState.Active,
             RuntimePluginState.Inactive => HostPluginState.Inactive,
+            RuntimePluginState.Faulted => HostPluginState.Faulted,
+            RuntimePluginState.UnloadFailed => HostPluginState.UnloadFailed,
             _ => HostPluginState.Installed,
         };
 }

@@ -3,6 +3,7 @@ using System;
 using Callora.Host.Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Callora.Host.Backend.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HostPersistenceDbContext))]
-    partial class HostPersistenceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260714201139_AddBackgroundJobLease")]
+    partial class AddBackgroundJobLease
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -689,10 +692,6 @@ namespace Callora.Host.Backend.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTimeOffset?>("LeaseExpiresAtUtc")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("LeaseToken")
-                        .IsConcurrencyToken()
-                        .HasColumnType("uuid");
 
                     b.Property<int>("MaxAttempts")
                         .HasColumnType("integer");

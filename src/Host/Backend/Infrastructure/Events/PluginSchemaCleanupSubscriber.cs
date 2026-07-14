@@ -14,6 +14,7 @@ namespace Callora.Host.Backend.Infrastructure.Events;
 /// </summary>
 public sealed class PluginSchemaCleanupSubscriber(
     IPluginSchemaDropper schemaDropper,
+    IPluginDataDocumentCleaner dataDocumentCleaner,
     IPluginInstallationRepository installationRepository,
     ILogger<PluginSchemaCleanupSubscriber> logger) : IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>
 {
@@ -27,6 +28,23 @@ public sealed class PluginSchemaCleanupSubscriber(
         }
 
         var pluginId = appEvent.PluginId.Trim();
+
+        // Host-owned data documents live in the host schema keyed by plugin id,
+        // so they are not covered by the dedicated-schema drop and must be
+        // removed even for plugins without a dedicated schema.
+        try
+        {
+            var removed = await dataDocumentCleaner.DeleteByPluginIdAsync(pluginId, cancellationToken).ConfigureAwait(false);
+            if (removed > 0)
+            {
+                logger.LogInformation("Removed {Count} data documents for uninstalled plugin {PluginId}.", removed, pluginId);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Removing data documents for plugin {PluginId} failed.", pluginId);
+        }
+
         var schema = await ResolveSchemaAsync(pluginId, cancellationToken).ConfigureAwait(false);
         if (schema is null)
         {

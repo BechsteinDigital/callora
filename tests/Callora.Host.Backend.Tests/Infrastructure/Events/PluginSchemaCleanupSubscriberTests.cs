@@ -73,10 +73,33 @@ public sealed class PluginSchemaCleanupSubscriberTests
         await subscriber.HandleAsync(UninstallEvent("voip", success: true));
     }
 
+    [Fact]
+    public async Task Uninstall_RemovesHostOwnedPluginDataDocuments()
+    {
+        var cleaner = new RecordingDataDocumentCleaner();
+        var subscriber = CreateSubscriber(new RecordingSchemaDropper(), new InMemoryPluginInstallationRepository(), cleaner);
+
+        await subscriber.HandleAsync(UninstallEvent("acme-dialer", success: true));
+
+        Assert.Equal(["acme-dialer"], cleaner.Cleaned);
+    }
+
+    [Fact]
+    public async Task NonUninstallActions_DoNotRemoveDataDocuments()
+    {
+        var cleaner = new RecordingDataDocumentCleaner();
+        var subscriber = CreateSubscriber(new RecordingSchemaDropper(), new InMemoryPluginInstallationRepository(), cleaner);
+
+        await subscriber.HandleAsync(new PluginLifecycleChangedEvent(DateTimeOffset.UtcNow, "plugin.activate", "voip", true, "tester", null));
+
+        Assert.Empty(cleaner.Cleaned);
+    }
+
     private static PluginSchemaCleanupSubscriber CreateSubscriber(
         IPluginSchemaDropper dropper,
-        IPluginInstallationRepository installations) =>
-        new(dropper, installations, NullLogger<PluginSchemaCleanupSubscriber>.Instance);
+        IPluginInstallationRepository installations,
+        IPluginDataDocumentCleaner? cleaner = null) =>
+        new(dropper, cleaner ?? new RecordingDataDocumentCleaner(), installations, NullLogger<PluginSchemaCleanupSubscriber>.Instance);
 
     private static PluginLifecycleChangedEvent UninstallEvent(string pluginId, bool success) =>
         new(DateTimeOffset.UtcNow, "plugin.uninstall", pluginId, success, "tester", null);
@@ -96,5 +119,16 @@ public sealed class PluginSchemaCleanupSubscriberTests
     {
         public Task DropAsync(string schemaName, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("drop failed");
+    }
+
+    private sealed class RecordingDataDocumentCleaner : IPluginDataDocumentCleaner
+    {
+        public List<string> Cleaned { get; } = [];
+
+        public Task<int> DeleteByPluginIdAsync(string pluginId, CancellationToken cancellationToken = default)
+        {
+            Cleaned.Add(pluginId);
+            return Task.FromResult(0);
+        }
     }
 }

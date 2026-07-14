@@ -34,7 +34,7 @@ public sealed class RecurringJobEnqueuer(
             if (!TryMarkDue(definition, nowUtc))
                 continue;
 
-            if (await jobStore.HasActiveJobAsync(definition.JobType, cancellationToken).ConfigureAwait(false))
+            if (await jobStore.HasActiveJobAsync(definition.JobType, nowUtc, cancellationToken).ConfigureAwait(false))
                 continue;
 
             var job = BackgroundJob.Create(

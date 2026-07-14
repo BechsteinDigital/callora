@@ -60,6 +60,15 @@ public sealed class PluginUiAssetPublisher(
             .OrderBy(x => x.PluginId, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
+        // A plugin that is installed but not active must not be resurrected from
+        // disk by local discovery below; only genuinely dev-only plugins (no
+        // installation record at all) are served without an active record.
+        var suppressedPluginIds = installations
+            .Where(x => x.State != PluginInstallationState.Active)
+            .Where(x => !string.IsNullOrWhiteSpace(x.PluginId))
+            .Select(x => x.PluginId.Trim())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var pluginRootsByPluginId = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var installation in candidates)
         {
@@ -82,6 +91,11 @@ public sealed class PluginUiAssetPublisher(
         var localPluginRoots = DiscoverLocalPluginRoots(cancellationToken);
         foreach (var pair in localPluginRoots)
         {
+            if (suppressedPluginIds.Contains(pair.Key))
+            {
+                continue;
+            }
+
             if (!pluginRootsByPluginId.ContainsKey(pair.Key))
             {
                 pluginRootsByPluginId[pair.Key] = pair.Value;

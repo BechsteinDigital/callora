@@ -19,7 +19,12 @@ public sealed class BackgroundJobProcessor(
     /// </summary>
     public async Task<bool> ProcessNextAsync(CancellationToken cancellationToken)
     {
-        var job = await jobStore.TryClaimNextDueAsync(DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
+        var nowUtc = DateTimeOffset.UtcNow;
+        await jobStore.FailExpiredExhaustedAsync(nowUtc, cancellationToken).ConfigureAwait(false);
+
+        var job = await jobStore
+            .TryClaimNextDueAsync(nowUtc, options.LeaseDuration, cancellationToken)
+            .ConfigureAwait(false);
         if (job is null)
             return false;
 
@@ -60,7 +65,15 @@ public sealed class BackgroundJobProcessor(
             logger.LogError(ex, "Job {JobId} ({JobType}) failed on attempt {Attempt}.", job.Id, job.JobType, job.AttemptCount);
         }
 
-        await jobStore.SaveAsync(job, cancellationToken).ConfigureAwait(false);
+        if (!await jobStore.SaveAsync(job, cancellationToken).ConfigureAwait(false))
+        {
+            logger.LogWarning(
+                "Job {JobId} ({JobType}) lost its lease before saving; another worker owns it now.",
+                job.Id,
+                job.JobType);
+            return true;
+        }
+
         BackgroundJobTelemetry.RecordAttempt(
             job.JobType,
             job.Status.ToString(),

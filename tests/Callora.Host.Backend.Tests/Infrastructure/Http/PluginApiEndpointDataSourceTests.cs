@@ -101,6 +101,29 @@ public sealed class PluginApiEndpointDataSourceTests
     }
 
     [Fact]
+    public async Task DuplicatePluginRoute_IsRejected_FirstWins()
+    {
+        var catalog = new StaticPluginCatalog(new Dictionary<Type, IReadOnlyList<object>>
+        {
+            // Two controllers claim the same method+route (as two plugins would).
+            [typeof(IApiController)] = [new TestPluginAdminController(), new TestPluginAdminController()]
+        });
+        var dataSource = new PluginApiEndpointDataSource(
+            catalog,
+            NullLogger<PluginApiEndpointDataSource>.Instance);
+        dataSource.Refresh();
+        await using var app = await CreateAppAsync(dataSource);
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "test.read");
+
+        // Without the first-wins guard the duplicate would throw
+        // AmbiguousMatchException (500) at request time.
+        var response = await client.GetAsync("/api/test-plugin/ping");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task FaultingAction_ReturnsStructuredServerError()
     {
         var catalog = new StaticPluginCatalog(new Dictionary<Type, IReadOnlyList<object>>

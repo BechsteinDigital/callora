@@ -14,6 +14,13 @@ public sealed class BackgroundJobOptions
     /// <summary>Base delay for exponential retry backoff (doubles per attempt).</summary>
     public TimeSpan RetryBaseDelay { get; set; } = TimeSpan.FromSeconds(30);
 
+    /// <summary>
+    /// How long a claimed job stays leased before a competing worker may reclaim
+    /// it as orphaned. Must exceed the longest expected job runtime; a too-short
+    /// value risks a second worker reclaiming a job that is still running.
+    /// </summary>
+    public TimeSpan LeaseDuration { get; set; } = TimeSpan.FromMinutes(5);
+
     /// <summary>Maximum number of jobs returned by the monitoring endpoint.</summary>
     public int RecentListLimit { get; set; } = 100;
 }

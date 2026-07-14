@@ -103,6 +103,14 @@ public static class BackendSecurityServiceCollectionExtensions
             .SetDefaultPolicy(new AuthorizationPolicyBuilder()
                 .AddAuthenticationSchemes(CompositeScheme)
                 .RequireAuthenticatedUser()
+                .Build())
+            // Fail-closed Sicherheitsnetz (PLAT-267): eine Route ohne explizite
+            // Autorisierung ist nicht offen, sondern verlangt Authentifizierung.
+            // Bewusst anonyme Routen sind mit AllowAnonymous markiert und bleiben
+            // davon ausgenommen.
+            .SetFallbackPolicy(new AuthorizationPolicyBuilder()
+                .AddAuthenticationSchemes(CompositeScheme)
+                .RequireAuthenticatedUser()
                 .Build());
 
         return services;
