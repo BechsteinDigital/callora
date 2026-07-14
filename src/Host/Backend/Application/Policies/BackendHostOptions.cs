@@ -64,7 +64,7 @@ public sealed class BackendHostOptions
 
     public string JwtAudience { get; set; } = "callora-host-api";
 
-    public string JwtSigningKey { get; set; } = "callora-local-dev-signing-key-change-me";
+    public string JwtSigningKey { get; set; } = BackendSecretHygiene.DefaultJwtSigningKey;
 
     public string? OidcAuthority { get; set; }
 

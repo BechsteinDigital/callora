@@ -373,19 +373,25 @@ app.MapWorkspaceEndpoints();
 app.MapWorkspaceThemeEndpoints();
 app.MapWorkspacePublicEndpoints();
 
-// Laut, aber nicht blockierend: Dev-Defaults dürfen eine Produktionsumgebung
-// nie unbemerkt erreichen (der Default-JwtSigningKey wirft bereits beim Start).
-if (backendOptions.ApiKeys.Contains("callora-local-dev-key-change-me", StringComparer.Ordinal))
+// Dev-Defaults (JWT-Key, Demo-Admin-Passwort, DB-Passwort, Bootstrap-API-Key)
+// dürfen eine Produktionsumgebung nie erreichen: außerhalb Development wird der
+// Start verweigert, in Development bleibt es bei einer lauten Warnung.
+var secretViolations = BackendSecretHygiene.Inspect(backendOptions);
+if (secretViolations.Count > 0)
 {
-    app.Logger.LogWarning(
-        "SECURITY: The default development API key is active. Replace BackendHost__ApiKeys before exposing this host.");
-}
-
-if (backendOptions.DemoAdminUser.Enabled &&
-    string.Equals(backendOptions.DemoAdminUser.Password, "admin123!", StringComparison.Ordinal))
-{
-    app.Logger.LogWarning(
-        "SECURITY: The demo admin user is enabled with its default password. Disable it or set a strong password for production.");
+    if (app.Environment.IsDevelopment())
+    {
+        foreach (var violation in secretViolations)
+        {
+            app.Logger.LogWarning("SECURITY: {Violation}", violation);
+        }
+    }
+    else
+    {
+        throw new InvalidOperationException(
+            "Refusing to start: insecure development defaults are active outside Development:" +
+            Environment.NewLine + "- " + string.Join(Environment.NewLine + "- ", secretViolations));
+    }
 }
 
 await app.RunAsync();
