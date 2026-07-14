@@ -89,12 +89,17 @@ Thumbs.db
 # ------------------------------
 _site/
 docs
+# DocFX-generierte API-Metadaten (aus dem Quellcode, nicht versionieren).
+docfx/api/*.yml
+docfx/api/.manifest
 *.md
 !README.md
 # Betriebsrunbooks sind Teil des Repos (PLAT-235).
 !ops/**/*.md
 # GitHub community health files (security policy etc.) belong in the repo.
 !.github/**/*.md
+# DocFX-Quellen (konzeptuelle Docs) gehören ins Repo.
+!docfx/**/*.md
 
 .worktrees/
 dashboard-vue/
