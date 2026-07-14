@@ -62,10 +62,54 @@ public sealed class EfBackendUserStore(
                 cancellationToken);
     }
 
+    public Task<string?> GetWorkspaceRoleAsync(
+        string externalId,
+        string workspaceKey,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(externalId) || string.IsNullOrWhiteSpace(workspaceKey))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        var normalizedExternalId = externalId.Trim();
+        var normalizedWorkspaceKey = workspaceKey.Trim();
+
+        return dbContext.WorkspaceMemberships
+            .AsNoTracking()
+            .Where(x => x.User.ExternalId == normalizedExternalId &&
+                        x.Workspace.WorkspaceKey == normalizedWorkspaceKey &&
+                        x.Workspace.Tenant.IsActive &&
+                        x.Workspace.IsActive)
+            .Select(x => x.Role)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<BackendUser>> ListAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.BackendUsers
             .AsNoTracking()
+            .OrderBy(x => x.ExternalId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<BackendUser>> ListByWorkspaceAsync(
+        string workspaceKey,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(workspaceKey))
+        {
+            return [];
+        }
+
+        var normalizedWorkspaceKey = workspaceKey.Trim();
+        return await dbContext.WorkspaceMemberships
+            .AsNoTracking()
+            .Where(x => x.Workspace.WorkspaceKey == normalizedWorkspaceKey &&
+                        x.Workspace.Tenant.IsActive &&
+                        x.Workspace.IsActive)
+            .Select(x => x.User)
             .OrderBy(x => x.ExternalId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);

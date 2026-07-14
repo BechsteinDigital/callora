@@ -8,7 +8,7 @@ namespace Callora.Host.Backend.Tests.Support;
 internal sealed class InMemoryBackendUserStore : IBackendUserStore
 {
     private readonly ConcurrentDictionary<string, BackendUser> _users = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> _workspaceMembers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _workspaceMembers = new(StringComparer.OrdinalIgnoreCase);
     private readonly IPasswordHasher<BackendUser> _passwordHasher = new PasswordHasher<BackendUser>();
 
     public Task<BackendUser?> AuthenticateAsync(
@@ -51,6 +51,26 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
             members.ContainsKey(externalId.Trim()));
     }
 
+    public Task<string?> GetWorkspaceRoleAsync(
+        string externalId,
+        string workspaceKey,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(externalId) || string.IsNullOrWhiteSpace(workspaceKey))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        if (_workspaceMembers.TryGetValue(workspaceKey.Trim(), out var members) &&
+            members.TryGetValue(externalId.Trim(), out var role))
+        {
+            return Task.FromResult<string?>(role);
+        }
+
+        return Task.FromResult<string?>(null);
+    }
+
     public Task<IReadOnlyList<BackendUser>> ListAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -58,6 +78,27 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
             _users.Values
                 .OrderBy(x => x.ExternalId, StringComparer.OrdinalIgnoreCase)
                 .ToArray());
+    }
+
+    public Task<IReadOnlyList<BackendUser>> ListByWorkspaceAsync(
+        string workspaceKey,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(workspaceKey) ||
+            !_workspaceMembers.TryGetValue(workspaceKey.Trim(), out var members))
+        {
+            return Task.FromResult<IReadOnlyList<BackendUser>>([]);
+        }
+
+        var users = members.Keys
+            .Select(externalId => _users.TryGetValue(externalId, out var user) ? user : null)
+            .Where(user => user is not null)
+            .Select(user => user!)
+            .OrderBy(x => x.ExternalId, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return Task.FromResult<IReadOnlyList<BackendUser>>(users);
     }
 
     public Task<BackendUser?> GetByExternalIdAsync(
@@ -133,9 +174,9 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
         return Task.FromResult(removed);
     }
 
-    public void AddWorkspaceMember(string workspaceKey, string externalId)
+    public void AddWorkspaceMember(string workspaceKey, string externalId, string role = "member")
     {
-        var members = _workspaceMembers.GetOrAdd(workspaceKey.Trim(), _ => new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase));
-        members.TryAdd(externalId.Trim(), 1);
+        var members = _workspaceMembers.GetOrAdd(workspaceKey.Trim(), _ => new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+        members[externalId.Trim()] = role.Trim();
     }
 }
