@@ -82,4 +82,18 @@ public sealed class CuratedPluginServiceProviderTests
         Assert.Same(exported, curated.GetService(typeof(ICommunicationChannelRegistry)));
         Assert.Null(curated.GetService(typeof(ICallDirectory)));
     }
+
+    [Fact]
+    public void ExportBridge_DoesNotBypassAllowlist_ForHostInternalContracts()
+    {
+        // Even an export resolver that would hand out anything cannot expose a
+        // host-internal type — the allowlist gate runs before the export fallback.
+        using var root = new ServiceCollection().BuildServiceProvider();
+        var curated = new CuratedPluginServiceProvider(
+            root,
+            "acme-plugin",
+            resolveExport: _ => new object());
+
+        Assert.Null(curated.GetService(typeof(IBackgroundJobStore)));
+    }
 }

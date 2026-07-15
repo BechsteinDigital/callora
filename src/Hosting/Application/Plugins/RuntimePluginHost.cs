@@ -65,9 +65,15 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
     // Cross-plugin service resolution for the curated provider (REV2 §9.3):
     // a contract the host does not register itself is served from a plugin
-    // export. Withdrawn automatically on the providing plugin's deactivation.
+    // export. Only single-provider shared services (e.g. the channel registry)
+    // are resolvable this way — multi-provider exports (controllers, flow
+    // handlers, event providers) are host-collected and must not be picked
+    // arbitrarily through a consuming plugin's service surface. Withdrawn
+    // automatically on the providing plugin's deactivation.
     private object? ResolveExport(Type contractType) =>
-        TryGetExport(contractType, out var service) ? service : null;
+        _exports.TryGetValue(contractType, out var registrations) && registrations.Length == 1
+            ? registrations[0].Service
+            : null;
 
     /// <inheritdoc />
     public IReadOnlyList<object> GetExports(Type contractType)
