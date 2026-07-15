@@ -14,6 +14,7 @@ namespace Callora.Host.Backend.Infrastructure.Persistence;
 public sealed class WorkspaceDataPurgeService(
     HostPersistenceDbContext dbContext,
     IMediaStorage mediaStorage,
+    PluginWorkspaceDataPurger pluginPurger,
     ILogger<WorkspaceDataPurgeService> logger) : IWorkspaceDataPurgeService
 {
     public async Task<bool> PurgeAsync(string workspaceKey, CancellationToken cancellationToken = default)
@@ -87,6 +88,10 @@ public sealed class WorkspaceDataPurgeService(
             key,
             deletedRows,
             mediaIds.Length);
+
+        // Plugins own data the host cannot reach (plugin_<id> schemas, PLAT-260):
+        // ask each to erase its workspace data after the host purge committed.
+        await pluginPurger.PurgeAsync(key, cancellationToken).ConfigureAwait(false);
 
         foreach (var mediaId in mediaIds)
         {

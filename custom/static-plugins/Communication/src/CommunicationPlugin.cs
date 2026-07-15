@@ -67,6 +67,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
                 .ImportAsync(cancellationToken)
                 .ConfigureAwait(false);
             accountStore = efStore;
+
+            // Erase the plugin's own workspace data (plugin_communication schema)
+            // when a workspace is purged (REV2 §14).
+            context.Export<IWorkspaceDataPurgeContributor>(
+                new CommunicationWorkspaceDataPurgeContributor(dbContextFactory));
         }
         else
         {

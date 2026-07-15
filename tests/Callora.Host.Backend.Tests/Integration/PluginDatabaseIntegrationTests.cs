@@ -116,6 +116,48 @@ public sealed class PluginDatabaseIntegrationTests : IAsyncLifetime
         Assert.Equal(0, remaining);
     }
 
+    [SkippableFact]
+    public async Task PurgeContributor_ErasesWorkspaceData_LeavingOtherWorkspaces()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+
+        var factory = BuildFactory();
+        await factory.MigrateAsync();
+
+        var store = new EfSipAccountStore(factory, new PassthroughDataProtector());
+        await store.CreateAsync("workspace-a",
+            new UpsertSipAccountRequest("a", "example.org", "A", "s", true));
+        await store.CreateAsync("workspace-b",
+            new UpsertSipAccountRequest("b", "example.org", "B", "s", true));
+
+        await using (var seed = factory.CreateDbContext())
+        {
+            seed.CallLogs.Add(NewCallLog("workspace-a"));
+            seed.CallLogs.Add(NewCallLog("workspace-b"));
+            await seed.SaveChangesAsync();
+        }
+
+        await new CommunicationWorkspaceDataPurgeContributor(factory).PurgeWorkspaceAsync("workspace-a");
+
+        await using var db = factory.CreateDbContext();
+        Assert.Empty(await db.CallLogs.Where(x => x.WorkspaceKey == "workspace-a").ToListAsync());
+        Assert.Empty(await db.SipAccounts.Where(x => x.WorkspaceKey == "workspace-a").ToListAsync());
+        Assert.Single(await db.CallLogs.Where(x => x.WorkspaceKey == "workspace-b").ToListAsync());
+        Assert.Single(await db.SipAccounts.Where(x => x.WorkspaceKey == "workspace-b").ToListAsync());
+    }
+
+    private static CallLog NewCallLog(string workspaceKey) => new()
+    {
+        Id = Guid.NewGuid(),
+        WorkspaceKey = workspaceKey,
+        CallId = "call-1",
+        ChannelId = "chan-1",
+        Direction = "inbound",
+        TargetValue = "sip:x@example.org",
+        StartedAtUtc = DateTimeOffset.UtcNow,
+        EndedAtUtc = DateTimeOffset.UtcNow
+    };
+
     private PluginDbContextFactory<VoipDbContext> BuildFactory()
     {
         var provider = new NpgsqlPluginDbContextProvider(
