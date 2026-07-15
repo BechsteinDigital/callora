@@ -3,7 +3,7 @@ using System.Net;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Application.Policies;
 using Callora.Core.Tests.Support;
-using Callora.Host.Workspace.Api;
+using Callora.Workspace.Api;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;

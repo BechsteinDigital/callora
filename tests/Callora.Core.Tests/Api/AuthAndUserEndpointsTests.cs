@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Http.Json;
 using Callora.Core.Api;
 using Callora.Administration.Api;
-using Callora.Host.Workspace.Api;
 using Callora.Core.Application.Security;
 using Callora.Core.Application.Policies;
 using Callora.Core.Infrastructure.Security;

@@ -3,7 +3,7 @@ using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Policies;
 using System.Text.Json;
 
-namespace Callora.Host.Workspace.Api;
+namespace Callora.Workspace.Api;
 
 public static class WorkspacePublicEndpoints
 {

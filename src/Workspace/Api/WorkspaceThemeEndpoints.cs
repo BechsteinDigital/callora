@@ -5,7 +5,7 @@ using Callora.Core.Application.Workspaces;
 using Callora.Core.Application.Policies;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Host.Workspace.Api;
+namespace Callora.Workspace.Api;
 
 public static class WorkspaceThemeEndpoints
 {
