@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public sealed record UpsertFlowApiRequest(
     string Name,

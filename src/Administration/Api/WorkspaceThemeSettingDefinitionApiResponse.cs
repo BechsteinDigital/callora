@@ -1,4 +1,4 @@
-namespace Callora.Host.Workspace.Api;
+namespace Callora.Administration.Api;
 
 public sealed record WorkspaceThemeSettingDefinitionApiResponse(
     string SettingKey,

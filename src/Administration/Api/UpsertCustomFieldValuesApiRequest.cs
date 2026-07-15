@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Request body for replacing custom field values on one entity instance.

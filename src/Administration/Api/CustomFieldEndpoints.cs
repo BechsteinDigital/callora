@@ -1,7 +1,8 @@
+using Callora.Core.Api;
 using Callora.Core.Application.CustomFields;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Custom field definitions and values on core entities. Workspace-entity

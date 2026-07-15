@@ -1,4 +1,4 @@
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Public shape of one webhook subscription; the secret never leaves the API.

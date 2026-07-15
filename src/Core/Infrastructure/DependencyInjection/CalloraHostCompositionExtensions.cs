@@ -303,13 +303,10 @@ public static class CalloraHostCompositionExtensions
         app.MapAuthEndpoints();
         app.MapJobEndpoints();
         app.MapSystemConfigEndpoints();
-        app.MapWebhookEndpoints();
-        app.MapNotificationEndpoints();
-        app.MapMediaEndpoints();
-        app.MapCustomFieldEndpoints();
-        app.MapFlowEndpoints();
         app.MapControllers();
-        app.MapWorkspaceEndpoints();
+        // The workspace-facing storefront surface stays in the host composition
+        // until Callora.Workspace is extracted (Phase 2.5); the operator /api/*
+        // endpoints moved to Callora.Administration.
         app.MapWorkspaceThemeEndpoints();
         app.MapWorkspacePublicEndpoints();
 

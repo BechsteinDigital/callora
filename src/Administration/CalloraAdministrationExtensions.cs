@@ -38,6 +38,17 @@ public static class CalloraAdministrationExtensions
         app.MapBusinessEventEndpoints();
         app.MapThemeEndpoints();
 
+        // Operator /api/* surface: workspace administration plus the cross-cutting
+        // resource endpoints. All are backend-permission gated (some additionally
+        // workspace-scoped as a tenant filter) — the operator backend, not the
+        // storefront, so they live here rather than in Callora.Workspace (REV2 §4).
+        app.MapWorkspaceEndpoints();
+        app.MapCustomFieldEndpoints();
+        app.MapFlowEndpoints();
+        app.MapMediaEndpoints();
+        app.MapNotificationEndpoints();
+        app.MapWebhookEndpoints();
+
         // Tenant management is feature-gated, mirroring the host composition.
         if (options.EnableTenantManagementApi)
         {

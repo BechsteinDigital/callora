@@ -4,7 +4,7 @@ using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Application.Policies;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Host.Workspace.Api;
+namespace Callora.Administration.Api;
 
 public static class WorkspaceEndpoints
 {
