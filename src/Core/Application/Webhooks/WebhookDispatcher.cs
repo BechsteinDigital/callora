@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Callora.Core.Application.Webhooks;
-using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Core.Application.Jobs.Contracts;
 
 namespace Callora.Core.Application.Webhooks;
 

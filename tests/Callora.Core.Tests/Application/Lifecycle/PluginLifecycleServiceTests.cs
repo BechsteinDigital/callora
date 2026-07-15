@@ -8,7 +8,7 @@ using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Extensions;
 using Callora.Core.Tests.Support;
 using System.Reflection;
-using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 
 namespace Callora.Core.Tests.Application.Lifecycle;
 
@@ -53,8 +53,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Install,
                 true,
                 "plugin-install",
                 null)
@@ -99,8 +99,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -140,8 +140,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -230,8 +230,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -481,8 +481,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Install,
                 true,
                 "plugin-reg",
                 null)
@@ -613,8 +613,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Install,
                 true,
                 "plugin-deprecated",
                 null)
@@ -718,8 +718,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Install,
                 true,
                 "plugin-with-extension",
                 null)
@@ -781,8 +781,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Install,
                 true,
                 "plugin-scope",
                 null)
@@ -847,8 +847,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -903,8 +903,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            ActivateResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Activate,
+            ActivateResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Activate,
                 true,
                 "plugin-x",
                 null)
@@ -1094,8 +1094,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Install,
                 true,
                 "plugin-nuget",
                 null)
@@ -1133,13 +1133,13 @@ public sealed class PluginLifecycleServiceTests
         {
             InstallHandler = (assemblyPath, _) =>
                 assemblyPath == "/tmp/plugin-new.dll"
-                    ? new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                        Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+                    ? new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                        Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Install,
                         false,
                         "plugin-x",
                         "new install failed")
-                    : new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                        Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+                    : new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                        Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Install,
                         true,
                         "plugin-x",
                         null)
@@ -1205,8 +1205,8 @@ public sealed class PluginLifecycleServiceTests
     {
         var lifecycle = new FakeHostPluginLifecycle
         {
-            InstallResult = new Callora.Host.PluginContracts.Application.Plugins.HostPluginOperationResult(
-                Callora.Host.PluginContracts.Application.Plugins.HostPluginOperation.Install,
+            InstallResult = new Callora.Core.Application.Plugins.Contracts.HostPluginOperationResult(
+                Callora.Core.Application.Plugins.Contracts.HostPluginOperation.Install,
                 true,
                 "plugin-local",
                 null)

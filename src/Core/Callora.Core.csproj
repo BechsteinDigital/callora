@@ -15,7 +15,6 @@
          Callora.* to the default context, so Communication and Dialer share one
          ICommunicationChannelRegistry type identity (REV2 §10.1A). Do not remove. -->
     <ProjectReference Include="..\..\custom\static-plugins\Communication\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
-    <ProjectReference Include="..\Host\PluginContracts\Callora.Host.PluginContracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

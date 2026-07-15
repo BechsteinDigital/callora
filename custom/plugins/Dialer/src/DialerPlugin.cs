@@ -1,8 +1,8 @@
 using Callora.Plugin.Communication.Abstractions;
-using Callora.Host.PluginContracts.Application.Data;
-using Callora.Host.PluginContracts.Application.Jobs;
-using Callora.Host.PluginContracts.Application.Plugins;
-using Callora.Host.PluginContracts.Domain.Plugins;
+using Callora.Core.Application.Data.Contracts;
+using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugins.Dialer.Application.Admin;
 using Callora.Plugins.Dialer.Application.Numbers;
 using Callora.Plugins.Dialer.Application.Runs;

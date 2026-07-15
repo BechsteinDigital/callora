@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Plugins;
 using Xunit;
 

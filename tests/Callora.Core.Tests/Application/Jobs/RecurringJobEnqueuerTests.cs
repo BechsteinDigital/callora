@@ -1,6 +1,6 @@
 using Callora.Core.Application.Jobs;
 using Callora.Core.Tests.Support;
-using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Core.Application.Jobs.Contracts;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Jobs;

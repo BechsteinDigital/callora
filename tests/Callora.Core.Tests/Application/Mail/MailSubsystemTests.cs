@@ -2,8 +2,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 using Callora.Core.Application.Mail;
 using Callora.Core.Tests.Support;
-using Callora.Host.PluginContracts.Application.Jobs;
-using Callora.Host.PluginContracts.Application.Mail;
+using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Application.Mail.Contracts;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Mail;

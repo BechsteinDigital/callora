@@ -1,5 +1,5 @@
-using Callora.Host.PluginContracts.Application.Persistence;
-using Callora.Host.PluginContracts.Application.Secrets;
+using Callora.Core.Application.Persistence.Contracts;
+using Callora.Core.Application.Secrets.Contracts;
 using Callora.Plugin.Communication.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 

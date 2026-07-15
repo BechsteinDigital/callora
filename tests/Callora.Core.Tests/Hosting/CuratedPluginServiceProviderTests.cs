@@ -1,7 +1,7 @@
 using Callora.Core.Application.Jobs;
 using Callora.Core.Tests.Support;
-using Callora.Host.PluginContracts.Application.Data;
-using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Core.Application.Data.Contracts;
+using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Application.Plugins;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Channels;

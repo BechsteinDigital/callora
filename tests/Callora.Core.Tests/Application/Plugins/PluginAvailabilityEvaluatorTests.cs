@@ -4,7 +4,7 @@ using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Policies;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Tests.Support;
-using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Plugins;

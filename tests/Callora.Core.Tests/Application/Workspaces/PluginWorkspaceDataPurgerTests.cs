@@ -1,6 +1,6 @@
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Tests.Support;
-using Callora.Host.PluginContracts.Application.Persistence;
+using Callora.Core.Application.Persistence.Contracts;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Callora.Core.Tests.Application.Workspaces;

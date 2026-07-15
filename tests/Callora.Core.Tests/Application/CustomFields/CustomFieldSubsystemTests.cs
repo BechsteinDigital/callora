@@ -1,6 +1,6 @@
 using Callora.Core.Application.Plugins;
 using Callora.Core.Infrastructure.CustomFields;
-using Callora.Host.PluginContracts.Application.Migrations;
+using Callora.Core.Application.Migrations.Contracts;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.CustomFields;

@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Data;
+using Callora.Core.Application.Data.Contracts;
 
 namespace Callora.Core.Infrastructure.Persistence;
 

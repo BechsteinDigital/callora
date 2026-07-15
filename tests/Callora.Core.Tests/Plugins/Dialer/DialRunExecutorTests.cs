@@ -118,7 +118,7 @@ public sealed class DialRunExecutorTests
         var started = await coordinator.StartRunAsync("workspace-a", new DialRunOptions(TimeSpan.FromSeconds(5)));
 
         var handler = new DialRunJobHandler(new DialRunExecutor(registry), numberStore, runStore);
-        var handlerTask = handler.ExecuteAsync(new Callora.Host.PluginContracts.Application.Jobs.BackgroundJobExecutionContext(
+        var handlerTask = handler.ExecuteAsync(new Callora.Core.Application.Jobs.Contracts.BackgroundJobExecutionContext(
             Guid.NewGuid(),
             DialRunJobHandler.JobTypeName,
             $$"""{"runId":"{{started!.RunId}}","workspaceKey":"workspace-a","callTimeoutSeconds":5}""",
@@ -153,7 +153,7 @@ public sealed class DialRunExecutorTests
         var handler = new DialRunJobHandler(new DialRunExecutor(registry), numberStore, runStore);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            handler.ExecuteAsync(new Callora.Host.PluginContracts.Application.Jobs.BackgroundJobExecutionContext(
+            handler.ExecuteAsync(new Callora.Core.Application.Jobs.Contracts.BackgroundJobExecutionContext(
                 Guid.NewGuid(),
                 DialRunJobHandler.JobTypeName,
                 $$"""{"runId":"{{started!.RunId}}","workspaceKey":"workspace-a","callTimeoutSeconds":5}""",

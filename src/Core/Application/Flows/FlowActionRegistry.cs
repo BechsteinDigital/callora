@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Flows;
+using Callora.Core.Application.Flows.Contracts;
 using Callora.Core.Application.Plugins;
 
 namespace Callora.Core.Application.Flows;

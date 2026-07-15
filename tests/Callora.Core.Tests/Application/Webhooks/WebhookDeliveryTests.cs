@@ -3,7 +3,7 @@ using System.Text.Json;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Webhooks;
 using Callora.Core.Tests.Support;
-using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Core.Application.Jobs.Contracts;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Webhooks;

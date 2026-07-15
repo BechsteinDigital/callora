@@ -165,7 +165,7 @@ public sealed class PluginDatabaseIntegrationTests : IAsyncLifetime
         return new PluginDbContextFactory<VoipDbContext>(provider, "communication");
     }
 
-    private sealed class PassthroughDataProtector : Callora.Host.PluginContracts.Application.Secrets.IPluginDataProtector
+    private sealed class PassthroughDataProtector : Callora.Core.Application.Secrets.Contracts.IPluginDataProtector
     {
         public string Protect(string scope, string plaintext) => plaintext;
 

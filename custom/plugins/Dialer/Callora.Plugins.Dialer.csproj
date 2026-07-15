@@ -9,10 +9,14 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
-  <!-- Beweis der Vertragsschicht: ausschließlich Contracts-Referenzen, kein CalloraVoipSdk. -->
+  <!-- Vertragsschicht: linkt gegen die Core-Contracts (…*.Contracts-Namespaces) und
+       die Communication-Foundation, nicht gegen das CalloraVoipSdk. Core wird nur zur
+       Compile-Zeit referenziert (ExcludeAssets=runtime) — der Host liefert es, der
+       Plugin-ALC teilt die Typidentität; die Contract-Grenze ist weich (Namespace,
+       später Analyzer) statt einer eigenen Assembly. -->
   <ItemGroup>
     <ProjectReference Include="..\..\..\custom\static-plugins\Communication\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\Host\PluginContracts\Callora.Host.PluginContracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\Callora.Core.csproj" Private="false" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>

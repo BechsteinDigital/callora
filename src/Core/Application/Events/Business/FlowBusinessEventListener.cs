@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Callora.Core.Application.Flows;
-using Callora.Host.PluginContracts.Application.Events;
-using Callora.Host.PluginContracts.Application.Flows;
-using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Core.Application.Events.Contracts;
+using Callora.Core.Application.Flows.Contracts;
+using Callora.Core.Application.Jobs.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Callora.Core.Application.Events.Business;

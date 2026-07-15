@@ -1,5 +1,5 @@
 using Callora.Core.Application.Events;
-using Callora.Host.PluginContracts.Application.Events;
+using Callora.Core.Application.Events.Contracts;
 
 namespace Callora.Core.Tests.Support;
 

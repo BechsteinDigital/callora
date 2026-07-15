@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
-using Callora.Host.PluginContracts.Application.Http;
+using Callora.Core.Application.Http.Contracts;
 
 namespace Callora.Core.Infrastructure.Http;
 

@@ -1,5 +1,5 @@
 using System.Globalization;
-using Callora.Host.PluginContracts.Application.Flows;
+using Callora.Core.Application.Flows.Contracts;
 
 namespace Callora.Core.Application.Flows.Conditions;
 

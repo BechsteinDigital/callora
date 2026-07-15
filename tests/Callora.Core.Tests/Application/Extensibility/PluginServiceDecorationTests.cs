@@ -1,5 +1,5 @@
 using Callora.Core.Tests.Support;
-using Callora.Host.PluginContracts.Application.Extensibility;
+using Callora.Core.Application.Extensibility.Contracts;
 using Callora.Core.Application.Plugins;
 
 namespace Callora.Core.Tests.Application.Extensibility;

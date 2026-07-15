@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using Callora.Core.Tests.Cli;
-using Callora.Host.PluginContracts.Application.Persistence;
+using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Options;
 using Callora.Core.Application.Plugins;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Callora.Core.Application.Webhooks;
-using Callora.Host.PluginContracts.Application.Flows;
+using Callora.Core.Application.Flows.Contracts;
 
 namespace Callora.Core.Application.Flows.Actions;
 

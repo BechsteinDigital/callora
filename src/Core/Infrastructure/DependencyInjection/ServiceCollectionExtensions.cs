@@ -1,7 +1,7 @@
 using Callora.Core.Application.Options;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Startup;
-using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 
 namespace Callora.Core.Infrastructure.DependencyInjection;
 
