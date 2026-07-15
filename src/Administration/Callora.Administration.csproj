@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Web SDK for its implicit ASP.NET usings; built as a library — the
+         distribution skeleton composes it, this module has no entry point. -->
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The operator API surface builds on Core's domain logic (Identity/RBAC,
+         Tenancy stay in Core, REV2 §4). Core never references Administration. -->
+    <ProjectReference Include="..\Core\Callora.Core.csproj" />
+  </ItemGroup>
+
+</Project>

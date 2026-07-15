@@ -315,7 +315,6 @@ public static class CalloraHostCompositionExtensions
         app.MapPluginAssetEndpoints(backendOptions);
         app.MapPluginAdminExtensionEndpoints();
         app.MapThemeEndpoints();
-        app.MapRbacEndpoints();
         app.MapControllers();
         if (backendOptions.EnableTenantManagementApi)
         {

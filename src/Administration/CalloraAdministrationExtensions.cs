@@ -1,0 +1,24 @@
+using Callora.Administration.Api;
+
+namespace Callora.Administration;
+
+/// <summary>
+/// Composition entry for the Administration module — the operator-facing API
+/// surface (global, SuperAdmin). The distribution skeleton calls these; Core
+/// never references Administration. Domain logic (Identity/RBAC, Tenancy) stays
+/// in Core, this module owns only the operator API (REV2 §4).
+/// </summary>
+public static class CalloraAdministrationExtensions
+{
+    /// <summary>Registers Administration services. Currently none — the domain
+    /// services live in Core (AddCalloraHost); this is the forward-compatible
+    /// seam for admin-only registrations.</summary>
+    public static WebApplicationBuilder AddCalloraAdministration(this WebApplicationBuilder builder) => builder;
+
+    /// <summary>Maps the operator-facing endpoints.</summary>
+    public static WebApplication MapCalloraAdministration(this WebApplication app)
+    {
+        app.MapRbacEndpoints();
+        return app;
+    }
+}
