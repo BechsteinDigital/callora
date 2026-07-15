@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Callora.Core.Api;
+using Callora.Administration.Api;
 using Callora.Host.Workspace.Api;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Tests.Support;

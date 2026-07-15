@@ -1,4 +1,4 @@
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public sealed record RbacRoleApiResponse(
     string Role,

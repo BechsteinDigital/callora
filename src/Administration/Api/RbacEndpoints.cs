@@ -4,7 +4,7 @@ using Callora.Core.Application.Plugins;
 using Microsoft.AspNetCore.Mvc;
 using Callora.Core.Application.Plugins.Contracts;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public static class RbacEndpoints
 {
