@@ -12,12 +12,18 @@ namespace Callora.Administration;
 /// </summary>
 public static class CalloraAdministrationExtensions
 {
-    /// <summary>Registers Administration services. Currently none — the domain
-    /// services live in Core (AddCalloraHost); this is the forward-compatible
-    /// seam for admin-only registrations.</summary>
-    public static WebApplicationBuilder AddCalloraAdministration(this WebApplicationBuilder builder) => builder;
+    /// <summary>Registers Administration services. The domain services live in
+    /// Core (AddCalloraHost); this only adds the module's MVC controllers
+    /// (IntegrationsController) as an application part so the host's
+    /// MapControllers() discovers them.</summary>
+    public static WebApplicationBuilder AddCalloraAdministration(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddControllers()
+            .AddApplicationPart(typeof(CalloraAdministrationExtensions).Assembly);
+        return builder;
+    }
 
-    /// <summary>Maps the operator-facing endpoints.</summary>
+    /// <summary>Maps the operator-facing minimal-API endpoints.</summary>
     public static WebApplication MapCalloraAdministration(this WebApplication app)
     {
         var options = app.Services.GetRequiredService<BackendHostOptions>();

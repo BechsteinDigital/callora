@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Callora.Core.Api.Admin.Integrations;
+namespace Callora.Administration.Api.Admin.Integrations;
 
 /// <summary>
 /// Management API for named machine-to-machine integrations (PLAT-264). Each
