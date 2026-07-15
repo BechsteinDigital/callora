@@ -202,6 +202,7 @@ builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Mail.IMai
         sp.GetRequiredService<Callora.Hosting.Application.Plugins.ICalloraPluginCatalog>()));
 builder.Services.AddScoped<IBackgroundJobHandler, Callora.Host.Backend.Application.Mail.MailSendJobHandler>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Media.IMediaStore, EfMediaStore>();
+builder.Services.AddScoped<Callora.Host.Backend.Application.Workspaces.PluginWorkspaceDataPurger>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Workspaces.IWorkspaceDataPurgeService, WorkspaceDataPurgeService>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Security.IUserDataSubjectService, EfUserDataSubjectService>();
 builder.Services.AddSingleton<Callora.Host.Backend.Application.Media.IMediaStorage, Callora.Host.Backend.Infrastructure.Media.FileSystemMediaStorage>();
