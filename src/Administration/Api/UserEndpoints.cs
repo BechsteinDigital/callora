@@ -1,8 +1,9 @@
+using Callora.Core.Api;
 using Callora.Core.Application.Security;
 using Callora.Core.Domain.Security;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public static class UserEndpoints
 {

@@ -1,4 +1,6 @@
 using Callora.Administration.Api;
+using Callora.Core.Application.Policies;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Callora.Administration;
 
@@ -19,6 +21,14 @@ public static class CalloraAdministrationExtensions
     public static WebApplication MapCalloraAdministration(this WebApplication app)
     {
         app.MapRbacEndpoints();
+        app.MapUserEndpoints();
+
+        // Tenant management is feature-gated, mirroring the host composition.
+        if (app.Services.GetRequiredService<BackendHostOptions>().EnableTenantManagementApi)
+        {
+            app.MapTenantEndpoints();
+        }
+
         return app;
     }
 }

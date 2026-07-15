@@ -1,7 +1,8 @@
+using Callora.Core.Api;
 using Callora.Core.Application.Tenants;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public static class TenantEndpoints
 {

@@ -316,11 +316,6 @@ public static class CalloraHostCompositionExtensions
         app.MapPluginAdminExtensionEndpoints();
         app.MapThemeEndpoints();
         app.MapControllers();
-        if (backendOptions.EnableTenantManagementApi)
-        {
-            app.MapTenantEndpoints();
-        }
-        app.MapUserEndpoints();
         app.MapWorkspaceEndpoints();
         app.MapWorkspaceThemeEndpoints();
         app.MapWorkspacePublicEndpoints();
