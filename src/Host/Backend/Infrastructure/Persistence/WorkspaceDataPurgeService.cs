@@ -91,7 +91,15 @@ public sealed class WorkspaceDataPurgeService(
 
         // Plugins own data the host cannot reach (plugin_<id> schemas, PLAT-260):
         // ask each to erase its workspace data after the host purge committed.
-        await pluginPurger.PurgeAsync(key, cancellationToken).ConfigureAwait(false);
+        var pluginPurgeFailures = await pluginPurger.PurgeAsync(key, cancellationToken).ConfigureAwait(false);
+        if (pluginPurgeFailures > 0)
+        {
+            logger.LogError(
+                "COMPLIANCE: workspace {WorkspaceKey} purge left {FailedContributors} plugin contributor(s) " +
+                "unpurged; plugin-owned rows may remain and must be retried.",
+                key,
+                pluginPurgeFailures);
+        }
 
         foreach (var mediaId in mediaIds)
         {
