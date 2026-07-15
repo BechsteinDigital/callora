@@ -4,8 +4,7 @@
     {"pluginId": "TemplateAlpha", "surface": "admin", "entryPath": "custom/plugins/TemplateAlpha/src/Resources/app/admin/main.ts"},
     {"pluginId": "TemplateAlpha", "surface": "workspace", "entryPath": "custom/plugins/TemplateAlpha/src/Resources/app/workspace/main.ts"},
     {"pluginId": "TemplateBeta", "surface": "admin", "entryPath": "custom/plugins/TemplateBeta/src/Resources/app/admin/main.ts"},
-    {"pluginId": "TemplateBeta", "surface": "workspace", "entryPath": "custom/plugins/TemplateBeta/src/Resources/app/workspace/main.ts"},
-    {"pluginId": "Voip", "surface": "admin", "entryPath": "custom/plugins/Voip/src/Resources/app/admin/main.js"}
+    {"pluginId": "TemplateBeta", "surface": "workspace", "entryPath": "custom/plugins/TemplateBeta/src/Resources/app/workspace/main.ts"}
   ],
   "workspaceTemplates": [
     {"pluginId": "TemplateAlpha", "templatePath": "custom/plugins/TemplateAlpha/src/Resources/views/workspace/layouts/dashboard.html"},

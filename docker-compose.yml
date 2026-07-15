@@ -27,8 +27,8 @@ services:
       BackendHost__PluginAssetBaseUrl: ${BackendHost__PluginAssetBaseUrl:-/plugin-assets}
       BackendHost__PluginManifestUrl: ${BackendHost__PluginManifestUrl:-/manifests/plugin-ui-assets.manifest.json}
       BackendHost__RequireAllowlistForActivation: ${BackendHost__RequireAllowlistForActivation:-false}
-      BackendHost__ActivationAllowlistPluginIds__0: ${BackendHost__ActivationAllowlistPluginIds__0:-voip}
-      BackendHost__ActivationEntitledPluginIds__0: ${BackendHost__ActivationEntitledPluginIds__0:-voip}
+      BackendHost__ActivationAllowlistPluginIds__0: ${BackendHost__ActivationAllowlistPluginIds__0:-communication}
+      BackendHost__ActivationEntitledPluginIds__0: ${BackendHost__ActivationEntitledPluginIds__0:-communication}
       BackendHost__DefaultActivationRolloutRing: ${BackendHost__DefaultActivationRolloutRing:-Stable}
       BackendHost__EntitlementFailureFallbackMode: ${BackendHost__EntitlementFailureFallbackMode:-DenyActivation}
       BackendHost__AllowUnsignedPlugins: ${BackendHost__AllowUnsignedPlugins:-true}

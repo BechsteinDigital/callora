@@ -77,6 +77,51 @@ public sealed class PluginUiAssetPublisherTests
     }
 
     [Fact]
+    public async Task PublishAllAsync_StaticPluginWithoutInstall_IsPublished()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"callora-plugin-assets-{Guid.NewGuid():N}");
+        var staticPluginDirectory = Path.Combine(tempRoot, "custom", "static-plugins");
+        var webRoot = Path.Combine(tempRoot, "wwwroot");
+        Directory.CreateDirectory(staticPluginDirectory);
+        Directory.CreateDirectory(webRoot);
+
+        try
+        {
+            CreatePlugin(
+                staticPluginDirectory,
+                pluginFolderName: "Communication",
+                pluginId: "communication",
+                createAdmin: true,
+                createWorkspace: true,
+                createWorkspaceTemplate: false);
+
+            var sut = new PluginUiAssetPublisher(
+                new InMemoryPluginInstallationRepository(),
+                new TestWebHostEnvironment { WebRootPath = webRoot, ContentRootPath = tempRoot },
+                new CalloraHostingOptions { StaticPluginDirectory = staticPluginDirectory },
+                NullLogger<PluginUiAssetPublisher>.Instance);
+
+            await sut.PublishAllAsync();
+
+            var manifestPath = Path.Combine(webRoot, "plugin-assets", ".build", "ui-assets.manifest.json");
+            using var document = JsonDocument.Parse(await File.ReadAllTextAsync(manifestPath));
+            var pluginIds = document.RootElement.GetProperty("entries").EnumerateArray()
+                .Select(x => x.GetProperty("pluginId").GetString())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            Assert.Contains("communication", pluginIds);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task PublishAllAsync_InstalledAndDiscoveredPlugin_IsNotDuplicated()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), $"callora-plugin-assets-{Guid.NewGuid():N}");
