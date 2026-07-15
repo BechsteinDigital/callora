@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace Callora.Host.Workspace.Api;
+namespace Callora.Workspace.Api;
 
 internal static class WorkspaceClaims
 {

@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\src\Host\Cli\Callora.Host.Cli.csproj" />
     <ProjectReference Include="..\..\src\Core\Callora.Core.csproj" />
     <ProjectReference Include="..\..\src\Administration\Callora.Administration.csproj" />
+    <ProjectReference Include="..\..\src\Workspace\Callora.Workspace.csproj" />
     <ProjectReference Include="..\..\custom\static-plugins\Communication\Callora.Plugin.Communication.csproj" />
     <ProjectReference Include="..\..\custom\plugins\Dialer\Callora.Plugins.Dialer.csproj" />
   </ItemGroup>

@@ -1,7 +1,6 @@
 using Callora.Core.Application.Security;
 using Callora.Core.Application.Policies;
 using Callora.Core.Infrastructure.Security;
-using Callora.Host.Workspace.Api;
 using System.Security.Claims;
 
 namespace Callora.Core.Api;

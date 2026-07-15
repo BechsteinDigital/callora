@@ -8,7 +8,6 @@ using System.Security.Claims;
 using System.Text;
 using Callora.Core.Api;
 using Callora.Administration.Api;
-using Callora.Host.Workspace.Api;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Policies;

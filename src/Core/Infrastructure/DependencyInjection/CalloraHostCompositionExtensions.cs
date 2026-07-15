@@ -13,7 +13,6 @@ using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Infrastructure.Plugins;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Infrastructure.Startup;
-using Callora.Host.Workspace.Api;
 using Microsoft.AspNetCore.DataProtection;
 using Callora.Core.Application.Monitoring;
 using Callora.Core.Api.OpenApi;
@@ -304,11 +303,8 @@ public static class CalloraHostCompositionExtensions
         app.MapJobEndpoints();
         app.MapSystemConfigEndpoints();
         app.MapControllers();
-        // The workspace-facing storefront surface stays in the host composition
-        // until Callora.Workspace is extracted (Phase 2.5); the operator /api/*
-        // endpoints moved to Callora.Administration.
-        app.MapWorkspaceThemeEndpoints();
-        app.MapWorkspacePublicEndpoints();
+        // Operator /api/* moved to Callora.Administration, the storefront surface
+        // to Callora.Workspace; the skeleton composes both modules explicitly.
 
         // Dev-Defaults (JWT-Key, Demo-Admin-Passwort, DB-Passwort, Bootstrap-API-Key)
         // dürfen eine Produktionsumgebung nie erreichen: außerhalb Development wird der
