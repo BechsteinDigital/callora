@@ -1,6 +1,6 @@
 using Callora.Core.Application.Plugins.Contracts;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public sealed record PluginAdminRouteMatch(
     IHostAdminApiExtensionContributor Contributor,

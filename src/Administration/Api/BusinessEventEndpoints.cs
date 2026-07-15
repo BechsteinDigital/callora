@@ -1,7 +1,7 @@
 using Callora.Core.Application.Events.Business;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Discovery of the platform's business events (PLAT-270): the flow-builder

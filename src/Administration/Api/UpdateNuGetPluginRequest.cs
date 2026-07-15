@@ -1,6 +1,6 @@
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
-public sealed record InstallNuGetPluginRequest(
+public sealed record UpdateNuGetPluginRequest(
     string PackageId,
     string PackageVersion,
     string? AssemblyFileName = null,

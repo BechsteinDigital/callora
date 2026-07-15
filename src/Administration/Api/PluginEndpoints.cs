@@ -1,3 +1,4 @@
+using Callora.Core.Api;
 using Callora.Core.Application.Entitlements;
 using Callora.Core.Application.Audit;
 using Callora.Core.Application.Plugins;
@@ -10,7 +11,7 @@ using Callora.Core.Application.Startup;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public static class PluginEndpoints
 {
