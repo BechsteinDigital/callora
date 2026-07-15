@@ -23,7 +23,7 @@ Der Host gibt die Struktur vor, jedes Plugin spiegelt sie eins zu eins. Diese
 Struktur ist verbindlich fuer den Host und fuer alle Plugin-Entwicklungen.
 
 ```
-<Root>/                       # Host: src/Host/Backend/   Plugin: custom/plugins/<Name>/src/
+<Root>/                       # Host: src/Core/   Plugin: custom/plugins/<Name>/src/
 ├── Domain/                   # Kern-Geschaeftslogik, keine Framework-Abhaengigkeiten
 │   └── <Feature>/            # nach Feature gruppiert (z.B. Accounts/, Calls/)
 ├── Application/              # Use-Cases, Ports (Interfaces), Orchestrierung

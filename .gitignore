@@ -111,7 +111,7 @@ diff.txt
 graphify-out/
 
 # Vom PluginUiAssetPublisher generiert (bei jedem Start neu aufgebaut)
-src/Host/Backend/wwwroot/plugin-assets/
+src/Core/wwwroot/plugin-assets/
 
 custom/plugins/*/node_modules/
 custom/static-plugins/*/node_modules/

@@ -3,7 +3,7 @@ services:
     image: callora/backend:prod-like
     build:
       context: .
-      dockerfile: src/Host/Backend/Dockerfile
+      dockerfile: src/Core/Dockerfile
     container_name: ${DEV_CALLORA_CONTAINER_NAME:-callora-backend-prod-like}
     restart: unless-stopped
     depends_on:
