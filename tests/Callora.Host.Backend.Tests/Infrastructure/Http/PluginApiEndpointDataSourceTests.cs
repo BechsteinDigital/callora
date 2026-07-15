@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Infrastructure.Http;
 using Callora.Host.PluginContracts.Application.Http;
 using Callora.Host.Backend.Tests.Support;
@@ -144,7 +145,27 @@ public sealed class PluginApiEndpointDataSourceTests
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
     }
 
-    private static async Task<WebApplication> CreateAppAsync(PluginApiEndpointDataSource? dataSource = null)
+    [Fact]
+    public async Task WorkspaceRoute_ToUnavailablePlugin_IsForbidden()
+    {
+        // The caller is correctly workspace-scoped and permitted, but the plugin
+        // is not effectively available in the workspace (REV2 §13) → 403.
+        await using var app = await CreateAppAsync(
+            availability: new StaticPluginAvailabilityEvaluator("test-plugin"));
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "test.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "workspace-a");
+
+        var response = await client.GetAsync("/api/test-plugin/items?workspaceKey=workspace-a");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+    }
+
+    private static async Task<WebApplication> CreateAppAsync(
+        PluginApiEndpointDataSource? dataSource = null,
+        IPluginAvailabilityEvaluator? availability = null)
     {
         if (dataSource is null)
         {
@@ -168,6 +189,8 @@ public sealed class PluginApiEndpointDataSourceTests
             .AddAuthentication("Header")
             .AddScheme<AuthenticationSchemeOptions, HeaderAuthenticationHandler>("Header", _ => { });
         builder.Services.AddAuthorization();
+        builder.Services.AddSingleton<IPluginAvailabilityEvaluator>(
+            availability ?? new StaticPluginAvailabilityEvaluator());
 
         var app = builder.Build();
         app.UseAuthentication();

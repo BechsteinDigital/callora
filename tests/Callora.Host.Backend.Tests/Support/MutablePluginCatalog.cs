@@ -9,6 +9,7 @@ namespace Callora.Host.Backend.Tests.Support;
 /// </summary>
 public sealed class MutablePluginCatalog : ICalloraPluginCatalog
 {
+    private const string OwningPluginId = "test-plugin";
     private object[] _controllers = [];
 
     public void SetExports(params object[] controllers) => _controllers = controllers;
@@ -21,4 +22,9 @@ public sealed class MutablePluginCatalog : ICalloraPluginCatalog
 
     public IReadOnlyList<object> GetExports(Type contractType) =>
         contractType == typeof(IApiController) ? _controllers : [];
+
+    public IReadOnlyList<CalloraPluginExport> GetOwnedExports(Type contractType) =>
+        contractType == typeof(IApiController)
+            ? _controllers.Select(controller => new CalloraPluginExport(OwningPluginId, controller)).ToArray()
+            : [];
 }

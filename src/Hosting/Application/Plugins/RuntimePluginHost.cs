@@ -89,6 +89,19 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     }
 
     /// <inheritdoc />
+    public IReadOnlyList<CalloraPluginExport> GetOwnedExports(Type contractType)
+    {
+        ArgumentNullException.ThrowIfNull(contractType);
+        if (!_exports.TryGetValue(contractType, out var registrations) || registrations.Length == 0)
+            return Array.Empty<CalloraPluginExport>();
+
+        return registrations
+            .OrderByDescending(static registration => registration.Sequence)
+            .Select(static registration => new CalloraPluginExport(registration.PluginId, registration.Service))
+            .ToArray();
+    }
+
+    /// <inheritdoc />
     public async Task<RuntimePluginInstallResult> InstallAsync(
         string assemblyPath,
         string? entryTypeName = null,
