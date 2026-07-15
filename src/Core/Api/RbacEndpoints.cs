@@ -1,6 +1,6 @@
 using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 using Microsoft.AspNetCore.Mvc;
 using Callora.Host.PluginContracts.Application.Plugins;
 

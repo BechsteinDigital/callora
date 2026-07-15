@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Callora.Core.Infrastructure.Security;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 using Microsoft.Extensions.Primitives;
 using Callora.Host.PluginContracts.Application.Plugins;
 

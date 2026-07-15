@@ -1,7 +1,7 @@
 using Callora.Core.Application.Jobs;
 using Callora.Core.Domain.Jobs;
 using Callora.Host.PluginContracts.Application.Jobs;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 
 namespace Callora.Core.Application.Jobs;
 

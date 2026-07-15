@@ -1,5 +1,5 @@
 using Callora.Core.Application.Events;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Callora.Host.PluginContracts.Application.Events;

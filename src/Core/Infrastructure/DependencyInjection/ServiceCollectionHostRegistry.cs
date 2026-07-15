@@ -1,4 +1,4 @@
-using Callora.Hosting.Infrastructure.DependencyInjection;
+using Callora.Core.Infrastructure.DependencyInjection;
 
 namespace Callora.Core.Infrastructure.DependencyInjection;
 

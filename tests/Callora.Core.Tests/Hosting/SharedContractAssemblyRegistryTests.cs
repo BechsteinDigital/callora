@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using Callora.Core.Tests.Support;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 
 namespace Callora.Core.Tests.Hosting;
 

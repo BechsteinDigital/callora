@@ -15,8 +15,13 @@
          Callora.* to the default context, so Communication and Dialer share one
          ICommunicationChannelRegistry type identity (REV2 §10.1A). Do not remove. -->
     <ProjectReference Include="..\..\custom\static-plugins\Communication\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
-    <ProjectReference Include="..\Hosting\Callora.Hosting.csproj" />
     <ProjectReference Include="..\Host\PluginContracts\Callora.Host.PluginContracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The former Callora.Hosting runtime machinery now lives in Core; its
+         tests still reach the internals it moved in with. -->
+    <InternalsVisibleTo Include="Callora.Core.Tests" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +31,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <!-- Explicit since the merged-in runtime machinery (formerly Callora.Hosting)
+         builds against it; pins Relational to the central 10.0.9 over the lower
+         version Npgsql pulls transitively. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />

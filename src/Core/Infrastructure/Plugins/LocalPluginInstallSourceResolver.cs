@@ -2,7 +2,7 @@ using System.Text.Json;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Lifecycle;
 using Callora.Core.Infrastructure.Startup;
-using Callora.Hosting.Application.Options;
+using Callora.Core.Application.Options;
 
 namespace Callora.Core.Infrastructure.Plugins;
 

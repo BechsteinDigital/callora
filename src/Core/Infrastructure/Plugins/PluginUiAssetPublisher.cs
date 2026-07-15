@@ -3,7 +3,7 @@ using Callora.Core.Application.Persistence;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Startup;
-using Callora.Hosting.Application.Options;
+using Callora.Core.Application.Options;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Callora.Core.Infrastructure.Plugins;

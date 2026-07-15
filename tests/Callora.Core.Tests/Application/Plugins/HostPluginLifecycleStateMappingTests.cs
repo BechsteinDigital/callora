@@ -1,5 +1,5 @@
 using Callora.Host.PluginContracts.Application.Plugins;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Plugins;

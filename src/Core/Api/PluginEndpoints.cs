@@ -6,7 +6,7 @@ using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Policies;
 using Callora.Core.Infrastructure.Security;
 using Callora.Host.Workspace.Api;
-using Callora.Hosting.Application.Startup;
+using Callora.Core.Application.Startup;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
