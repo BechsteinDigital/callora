@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Callora.Plugin.Communication.Abstractions;
 
-namespace Callora.Host.Backend.Application.Communication;
+namespace Callora.Plugin.Communication.Application.Channels;
 
 /// <summary>
 /// Thread-safe, workspace-scoped in-memory registry of communication channels.

@@ -5,11 +5,13 @@ namespace Callora.Hosting.Application.Plugins;
 internal sealed class PluginContext(
     IServiceProvider services,
     string pluginId,
-    Action<string, Type, object> registerExport) : IHostPluginContext
+    Action<string, Type, object> registerExport,
+    Func<Type, object?> resolveExport) : IHostPluginContext
 {
     // Kuratierte Oberfläche statt Root-Provider: Plugins sehen nur
-    // veröffentlichte Verträge und plugin-gebundene Dienste (PLAT-252).
-    public IServiceProvider Services { get; } = new CuratedPluginServiceProvider(services, pluginId);
+    // veröffentlichte Verträge, plugin-gebundene Dienste (PLAT-252) und
+    // plugin-übergreifend exportierte Contract-Services (REV2 §9.3).
+    public IServiceProvider Services { get; } = new CuratedPluginServiceProvider(services, pluginId, resolveExport);
 
     public void Export(Type contractType, object service)
     {

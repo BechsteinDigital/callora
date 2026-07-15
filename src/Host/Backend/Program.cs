@@ -1,9 +1,7 @@
-using Callora.Plugin.Communication.Abstractions;
 using Callora.Host.Backend.Api;
 using Callora.Host.Backend.Application.Extensions;
 using Callora.Host.Backend.Application.Entitlements;
 using Callora.Host.Backend.Application.Jobs;
-using Callora.Host.Backend.Application.Communication;
 using Callora.Host.Backend.Application.Events;
 using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Application.Lifecycle;
@@ -63,8 +61,6 @@ ServiceCollectionExtensions.AddCalloraHosting(
         options.PluginDirectory = CalloraHostingPathResolver.ResolvePluginDirectory(options.PluginDirectory);
     });
 
-builder.Services.AddSingleton<CommunicationChannelRegistry>();
-builder.Services.AddSingleton<ICommunicationChannelRegistry>(sp => sp.GetRequiredService<CommunicationChannelRegistry>());
 // Zentrale Feature-Flags (PLAT-263), aus BackendHost:FeatureFlags.
 builder.Services.AddSingleton<Callora.Host.Backend.Application.Features.IFeatureFlagService,
     Callora.Host.Backend.Infrastructure.Features.ConfiguredFeatureFlagService>();

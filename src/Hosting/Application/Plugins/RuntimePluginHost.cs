@@ -63,6 +63,12 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         return false;
     }
 
+    // Cross-plugin service resolution for the curated provider (REV2 §9.3):
+    // a contract the host does not register itself is served from a plugin
+    // export. Withdrawn automatically on the providing plugin's deactivation.
+    private object? ResolveExport(Type contractType) =>
+        TryGetExport(contractType, out var service) ? service : null;
+
     /// <inheritdoc />
     public IReadOnlyList<object> GetExports(Type contractType)
     {
@@ -350,7 +356,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                     $"Plugin id mismatch. Expected '{record.PluginId}', but plugin returned '{plugin.PluginId}'.");
             }
 
-            var pluginContext = new PluginContext(_services, record.PluginId, RegisterExport);
+            var pluginContext = new PluginContext(_services, record.PluginId, RegisterExport, ResolveExport);
             await plugin.StartAsync(pluginContext, cancellationToken).ConfigureAwait(false);
 
             // Shopware-artige Controller-Discovery: IApiController-Typen der

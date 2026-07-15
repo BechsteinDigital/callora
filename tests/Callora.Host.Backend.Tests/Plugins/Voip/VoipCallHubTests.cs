@@ -1,5 +1,5 @@
 using Callora.Plugin.Communication.Abstractions;
-using Callora.Host.Backend.Application.Communication;
+using Callora.Plugin.Communication.Application.Channels;
 using Callora.Host.Backend.Tests.Support;
 using Callora.Plugin.Communication.Application.Calls;
 

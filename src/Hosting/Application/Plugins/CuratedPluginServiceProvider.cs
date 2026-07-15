@@ -7,14 +7,19 @@ namespace Callora.Hosting.Application.Plugins;
 
 /// <summary>
 /// Curated service surface for plugins (PLAT-252): resolves only published
-/// contracts (PluginContracts assembly, Callora.Contracts.*) plus logging.
-/// Everything else returns null — plugins cannot reach arbitrary host
-/// services through the root provider anymore. IPluginDataStore is handed
-/// out plugin-bound, so a plugin cannot address foreign plugin data.
+/// contracts (PluginContracts assembly, Callora.Contracts.*, foundation
+/// *.Abstractions packages) plus logging. A contract the host does not register
+/// itself is resolved from a cross-plugin export (REV2 §9.3 "geteilte
+/// Service-Exports"), so e.g. the Communication plugin can provide
+/// ICommunicationChannelRegistry to the Dialer plugin. Everything else returns
+/// null — plugins cannot reach arbitrary host services through the root
+/// provider anymore. IPluginDataStore is handed out plugin-bound, so a plugin
+/// cannot address foreign plugin data.
 /// </summary>
 internal sealed class CuratedPluginServiceProvider(
     IServiceProvider rootServices,
-    string pluginId) : IServiceProvider
+    string pluginId,
+    Func<Type, object?>? resolveExport = null) : IServiceProvider
 {
     private static readonly string PluginContractsAssemblyName =
         typeof(IHostPluginContext).Assembly.GetName().Name!;
@@ -45,7 +50,14 @@ internal sealed class CuratedPluginServiceProvider(
             return Activator.CreateInstance(factoryType, provider, pluginId);
         }
 
-        return IsAllowed(serviceType) ? rootServices.GetService(serviceType) : null;
+        if (!IsAllowed(serviceType))
+        {
+            return null;
+        }
+
+        // Host registration wins; otherwise fall back to a cross-plugin export
+        // (e.g. the Communication plugin's ICommunicationChannelRegistry).
+        return rootServices.GetService(serviceType) ?? resolveExport?.Invoke(serviceType);
     }
 
     private static bool IsAllowed(Type serviceType)
@@ -61,7 +73,16 @@ internal sealed class CuratedPluginServiceProvider(
         }
 
         var assemblyName = serviceType.Assembly.GetName().Name;
+        if (assemblyName is null)
+        {
+            return false;
+        }
+
         return string.Equals(assemblyName, PluginContractsAssemblyName, StringComparison.Ordinal) ||
-               (assemblyName is not null && assemblyName.StartsWith("Callora.Contracts.", StringComparison.Ordinal));
+               assemblyName.StartsWith("Callora.Contracts.", StringComparison.Ordinal) ||
+               // Foundation contract packages (e.g. Callora.Plugin.Communication.Abstractions)
+               // are unified in the shared load context and published cross-plugin.
+               (assemblyName.StartsWith("Callora.Plugin.", StringComparison.Ordinal) &&
+                assemblyName.EndsWith(".Abstractions", StringComparison.Ordinal));
     }
 }

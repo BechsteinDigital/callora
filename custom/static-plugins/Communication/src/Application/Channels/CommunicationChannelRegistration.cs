@@ -1,6 +1,6 @@
 using Callora.Plugin.Communication.Abstractions;
 
-namespace Callora.Host.Backend.Application.Communication;
+namespace Callora.Plugin.Communication.Application.Channels;
 
 /// <summary>
 /// Disposable handle for one channel registration. Disposing removes the
