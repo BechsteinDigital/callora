@@ -15,8 +15,14 @@ public sealed class PluginWorkspaceDataPurger(
     ICalloraPluginCatalog catalog,
     ILogger<PluginWorkspaceDataPurger> logger)
 {
-    public async Task PurgeAsync(string workspaceKey, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Invokes every exported contributor for the workspace and returns how many
+    /// failed. A non-zero result is a compliance-relevant partial purge: those
+    /// plugins' rows may remain and the failure must be retried.
+    /// </summary>
+    public async Task<int> PurgeAsync(string workspaceKey, CancellationToken cancellationToken = default)
     {
+        var failures = 0;
         foreach (var contributor in catalog.GetExports<IWorkspaceDataPurgeContributor>())
         {
             try
@@ -25,13 +31,18 @@ public sealed class PluginWorkspaceDataPurger(
             }
             catch (Exception exception)
             {
-                logger.LogWarning(
+                failures++;
+                // A failed erasure is compliance-critical, not a warning: it must
+                // surface to alerting so the orphaned rows get retried.
+                logger.LogError(
                     exception,
-                    "Plugin workspace-data purge contributor {Contributor} failed for workspace {WorkspaceKey}; " +
-                    "plugin-owned rows may remain and need a retry.",
+                    "COMPLIANCE: plugin workspace-data purge contributor {Contributor} failed for workspace " +
+                    "{WorkspaceKey}; plugin-owned rows remain and must be retried.",
                     contributor.GetType().FullName,
                     workspaceKey);
             }
         }
+
+        return failures;
     }
 }

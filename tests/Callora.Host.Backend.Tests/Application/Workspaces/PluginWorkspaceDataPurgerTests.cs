@@ -16,8 +16,9 @@ public sealed class PluginWorkspaceDataPurgerTests
             Catalog(first, second),
             NullLogger<PluginWorkspaceDataPurger>.Instance);
 
-        await purger.PurgeAsync("workspace-a");
+        var failures = await purger.PurgeAsync("workspace-a");
 
+        Assert.Equal(0, failures);
         Assert.Equal("workspace-a", first.PurgedWorkspaceKey);
         Assert.Equal("workspace-a", second.PurgedWorkspaceKey);
     }
@@ -31,9 +32,11 @@ public sealed class PluginWorkspaceDataPurgerTests
             Catalog(throwing, recording),
             NullLogger<PluginWorkspaceDataPurger>.Instance);
 
-        // Best-effort: the failing contributor is swallowed (logged), not fatal.
-        await purger.PurgeAsync("workspace-a");
+        // Best-effort: the failing contributor is counted and logged (not fatal),
+        // the others still run.
+        var failures = await purger.PurgeAsync("workspace-a");
 
+        Assert.Equal(1, failures);
         Assert.Equal("workspace-a", recording.PurgedWorkspaceKey);
     }
 
