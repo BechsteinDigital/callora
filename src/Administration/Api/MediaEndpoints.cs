@@ -1,7 +1,8 @@
+using Callora.Core.Api;
 using Callora.Core.Application.Media;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Workspace media assets: upload, list, stream and delete. Bytes are

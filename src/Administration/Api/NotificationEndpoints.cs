@@ -1,7 +1,8 @@
+using Callora.Core.Api;
 using Callora.Core.Application.Notifications;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// In-app notification center endpoints.

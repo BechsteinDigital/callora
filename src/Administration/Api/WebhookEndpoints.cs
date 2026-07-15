@@ -1,7 +1,8 @@
+using Callora.Core.Api;
 using Callora.Core.Application.Webhooks;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Manage outbound webhook subscriptions. Secrets are write-only: list and

@@ -1,7 +1,8 @@
+using Callora.Core.Api;
 using Callora.Core.Application.Flows;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Flow automation CRUD: triggers, condition trees and action lists per

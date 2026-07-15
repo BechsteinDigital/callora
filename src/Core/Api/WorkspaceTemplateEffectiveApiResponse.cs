@@ -1,4 +1,4 @@
-namespace Callora.Host.Workspace.Api;
+namespace Callora.Core.Api;
 
 public sealed record WorkspaceTemplateEffectiveApiResponse(
     string TenantKey,
