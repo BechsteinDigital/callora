@@ -13,4 +13,6 @@ internal sealed class EmptyCalloraPluginCatalog : ICalloraPluginCatalog
     }
 
     public IReadOnlyList<object> GetExports(Type contractType) => [];
+
+    public IReadOnlyList<CalloraPluginExport> GetOwnedExports(Type contractType) => [];
 }

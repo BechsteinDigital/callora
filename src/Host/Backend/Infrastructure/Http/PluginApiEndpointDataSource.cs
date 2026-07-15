@@ -1,10 +1,12 @@
 using System.Reflection;
 using System.Text.Json;
 using Callora.Host.Backend.Api;
+using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Infrastructure.Security;
 using Callora.Host.PluginContracts.Application.Http;
 using Callora.Hosting.Application.Plugins;
 using Microsoft.AspNetCore.Routing.Patterns;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 
 namespace Callora.Host.Backend.Infrastructure.Http;
@@ -66,8 +68,14 @@ public sealed class PluginApiEndpointDataSource(
     {
         var endpoints = new List<Endpoint>();
         var claimedRoutes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var controller in pluginCatalog.GetExports<IApiController>())
+        foreach (var owned in pluginCatalog.GetOwnedExports(typeof(IApiController)))
         {
+            if (owned.Service is not IApiController controller)
+            {
+                continue;
+            }
+
+            var pluginId = owned.PluginId;
             var controllerType = controller.GetType();
             foreach (var method in controllerType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             {
@@ -103,7 +111,7 @@ public sealed class PluginApiEndpointDataSource(
 
                 try
                 {
-                    endpoints.Add(BuildEndpoint(controller, method, route));
+                    endpoints.Add(BuildEndpoint(pluginId, controller, method, route));
                     claimedRoutes.Add(routeKey);
                 }
                 catch (Exception exception)
@@ -122,7 +130,7 @@ public sealed class PluginApiEndpointDataSource(
         return endpoints;
     }
 
-    private Endpoint BuildEndpoint(object controller, MethodInfo method, CalloraRouteAttribute route)
+    private Endpoint BuildEndpoint(string pluginId, object controller, MethodInfo method, CalloraRouteAttribute route)
     {
         var isStream = IsStreamAction(method);
         if (!isStream && !IsResultAction(method))
@@ -133,7 +141,7 @@ public sealed class PluginApiEndpointDataSource(
         }
 
         var requiresWorkspaceScope = controller is WorkspaceApiController;
-        var requestDelegate = BuildRequestDelegate(controller, method, route, requiresWorkspaceScope, isStream);
+        var requestDelegate = BuildRequestDelegate(pluginId, controller, method, route, requiresWorkspaceScope, isStream);
 
         var builder = new RouteEndpointBuilder(
             requestDelegate,
@@ -147,6 +155,7 @@ public sealed class PluginApiEndpointDataSource(
     }
 
     private RequestDelegate BuildRequestDelegate(
+        string pluginId,
         object controller,
         MethodInfo method,
         CalloraRouteAttribute route,
@@ -178,6 +187,24 @@ public sealed class PluginApiEndpointDataSource(
                 await WriteProblemAsync(httpContext, StatusCodes.Status403Forbidden,
                     "Forbidden", "The caller is not scoped to the requested workspace.").ConfigureAwait(false);
                 return;
+            }
+
+            // A workspace-scoped route only serves when the plugin is effectively
+            // available in that workspace (REV2 §13): an entitlement lapse, missing
+            // capability, unhealthy runtime or inactive workspace returns 403 rather
+            // than letting the request reach a plugin that should be dark.
+            if (requiresWorkspaceScope && !string.IsNullOrWhiteSpace(request.WorkspaceKey) &&
+                httpContext.RequestServices.GetService<IPluginAvailabilityEvaluator>() is { } availabilityEvaluator)
+            {
+                var availability = await availabilityEvaluator
+                    .EvaluateAsync(pluginId, request.WorkspaceKey, httpContext.RequestAborted)
+                    .ConfigureAwait(false);
+                if (!availability.IsAvailable)
+                {
+                    await WriteProblemAsync(httpContext, StatusCodes.Status403Forbidden,
+                        "Forbidden", $"The plugin '{pluginId}' is not available in this workspace.").ConfigureAwait(false);
+                    return;
+                }
             }
 
             if (isStream)
