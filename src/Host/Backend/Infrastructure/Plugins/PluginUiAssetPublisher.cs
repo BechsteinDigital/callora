@@ -170,42 +170,50 @@ public sealed class PluginUiAssetPublisher(
     private Dictionary<string, string> DiscoverLocalPluginRoots(CancellationToken cancellationToken)
     {
         var discovered = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (string.IsNullOrWhiteSpace(hostingOptions.PluginDirectory))
+
+        // Mirror the discovery service (LocalPluginDiscoveryHostedService): the
+        // System-tier static-plugin root is scanned alongside the application
+        // root, so a dev-only static plugin (e.g. Communication) serves its UI
+        // source before it is installed.
+        foreach (var configuredDirectory in new[] { hostingOptions.StaticPluginDirectory, hostingOptions.PluginDirectory })
         {
-            return discovered;
-        }
-
-        var pluginDirectory = CalloraHostingPathResolver.ResolvePluginDirectory(hostingOptions.PluginDirectory);
-        if (!Directory.Exists(pluginDirectory))
-        {
-            return discovered;
-        }
-
-        var registryFiles = Directory
-            .EnumerateFiles(pluginDirectory, "registry.json", SearchOption.AllDirectories)
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        foreach (var registryFile in registryFiles)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var pluginRoot = Path.GetDirectoryName(registryFile);
-            if (string.IsNullOrWhiteSpace(pluginRoot) || !HasResourceRoots(pluginRoot))
+            if (string.IsNullOrWhiteSpace(configuredDirectory))
             {
                 continue;
             }
 
-            var pluginId = ReadPluginIdFromRegistry(registryFile);
-            if (string.IsNullOrWhiteSpace(pluginId))
+            var directory = CalloraHostingPathResolver.ResolvePluginDirectory(configuredDirectory);
+            if (!Directory.Exists(directory))
             {
-                pluginId = new DirectoryInfo(pluginRoot).Name;
+                continue;
             }
 
-            var normalizedPluginId = pluginId.Trim();
-            if (!discovered.ContainsKey(normalizedPluginId))
+            var registryFiles = Directory
+                .EnumerateFiles(directory, "registry.json", SearchOption.AllDirectories)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            foreach (var registryFile in registryFiles)
             {
-                discovered[normalizedPluginId] = pluginRoot;
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var pluginRoot = Path.GetDirectoryName(registryFile);
+                if (string.IsNullOrWhiteSpace(pluginRoot) || !HasResourceRoots(pluginRoot))
+                {
+                    continue;
+                }
+
+                var pluginId = ReadPluginIdFromRegistry(registryFile);
+                if (string.IsNullOrWhiteSpace(pluginId))
+                {
+                    pluginId = new DirectoryInfo(pluginRoot).Name;
+                }
+
+                var normalizedPluginId = pluginId.Trim();
+                if (!discovered.ContainsKey(normalizedPluginId))
+                {
+                    discovered[normalizedPluginId] = pluginRoot;
+                }
             }
         }
 

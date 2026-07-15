@@ -53,24 +53,25 @@ API ist danach erreichbar unter:
 - Admin UI shell source is located in `apps/admin-shell` and is deployed separately from the backend host.
 - Workspace shell source is located in `apps/workspace-shell` and is deployed separately from the backend host.
 
-## VoIP Plugin (neu)
-- Projekt: `custom/plugins/Voip/Callora.Plugins.Voip.csproj`
-- Entrypoint: `Callora.Plugins.Voip.Application.VoipPlugin`
-- Registry: `custom/plugins/Voip/registry.json`
+## Communication Plugin (System-Tier)
+- Projekt: `custom/static-plugins/Communication/Callora.Plugin.Communication.csproj`
+- Entrypoint: `Callora.Plugin.Communication.Application.CommunicationPlugin`
+- Registry: `custom/static-plugins/Communication/registry.json` (pluginId `communication`, tier `system`)
+- Öffentliche Verträge: `custom/static-plugins/Communication/Abstractions` (`Callora.Plugin.Communication.Abstractions`)
 
 Build + Install-Beispiel:
 ```bash
-dotnet build custom/plugins/Voip/Callora.Plugins.Voip.csproj
+dotnet build custom/static-plugins/Communication/Callora.Plugin.Communication.csproj
 curl -s -X POST http://localhost:5000/api/plugins/install \
   -H "X-Callora-Api-Key: callora-local-dev-key-change-me" \
   -H "Content-Type: application/json" \
-  -d '{"assemblyPath":"/abs/path/to/Callora.Plugins.Voip.dll"}'
+  -d '{"assemblyPath":"/abs/path/to/Callora.Plugin.Communication.dll"}'
 ```
 
 Contract-Test-Kit (lokal/CI):
 ```bash
 dotnet run --project src/Host/Cli/Callora.Host.Cli.csproj -- \
   plugin test-contract \
-  --assembly custom/plugins/Voip/bin/Debug/net10.0/Callora.Plugins.Voip.dll \
-  --registry custom/plugins/Voip/registry.json
+  --assembly custom/static-plugins/Communication/bin/Debug/net10.0/Callora.Plugin.Communication.dll \
+  --registry custom/static-plugins/Communication/registry.json
 ```
