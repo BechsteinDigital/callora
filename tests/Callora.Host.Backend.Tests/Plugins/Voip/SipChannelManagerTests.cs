@@ -1,5 +1,4 @@
 using Callora.Plugin.Communication.Abstractions;
-using Callora.Host.Backend.Application.Communication;
 using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Tests.Support;
 using Callora.Plugin.Communication.Application.Accounts;

@@ -42,7 +42,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
 
         var dataStore = ResolveRequired<IPluginDataStore>(context.Services);
         var dataProtector = ResolveRequired<IPluginDataProtector>(context.Services);
-        var channelRegistry = ResolveRequired<ICommunicationChannelRegistry>(context.Services);
+        // The Communication foundation OWNS the channel registry (REV2 §4.2/§10.1B):
+        // it creates the instance and exports it so consuming plugins (e.g. Dialer)
+        // resolve it cross-plugin, without the host knowing communication at all.
+        var channelRegistry = new CommunicationChannelRegistry();
+        context.Export<ICommunicationChannelRegistry>(channelRegistry);
 
         var loggerFactory = context.Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
 

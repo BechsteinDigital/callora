@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Load-bearing despite no direct code usage: the host references the
+         Communication foundation CONTRACT (not its implementation) so the
+         assembly lives in the host default load context. Plugin ALCs defer all
+         Callora.* to the default context, so Communication and Dialer share one
+         ICommunicationChannelRegistry type identity (REV2 §10.1A). Do not remove. -->
     <ProjectReference Include="..\..\..\custom\static-plugins\Communication\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
     <ProjectReference Include="..\..\Hosting\Callora.Hosting.csproj" />
     <ProjectReference Include="..\PluginContracts\Callora.Host.PluginContracts.csproj" />
