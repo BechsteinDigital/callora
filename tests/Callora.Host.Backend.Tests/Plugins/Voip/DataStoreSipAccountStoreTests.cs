@@ -1,6 +1,6 @@
 using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Tests.Support;
-using Callora.Plugins.Voip.Application.Accounts;
+using Callora.Plugin.Communication.Application.Accounts;
 using Xunit;
 
 namespace Callora.Host.Backend.Tests.Plugins.Voip;

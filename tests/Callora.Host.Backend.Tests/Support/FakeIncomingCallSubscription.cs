@@ -1,5 +1,5 @@
-using Callora.Plugins.Voip.Application.Accounts;
-using Callora.Plugins.Voip.Application.Channels;
+using Callora.Plugin.Communication.Application.Accounts;
+using Callora.Plugin.Communication.Application.Channels;
 
 namespace Callora.Host.Backend.Tests.Support;
 

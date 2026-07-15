@@ -9,23 +9,23 @@ namespace Callora.Host.Backend.Tests.Cli;
 public sealed class PluginContractTestCliTests(ScaffoldedPluginFixture fixture)
 {
     [Fact]
-    public async Task PluginTestContract_ReferenceVoipPlugin_PassesMandatoryChecks()
+    public async Task PluginTestContract_ReferenceCommunicationPlugin_PassesMandatoryChecks()
     {
         var repositoryRoot = fixture.RepositoryRoot;
-        var voipProjectPath = Path.Combine(repositoryRoot, "custom", "plugins", "Voip", "Callora.Plugins.Voip.csproj");
-        var buildResult = await ScaffoldedPluginFixture.BuildProjectAsync(voipProjectPath, repositoryRoot);
+        var communicationProjectPath = Path.Combine(repositoryRoot, "custom", "static-plugins", "Communication", "Callora.Plugin.Communication.csproj");
+        var buildResult = await ScaffoldedPluginFixture.BuildProjectAsync(communicationProjectPath, repositoryRoot);
         Assert.True(buildResult.Success, buildResult.Output);
 
         var assemblyPath = Path.Combine(
             repositoryRoot,
             "custom",
-            "plugins",
-            "Voip",
+            "static-plugins",
+            "Communication",
             "bin",
             "Debug",
             "net10.0",
-            "Callora.Plugins.Voip.dll");
-        var registryPath = Path.Combine(repositoryRoot, "custom", "plugins", "Voip", "registry.json");
+            "Callora.Plugin.Communication.dll");
+        var registryPath = Path.Combine(repositoryRoot, "custom", "static-plugins", "Communication", "registry.json");
 
         using var stdout = new StringWriter();
         using var stderr = new StringWriter();

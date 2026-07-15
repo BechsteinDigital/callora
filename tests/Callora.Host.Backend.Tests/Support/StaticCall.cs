@@ -1,5 +1,5 @@
 using Callora.Plugin.Communication.Abstractions;
-using Callora.Plugins.Voip.Application.Audio;
+using Callora.Plugin.Communication.Application.Audio;
 
 namespace Callora.Host.Backend.Tests.Support;
 

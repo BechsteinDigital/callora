@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\custom\static-plugins\Communication\Callora.Plugin.Communication.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\custom\static-plugins\Communication\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
     <ProjectReference Include="..\..\Hosting\Callora.Hosting.csproj" />
     <ProjectReference Include="..\PluginContracts\Callora.Host.PluginContracts.csproj" />
   </ItemGroup>

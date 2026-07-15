@@ -19,11 +19,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Host.Backend.Tests"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{68A282F9-2C52-4E92-9B75-5A089AFA7255}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Plugins.Voip", "custom\plugins\Voip\Callora.Plugins.Voip.csproj", "{E266E3B5-BFA8-4BB9-AA59-85B3460FA683}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Plugin.Communication", "custom\static-plugins\Communication\Callora.Plugin.Communication.csproj", "{E266E3B5-BFA8-4BB9-AA59-85B3460FA683}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Host.Cli", "src\Host\Cli\Callora.Host.Cli.csproj", "{40078453-39EA-412C-A87F-DEBAE50E87F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Plugin.Communication.Abstractions", "custom\static-plugins\Communication\Callora.Plugin.Communication.Abstractions.csproj", "{839B888F-FA90-4BC4-9614-AEC98BEFCF9C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Plugin.Communication.Abstractions", "custom\static-plugins\Communication\Abstractions\Callora.Plugin.Communication.Abstractions.csproj", "{839B888F-FA90-4BC4-9614-AEC98BEFCF9C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{07D57EEB-2F50-60C4-C011-FE4FA775C9A8}"
 EndProject

@@ -31,7 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Host\Cli\Callora.Host.Cli.csproj" />
     <ProjectReference Include="..\..\src\Host\Backend\Callora.Host.Backend.csproj" />
-    <ProjectReference Include="..\..\custom\plugins\Voip\Callora.Plugins.Voip.csproj" />
+    <ProjectReference Include="..\..\custom\static-plugins\Communication\Callora.Plugin.Communication.csproj" />
     <ProjectReference Include="..\..\custom\plugins\Dialer\Callora.Plugins.Dialer.csproj" />
   </ItemGroup>
 

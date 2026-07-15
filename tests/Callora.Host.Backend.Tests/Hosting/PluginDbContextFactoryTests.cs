@@ -2,7 +2,7 @@ using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Persistence;
 using Callora.Host.PluginContracts.Application.Persistence;
 using Callora.Hosting.Application.Plugins;
-using Callora.Plugins.Voip.Application.Persistence;
+using Callora.Plugin.Communication.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +20,7 @@ public sealed class PluginDbContextFactoryTests
     public void CreateDbContext_BuildsTypedContext_InPluginSchema()
     {
         // CreateDbContext only builds options; it does not open a connection.
-        var factory = new PluginDbContextFactory<VoipDbContext>(CreateProvider(), "voip");
+        var factory = new PluginDbContextFactory<VoipDbContext>(CreateProvider(), "communication");
 
         using var db = factory.CreateDbContext();
         var entity = db.Model.FindEntityType(typeof(CallLog));

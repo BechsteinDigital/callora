@@ -1,0 +1,18 @@
+{
+  "contractVersion": "v1",
+  "schemaVersion": "1.0",
+  "name": "Callora Communication",
+  "pluginId": "communication",
+  "version": "0.2.0",
+  "tier": "system",
+  "assemblyFileName": "Callora.Plugin.Communication.dll",
+  "entryTypeName": "Callora.Plugin.Communication.Application.CommunicationPlugin",
+  "databaseSchema": "plugin_communication",
+  "capabilities": [
+    "communication.voice"
+  ],
+  "dependencies": {
+    "Callora.Host.PluginContracts": ">=0.1.0",
+    "Callora.Plugin.Communication.Abstractions": ">=0.1.0"
+  }
+}

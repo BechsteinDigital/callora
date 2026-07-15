@@ -114,3 +114,4 @@ graphify-out/
 src/Host/Backend/wwwroot/plugin-assets/
 
 custom/plugins/*/node_modules/
+custom/static-plugins/*/node_modules/
