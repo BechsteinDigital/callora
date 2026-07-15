@@ -36,6 +36,9 @@ public sealed class RuntimePluginHostActivationTests
         Assert.True(install.IsSuccess, install.Message);
         var pluginId = install.Plugin!.PluginId;
 
+        // The export appears only through activation, not from installation.
+        Assert.Empty(host.GetExports<IWorkspaceDataPurgeContributor>());
+
         var activate = await host.ActivateAsync(pluginId);
         Assert.True(activate.IsSuccess, activate.Message);
 
