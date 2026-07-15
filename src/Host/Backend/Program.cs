@@ -156,6 +156,8 @@ builder.Services.AddScoped<IWorkspacePluginActivationReader, EfWorkspacePluginAc
 builder.Services.AddScoped<Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationStore, EfWorkspacePluginActivationStore>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Lifecycle.PluginCapabilityGuard>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Plugins.PluginAvailabilityEvaluator>();
+builder.Services.AddScoped<Callora.Host.Backend.Application.Plugins.IPluginAvailabilityEvaluator>(
+    static sp => sp.GetRequiredService<Callora.Host.Backend.Application.Plugins.PluginAvailabilityEvaluator>());
 builder.Services.AddScoped<WorkspaceUiChainResolver>();
 builder.Services.AddScoped<WorkspacePublicThemeResolver>();
 builder.Services.AddScoped<Callora.Host.Backend.Application.Configuration.ISystemConfigStore, EfSystemConfigStore>();

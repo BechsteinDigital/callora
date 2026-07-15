@@ -228,6 +228,8 @@ public sealed class WorkspacePublicEndpointsTests
             new StaticWorkspaceTemplateResolutionService([]));
         builder.Services.AddSingleton<Callora.Host.Backend.Application.Plugins.IWorkspacePluginActivationReader>(
             new StaticWorkspacePluginActivationReader(["dialer", "voip"]));
+        builder.Services.AddSingleton<Callora.Host.Backend.Application.Plugins.IPluginAvailabilityEvaluator>(
+            new StaticPluginAvailabilityEvaluator());
         builder.Services.AddSingleton<Callora.Host.Backend.Application.Extensions.IWorkspaceThemeSettingsStore>(
             new InMemoryWorkspaceThemeSettingsStore());
         builder.Services.AddScoped<Callora.Host.Backend.Application.Extensions.WorkspaceUiChainResolver>();

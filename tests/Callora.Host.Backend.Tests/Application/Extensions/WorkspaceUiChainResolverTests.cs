@@ -16,7 +16,8 @@ public sealed class WorkspaceUiChainResolverTests
                 Template("template-alpha", "workspace.dashboard"),
                 Template("template-beta", "workspace.sidebar")
             ]),
-            new StaticWorkspacePluginActivationReader(["dialer", "voip"]));
+            new StaticWorkspacePluginActivationReader(["dialer", "voip"]),
+            new StaticPluginAvailabilityEvaluator());
 
         var chain = await resolver.ResolveAsync("workspace-a");
 
@@ -28,7 +29,8 @@ public sealed class WorkspaceUiChainResolverTests
     {
         var resolver = new WorkspaceUiChainResolver(
             new StaticWorkspaceTemplateResolutionService([Template("template-alpha", "workspace.base")]),
-            new StaticWorkspacePluginActivationReader(["template-alpha", "voip"]));
+            new StaticWorkspacePluginActivationReader(["template-alpha", "voip"]),
+            new StaticPluginAvailabilityEvaluator());
 
         var chain = await resolver.ResolveAsync("workspace-a");
 
@@ -40,11 +42,27 @@ public sealed class WorkspaceUiChainResolverTests
     {
         var resolver = new WorkspaceUiChainResolver(
             new StaticWorkspaceTemplateResolutionService([]),
-            new StaticWorkspacePluginActivationReader(["dialer", "voip"]));
+            new StaticWorkspacePluginActivationReader(["dialer", "voip"]),
+            new StaticPluginAvailabilityEvaluator());
 
         var chain = await resolver.ResolveAsync("workspace-a");
 
         Assert.Equal(["dialer", "voip"], chain);
+    }
+
+    [Fact]
+    public async Task Resolve_ExcludesActivePluginThatIsNotEffectivelyAvailable()
+    {
+        // 'voip' is activated but not effectively available (e.g. lapsed
+        // entitlement) → it drops from the UI chain while 'dialer' remains.
+        var resolver = new WorkspaceUiChainResolver(
+            new StaticWorkspaceTemplateResolutionService([]),
+            new StaticWorkspacePluginActivationReader(["dialer", "voip"]),
+            new StaticPluginAvailabilityEvaluator("voip"));
+
+        var chain = await resolver.ResolveAsync("workspace-a");
+
+        Assert.Equal(["dialer"], chain);
     }
 
     private static WorkspaceTemplateEffectiveSnapshot Template(string pluginId, string templateKey) =>
