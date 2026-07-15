@@ -163,9 +163,28 @@ public sealed class PluginApiEndpointDataSourceTests
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
     }
 
+    [Fact]
+    public async Task WorkspaceRoute_WithoutAvailabilityEvaluator_IsServed()
+    {
+        // Contract: the availability gate is an additional layer on top of the
+        // always-enforced auth/permission/workspace-scope checks. When no
+        // evaluator is registered it fails open, so a host that has not wired
+        // availability still serves its workspace routes.
+        await using var app = await CreateAppAsync(registerAvailability: false);
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "test.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "workspace-a");
+
+        var response = await client.GetAsync("/api/test-plugin/items?workspaceKey=workspace-a");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private static async Task<WebApplication> CreateAppAsync(
         PluginApiEndpointDataSource? dataSource = null,
-        IPluginAvailabilityEvaluator? availability = null)
+        IPluginAvailabilityEvaluator? availability = null,
+        bool registerAvailability = true)
     {
         if (dataSource is null)
         {
@@ -189,8 +208,11 @@ public sealed class PluginApiEndpointDataSourceTests
             .AddAuthentication("Header")
             .AddScheme<AuthenticationSchemeOptions, HeaderAuthenticationHandler>("Header", _ => { });
         builder.Services.AddAuthorization();
-        builder.Services.AddSingleton<IPluginAvailabilityEvaluator>(
-            availability ?? new StaticPluginAvailabilityEvaluator());
+        if (registerAvailability)
+        {
+            builder.Services.AddSingleton<IPluginAvailabilityEvaluator>(
+                availability ?? new StaticPluginAvailabilityEvaluator());
+        }
 
         var app = builder.Build();
         app.UseAuthentication();
