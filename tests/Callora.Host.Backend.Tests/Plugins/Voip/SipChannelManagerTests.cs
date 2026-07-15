@@ -2,8 +2,8 @@ using Callora.Plugin.Communication.Abstractions;
 using Callora.Host.Backend.Application.Communication;
 using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Tests.Support;
-using Callora.Plugins.Voip.Application.Accounts;
-using Callora.Plugins.Voip.Application.Channels;
+using Callora.Plugin.Communication.Application.Accounts;
+using Callora.Plugin.Communication.Application.Channels;
 using Xunit;
 using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;
 
@@ -23,7 +23,7 @@ public sealed class SipChannelManagerTests
         var channels = registry.GetChannels("workspace-a");
         var channel = Assert.Single(channels);
         Assert.Contains(CommunicationCapabilities.Voice, channel.Capabilities);
-        Assert.Equal("voip", channel.PluginId);
+        Assert.Equal("communication", channel.PluginId);
     }
 
     [Fact]

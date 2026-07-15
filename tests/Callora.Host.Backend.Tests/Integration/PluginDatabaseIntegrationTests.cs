@@ -1,8 +1,8 @@
 using Callora.Host.Backend.Application.Policies;
 using Callora.Host.Backend.Infrastructure.Persistence;
 using Callora.Hosting.Application.Plugins;
-using Callora.Plugins.Voip.Application.Accounts;
-using Callora.Plugins.Voip.Application.Persistence;
+using Callora.Plugin.Communication.Application.Accounts;
+using Callora.Plugin.Communication.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -99,7 +99,7 @@ public sealed class PluginDatabaseIntegrationTests : IAsyncLifetime
         var connection = db.Database.GetDbConnection();
         await connection.OpenAsync();
 
-        var schema = PluginSchemaName.TryResolve("voip")!;
+        var schema = PluginSchemaName.TryResolve("communication")!;
         await using (var drop = connection.CreateCommand())
         {
             drop.CommandText = "DROP SCHEMA IF EXISTS \"" + schema + "\" CASCADE;";
@@ -120,7 +120,7 @@ public sealed class PluginDatabaseIntegrationTests : IAsyncLifetime
     {
         var provider = new NpgsqlPluginDbContextProvider(
             new BackendHostOptions { DatabaseConnectionString = _postgres.GetConnectionString() });
-        return new PluginDbContextFactory<VoipDbContext>(provider, "voip");
+        return new PluginDbContextFactory<VoipDbContext>(provider, "communication");
     }
 
     private sealed class PassthroughDataProtector : Callora.Host.PluginContracts.Application.Secrets.IPluginDataProtector

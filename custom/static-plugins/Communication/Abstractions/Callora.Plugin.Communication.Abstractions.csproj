@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>Callora.Plugin.Communication.Abstractions</RootNamespace>
+    <!-- Standalone contract package, nested beside the Communication runtime
+         plugin. Explicit glob keeps it self-contained (NuGet-package north-star). -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Description>Callora Communication foundation — stable cross-plugin contracts (channels, calls, capabilities) shared via the host load context. Assembly name starts with "Callora." so it is unified across plugin load contexts.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src/**/*.cs" />
+  </ItemGroup>
+
+</Project>

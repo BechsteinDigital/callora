@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Callora.Host.Backend.Infrastructure.Persistence;
 using Callora.Host.Backend.Tests.Cli;
-using Callora.Plugins.Voip.Application;
-using Callora.Plugins.Voip.Application.Persistence;
+using Callora.Plugin.Communication.Application;
+using Callora.Plugin.Communication.Application.Persistence;
 
 namespace Callora.Host.Backend.Tests.Plugins.Voip;
 
@@ -17,14 +17,14 @@ public sealed class VoipSchemaConsistencyTests
     [Fact]
     public void DbContextSchema_MatchesConvention()
     {
-        Assert.Equal(VoipDbContext.SchemaName, PluginSchemaName.TryResolve(VoipPlugin.Id));
+        Assert.Equal(VoipDbContext.SchemaName, PluginSchemaName.TryResolve(CommunicationPlugin.Id));
     }
 
     [Fact]
     public void ManifestDatabaseSchema_MatchesDbContextSchema()
     {
         var repoRoot = ScaffoldedPluginFixture.ResolveRepositoryRoot();
-        var manifestPath = Path.Combine(repoRoot, "custom", "plugins", "Voip", "registry.json");
+        var manifestPath = Path.Combine(repoRoot, "custom", "static-plugins", "Communication", "registry.json");
 
         using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var declared = document.RootElement.GetProperty("databaseSchema").GetString();

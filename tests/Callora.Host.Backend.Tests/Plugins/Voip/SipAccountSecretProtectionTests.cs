@@ -1,7 +1,7 @@
 using Callora.Host.Backend.Application.Plugins;
 using Callora.Host.Backend.Tests.Support;
 using Callora.Host.PluginContracts.Application.Data;
-using Callora.Plugins.Voip.Application.Accounts;
+using Callora.Plugin.Communication.Application.Accounts;
 using Xunit;
 
 namespace Callora.Host.Backend.Tests.Plugins.Voip;
@@ -16,12 +16,12 @@ public sealed class SipAccountSecretProtectionTests
 
         var created = await store.CreateAsync("workspace-a", NewRequest("alice", secret: "super-geheim"));
 
-        var rawJson = await dataStore.GetAsync(new PluginDataKey("voip", "workspace-a", "sip-accounts", created.SipAccountId));
+        var rawJson = await dataStore.GetAsync(new PluginDataKey("communication", "workspace-a", "sip-accounts", created.SipAccountId));
         Assert.NotNull(rawJson);
         using var document = System.Text.Json.JsonDocument.Parse(rawJson!);
         var storedSecret = document.RootElement.GetProperty("secret").GetString();
         Assert.NotEqual("super-geheim", storedSecret);
-        Assert.StartsWith("protected:voip:", storedSecret);
+        Assert.StartsWith("protected:communication:", storedSecret);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public sealed class SipAccountSecretProtectionTests
         var dataStore = new InMemoryPluginDataStore();
         // Alt-Datensatz simulieren: Secret liegt unverschlüsselt im Dokument.
         await dataStore.SetAsync(
-            new PluginDataKey("voip", "workspace-a", "sip-accounts", "legacy-acc"),
+            new PluginDataKey("communication", "workspace-a", "sip-accounts", "legacy-acc"),
             """{"sipAccountId":"legacy-acc","username":"old","domain":"voice.example.org","displayName":"Old","secret":"klartext","isActive":true,"createdAtUtc":"2026-01-01T00:00:00+00:00","updatedAtUtc":"2026-01-01T00:00:00+00:00"}""");
         var store = new DataStoreSipAccountStore(dataStore, new FakePluginDataProtector());
 
