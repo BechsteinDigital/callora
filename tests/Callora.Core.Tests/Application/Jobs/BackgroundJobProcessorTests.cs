@@ -1,7 +1,7 @@
 using Callora.Core.Application.Jobs;
 using Callora.Core.Domain.Jobs;
 using Callora.Core.Tests.Support;
-using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Core.Application.Jobs.Contracts;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 

@@ -1,5 +1,5 @@
-using Callora.Host.PluginContracts.Application.Flows;
-using Callora.Host.PluginContracts.Application.Notifications;
+using Callora.Core.Application.Flows.Contracts;
+using Callora.Core.Application.Notifications.Contracts;
 
 namespace Callora.Core.Application.Flows.Actions;
 

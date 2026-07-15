@@ -3,7 +3,7 @@ using System.Text.Json;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Application.Plugins;
 using Microsoft.Extensions.Primitives;
-using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 
 namespace Callora.Core.Api;
 

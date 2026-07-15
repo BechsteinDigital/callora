@@ -1,5 +1,5 @@
 using Callora.Plugin.Communication.Abstractions;
-using Callora.Host.PluginContracts.Application.Persistence;
+using Callora.Core.Application.Persistence.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Plugin.Communication.Application.Persistence;

@@ -1,29 +1,27 @@
-using Callora.Host.PluginContracts.Application.Data;
-using Callora.Host.PluginContracts.Application.Persistence;
-using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Core.Application.Data.Contracts;
+using Callora.Core.Application.Persistence.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Core.Application.Plugins;
 
 /// <summary>
 /// Curated service surface for plugins (PLAT-252): resolves only published
-/// contracts (PluginContracts assembly, Callora.Contracts.*, foundation
-/// *.Abstractions packages) plus logging. A contract the host does not register
-/// itself is resolved from a cross-plugin export (REV2 §9.3 "geteilte
-/// Service-Exports"), so e.g. the Communication plugin can provide
-/// ICommunicationChannelRegistry to the Dialer plugin. Everything else returns
-/// null — plugins cannot reach arbitrary host services through the root
-/// provider anymore. IPluginDataStore is handed out plugin-bound, so a plugin
-/// cannot address foreign plugin data.
+/// contracts (the Callora.Core.*.Contracts namespaces, Callora.Contracts.*,
+/// foundation *.Abstractions packages) plus logging. Since the former
+/// PluginContracts assembly merged feature-first into the fat Core, the
+/// namespace — not the assembly — separates a published contract from a host
+/// internal (REV2 §7). A contract the host does not register itself is resolved
+/// from a cross-plugin export (REV2 §9.3 "geteilte Service-Exports"), so e.g.
+/// the Communication plugin can provide ICommunicationChannelRegistry to the
+/// Dialer plugin. Everything else returns null — plugins cannot reach arbitrary
+/// host services through the root provider. IPluginDataStore is handed out
+/// plugin-bound, so a plugin cannot address foreign plugin data.
 /// </summary>
 internal sealed class CuratedPluginServiceProvider(
     IServiceProvider rootServices,
     string pluginId,
     Func<Type, object?>? resolveExport = null) : IServiceProvider
 {
-    private static readonly string PluginContractsAssemblyName =
-        typeof(IHostPluginContext).Assembly.GetName().Name!;
-
     public object? GetService(Type serviceType)
     {
         ArgumentNullException.ThrowIfNull(serviceType);
@@ -72,14 +70,27 @@ internal sealed class CuratedPluginServiceProvider(
             return true;
         }
 
+        // Published contracts moved feature-first into Core and now live in
+        // Callora.Core.<Layer>.<Feature>.Contracts namespaces, next to their host
+        // implementations. The namespace is the boundary — the assembly is the
+        // whole fat Core and no longer discriminates (REV2 §7 "Freiheit über
+        // Schutz"; a later analyzer enforces it).
+        var ns = serviceType.Namespace;
+        if (ns is not null &&
+            ns.StartsWith("Callora.Core.", StringComparison.Ordinal) &&
+            (ns.EndsWith(".Contracts", StringComparison.Ordinal) ||
+             ns.Contains(".Contracts.", StringComparison.Ordinal)))
+        {
+            return true;
+        }
+
         var assemblyName = serviceType.Assembly.GetName().Name;
         if (assemblyName is null)
         {
             return false;
         }
 
-        return string.Equals(assemblyName, PluginContractsAssemblyName, StringComparison.Ordinal) ||
-               assemblyName.StartsWith("Callora.Contracts.", StringComparison.Ordinal) ||
+        return assemblyName.StartsWith("Callora.Contracts.", StringComparison.Ordinal) ||
                // Foundation contract packages (e.g. Callora.Plugin.Communication.Abstractions)
                // are unified in the shared load context and published cross-plugin.
                (assemblyName.StartsWith("Callora.Plugin.", StringComparison.Ordinal) &&

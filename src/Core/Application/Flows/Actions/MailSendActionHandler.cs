@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Callora.Core.Application.Mail;
-using Callora.Host.PluginContracts.Application.Flows;
-using Callora.Host.PluginContracts.Application.Jobs;
-using Callora.Host.PluginContracts.Application.Mail;
+using Callora.Core.Application.Flows.Contracts;
+using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Application.Mail.Contracts;
 
 namespace Callora.Core.Application.Flows.Actions;
 

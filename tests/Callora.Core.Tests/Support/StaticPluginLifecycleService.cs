@@ -1,5 +1,5 @@
 using Callora.Core.Application.Lifecycle;
-using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 
 namespace Callora.Core.Tests.Support;
 

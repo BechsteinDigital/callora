@@ -1,5 +1,5 @@
 using System.Data.Common;
-using Callora.Host.PluginContracts.Application.Persistence;
+using Callora.Core.Application.Persistence.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Core.Application.Plugins;

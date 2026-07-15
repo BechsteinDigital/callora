@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Persistence;
+using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins;
 
 namespace Callora.Core.Application.Workspaces;

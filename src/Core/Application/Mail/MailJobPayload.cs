@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Mail;
+using Callora.Core.Application.Mail.Contracts;
 
 namespace Callora.Core.Application.Mail;
 

@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Persistence;
+using Callora.Core.Application.Persistence.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Plugin.Communication.Application.Persistence;

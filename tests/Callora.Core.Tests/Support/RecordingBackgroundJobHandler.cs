@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Core.Application.Jobs.Contracts;
 
 namespace Callora.Core.Tests.Support;
 

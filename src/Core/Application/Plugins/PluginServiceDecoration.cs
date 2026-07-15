@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Extensibility;
+using Callora.Core.Application.Extensibility.Contracts;
 
 namespace Callora.Core.Application.Plugins;
 

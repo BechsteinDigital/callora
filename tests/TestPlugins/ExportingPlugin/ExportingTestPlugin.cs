@@ -1,6 +1,6 @@
-using Callora.Host.PluginContracts.Application.Persistence;
-using Callora.Host.PluginContracts.Application.Plugins;
-using Callora.Host.PluginContracts.Domain.Plugins;
+using Callora.Core.Application.Persistence.Contracts;
+using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Domain.Plugins.Contracts;
 
 namespace Callora.TestPlugin.Exporting;
 

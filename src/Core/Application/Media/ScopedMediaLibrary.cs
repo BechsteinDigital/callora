@@ -1,5 +1,5 @@
 using Callora.Core.Application.Media;
-using Callora.Host.PluginContracts.Application.Media;
+using Callora.Core.Application.Media.Contracts;
 
 namespace Callora.Core.Application.Media;
 

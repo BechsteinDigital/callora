@@ -1,6 +1,6 @@
 using Callora.Core.Application.Jobs;
 using Callora.Core.Application.Notifications;
-using Callora.Host.PluginContracts.Application.Jobs;
+using Callora.Core.Application.Jobs.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Core.Application.Retention;

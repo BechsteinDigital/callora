@@ -21,10 +21,10 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Callora.Host.PluginContracts.Application.Data;
-using Callora.Host.PluginContracts.Application.Events;
-using Callora.Host.PluginContracts.Application.Jobs;
-using Callora.Host.PluginContracts.Application.Secrets;
+using Callora.Core.Application.Data.Contracts;
+using Callora.Core.Application.Events.Contracts;
+using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Application.Secrets.Contracts;
 
 namespace Callora.Core.Infrastructure.DependencyInjection;
 
@@ -93,7 +93,7 @@ public static class CalloraHostCompositionExtensions
         builder.Configuration.GetSection("Retention").Bind(retentionOptions);
         builder.Services.AddSingleton(retentionOptions);
         builder.Services.AddScoped<IBackgroundJobHandler, Callora.Core.Application.Retention.RetentionCleanupJobHandler>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Jobs.IRecurringJobProvider,
+        builder.Services.AddSingleton<Callora.Core.Application.Jobs.Contracts.IRecurringJobProvider,
             Callora.Core.Application.Retention.RetentionRecurringJobProvider>();
 
         builder.Services.AddSingleton<ISecretStore>(sp => new ChainedSecretStore(
@@ -176,11 +176,11 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton<Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource>();
         builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>,
             Callora.Core.Infrastructure.Http.PluginApiRoutingRefreshSubscriber>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Configuration.IPluginConfigReader, Callora.Core.Application.Configuration.ScopedPluginConfigReader>();
+        builder.Services.AddSingleton<Callora.Core.Application.Configuration.Contracts.IPluginConfigReader, Callora.Core.Application.Configuration.ScopedPluginConfigReader>();
         builder.Services.AddScoped<Callora.Core.Application.Webhooks.IWebhookSubscriptionStore, EfWebhookSubscriptionStore>();
         builder.Services.AddScoped<IBackgroundJobHandler, Callora.Core.Application.Webhooks.WebhookDeliveryJobHandler>();
         builder.Services.AddSingleton<Callora.Core.Application.Webhooks.WebhookDispatcher>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Webhooks.IWebhookEventPublisher,
+        builder.Services.AddSingleton<Callora.Core.Application.Webhooks.Contracts.IWebhookEventPublisher,
             Callora.Core.Application.Webhooks.ScopedWebhookEventPublisher>();
         builder.Services.AddSingleton<Callora.Core.Application.Webhooks.WebhookEgressGuard>();
         builder.Services.AddHttpClient(Callora.Core.Application.Webhooks.WebhookDeliveryJobHandler.HttpClientName, client =>
@@ -200,14 +200,14 @@ public static class CalloraHostCompositionExtensions
                 };
             });
         builder.Services.AddScoped<Callora.Core.Application.Notifications.INotificationStore, EfNotificationStore>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Notifications.INotificationPublisher, Callora.Core.Application.Notifications.ScopedNotificationPublisher>();
+        builder.Services.AddSingleton<Callora.Core.Application.Notifications.Contracts.INotificationPublisher, Callora.Core.Application.Notifications.ScopedNotificationPublisher>();
         // Dekorierbarer Host-Service (PLAT-266): Plugins können den Mailversand
         // umhüllen (z. B. Suppression-Listen, Provider-Wechsel), indem sie einen
         // IServiceDecorator<IMailSender> exportieren.
         builder.Services.AddSingleton<Callora.Core.Infrastructure.Mail.SmtpMailSender>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Mail.IMailSender>(sp =>
+        builder.Services.AddSingleton<Callora.Core.Application.Mail.Contracts.IMailSender>(sp =>
             Callora.Core.Application.Plugins.PluginServiceDecoration.Decorate(
-                (Callora.Host.PluginContracts.Application.Mail.IMailSender)sp.GetRequiredService<Callora.Core.Infrastructure.Mail.SmtpMailSender>(),
+                (Callora.Core.Application.Mail.Contracts.IMailSender)sp.GetRequiredService<Callora.Core.Infrastructure.Mail.SmtpMailSender>(),
                 sp.GetRequiredService<Callora.Core.Application.Plugins.ICalloraPluginCatalog>()));
         builder.Services.AddScoped<IBackgroundJobHandler, Callora.Core.Application.Mail.MailSendJobHandler>();
         builder.Services.AddScoped<Callora.Core.Application.Media.IMediaStore, EfMediaStore>();
@@ -215,8 +215,8 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<Callora.Core.Application.Workspaces.IWorkspaceDataPurgeService, WorkspaceDataPurgeService>();
         builder.Services.AddScoped<Callora.Core.Application.Security.IUserDataSubjectService, EfUserDataSubjectService>();
         builder.Services.AddSingleton<Callora.Core.Application.Media.IMediaStorage, Callora.Core.Infrastructure.Media.FileSystemMediaStorage>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Media.IMediaLibrary, Callora.Core.Application.Media.ScopedMediaLibrary>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Migrations.IPluginMigrationRunner, Callora.Core.Infrastructure.Plugins.ScopedPluginMigrationRunner>();
+        builder.Services.AddSingleton<Callora.Core.Application.Media.Contracts.IMediaLibrary, Callora.Core.Application.Media.ScopedMediaLibrary>();
+        builder.Services.AddSingleton<Callora.Core.Application.Migrations.Contracts.IPluginMigrationRunner, Callora.Core.Infrastructure.Plugins.ScopedPluginMigrationRunner>();
         builder.Services.AddScoped<Callora.Core.Application.CustomFields.ICustomFieldStore, EfCustomFieldStore>();
         builder.Services.AddScoped<Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService>();
         builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginCustomFieldSyncSubscriber>();
@@ -226,16 +226,16 @@ public static class CalloraHostCompositionExtensions
             EfPluginDataDocumentCleaner>();
         builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>,
             Callora.Core.Infrastructure.Events.PluginSchemaCleanupSubscriber>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.CustomFields.ICustomFieldAccessor, Callora.Core.Application.CustomFields.ScopedCustomFieldAccessor>();
+        builder.Services.AddSingleton<Callora.Core.Application.CustomFields.Contracts.ICustomFieldAccessor, Callora.Core.Application.CustomFields.ScopedCustomFieldAccessor>();
         builder.Services.AddScoped<Callora.Core.Application.Flows.IFlowStore, EfFlowStore>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IRuleConditionEvaluator, Callora.Core.Application.Flows.Conditions.EventNameConditionEvaluator>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IRuleConditionEvaluator, Callora.Core.Application.Flows.Conditions.DataFieldConditionEvaluator>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IRuleConditionEvaluator, Callora.Core.Application.Flows.Conditions.WorkspaceKeyConditionEvaluator>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IRuleConditionEvaluator, Callora.Core.Application.Flows.Conditions.TimeWindowConditionEvaluator>();
+        builder.Services.AddSingleton<Callora.Core.Application.Flows.Contracts.IRuleConditionEvaluator, Callora.Core.Application.Flows.Conditions.EventNameConditionEvaluator>();
+        builder.Services.AddSingleton<Callora.Core.Application.Flows.Contracts.IRuleConditionEvaluator, Callora.Core.Application.Flows.Conditions.DataFieldConditionEvaluator>();
+        builder.Services.AddSingleton<Callora.Core.Application.Flows.Contracts.IRuleConditionEvaluator, Callora.Core.Application.Flows.Conditions.WorkspaceKeyConditionEvaluator>();
+        builder.Services.AddSingleton<Callora.Core.Application.Flows.Contracts.IRuleConditionEvaluator, Callora.Core.Application.Flows.Conditions.TimeWindowConditionEvaluator>();
         builder.Services.AddSingleton<Callora.Core.Application.Flows.RuleEvaluator>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Core.Application.Flows.Actions.NotificationCreateActionHandler>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Core.Application.Flows.Actions.MailSendActionHandler>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Flows.IFlowActionHandler, Callora.Core.Application.Flows.Actions.WebhookSendActionHandler>();
+        builder.Services.AddSingleton<Callora.Core.Application.Flows.Contracts.IFlowActionHandler, Callora.Core.Application.Flows.Actions.NotificationCreateActionHandler>();
+        builder.Services.AddSingleton<Callora.Core.Application.Flows.Contracts.IFlowActionHandler, Callora.Core.Application.Flows.Actions.MailSendActionHandler>();
+        builder.Services.AddSingleton<Callora.Core.Application.Flows.Contracts.IFlowActionHandler, Callora.Core.Application.Flows.Actions.WebhookSendActionHandler>();
         builder.Services.AddScoped<Callora.Core.Application.Flows.FlowActionRegistry>();
         builder.Services.AddScoped<IBackgroundJobHandler, Callora.Core.Application.Flows.FlowExecuteJobHandler>();
 
@@ -243,12 +243,12 @@ public static class CalloraHostCompositionExtensions
         // Webhooks und Plugins generisch hängen. Der Bus ist auch für Plugins
         // auflösbar (PluginContract), damit sie Events publizieren können.
         builder.Services.AddSingleton<Callora.Core.Application.Events.Business.BusinessEventBus>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Events.IBusinessEventBus>(
+        builder.Services.AddSingleton<Callora.Core.Application.Events.Contracts.IBusinessEventBus>(
             sp => sp.GetRequiredService<Callora.Core.Application.Events.Business.BusinessEventBus>());
         builder.Services.AddSingleton<Callora.Core.Application.Events.Business.BusinessEventRegistry>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Events.IBusinessEventListener,
+        builder.Services.AddSingleton<Callora.Core.Application.Events.Contracts.IBusinessEventListener,
             Callora.Core.Application.Events.Business.FlowBusinessEventListener>();
-        builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Events.IBusinessEventListener,
+        builder.Services.AddSingleton<Callora.Core.Application.Events.Contracts.IBusinessEventListener,
             Callora.Core.Application.Events.Business.WebhookBusinessEventListener>();
         builder.Services.AddSingleton<CachedWorkspaceTemplateResolutionService>();
         builder.Services.AddSingleton<IWorkspaceTemplateResolutionService>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());

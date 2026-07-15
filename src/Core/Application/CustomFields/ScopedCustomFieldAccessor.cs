@@ -1,5 +1,5 @@
 using Callora.Core.Application.CustomFields;
-using Callora.Host.PluginContracts.Application.CustomFields;
+using Callora.Core.Application.CustomFields.Contracts;
 
 namespace Callora.Core.Application.CustomFields;
 

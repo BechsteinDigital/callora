@@ -1,6 +1,6 @@
 using Callora.Core.Application.Flows;
 using Callora.Core.Application.Flows.Conditions;
-using Callora.Host.PluginContracts.Application.Flows;
+using Callora.Core.Application.Flows.Contracts;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 

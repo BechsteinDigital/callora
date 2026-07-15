@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Callora.Host.PluginContracts.Application.Configuration;
+using Callora.Core.Application.Configuration.Contracts;
 
 namespace Callora.Core.Application.Configuration;
 

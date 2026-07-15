@@ -1,6 +1,6 @@
 using Callora.Core.Application.Configuration;
 using Callora.Core.Domain.Configuration;
-using Callora.Host.PluginContracts.Application.Secrets;
+using Callora.Core.Application.Secrets.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Core.Infrastructure.Persistence;

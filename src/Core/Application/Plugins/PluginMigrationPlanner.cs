@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Migrations;
+using Callora.Core.Application.Migrations.Contracts;
 
 namespace Callora.Core.Application.Plugins;
 

@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Secrets;
+using Callora.Core.Application.Secrets.Contracts;
 
 namespace Callora.Core.Tests.Support;
 

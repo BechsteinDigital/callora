@@ -18,7 +18,9 @@
 
   <ItemGroup>
     <ProjectReference Include="Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\Host\PluginContracts\Callora.Host.PluginContracts.csproj" />
+    <!-- Compile gegen die Core-Contracts, aber Core nicht mitliefern (Host stellt es,
+         Plugin-ALC teilt die Typidentität, REV2 §10.1A). -->
+    <ProjectReference Include="..\..\..\src\Core\Callora.Core.csproj" Private="false" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>

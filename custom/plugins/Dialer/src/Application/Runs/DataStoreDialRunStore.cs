@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Callora.Host.PluginContracts.Application.Data;
+using Callora.Core.Application.Data.Contracts;
 
 namespace Callora.Plugins.Dialer.Application.Runs;
 

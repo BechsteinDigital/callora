@@ -5,7 +5,7 @@ using System.Diagnostics.Metrics;
 using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Policies;
 using Callora.Core.Tests.Support;
-using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 
 namespace Callora.Core.Tests.Application.Lifecycle;
 

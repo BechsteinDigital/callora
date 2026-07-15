@@ -5,7 +5,7 @@ using Callora.Core.Tests.Infrastructure.Events.Support;
 using Callora.Core.Application.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Callora.Host.PluginContracts.Application.Events;
+using Callora.Core.Application.Events.Contracts;
 
 namespace Callora.Core.Tests.Infrastructure.Events;
 

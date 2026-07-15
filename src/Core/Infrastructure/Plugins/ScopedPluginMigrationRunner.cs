@@ -1,7 +1,7 @@
 using Callora.Core.Application.Plugins;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Persistence;
-using Callora.Host.PluginContracts.Application.Migrations;
+using Callora.Core.Application.Migrations.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 

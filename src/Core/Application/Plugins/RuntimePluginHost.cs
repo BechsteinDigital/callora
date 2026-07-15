@@ -3,8 +3,8 @@ using System.Collections.Immutable;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
-using Callora.Host.PluginContracts.Application.Plugins;
-using Callora.Host.PluginContracts.Domain.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Core.Application.Options;
 
 namespace Callora.Core.Application.Plugins;
@@ -617,7 +617,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             assemblyTypes = exception.Types.Where(static type => type is not null).ToArray()!;
         }
 
-        var manuallyExported = GetExports(typeof(Callora.Host.PluginContracts.Application.Http.IApiController))
+        var manuallyExported = GetExports(typeof(Callora.Core.Application.Http.Contracts.IApiController))
             .Select(static export => export.GetType())
             .ToHashSet();
 
@@ -625,7 +625,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         {
             if (controllerType.IsAbstract ||
                 controllerType.IsInterface ||
-                !typeof(Callora.Host.PluginContracts.Application.Http.IApiController).IsAssignableFrom(controllerType))
+                !typeof(Callora.Core.Application.Http.Contracts.IApiController).IsAssignableFrom(controllerType))
             {
                 continue;
             }
@@ -642,7 +642,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             var controller = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance(
                 pluginServices,
                 controllerType);
-            RegisterExport(pluginId, typeof(Callora.Host.PluginContracts.Application.Http.IApiController), controller);
+            RegisterExport(pluginId, typeof(Callora.Core.Application.Http.Contracts.IApiController), controller);
 
             if (_logger.IsEnabled(LogLevel.Information))
             {

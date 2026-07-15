@@ -1,5 +1,5 @@
 using Callora.Core.Application.Notifications;
-using Callora.Host.PluginContracts.Application.Notifications;
+using Callora.Core.Application.Notifications.Contracts;
 
 namespace Callora.Core.Application.Notifications;
 

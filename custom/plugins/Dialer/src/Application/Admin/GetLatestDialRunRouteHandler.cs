@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 using Callora.Plugins.Dialer.Application.Runs;
 
 namespace Callora.Plugins.Dialer.Application.Admin;

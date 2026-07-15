@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Events;
+using Callora.Core.Application.Events.Contracts;
 
 namespace Callora.Core.Application.Events;
 

@@ -58,20 +58,22 @@ internal sealed class PluginScaffolder
         var repositoryRoot = FindRepositoryRoot(currentDirectory);
         if (repositoryRoot is null)
         {
-            return "<PackageReference Include=\"Callora.Host.PluginContracts\" Version=\"0.1.0\" />";
+            // Compile against the host contracts (now part of Callora.Core) but do
+            // not ship Core with the plugin — the host provides it, the plugin ALC
+            // shares its type identity (REV2 §10.1A).
+            return "<PackageReference Include=\"Callora.Core\" Version=\"0.1.0\" ExcludeAssets=\"runtime\" />";
         }
 
         var projectReferenceAbsolutePath = Path.Combine(
             repositoryRoot,
             "src",
-            "Host",
-            "PluginContracts",
-            "Callora.Host.PluginContracts.csproj");
+            "Core",
+            "Callora.Core.csproj");
 
         var relativePath = Path.GetRelativePath(outputDirectory, projectReferenceAbsolutePath)
             .Replace('\\', '/');
 
-        return $"<ProjectReference Include=\"{relativePath}\" />";
+        return $"<ProjectReference Include=\"{relativePath}\" Private=\"false\" ExcludeAssets=\"runtime\" />";
     }
 
     private static string? FindRepositoryRoot(string currentDirectory)
@@ -118,8 +120,8 @@ internal sealed class PluginScaffolder
         string className,
         string pluginId,
         string displayName) =>
-        $@"using Callora.Host.PluginContracts.Application.Plugins;
-using Callora.Host.PluginContracts.Domain.Plugins;
+        $@"using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Domain.Plugins.Contracts;
 
 namespace {namespaceName};
 
@@ -167,7 +169,7 @@ public sealed class {className} : IHostManagedPlugin
             },
             dependencies = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["Callora.Host.PluginContracts"] = ">=0.1.0"
+                ["Callora.Core"] = ">=0.1.0"
             }
         };
 

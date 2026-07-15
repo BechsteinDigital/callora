@@ -1,4 +1,4 @@
-using Callora.Host.PluginContracts.Application.Webhooks;
+using Callora.Core.Application.Webhooks.Contracts;
 
 namespace Callora.Core.Application.Webhooks;
 

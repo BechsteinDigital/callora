@@ -35,7 +35,7 @@ public sealed class ArchitectureRulesTests
     private static readonly HashSet<string> DomainLayerBaseline = new(StringComparer.OrdinalIgnoreCase)
     {
         // Öffentlicher Plugin-Einstiegsvertrag benötigt seinen Startkontext.
-        NormalizePath("src/Host/PluginContracts/Domain/Plugins/IHostManagedPlugin.cs")
+        NormalizePath("src/Core/Domain/Plugins/Contracts/IHostManagedPlugin.cs")
     };
 
     [Fact]
