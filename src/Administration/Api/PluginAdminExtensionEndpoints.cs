@@ -1,3 +1,4 @@
+using Callora.Core.Api;
 using System.Security.Claims;
 using System.Text.Json;
 using Callora.Core.Infrastructure.Security;
@@ -5,7 +6,7 @@ using Callora.Core.Application.Plugins;
 using Microsoft.Extensions.Primitives;
 using Callora.Core.Application.Plugins.Contracts;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public static class PluginAdminExtensionEndpoints
 {

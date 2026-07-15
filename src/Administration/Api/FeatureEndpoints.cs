@@ -1,6 +1,6 @@
 using Callora.Core.Application.Features;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Read-only feature-flag query API (PLAT-263). Flags are non-sensitive

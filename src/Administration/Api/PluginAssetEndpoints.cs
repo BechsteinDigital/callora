@@ -1,6 +1,6 @@
 using Callora.Core.Application.Policies;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public static class PluginAssetEndpoints
 {

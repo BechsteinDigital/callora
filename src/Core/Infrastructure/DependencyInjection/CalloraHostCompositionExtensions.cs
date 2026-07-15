@@ -301,20 +301,13 @@ public static class CalloraHostCompositionExtensions
             app.Services.GetRequiredService<Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource>());
 
         app.MapAuthEndpoints();
-        app.MapEntitlementSyncEndpoints();
         app.MapJobEndpoints();
         app.MapSystemConfigEndpoints();
-        app.MapFeatureEndpoints();
         app.MapWebhookEndpoints();
-        app.MapBusinessEventEndpoints();
         app.MapNotificationEndpoints();
         app.MapMediaEndpoints();
         app.MapCustomFieldEndpoints();
         app.MapFlowEndpoints();
-        app.MapPluginEndpoints();
-        app.MapPluginAssetEndpoints(backendOptions);
-        app.MapPluginAdminExtensionEndpoints();
-        app.MapThemeEndpoints();
         app.MapControllers();
         app.MapWorkspaceEndpoints();
         app.MapWorkspaceThemeEndpoints();

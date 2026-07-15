@@ -1,3 +1,4 @@
+using Callora.Core.Api;
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Workspaces;
@@ -5,7 +6,7 @@ using Callora.Core.Infrastructure.Security;
 using Callora.Host.Workspace.Api;
 using System.Text.Json;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 public static class ThemeEndpoints
 {

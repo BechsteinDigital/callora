@@ -1,9 +1,10 @@
+using Callora.Core.Api;
 using System.Text.Json;
 using Callora.Core.Application.Entitlements;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Application.Jobs.Contracts;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Inbound marketplace entitlement sync. Events are validated and handed to
