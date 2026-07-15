@@ -1,5 +1,5 @@
 using System.Net;
-using Callora.Core.Api.Admin.Integrations;
+using Callora.Administration.Api.Admin.Integrations;
 using Callora.Core.Api.OpenApi;
 using Callora.Core.Application.Policies;
 using Microsoft.AspNetCore.Builder;

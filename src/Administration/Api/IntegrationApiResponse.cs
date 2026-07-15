@@ -1,4 +1,4 @@
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>Listing projection for integrations; never carries the secret key (PLAT-264).</summary>
 public sealed record IntegrationApiResponse(

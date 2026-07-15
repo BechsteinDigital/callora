@@ -1,4 +1,4 @@
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Returned once on creation — the only time the plaintext key is exposed (PLAT-264).
