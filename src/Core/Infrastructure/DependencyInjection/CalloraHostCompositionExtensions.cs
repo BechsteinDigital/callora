@@ -14,7 +14,6 @@ using Callora.Core.Infrastructure.Plugins;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Infrastructure.Startup;
 using Callora.Host.Workspace.Api;
-using Callora.Hosting.Infrastructure.DependencyInjection;
 using Microsoft.AspNetCore.DataProtection;
 using Callora.Core.Application.Monitoring;
 using Callora.Core.Api.OpenApi;
@@ -78,7 +77,7 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
         // Plugin-eigene EF-Datenbanken (PLAT-260): Plugins bringen echte Entities +
         // EF-Migrationen in ihrem eigenen Schema mit.
-        builder.Services.AddSingleton<Callora.Hosting.Application.Plugins.IPluginDbContextProvider,
+        builder.Services.AddSingleton<Callora.Core.Application.Plugins.IPluginDbContextProvider,
             NpgsqlPluginDbContextProvider>();
 
         var backgroundJobOptions = new BackgroundJobOptions();
@@ -207,9 +206,9 @@ public static class CalloraHostCompositionExtensions
         // IServiceDecorator<IMailSender> exportieren.
         builder.Services.AddSingleton<Callora.Core.Infrastructure.Mail.SmtpMailSender>();
         builder.Services.AddSingleton<Callora.Host.PluginContracts.Application.Mail.IMailSender>(sp =>
-            Callora.Hosting.Application.Plugins.PluginServiceDecoration.Decorate(
+            Callora.Core.Application.Plugins.PluginServiceDecoration.Decorate(
                 (Callora.Host.PluginContracts.Application.Mail.IMailSender)sp.GetRequiredService<Callora.Core.Infrastructure.Mail.SmtpMailSender>(),
-                sp.GetRequiredService<Callora.Hosting.Application.Plugins.ICalloraPluginCatalog>()));
+                sp.GetRequiredService<Callora.Core.Application.Plugins.ICalloraPluginCatalog>()));
         builder.Services.AddScoped<IBackgroundJobHandler, Callora.Core.Application.Mail.MailSendJobHandler>();
         builder.Services.AddScoped<Callora.Core.Application.Media.IMediaStore, EfMediaStore>();
         builder.Services.AddScoped<Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger>();

@@ -2,7 +2,6 @@ using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Domain.Extensions;
 using Callora.Host.PluginContracts.Application.Plugins;
-using Callora.Hosting.Application.Plugins;
 
 namespace Callora.Core.Application.Lifecycle;
 

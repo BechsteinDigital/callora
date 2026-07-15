@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Callora.Core.Api;
 using Callora.Host.Workspace.Api;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 using Callora.Core.Tests.Support;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;

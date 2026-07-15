@@ -3,7 +3,7 @@ using Callora.Core.Application.Lifecycle;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Startup;
 using Callora.Core.Tests.Support;
-using Callora.Hosting.Application.Options;
+using Callora.Core.Application.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 

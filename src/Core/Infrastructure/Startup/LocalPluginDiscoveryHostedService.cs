@@ -2,7 +2,7 @@ using System.Text.Json;
 using Callora.Core.Application.Persistence;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Lifecycle;
-using Callora.Hosting.Application.Options;
+using Callora.Core.Application.Options;
 using Callora.Core.Infrastructure.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

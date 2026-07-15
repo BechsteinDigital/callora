@@ -1,5 +1,5 @@
 using Callora.Host.PluginContracts.Application.Http;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 
 namespace Callora.Core.Tests.Support;
 

@@ -1,4 +1,4 @@
-using Callora.Hosting.Application.Startup;
+using Callora.Core.Application.Startup;
 
 namespace Callora.Core.Infrastructure.Startup;
 

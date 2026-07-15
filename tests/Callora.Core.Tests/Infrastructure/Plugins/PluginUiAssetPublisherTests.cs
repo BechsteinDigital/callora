@@ -2,7 +2,7 @@ using System.Text.Json;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Plugins;
 using Callora.Core.Tests.Support;
-using Callora.Hosting.Application.Options;
+using Callora.Core.Application.Options;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Callora.Core.Tests.Infrastructure.Plugins;

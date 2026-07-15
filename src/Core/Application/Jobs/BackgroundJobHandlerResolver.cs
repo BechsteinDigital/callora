@@ -1,5 +1,5 @@
 using Callora.Host.PluginContracts.Application.Jobs;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 
 namespace Callora.Core.Application.Jobs;
 

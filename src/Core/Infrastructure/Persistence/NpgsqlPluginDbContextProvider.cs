@@ -1,5 +1,5 @@
 using Callora.Core.Application.Policies;
-using Callora.Hosting.Application.Plugins;
+using Callora.Core.Application.Plugins;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Core.Infrastructure.Persistence;
