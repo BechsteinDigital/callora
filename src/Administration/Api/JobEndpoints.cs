@@ -1,7 +1,7 @@
 using Callora.Core.Application.Jobs;
 using Callora.Core.Infrastructure.Security;
 
-namespace Callora.Core.Api;
+namespace Callora.Administration.Api;
 
 /// <summary>
 /// Read-only monitoring endpoints for the background job queue.

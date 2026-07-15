@@ -48,6 +48,8 @@ public static class CalloraAdministrationExtensions
         app.MapMediaEndpoints();
         app.MapNotificationEndpoints();
         app.MapWebhookEndpoints();
+        app.MapJobEndpoints();
+        app.MapSystemConfigEndpoints();
 
         // Tenant management is feature-gated, mirroring the host composition.
         if (options.EnableTenantManagementApi)

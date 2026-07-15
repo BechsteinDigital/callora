@@ -299,12 +299,13 @@ public static class CalloraHostCompositionExtensions
         ((IEndpointRouteBuilder)app).DataSources.Add(
             app.Services.GetRequiredService<Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource>());
 
+        // Auth stays here: it is the login/token mechanism (anonymous /api/auth),
+        // not an operator resource. MapControllers wires the MVC discovery (plugin
+        // controllers plus the modules' application parts). Every operator /api/*
+        // resource moved to Callora.Administration, the storefront to
+        // Callora.Workspace; the skeleton composes both modules explicitly.
         app.MapAuthEndpoints();
-        app.MapJobEndpoints();
-        app.MapSystemConfigEndpoints();
         app.MapControllers();
-        // Operator /api/* moved to Callora.Administration, the storefront surface
-        // to Callora.Workspace; the skeleton composes both modules explicitly.
 
         // Dev-Defaults (JWT-Key, Demo-Admin-Passwort, DB-Passwort, Bootstrap-API-Key)
         // dürfen eine Produktionsumgebung nie erreichen: außerhalb Development wird der
