@@ -10,7 +10,7 @@ Vorwissen über die Codebasis.
   3300 (workspace). Host-Builds erfordern gestoppten Container
   (NuGet-obj-Race im Bind-Mount → NETSDK1064; danach ggf.
   `dotnet restore Callora.Host.sln --force`).
-- **Produktion:** `dotnet publish src/Host/Backend` (siehe Release-Workflow);
+- **Produktion:** `dotnet publish src/Core` (siehe Release-Workflow);
   Konfiguration über `appsettings.json` + Umgebungsvariablen
   (`BackendHost__...`).
 - **Pflicht vor Produktivstart:** `BackendHost:JwtSigningKey` setzen (der
@@ -28,10 +28,10 @@ Vorwissen über die Codebasis.
 
 ## Datenbank & Migrationen
 
-- EF-Migrationen liegen in `src/Host/Backend/Infrastructure/Persistence/Migrations`
+- EF-Migrationen liegen in `src/Core/Infrastructure/Persistence/Migrations`
   und werden beim Start angewendet.
 - Neue Migration: Container stoppen, dann
-  `dotnet ef migrations add <Name> --project src/Host/Backend/... --output-dir Infrastructure/Persistence/Migrations`.
+  `dotnet ef migrations add <Name> --project src/Core/... --output-dir Infrastructure/Persistence/Migrations`.
 - Backup vor Schema-Eingriffen: `pg_dump callora_host > backup.sql`.
 
 ## Schlüssel & Secrets

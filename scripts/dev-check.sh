@@ -39,8 +39,8 @@ cd "$ROOT_DIR"
 ./scripts/dev-build.sh --configuration Debug
 
 if [[ "$SKIP_TESTS" != "true" ]]; then
-  if [[ -f "tests/Callora.Host.Backend.Tests/Callora.Host.Backend.Tests.csproj" ]]; then
-    ./scripts/dev-test.sh --project tests/Callora.Host.Backend.Tests/Callora.Host.Backend.Tests.csproj
+  if [[ -f "tests/Callora.Core.Tests/Callora.Core.Tests.csproj" ]]; then
+    ./scripts/dev-test.sh --project tests/Callora.Core.Tests/Callora.Core.Tests.csproj
   fi
 fi
 

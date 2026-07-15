@@ -35,7 +35,7 @@ jobs:
 
       - name: Publish host backend
         run: >
-          dotnet publish src/Host/Backend/Callora.Host.Backend.csproj
+          dotnet publish src/Core/Callora.Core.csproj
           --configuration Release --no-build
           --output artifacts/callora-host
 

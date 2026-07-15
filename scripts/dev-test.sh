@@ -5,7 +5,7 @@ set -euo pipefail
 #
 # Usage:
 #   ./scripts/dev-test.sh
-#   ./scripts/dev-test.sh --project tests/Callora.Host.Backend.Tests/Callora.Host.Backend.Tests.csproj
+#   ./scripts/dev-test.sh --project tests/Callora.Core.Tests/Callora.Core.Tests.csproj
 #   ./scripts/dev-test.sh --filter "FullyQualifiedName~Plugin"
 #   ./scripts/dev-test.sh --configuration Release --no-build
 

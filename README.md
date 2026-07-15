@@ -3,7 +3,7 @@
 Standalone host platform repository for Callora.
 
 ## Scope
-- Host backend API (`src/Host/Backend`)
+- Host backend API (`src/Core`)
 - Host plugin contracts (`src/Host/PluginContracts`)
 - Hosting/runtime lifecycle (`src/Hosting`)
 - Module abstractions used by host runtime (`src/Abstractions`)
@@ -13,7 +13,7 @@ Standalone host platform repository for Callora.
 dotnet restore Callora.Host.sln
 dotnet build Callora.Host.sln
 ./scripts/build-admin-ui.sh
-dotnet test tests/Callora.Host.Backend.Tests/Callora.Host.Backend.Tests.csproj
+dotnet test tests/Callora.Core.Tests/Callora.Core.Tests.csproj
 ```
 
 ## Environment
@@ -26,7 +26,7 @@ Beispiel fuer lokale Shell-Session:
 set -a
 source .env
 set +a
-dotnet run --project src/Host/Backend/Callora.Host.Backend.csproj
+dotnet run --project src/Core/Callora.Core.csproj
 ```
 
 Lokalen Dev-Stack (Backend + Postgres) starten:

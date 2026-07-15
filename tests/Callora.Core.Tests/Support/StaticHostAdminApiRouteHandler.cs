@@ -1,0 +1,14 @@
+using Callora.Host.PluginContracts.Application.Plugins;
+
+namespace Callora.Core.Tests.Support;
+
+internal sealed class StaticHostAdminApiRouteHandler(
+    Func<HostAdminApiRequest, HostAdminApiResponse> handler) : IHostAdminApiRouteHandler
+{
+    public ValueTask<HostAdminApiResponse> HandleAsync(
+        HostAdminApiRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(handler(request));
+    }
+}

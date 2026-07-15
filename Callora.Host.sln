@@ -11,11 +11,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Host.PluginContract
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Hosting", "src\Hosting\Callora.Hosting.csproj", "{588A3423-ACA3-40EE-B748-6C72F3BA6D53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Host.Backend", "src\Host\Backend\Callora.Host.Backend.csproj", "{A3ABF697-F05C-41CA-95DA-3A1769F90B98}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Core", "src\Core\Callora.Core.csproj", "{A3ABF697-F05C-41CA-95DA-3A1769F90B98}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8C1CEE8A-CC12-4AC9-A8F3-BCDD79D98AE4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Host.Backend.Tests", "tests\Callora.Host.Backend.Tests\Callora.Host.Backend.Tests.csproj", "{3852EC32-11E0-4478-8CCC-6F6C43462F26}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Callora.Core.Tests", "tests\Callora.Core.Tests\Callora.Core.Tests.csproj", "{3852EC32-11E0-4478-8CCC-6F6C43462F26}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{68A282F9-2C52-4E92-9B75-5A089AFA7255}"
 EndProject
