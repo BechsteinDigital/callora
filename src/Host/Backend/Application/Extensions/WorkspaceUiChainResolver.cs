@@ -11,7 +11,8 @@ namespace Callora.Host.Backend.Application.Extensions;
 /// </summary>
 public sealed class WorkspaceUiChainResolver(
     IWorkspaceTemplateResolutionService templateResolution,
-    IWorkspacePluginActivationReader activationReader)
+    IWorkspacePluginActivationReader activationReader,
+    IPluginAvailabilityEvaluator availabilityEvaluator)
 {
     public async Task<IReadOnlyList<string>> ResolveAsync(
         string workspaceKey,
@@ -40,7 +41,19 @@ public sealed class WorkspaceUiChainResolver(
 
         foreach (var pluginId in activePluginIds)
         {
-            if (seen.Add(pluginId))
+            if (!seen.Add(pluginId))
+            {
+                continue;
+            }
+
+            // An active plugin only contributes UI when it is effectively
+            // available in the workspace (REV2 §13): a lapsed entitlement,
+            // missing capability or an unhealthy runtime drops it from the chain
+            // without touching its desired activation.
+            var availability = await availabilityEvaluator
+                .EvaluateAsync(pluginId, normalizedKey, cancellationToken)
+                .ConfigureAwait(false);
+            if (availability.IsAvailable)
             {
                 chain.Add(pluginId);
             }

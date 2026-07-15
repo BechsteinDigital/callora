@@ -19,7 +19,7 @@ public sealed class PluginAvailabilityEvaluator(
     IPluginEntitlementStore entitlementStore,
     IWorkspacePluginActivationReader activationReader,
     IWorkspaceManagementStore workspaceStore,
-    PluginCapabilityGuard capabilityGuard)
+    PluginCapabilityGuard capabilityGuard) : IPluginAvailabilityEvaluator
 {
     public async Task<PluginAvailability> EvaluateAsync(
         string pluginId,
