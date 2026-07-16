@@ -113,6 +113,28 @@ public sealed class CalloraInternalConsumptionAnalyzerTests
     }
 
     [Fact]
+    public async Task Constructing_a_collection_of_a_marked_type_is_reported()
+    {
+        // Generic type argument in operation position: the constructed type (List) is
+        // not marked, but its argument is — the analyzer must unwrap it.
+        const string consumer = """
+            namespace Plugin
+            {
+                public static class Maker
+                {
+                    public static object Make() => new System.Collections.Generic.List<Framework.InternalThing>();
+                }
+            }
+            """;
+
+        var reference = AnalyzerTestHarness.CompileReference(Framework(), "Callora.Fake.Framework");
+        var diagnostics = await AnalyzerTestHarness.RunAsync(consumer, frameworkAssembly: false, reference);
+
+        var single = Assert.Single(diagnostics);
+        Assert.Contains("InternalThing", single.GetMessage());
+    }
+
+    [Fact]
     public async Task Consuming_only_public_api_is_clean()
     {
         const string consumer = """
