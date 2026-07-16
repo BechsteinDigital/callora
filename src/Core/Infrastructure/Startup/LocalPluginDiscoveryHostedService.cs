@@ -1,26 +1,22 @@
-using System.Text.Json;
-using Callora.Core.Application.Persistence;
-using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Options;
-using Callora.Core.Infrastructure.Plugins;
+using Callora.Core.Application.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Core.Infrastructure.Startup;
 
+/// <summary>
+/// Runs local plugin discovery once at startup when <see cref="CalloraHostingOptions.AutoLoadPlugins"/>
+/// is enabled — a thin caller of <see cref="IPluginDiscoveryService"/>. On-demand refresh
+/// (admin overview, CLI) uses the same service directly.
+/// </summary>
 public sealed class LocalPluginDiscoveryHostedService(
     IServiceProvider services,
     CalloraHostingOptions hostingOptions,
-    ILocalPluginProjectBuilder projectBuilder,
     ILogger<LocalPluginDiscoveryHostedService> logger) : IHostedService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (!hostingOptions.AutoLoadPlugins)
@@ -28,199 +24,38 @@ public sealed class LocalPluginDiscoveryHostedService(
             return;
         }
 
-        // Foundation (System-tier) plugins are scanned before Application-tier
-        // plugins, so a foundation loads before anything depending on it.
-        var registryEntries = BuildScanRoots()
-            .Where(root => Directory.Exists(root.Directory))
-            .SelectMany(root => Directory
-                .EnumerateFiles(root.Directory, "registry.json", SearchOption.AllDirectories)
-                .OrderBy(file => file, StringComparer.OrdinalIgnoreCase)
-                .Select(file => (RegistryFile: file, root.DefaultTier)))
-            .ToArray();
+        using var scope = services.CreateScope();
+        var discovery = scope.ServiceProvider.GetRequiredService<IPluginDiscoveryService>();
+        var result = await discovery.RefreshAsync(cancellationToken).ConfigureAwait(false);
 
-        if (registryEntries.Length == 0)
+        if (logger.IsEnabled(LogLevel.Information))
         {
-            return;
+            logger.LogInformation(
+                "Plugin discovery: {Added} added, {Updated} updated, {Removed} removed, {MissingActive} missing-active.",
+                result.Added.Count,
+                result.Updated.Count,
+                result.RemovedInactive.Count,
+                result.MissingActive.Count);
         }
 
-        using var scope = services.CreateScope();
-        var installationRepository = scope.ServiceProvider.GetRequiredService<IPluginInstallationRepository>();
-        var lifecycleService = scope.ServiceProvider.GetRequiredService<IPluginLifecycleService>();
-
-        foreach (var (registryFile, defaultTier) in registryEntries)
+        // Preserve the historical auto-activation of freshly discovered plugins when
+        // configured; otherwise activation stays a deliberate, DB-driven action.
+        if (hostingOptions.AutoActivateInstalledPlugins && result.Added.Count > 0)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var manifest = await ReadManifestAsync(registryFile, cancellationToken).ConfigureAwait(false);
-            if (manifest is null || string.IsNullOrWhiteSpace(manifest.PluginId) || string.IsNullOrWhiteSpace(manifest.AssemblyFileName))
+            var lifecycleService = scope.ServiceProvider.GetRequiredService<IPluginLifecycleService>();
+            foreach (var pluginId in result.Added)
             {
-                logger.LogWarning("Skipping plugin registry '{RegistryFile}' because pluginId or assemblyFileName is missing.", registryFile);
-                continue;
-            }
-
-            var pluginId = manifest.PluginId.Trim();
-            var tier = PluginTierResolver.Resolve(manifest.Tier, defaultTier);
-            if (logger.IsEnabled(LogLevel.Information))
-            {
-                logger.LogInformation("Discovered {Tier}-tier plugin {PluginId} from {RegistryFile}.", tier, pluginId, registryFile);
-            }
-            var existing = await installationRepository.GetByPluginIdAsync(pluginId, cancellationToken).ConfigureAwait(false);
-            if (existing is not null)
-            {
-                continue;
-            }
-
-            var pluginRoot = Path.GetDirectoryName(registryFile);
-            if (string.IsNullOrWhiteSpace(pluginRoot))
-            {
-                continue;
-            }
-
-            var assemblyPath = ResolveAssemblyPath(pluginRoot, manifest.AssemblyFileName);
-            if (assemblyPath is null)
-            {
-                var projectPath = ResolveProjectPath(pluginRoot);
-                if (projectPath is null)
+                cancellationToken.ThrowIfCancellationRequested();
+                var activate = await lifecycleService
+                    .ActivateAsync(new PluginLifecycleCommand(pluginId, "system:startup-discovery", WorkspaceKey: null), cancellationToken)
+                    .ConfigureAwait(false);
+                if (!activate.IsSuccess)
                 {
-                    logger.LogWarning(
-                        "Skipping plugin '{PluginId}'. No precompiled assembly '{AssemblyFileName}' and no csproj found in '{PluginRoot}'.",
-                        pluginId,
-                        manifest.AssemblyFileName,
-                        pluginRoot);
-                    continue;
+                    logger.LogWarning("Auto-activation after discovery failed for {PluginId}: {Message}", pluginId, activate.Message);
                 }
-
-                var buildResult = await projectBuilder.BuildAsync(projectPath, cancellationToken: cancellationToken).ConfigureAwait(false);
-                if (!buildResult.IsSuccess)
-                {
-                    logger.LogWarning(
-                        "Skipping plugin '{PluginId}'. Project build failed for '{ProjectPath}': {Message}",
-                        pluginId,
-                        projectPath,
-                        buildResult.Message);
-                    continue;
-                }
-
-                assemblyPath = ResolveAssemblyPath(pluginRoot, manifest.AssemblyFileName);
-                if (assemblyPath is null)
-                {
-                    logger.LogWarning(
-                        "Skipping plugin '{PluginId}'. Build succeeded but assembly '{AssemblyFileName}' was not found.",
-                        pluginId,
-                        manifest.AssemblyFileName);
-                    continue;
-                }
-            }
-
-            var installResult = await lifecycleService
-                .InstallAsync(
-                    new InstallPluginCommand(
-                        AssemblyPath: assemblyPath,
-                        EntryTypeName: manifest.EntryTypeName,
-                        RequestedBy: "system:startup-discovery"),
-                    cancellationToken)
-                .ConfigureAwait(false);
-
-            if (!installResult.IsSuccess)
-            {
-                logger.LogWarning(
-                    "Local plugin auto-install failed for '{PluginId}' from '{AssemblyPath}': {Message}",
-                    pluginId,
-                    assemblyPath,
-                    installResult.Message);
-                continue;
-            }
-
-            if (!hostingOptions.AutoActivateInstalledPlugins || string.IsNullOrWhiteSpace(installResult.PluginId))
-            {
-                continue;
-            }
-
-            var activateResult = await lifecycleService
-                .ActivateAsync(
-                    new PluginLifecycleCommand(
-                        installResult.PluginId,
-                        RequestedBy: "system:startup-discovery",
-                        WorkspaceKey: null),
-                    cancellationToken)
-                .ConfigureAwait(false);
-            if (!activateResult.IsSuccess)
-            {
-                logger.LogWarning(
-                    "Local plugin auto-activation failed for '{PluginId}': {Message}",
-                    installResult.PluginId,
-                    activateResult.Message);
             }
         }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-    private IReadOnlyList<(string Directory, PluginTier DefaultTier)> BuildScanRoots()
-    {
-        var roots = new List<(string Directory, PluginTier DefaultTier)>();
-        if (!string.IsNullOrWhiteSpace(hostingOptions.StaticPluginDirectory))
-        {
-            roots.Add((
-                CalloraHostingPathResolver.ResolvePluginDirectory(hostingOptions.StaticPluginDirectory),
-                PluginTier.System));
-        }
-
-        if (!string.IsNullOrWhiteSpace(hostingOptions.PluginDirectory))
-        {
-            roots.Add((
-                CalloraHostingPathResolver.ResolvePluginDirectory(hostingOptions.PluginDirectory),
-                PluginTier.Application));
-        }
-
-        return roots;
-    }
-
-    private static async Task<PluginRegistryJsonDto?> ReadManifestAsync(string registryFile, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var json = await File.ReadAllTextAsync(registryFile, cancellationToken).ConfigureAwait(false);
-            return JsonSerializer.Deserialize<PluginRegistryJsonDto>(json, JsonOptions);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private static string? ResolveAssemblyPath(string pluginRoot, string assemblyFileName)
-    {
-        var directAssemblyPath = Path.Combine(pluginRoot, assemblyFileName);
-        if (File.Exists(directAssemblyPath))
-        {
-            return Path.GetFullPath(directAssemblyPath);
-        }
-
-        var binDirectory = Path.Combine(pluginRoot, "bin");
-        if (!Directory.Exists(binDirectory))
-        {
-            return null;
-        }
-
-        var candidates = Directory
-            .EnumerateFiles(binDirectory, assemblyFileName, SearchOption.AllDirectories)
-            .Select(path => new FileInfo(path))
-            .OrderByDescending(file => file.LastWriteTimeUtc)
-            .ToArray();
-        return candidates.Length == 0
-            ? null
-            : candidates[0].FullName;
-    }
-
-    private static string? ResolveProjectPath(string pluginRoot)
-    {
-        var csprojFiles = Directory
-            .EnumerateFiles(pluginRoot, "*.csproj", SearchOption.TopDirectoryOnly)
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        return csprojFiles.Length == 0
-            ? null
-            : csprojFiles[0];
-    }
 }

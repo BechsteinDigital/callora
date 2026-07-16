@@ -9,6 +9,10 @@ public sealed class RecordingPluginLifecycleService : IPluginLifecycleService
 
     public List<PluginLifecycleCommand> ActivateCalls { get; } = [];
 
+    public List<PluginLifecycleCommand> UninstallCalls { get; } = [];
+
+    public List<UpdateLocalPluginCommand> UpdateCalls { get; } = [];
+
     public IReadOnlyCollection<HostPluginDescriptor> Plugins { get; } = Array.Empty<HostPluginDescriptor>();
 
     public Task<IReadOnlyList<PluginInstallationSnapshot>> GetInstallationsAsync(
@@ -39,8 +43,15 @@ public sealed class RecordingPluginLifecycleService : IPluginLifecycleService
 
     public Task<PluginLifecycleServiceResult> UpdateFromLocalAsync(
         UpdateLocalPluginCommand command,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(new PluginLifecycleServiceResult(PluginLifecycleServiceStatus.BadRequest, false));
+        CancellationToken cancellationToken = default)
+    {
+        UpdateCalls.Add(command);
+        return Task.FromResult(new PluginLifecycleServiceResult(
+            PluginLifecycleServiceStatus.Ok,
+            true,
+            PluginId: command.PluginId,
+            Message: "updated"));
+    }
 
     public Task<PluginLifecycleServiceResult> ActivateAsync(
         PluginLifecycleCommand command,
@@ -61,6 +72,13 @@ public sealed class RecordingPluginLifecycleService : IPluginLifecycleService
 
     public Task<PluginLifecycleServiceResult> UninstallAsync(
         PluginLifecycleCommand command,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(new PluginLifecycleServiceResult(PluginLifecycleServiceStatus.BadRequest, false));
+        CancellationToken cancellationToken = default)
+    {
+        UninstallCalls.Add(command);
+        return Task.FromResult(new PluginLifecycleServiceResult(
+            PluginLifecycleServiceStatus.Ok,
+            true,
+            PluginId: command.PluginId,
+            Message: "uninstalled"));
+    }
 }

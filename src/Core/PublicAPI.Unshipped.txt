@@ -3415,7 +3415,6 @@ Callora.Core.Infrastructure.Startup.DatabaseReadinessHealthCheck
 Callora.Core.Infrastructure.Startup.DatabaseReadinessHealthCheck.CheckHealthAsync(Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult>!
 Callora.Core.Infrastructure.Startup.DatabaseReadinessHealthCheck.DatabaseReadinessHealthCheck(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Startup.LocalPluginDiscoveryHostedService
-Callora.Core.Infrastructure.Startup.LocalPluginDiscoveryHostedService.LocalPluginDiscoveryHostedService(System.IServiceProvider! services, Callora.Core.Application.Options.CalloraHostingOptions! hostingOptions, Callora.Core.Application.Plugins.ILocalPluginProjectBuilder! projectBuilder, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Startup.LocalPluginDiscoveryHostedService!>! logger) -> void
 Callora.Core.Infrastructure.Startup.LocalPluginDiscoveryHostedService.StartAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Startup.LocalPluginDiscoveryHostedService.StopAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Startup.PluginRuntimeRehydrationHostedService
@@ -4184,3 +4183,25 @@ virtual Callora.Core.Application.Events.HostApplicationEventPublishNext<TEvent>.
 ~override Callora.Core.Application.Plugins.PluginActivationDecision.ToString() -> string
 ~override Callora.Core.Application.Plugins.PluginAvailabilityInputs.Equals(object obj) -> bool
 ~override Callora.Core.Application.Plugins.PluginAvailabilityInputs.ToString() -> string
+Callora.Core.Application.Plugins.IPluginDiscoveryService
+Callora.Core.Application.Plugins.IPluginDiscoveryService.RefreshAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult!>!
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Added.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Added.init -> void
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.<Clone>$() -> Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult!
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>! Added, out System.Collections.Generic.IReadOnlyList<string!>! Updated, out System.Collections.Generic.IReadOnlyList<string!>! RemovedInactive, out System.Collections.Generic.IReadOnlyList<string!>! MissingActive) -> void
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Equals(Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult? other) -> bool
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.MissingActive.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.MissingActive.init -> void
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.PluginDiscoveryRefreshResult(System.Collections.Generic.IReadOnlyList<string!>! Added, System.Collections.Generic.IReadOnlyList<string!>! Updated, System.Collections.Generic.IReadOnlyList<string!>! RemovedInactive, System.Collections.Generic.IReadOnlyList<string!>! MissingActive) -> void
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.RemovedInactive.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.RemovedInactive.init -> void
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Updated.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Updated.init -> void
+override Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.GetHashCode() -> int
+override Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.ToString() -> string!
+static Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Empty.get -> Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult!
+static Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.operator !=(Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult? left, Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult? right) -> bool
+static Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.operator ==(Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult? left, Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult? right) -> bool
+Callora.Core.Infrastructure.Startup.LocalPluginDiscoveryHostedService.LocalPluginDiscoveryHostedService(System.IServiceProvider! services, Callora.Core.Application.Options.CalloraHostingOptions! hostingOptions, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Startup.LocalPluginDiscoveryHostedService!>! logger) -> void
