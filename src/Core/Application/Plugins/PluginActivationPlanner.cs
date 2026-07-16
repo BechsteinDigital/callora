@@ -1,29 +1,5 @@
 namespace Callora.Core.Application.Plugins;
 
-/// <summary>One plugin's ordering-relevant metadata (REV2 §5.1).</summary>
-/// <param name="PluginId">Stable plugin id.</param>
-/// <param name="IsFoundation">True for System-tier (foundation) plugins, which are
-/// preferred earlier when no capability edge forces an order.</param>
-/// <param name="ProvidedCapabilities">Capabilities this plugin provides.</param>
-/// <param name="RequiredCapabilities">Capabilities this plugin needs before it starts.</param>
-internal sealed record PluginActivationNode(
-    string PluginId,
-    bool IsFoundation,
-    IReadOnlyCollection<string> ProvidedCapabilities,
-    IReadOnlyCollection<string> RequiredCapabilities);
-
-/// <summary>
-/// The activation order plus the plugins that cannot be safely ordered.
-/// </summary>
-/// <param name="Order">Plugin ids in activation order (dependencies before dependents).</param>
-/// <param name="UnresolvedDependencies">Plugin ids requiring a capability no installed
-/// plugin provides (transitively) — they are left out of <paramref name="Order"/>.</param>
-/// <param name="Cyclic">Plugin ids caught in a capability dependency cycle.</param>
-internal sealed record PluginActivationPlan(
-    IReadOnlyList<string> Order,
-    IReadOnlyList<string> UnresolvedDependencies,
-    IReadOnlyList<string> Cyclic);
-
 /// <summary>
 /// Computes the order in which installed plugins should be activated so a plugin's
 /// required capabilities are provided before it starts (REV2 §5.1): foundation
