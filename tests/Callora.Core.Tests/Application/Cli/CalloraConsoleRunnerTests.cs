@@ -77,8 +77,100 @@ public sealed class CalloraConsoleRunnerTests
         Assert.Contains("Active", output.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task PluginActivateCommand_ActivatesAndReportsSuccess()
+    {
+        var lifecycle = new RecordingPluginLifecycleService();
+        var output = new StringWriter();
+
+        var exit = await new PluginActivateCommand(lifecycle).ExecuteAsync(["voip"], output);
+
+        Assert.Equal(0, exit);
+        Assert.Single(lifecycle.ActivateCalls);
+        Assert.Equal("voip", lifecycle.ActivateCalls[0].PluginId);
+        Assert.Contains("plugin:activate: voip", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PluginLifecycleCommand_ServiceFails_ReportsFailureAndExitsNonZero()
+    {
+        // Deactivate on the fake returns a failure result — exercises the base FAILED branch.
+        var output = new StringWriter();
+
+        var exit = await new PluginDeactivateCommand(new RecordingPluginLifecycleService()).ExecuteAsync(["voip"], output);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("plugin:deactivate: voip FAILED", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PluginLifecycleCommand_MissingPluginId_PrintsUsageAndFails()
+    {
+        var output = new StringWriter();
+
+        var exit = await new PluginUninstallCommand(new RecordingPluginLifecycleService()).ExecuteAsync([], output);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("Usage: plugin:uninstall <pluginId>", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PluginInstallCommand_ResolvesThenInstalls()
+    {
+        var resolver = new StubInstallResolver(
+            new LocalPluginInstallSourceResolveResult(true, "voip", "/tmp/voip.dll", "Voip.Entry", UsedBuild: false, "resolved"));
+        var lifecycle = new RecordingPluginLifecycleService();
+        var output = new StringWriter();
+
+        var exit = await new PluginInstallCommand(resolver, lifecycle).ExecuteAsync(["voip"], output);
+
+        Assert.Equal(0, exit);
+        Assert.Single(lifecycle.InstallCalls);
+        Assert.Equal("/tmp/voip.dll", lifecycle.InstallCalls[0].AssemblyPath);
+    }
+
+    [Fact]
+    public async Task PluginInstallCommand_ResolveFails_DoesNotInstall()
+    {
+        var resolver = new StubInstallResolver(
+            new LocalPluginInstallSourceResolveResult(false, "voip", null, null, UsedBuild: false, "not found", "ERR"));
+        var lifecycle = new RecordingPluginLifecycleService();
+        var output = new StringWriter();
+
+        var exit = await new PluginInstallCommand(resolver, lifecycle).ExecuteAsync(["voip"], output);
+
+        Assert.Equal(1, exit);
+        Assert.Empty(lifecycle.InstallCalls);
+        Assert.Contains("FAILED", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AllFrameworkPluginCommands_AreDiscoverableByTheAssemblyScan()
+    {
+        // Mirrors the registration scan: every command must be a non-abstract
+        // ICalloraConsoleCommand so AddCalloraConsoleCommands picks it up.
+        var discovered = typeof(CalloraConsoleRunner).Assembly.GetTypes()
+            .Where(type => type is { IsClass: true, IsAbstract: false } && typeof(ICalloraConsoleCommand).IsAssignableFrom(type))
+            .Select(type => type.Name)
+            .ToList();
+
+        string[] expected =
+        [
+            "PluginRefreshCommand", "PluginListCommand", "PluginInstallCommand",
+            "PluginActivateCommand", "PluginDeactivateCommand", "PluginUninstallCommand", "PluginUpdateCommand",
+        ];
+        Assert.All(expected, name => Assert.Contains(name, discovered));
+    }
+
     private static ICalloraPluginCatalog EmptyCatalog()
         => new StaticPluginCatalog(new Dictionary<Type, IReadOnlyList<object>>());
+
+    private sealed class StubInstallResolver(LocalPluginInstallSourceResolveResult result) : ILocalPluginInstallSourceResolver
+    {
+        public Task<LocalPluginInstallSourceResolveResult> ResolveForInstallAsync(
+            string pluginId, bool buildIfNeeded, bool forceBuild = false, CancellationToken cancellationToken = default)
+            => Task.FromResult(result);
+    }
 
     private sealed class RecordingCommand(string name) : ICalloraConsoleCommand
     {
