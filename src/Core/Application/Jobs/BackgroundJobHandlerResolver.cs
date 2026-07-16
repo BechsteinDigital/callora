@@ -11,15 +11,20 @@ public sealed class BackgroundJobHandlerResolver(
     ICalloraPluginCatalog pluginCatalog)
 {
     /// <summary>
-    /// Returns the first handler matching the job type, or null.
+    /// Returns the handler matching the job type, or null. Plugin exports take
+    /// precedence over host handlers of the same type (plugin-wins, consistent
+    /// with <see cref="Callora.Core.Application.Flows.FlowActionRegistry"/>).
     /// </summary>
     public IBackgroundJobHandler? Resolve(string jobType)
     {
         if (string.IsNullOrWhiteSpace(jobType))
             return null;
 
-        return hostHandlers
-            .Concat(pluginCatalog.GetExports<IBackgroundJobHandler>())
-            .FirstOrDefault(handler => string.Equals(handler.JobType, jobType, StringComparison.OrdinalIgnoreCase));
+        var pluginHandler = pluginCatalog
+            .GetExports<IBackgroundJobHandler>()
+            .LastOrDefault(handler => string.Equals(handler.JobType, jobType, StringComparison.OrdinalIgnoreCase));
+
+        return pluginHandler ?? hostHandlers
+            .LastOrDefault(handler => string.Equals(handler.JobType, jobType, StringComparison.OrdinalIgnoreCase));
     }
 }
