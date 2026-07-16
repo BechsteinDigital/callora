@@ -19,9 +19,8 @@ public sealed class BusinessEventBus(
     {
         ArgumentNullException.ThrowIfNull(businessEvent);
 
-        var listeners = services
-            .GetServices<IBusinessEventListener>()
-            .Concat(pluginCatalog.GetExports<IBusinessEventListener>())
+        var listeners = pluginCatalog
+            .MergeWithHost(services.GetServices<IBusinessEventListener>())
             .OrderByDescending(static listener => listener.Priority)
             .ToArray();
 
