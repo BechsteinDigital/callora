@@ -10,7 +10,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <!-- Core declares and legitimately consumes the [CalloraInternal] surface. -->
+    <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- REV2 §7: run the Callora governance analyzer (CAL0001) over the framework
+         assemblies too, so the boundary is validated in-tree, not only on plugins. -->
+    <ProjectReference Include="..\Analyzers\Callora.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Load-bearing despite no direct code usage: the host references the

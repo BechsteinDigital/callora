@@ -8,10 +8,16 @@
     <AssemblyName>callora</AssemblyName>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <!-- Framework CLI; may consume Core's [CalloraInternal] surface. -->
+    <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Callora.Core.csproj" />
+    <!-- REV2 §7: Callora governance analyzer (CAL0001). -->
+    <ProjectReference Include="..\..\Analyzers\Callora.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

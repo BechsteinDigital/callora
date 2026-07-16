@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- CA1707: Unterstriche in Testnamen sind die xUnit-Konvention
+         (Methode_Szenario_Erwartung). -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+    <!-- Test host, not a framework assembly; the analyzer under test is invoked
+         directly against in-memory compilations, not wired as a build analyzer. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+    <!-- Used to build in-memory C# compilations for the analyzer harness. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference the analyzer as a normal library so the harness can instantiate it. -->
+    <ProjectReference Include="..\..\src\Analyzers\Callora.Analyzers.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -9,12 +9,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <!-- Framework module; may consume Core's [CalloraInternal] surface. -->
+    <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- The storefront surface builds on Core's domain logic (workspace store,
          template resolution stay in Core, REV2 §4). Core never references Workspace. -->
     <ProjectReference Include="..\Core\Callora.Core.csproj" />
+    <!-- REV2 §7: Callora governance analyzer (CAL0001). -->
+    <ProjectReference Include="..\Analyzers\Callora.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>
