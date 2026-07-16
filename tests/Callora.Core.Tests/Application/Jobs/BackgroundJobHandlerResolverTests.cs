@@ -1,5 +1,6 @@
 using Callora.Core.Application.Jobs;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Extensibility;
 using Callora.Core.Tests.Support;
 
 namespace Callora.Core.Tests.Application.Jobs;
@@ -18,6 +19,17 @@ public sealed class BackgroundJobHandlerResolverTests
         var resolver = new BackgroundJobHandlerResolver([host], Catalog(plugin));
 
         Assert.Same(plugin, resolver.Resolve("email"));
+    }
+
+    [Fact]
+    public void Resolve_HostProtected_HostWinsOverPlugin()
+    {
+        // [HostProtected] host handlers (e.g. GDPR purge) are not overridable.
+        var host = new ProtectedStubHandler("retention.cleanup");
+        var plugin = new StubHandler("retention.cleanup");
+        var resolver = new BackgroundJobHandlerResolver([host], Catalog(plugin));
+
+        Assert.Same(host, resolver.Resolve("retention.cleanup"));
     }
 
     [Fact]
@@ -61,6 +73,15 @@ public sealed class BackgroundJobHandlerResolverTests
         });
 
     private sealed class StubHandler(string jobType) : IBackgroundJobHandler
+    {
+        public string JobType => jobType;
+
+        public Task ExecuteAsync(BackgroundJobExecutionContext context, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+    }
+
+    [HostProtected]
+    private sealed class ProtectedStubHandler(string jobType) : IBackgroundJobHandler
     {
         public string JobType => jobType;
 

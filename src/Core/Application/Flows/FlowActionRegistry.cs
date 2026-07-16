@@ -18,12 +18,10 @@ public sealed class FlowActionRegistry(
             return null;
         }
 
-        var normalized = actionType.Trim();
-        var pluginHandler = pluginCatalog
-            .GetExports<IFlowActionHandler>()
-            .LastOrDefault(handler => string.Equals(handler.Type, normalized, StringComparison.OrdinalIgnoreCase));
-
-        return pluginHandler ?? hostHandlers
-            .LastOrDefault(handler => string.Equals(handler.Type, normalized, StringComparison.OrdinalIgnoreCase));
+        return HostPluginResolution.ResolvePluginWins(
+            hostHandlers,
+            pluginCatalog.GetExports<IFlowActionHandler>(),
+            static handler => handler.Type,
+            actionType.Trim());
     }
 }

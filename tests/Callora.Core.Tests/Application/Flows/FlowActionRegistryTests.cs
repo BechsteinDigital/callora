@@ -1,5 +1,6 @@
 using Callora.Core.Application.Flows;
 using Callora.Core.Application.Flows.Contracts;
+using Callora.Core.Extensibility;
 using Callora.Core.Tests.Support;
 
 namespace Callora.Core.Tests.Application.Flows;
@@ -18,6 +19,16 @@ public sealed class FlowActionRegistryTests
         var registry = new FlowActionRegistry([host], Catalog(plugin));
 
         Assert.Same(plugin, registry.Resolve("call.accept"));
+    }
+
+    [Fact]
+    public void Resolve_HostProtected_HostWinsOverPlugin()
+    {
+        var host = new ProtectedStubHandler("call.accept");
+        var plugin = new StubHandler("call.accept");
+        var registry = new FlowActionRegistry([host], Catalog(plugin));
+
+        Assert.Same(host, registry.Resolve("call.accept"));
     }
 
     [Fact]
@@ -53,6 +64,18 @@ public sealed class FlowActionRegistryTests
         });
 
     private sealed class StubHandler(string type) : IFlowActionHandler
+    {
+        public string Type => type;
+
+        public Task ExecuteAsync(
+            RuleContext context,
+            IReadOnlyDictionary<string, string> parameters,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+    }
+
+    [HostProtected]
+    private sealed class ProtectedStubHandler(string type) : IFlowActionHandler
     {
         public string Type => type;
 

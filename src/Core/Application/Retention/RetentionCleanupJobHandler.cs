@@ -1,6 +1,7 @@
 using Callora.Core.Application.Jobs;
 using Callora.Core.Application.Notifications;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Extensibility;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Core.Application.Retention;
@@ -9,6 +10,7 @@ namespace Callora.Core.Application.Retention;
 /// Recurring cleanup job: deletes completed background jobs and old
 /// notifications once their retention window elapsed (PLAT-240).
 /// </summary>
+[HostProtected]
 public sealed class RetentionCleanupJobHandler(
     RetentionOptions options,
     IBackgroundJobStore jobStore,
