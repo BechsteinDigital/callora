@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -106,24 +107,82 @@ public sealed class CalloraInternalConsumptionAnalyzer : DiagnosticAnalyzer
 
         public void AnalyzeOperation(OperationAnalysisContext context)
         {
-            ISymbol? referenced = context.Operation switch
-            {
-                IInvocationOperation op => op.TargetMethod,
-                IObjectCreationOperation op => (ISymbol?)op.Constructor ?? op.Type,
-                IPropertyReferenceOperation op => op.Property,
-                IFieldReferenceOperation op => op.Field,
-                IEventReferenceOperation op => op.Event,
-                IMethodReferenceOperation op => op.Method,
-                ITypeOfOperation op => op.TypeOperand,
-                _ => null,
-            };
+            // Collect the marked culprits reachable from this operation, deduped per
+            // operation so one expression yields at most one diagnostic per culprit.
+            // Generic type arguments are unwrapped here too (e.g. new List<Marked>(),
+            // typeof(List<Marked>), Factory.Create<Marked>()), matching the signature
+            // path so operation and declaration coverage stay consistent.
+            var culprits = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
 
-            if (referenced is null)
+            switch (context.Operation)
+            {
+                case IInvocationOperation op:
+                    CollectSymbol(op.TargetMethod, culprits);
+                    CollectTypeArguments(op.TargetMethod.TypeArguments, culprits);
+                    break;
+                case IObjectCreationOperation op:
+                    CollectSymbol(op.Constructor, culprits);
+                    CollectType(op.Type, culprits);
+                    break;
+                case IPropertyReferenceOperation op:
+                    CollectSymbol(op.Property, culprits);
+                    break;
+                case IFieldReferenceOperation op:
+                    CollectSymbol(op.Field, culprits);
+                    break;
+                case IEventReferenceOperation op:
+                    CollectSymbol(op.Event, culprits);
+                    break;
+                case IMethodReferenceOperation op:
+                    CollectSymbol(op.Method, culprits);
+                    CollectTypeArguments(op.Method.TypeArguments, culprits);
+                    break;
+                case ITypeOfOperation op:
+                    CollectType(op.TypeOperand, culprits);
+                    break;
+            }
+
+            if (culprits.Count == 0)
             {
                 return;
             }
 
-            Report(referenced, context.Operation.Syntax.GetLocation(), context.ReportDiagnostic);
+            var location = context.Operation.Syntax.GetLocation();
+            foreach (var culprit in culprits)
+            {
+                Emit(culprit, location, context.ReportDiagnostic);
+            }
+        }
+
+        private void CollectSymbol(ISymbol? symbol, HashSet<ISymbol> culprits)
+        {
+            if (symbol is null)
+            {
+                return;
+            }
+
+            var marked = FindMarked(symbol);
+            if (marked is not null)
+            {
+                culprits.Add(marked);
+            }
+        }
+
+        private void CollectType(ITypeSymbol? type, HashSet<ISymbol> culprits)
+        {
+            var marked = FindMarkedInType(type);
+            if (marked is not null)
+            {
+                culprits.Add(marked);
+            }
+        }
+
+        private void CollectTypeArguments(ImmutableArray<ITypeSymbol> typeArguments, HashSet<ISymbol> culprits)
+        {
+            foreach (var typeArgument in typeArguments)
+            {
+                CollectType(typeArgument, culprits);
+            }
         }
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
@@ -167,18 +226,12 @@ public sealed class CalloraInternalConsumptionAnalyzer : DiagnosticAnalyzer
             var marked = FindMarkedInType(type);
             if (marked is not null)
             {
-                Report(marked, location, report);
+                Emit(marked, location, report);
             }
         }
 
-        private void Report(ISymbol referenced, Location location, Action<Diagnostic> report)
+        private void Emit(ISymbol marked, Location location, Action<Diagnostic> report)
         {
-            var marked = FindMarked(referenced);
-            if (marked is null)
-            {
-                return;
-            }
-
             // Only cross-assembly consumption of the framework's marked API is a violation;
             // a plugin using its own [CalloraInternal] type is its own business.
             if (SymbolEqualityComparer.Default.Equals(marked.ContainingAssembly, _consumer))

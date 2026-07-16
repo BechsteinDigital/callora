@@ -17,6 +17,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\custom\static-plugins\Communication\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Core\Callora.Core.csproj" Private="false" ExcludeAssets="runtime" />
+    <!-- REV2 §7: als Plugin vom Governance-Analyzer geprüft (kein Framework-Flag).
+         In-Repo verdrahtet; Fremd-/Neu-Plugins erhalten den Analyzer über das
+         Phase-3-NuGet-Paket mit Callora.Core. -->
+    <ProjectReference Include="..\..\..\src\Analyzers\Callora.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
