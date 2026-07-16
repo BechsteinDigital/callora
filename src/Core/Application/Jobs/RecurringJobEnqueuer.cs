@@ -50,8 +50,8 @@ public sealed class RecurringJobEnqueuer(
     }
 
     private IReadOnlyList<RecurringJobDefinition> CollectDefinitions() =>
-        hostProviders
-            .Concat(pluginCatalog.GetExports<IRecurringJobProvider>())
+        pluginCatalog
+            .MergeWithHost(hostProviders)
             .SelectMany(static provider => provider.GetDefinitions())
             .Where(static definition => definition.Interval > TimeSpan.Zero)
             .ToArray();
