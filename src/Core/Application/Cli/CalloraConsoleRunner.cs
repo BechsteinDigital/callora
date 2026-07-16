@@ -20,7 +20,7 @@ public sealed class CalloraConsoleRunner
         ArgumentNullException.ThrowIfNull(pluginCatalog);
 
         var byName = new Dictionary<string, ICalloraConsoleCommand>(StringComparer.OrdinalIgnoreCase);
-        foreach (var command in hostCommands.Concat(pluginCatalog.GetExports<ICalloraConsoleCommand>()))
+        foreach (var command in pluginCatalog.MergeWithHost(hostCommands))
         {
             // Host-registered commands win over a plugin exporting the same name.
             byName.TryAdd(command.Name, command);
