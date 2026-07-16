@@ -262,6 +262,4 @@ internal sealed class LocalPluginDiscoveryService(
             .EnumerateFiles(pluginRoot, "*.csproj", SearchOption.TopDirectoryOnly)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault();
-
-    private sealed record DiscoveredPlugin(string PluginId, string AssemblyPath, string? EntryTypeName);
 }

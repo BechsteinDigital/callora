@@ -26,8 +26,8 @@ public static class PluginEndpoints
 
         group.MapGet("/installed", async (
             System.Security.Claims.ClaimsPrincipal user,
-            IPluginDiscoveryService discovery,
-            IPluginLifecycleService lifecycleService,
+            [FromServices] IPluginDiscoveryService discovery,
+            [FromServices] IPluginLifecycleService lifecycleService,
             CancellationToken cancellationToken) =>
         {
             // Reconcile the registry against the local plugin directories before listing,
