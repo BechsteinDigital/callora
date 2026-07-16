@@ -4,12 +4,14 @@ using System.Text.Encodings.Web;
 using System.Text;
 using Callora.Core.Application.Integrations;
 using Callora.Core.Application.Policies;
+using Callora.Core.Extensibility;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Callora.Core.Infrastructure.Security;
 
+[CalloraInternal("API-key authentication handler — not a plugin contract (REV2 §7.2)")]
 public sealed class ApiKeyAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,

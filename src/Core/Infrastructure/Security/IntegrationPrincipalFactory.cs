@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Callora.Core.Domain.Integrations;
+using Callora.Core.Extensibility;
 
 namespace Callora.Core.Infrastructure.Security;
 
@@ -10,6 +11,7 @@ namespace Callora.Core.Infrastructure.Security;
 /// wildcard permission. The role's permissions are expanded afterwards by
 /// <see cref="BackendClaimsTransformation"/>.
 /// </summary>
+[CalloraInternal("Integration principal building — not a plugin contract (REV2 §7.2)")]
 public static class IntegrationPrincipalFactory
 {
     public static ClaimsPrincipal Create(IntegrationCredential integration)

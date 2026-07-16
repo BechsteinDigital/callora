@@ -1,8 +1,11 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Infrastructure.Security;
 
 /// <summary>
 /// Validates permission keys following &lt;function&gt;.&lt;action&gt; schema.
 /// </summary>
+[CalloraInternal("Permission-key validation — not a plugin contract (REV2 §7.2)")]
 public static class BackendPermissionKeyValidator
 {
     public static bool IsValid(string permissionKey)

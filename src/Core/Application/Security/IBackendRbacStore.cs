@@ -1,5 +1,8 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Security;
 
+[CalloraInternal("RBAC enforcement store — not a plugin contract (REV2 §7.2)")]
 public interface IBackendRbacStore
 {
     Task<IReadOnlyDictionary<string, IReadOnlyCollection<string>>> GetRolePermissionsAsync(

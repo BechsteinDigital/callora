@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Callora.Core.Extensibility;
 
 namespace Callora.Core.Infrastructure.Security;
 
@@ -8,6 +9,7 @@ namespace Callora.Core.Infrastructure.Security;
 /// <see cref="BackendClaimTypes.CalloraScope"/> claim of "platform"); a
 /// principal carrying neither that nor a workspace binding is rejected.
 /// </summary>
+[CalloraInternal("Workspace-scope enforcement — not a plugin contract (REV2 §7.2)")]
 public static class WorkspaceScopeEvaluator
 {
     /// <summary>

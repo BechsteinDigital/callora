@@ -1,4 +1,5 @@
 using Callora.Core.Application.Secrets.Contracts;
+using Callora.Core.Extensibility;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace Callora.Core.Infrastructure.Security;
@@ -8,6 +9,7 @@ namespace Callora.Core.Infrastructure.Security;
 /// Each plugin gets its own protector purpose, so payloads are not
 /// exchangeable between plugins.
 /// </summary>
+[CalloraInternal("DataProtection implementation — consume the IPluginDataProtector contract instead (REV2 §7.2)")]
 public sealed class DataProtectionPluginDataProtector(IDataProtectionProvider dataProtectionProvider)
     : IPluginDataProtector
 {

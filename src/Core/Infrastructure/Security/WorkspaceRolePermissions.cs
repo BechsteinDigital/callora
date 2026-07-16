@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Infrastructure.Security;
 
 /// <summary>
@@ -12,6 +14,7 @@ namespace Callora.Core.Infrastructure.Security;
 /// endpoints are workspace-scoped (audit finding H1).
 /// </para>
 /// </summary>
+[CalloraInternal("Workspace-role permission grants — RBAC enforcement, not a plugin contract (REV2 §7.2)")]
 public static class WorkspaceRolePermissions
 {
     private static readonly IReadOnlyList<string> AdminPermissions =

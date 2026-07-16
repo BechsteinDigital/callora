@@ -1,5 +1,6 @@
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins;
+using Callora.Core.Extensibility;
 
 namespace Callora.Core.Application.Workspaces;
 
@@ -11,6 +12,7 @@ namespace Callora.Core.Application.Workspaces;
 /// and blocks neither the other contributors nor the committed host purge — an
 /// orphaned plugin row is a compliance retry, not a purge blocker.
 /// </summary>
+[CalloraInternal("Purge orchestrator — plugins implement IWorkspaceDataPurgeContributor instead (REV2 §7.2)")]
 public sealed class PluginWorkspaceDataPurger(
     ICalloraPluginCatalog catalog,
     ILogger<PluginWorkspaceDataPurger> logger)
