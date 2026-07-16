@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Persistence.Contracts;
 
 /// <summary>
@@ -7,6 +9,7 @@ namespace Callora.Core.Application.Persistence.Contracts;
 /// plugin that stores workspace data exports one contributor via
 /// <c>IHostPluginContext.Export</c>; the host purge invokes them all.
 /// </summary>
+[CalloraExtensible("Extension point — implement to purge plugin workspace data (REV2 §8.2)")]
 public interface IWorkspaceDataPurgeContributor
 {
     /// <summary>

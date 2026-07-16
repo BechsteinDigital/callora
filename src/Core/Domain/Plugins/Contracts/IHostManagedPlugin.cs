@@ -1,10 +1,12 @@
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Extensibility;
 
 namespace Callora.Core.Domain.Plugins.Contracts;
 
 /// <summary>
 /// Runtime-loadable plugin entrypoint owned by the host platform.
 /// </summary>
+[CalloraExtensible("Plugin entrypoint — implement to provide a runtime-loadable plugin (REV2 §8.2)")]
 public interface IHostManagedPlugin
 {
     /// <summary>Stable plugin identifier.</summary>
