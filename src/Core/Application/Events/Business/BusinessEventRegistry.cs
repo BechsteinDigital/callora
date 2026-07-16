@@ -26,7 +26,7 @@ public sealed class BusinessEventRegistry(
     }
 
     private IEnumerable<BusinessEventDescriptor> CollectDescriptors() =>
-        hostProviders
-            .Concat(pluginCatalog.GetExports<IBusinessEventProvider>())
+        pluginCatalog
+            .MergeWithHost(hostProviders)
             .SelectMany(static provider => provider.GetDescriptors());
 }

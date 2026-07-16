@@ -45,4 +45,20 @@ public static class CalloraPluginCatalogExtensions
 
         return typed;
     }
+
+    /// <summary>
+    /// Merges host-provided contributors with plugin-exported ones (host first) —
+    /// the single seam every host+plugin collector site shares. Ordering, dedup and
+    /// precedence stay with the caller, since those differ per role by design.
+    /// </summary>
+    internal static IEnumerable<TContract> MergeWithHost<TContract>(
+        this ICalloraPluginCatalog catalog,
+        IEnumerable<TContract> hostContributors)
+        where TContract : class
+    {
+        ArgumentNullException.ThrowIfNull(catalog);
+        ArgumentNullException.ThrowIfNull(hostContributors);
+
+        return hostContributors.Concat(catalog.GetExports<TContract>());
+    }
 }
