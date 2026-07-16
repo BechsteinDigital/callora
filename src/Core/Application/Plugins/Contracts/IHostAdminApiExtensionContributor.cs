@@ -1,8 +1,11 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Plugins.Contracts;
 
 /// <summary>
 /// Provides backend API and navigation extensions for the host Admin UI.
 /// </summary>
+[CalloraExtensible("Extension point — implement to contribute Admin API and navigation (REV2 §8.2)")]
 public interface IHostAdminApiExtensionContributor
 {
     /// <summary>

@@ -1,8 +1,11 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Plugins.Contracts;
 
 /// <summary>
 /// Exposes code-first extension registrations from one active plugin.
 /// </summary>
+[CalloraExtensible("Extension point — implement to export code-first registrations (REV2 §8.2)")]
 public interface IHostPluginExtensionContributor
 {
     /// <summary>

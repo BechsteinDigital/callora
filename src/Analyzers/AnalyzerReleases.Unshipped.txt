@@ -6,3 +6,4 @@
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 CAL0001 | Callora.Extensibility | Error | Plugins must not consume [CalloraInternal] APIs
+CAL0002 | Callora.Extensibility | Error | Plugins must not derive from or implement [CalloraInternal] types

@@ -37,6 +37,11 @@ public sealed class CalloraInternalConsumptionAnalyzerTests
                 public void Do() { }
             }
 
+            [Callora.Core.Extensibility.CalloraInternal("internal base")]
+            public abstract class InternalBase { }
+
+            public abstract class PublicBase { }
+
             public sealed class PublicThing
             {
                 [Callora.Core.Extensibility.CalloraInternal("member-level")]
@@ -132,6 +137,148 @@ public sealed class CalloraInternalConsumptionAnalyzerTests
 
         var single = Assert.Single(diagnostics);
         Assert.Contains("InternalThing", single.GetMessage());
+    }
+
+    [Fact]
+    public async Task Implementing_a_marked_interface_is_reported_as_CAL0002()
+    {
+        const string consumer = """
+            namespace Plugin
+            {
+                public sealed class MyStore : Framework.ISecretStore
+                {
+                    public string Read(string key) => key;
+                }
+            }
+            """;
+
+        var reference = AnalyzerTestHarness.CompileReference(Framework(), "Callora.Fake.Framework");
+        var diagnostics = await AnalyzerTestHarness.RunAsync(consumer, frameworkAssembly: false, reference);
+
+        var single = Assert.Single(diagnostics);
+        Assert.Equal(CalloraInternalConsumptionAnalyzer.InheritanceDiagnosticId, single.Id);
+        Assert.Contains("ISecretStore", single.GetMessage());
+    }
+
+    [Fact]
+    public async Task Deriving_from_a_marked_base_is_reported_as_CAL0002()
+    {
+        const string consumer = """
+            namespace Plugin
+            {
+                public sealed class MyThing : Framework.InternalBase { }
+            }
+            """;
+
+        var reference = AnalyzerTestHarness.CompileReference(Framework(), "Callora.Fake.Framework");
+        var diagnostics = await AnalyzerTestHarness.RunAsync(consumer, frameworkAssembly: false, reference);
+
+        var single = Assert.Single(diagnostics);
+        Assert.Equal(CalloraInternalConsumptionAnalyzer.InheritanceDiagnosticId, single.Id);
+        Assert.Contains("InternalBase", single.GetMessage());
+    }
+
+    [Fact]
+    public async Task Implementing_a_public_interface_or_deriving_a_public_base_is_clean()
+    {
+        const string consumer = """
+            namespace Plugin
+            {
+                public sealed class Ok : Framework.PublicBase, Framework.IPublicService
+                {
+                    public void Go() { }
+                }
+            }
+            """;
+
+        var reference = AnalyzerTestHarness.CompileReference(Framework(), "Callora.Fake.Framework");
+        var diagnostics = await AnalyzerTestHarness.RunAsync(consumer, frameworkAssembly: false, reference);
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public async Task Implementing_your_own_internal_interface_in_the_same_assembly_is_allowed()
+    {
+        const string selfContained = """
+            #nullable enable
+            namespace Callora.Core.Extensibility
+            {
+                [System.AttributeUsage(System.AttributeTargets.All)]
+                public sealed class CalloraInternalAttribute : System.Attribute
+                {
+                    public CalloraInternalAttribute() { }
+                    public CalloraInternalAttribute(string reason) { Reason = reason; }
+                    public string? Reason { get; }
+                }
+            }
+            namespace Own
+            {
+                [Callora.Core.Extensibility.CalloraInternal]
+                public interface IMyInternal { void Do(); }
+
+                public sealed class Impl : IMyInternal { public void Do() { } }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestHarness.RunAsync(selfContained, frameworkAssembly: false);
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public async Task Implementing_a_marked_extensible_interface_is_clean()
+    {
+        // An extensible interface carries [CalloraExtensible], not [CalloraInternal],
+        // so implementing it from a plugin is exactly what it is for.
+        const string framework = """
+            #nullable enable
+            namespace Callora.Core.Extensibility
+            {
+                [System.AttributeUsage(System.AttributeTargets.All)]
+                public sealed class CalloraInternalAttribute : System.Attribute { }
+                [System.AttributeUsage(System.AttributeTargets.All)]
+                public sealed class CalloraExtensibleAttribute : System.Attribute { }
+            }
+            namespace Ext
+            {
+                [Callora.Core.Extensibility.CalloraExtensible]
+                public interface IContributor { void Contribute(); }
+            }
+            """;
+        const string consumer = """
+            namespace Plugin
+            {
+                public sealed class MyContributor : Ext.IContributor
+                {
+                    public void Contribute() { }
+                }
+            }
+            """;
+
+        var reference = AnalyzerTestHarness.CompileReference(framework, "Callora.Fake.Ext");
+        var diagnostics = await AnalyzerTestHarness.RunAsync(consumer, frameworkAssembly: false, reference);
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public async Task Framework_assemblies_may_implement_the_internal_surface()
+    {
+        const string consumer = """
+            namespace Framework.Internals
+            {
+                public sealed class MyStore : Framework.ISecretStore
+                {
+                    public string Read(string key) => key;
+                }
+            }
+            """;
+
+        var reference = AnalyzerTestHarness.CompileReference(Framework(), "Callora.Fake.Framework");
+        var diagnostics = await AnalyzerTestHarness.RunAsync(consumer, frameworkAssembly: true, reference);
+
+        Assert.Empty(diagnostics);
     }
 
     [Fact]

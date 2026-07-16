@@ -59,7 +59,7 @@ internal static class AnalyzerTestHarness
 
         var diagnostics = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
         return diagnostics
-            .Where(d => d.Id == CalloraInternalConsumptionAnalyzer.DiagnosticId)
+            .Where(d => d.Id.StartsWith("CAL", StringComparison.Ordinal))
             .ToImmutableArray();
     }
 

@@ -38,8 +38,21 @@ public sealed class CalloraInternalConsumptionAnalyzer : DiagnosticAnalyzer
         description: "Types and members marked [CalloraInternal] are visible for technical reasons only and are not a stable plugin contract. Plugins must extend Callora through documented extension points, not by consuming internal APIs (REV2 §7).",
         helpLinkUri: "https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-012-Ein-Core-Extensibility.md");
 
+    /// <summary>The stable diagnostic id for deriving from or implementing an internal type.</summary>
+    public const string InheritanceDiagnosticId = "CAL0002";
+
+    private static readonly DiagnosticDescriptor InheritanceRule = new(
+        id: InheritanceDiagnosticId,
+        title: "Deriving from or implementing a [CalloraInternal] type",
+        messageFormat: "'{0}' is marked [CalloraInternal] and is not an extension point; plugins must not derive from or implement it{1}",
+        category: "Callora.Extensibility",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "Types marked [CalloraInternal] are not sanctioned extension points. Plugins extend Callora only through types marked [CalloraExtensible] or other documented mechanisms, not by deriving from or implementing internal types (REV2 §7).",
+        helpLinkUri: "https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-012-Ein-Core-Extensibility.md");
+
     /// <inheritdoc />
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, InheritanceRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -83,6 +96,10 @@ public sealed class CalloraInternalConsumptionAnalyzer : DiagnosticAnalyzer
             SymbolKind.Property,
             SymbolKind.Field,
             SymbolKind.Event);
+
+        // CAL0002: deriving from or implementing an internal type via the base list —
+        // the inheritance vector the member/usage actions above do not cover.
+        context.RegisterSymbolAction(enforcement.AnalyzeNamedType, SymbolKind.NamedType);
     }
 
     private static bool IsFrameworkAssembly(AnalyzerConfigOptions options)
@@ -150,7 +167,7 @@ public sealed class CalloraInternalConsumptionAnalyzer : DiagnosticAnalyzer
             var location = context.Operation.Syntax.GetLocation();
             foreach (var culprit in culprits)
             {
-                Emit(culprit, location, context.ReportDiagnostic);
+                Emit(culprit, location, Rule, context.ReportDiagnostic);
             }
         }
 
@@ -221,18 +238,49 @@ public sealed class CalloraInternalConsumptionAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        public void AnalyzeNamedType(SymbolAnalysisContext context)
+        {
+            var type = (INamedTypeSymbol)context.Symbol;
+            var location = type.Locations.FirstOrDefault(l => l.IsInSource);
+            if (location is null)
+            {
+                return;
+            }
+
+            // Only the directly declared base list — what the plugin author actually wrote —
+            // is a violation; transitively inherited internal interfaces are not the author's.
+            var culprits = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (type.BaseType is not null && HasMarker(type.BaseType))
+            {
+                culprits.Add(type.BaseType);
+            }
+
+            foreach (var iface in type.Interfaces)
+            {
+                if (HasMarker(iface))
+                {
+                    culprits.Add(iface);
+                }
+            }
+
+            foreach (var culprit in culprits)
+            {
+                Emit(culprit, location, InheritanceRule, context.ReportDiagnostic);
+            }
+        }
+
         private void ReportType(ITypeSymbol? type, Location location, Action<Diagnostic> report)
         {
             var marked = FindMarkedInType(type);
             if (marked is not null)
             {
-                Emit(marked, location, report);
+                Emit(marked, location, Rule, report);
             }
         }
 
-        private void Emit(ISymbol marked, Location location, Action<Diagnostic> report)
+        private void Emit(ISymbol marked, Location location, DiagnosticDescriptor rule, Action<Diagnostic> report)
         {
-            // Only cross-assembly consumption of the framework's marked API is a violation;
+            // Only cross-assembly use of the framework's marked API is a violation;
             // a plugin using its own [CalloraInternal] type is its own business.
             if (SymbolEqualityComparer.Default.Equals(marked.ContainingAssembly, _consumer))
             {
@@ -242,7 +290,7 @@ public sealed class CalloraInternalConsumptionAnalyzer : DiagnosticAnalyzer
             var reason = GetReason(marked);
             var suffix = string.IsNullOrEmpty(reason) ? "." : ": " + reason;
             report(Diagnostic.Create(
-                Rule,
+                rule,
                 location,
                 marked.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
                 suffix));
