@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Application.Mail.Contracts;
+using Callora.Core.Extensibility;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Core.Application.Mail;
@@ -8,6 +9,7 @@ namespace Callora.Core.Application.Mail;
 /// <summary>
 /// Durable mail delivery: failures throw so the queue retries with backoff.
 /// </summary>
+[HostProtected]
 public sealed class MailSendJobHandler(
     IMailSender mailSender,
     ILogger<MailSendJobHandler> logger) : IBackgroundJobHandler
