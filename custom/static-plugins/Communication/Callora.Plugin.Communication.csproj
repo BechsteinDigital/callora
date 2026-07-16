@@ -21,6 +21,11 @@
     <!-- Compile gegen die Core-Contracts, aber Core nicht mitliefern (Host stellt es,
          Plugin-ALC teilt die Typidentität, REV2 §10.1A). -->
     <ProjectReference Include="..\..\..\src\Core\Callora.Core.csproj" Private="false" ExcludeAssets="runtime" />
+    <!-- REV2 §7: als Plugin wird Communication vom Analyzer geprüft (kein Framework-Flag);
+         konsumiert es [CalloraInternal]-Core-APIs, meldet CAL0001. -->
+    <ProjectReference Include="..\..\..\src\Analyzers\Callora.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

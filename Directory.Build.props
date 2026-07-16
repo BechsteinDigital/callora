@@ -22,9 +22,20 @@
          CA1873: Logging liegt ausschließlich auf Cold-Paths (Call-Start, Purge,
          Plugin-Load); LoggerMessage-SourceGen erst bei echtem Hot-Path-Bedarf. -->
     <NoWarn>$(NoWarn);CA1711;CA1873</NoWarn>
+
+    <!-- REV2 §7: der Callora-Analyzer (CAL0001) erzwingt die [CalloraInternal]-Grenze.
+         Framework-Assemblies (Core/Administration/Workspace/CLI/Analyzers) setzen dies
+         auf true und dürfen die interne Fläche konsumieren; jede andere Kompilierung —
+         insbesondere Plugins — bleibt false und wird geprüft. Für den Compiler sichtbar,
+         damit der Analyzer den Wert lesen kann. -->
+    <CalloraFrameworkAssembly Condition="'$(CalloraFrameworkAssembly)' == ''">false</CalloraFrameworkAssembly>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MinVer" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="CalloraFrameworkAssembly" />
   </ItemGroup>
 </Project>
