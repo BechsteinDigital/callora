@@ -264,8 +264,10 @@ public static class CalloraHostCompositionExtensions
         // here in DI; the skeleton runner dispatches to them (REV2 §6). Plugins may export
         // their own ICalloraConsoleCommand.
         builder.Services.AddScoped<Callora.Core.Application.Cli.CalloraConsoleRunner>();
-        builder.Services.AddScoped<Callora.Core.Application.Cli.ICalloraConsoleCommand, Callora.Core.Application.Cli.Commands.PluginRefreshCommand>();
-        builder.Services.AddScoped<Callora.Core.Application.Cli.ICalloraConsoleCommand, Callora.Core.Application.Cli.Commands.PluginListCommand>();
+        // Auto-register every framework console command in this assembly (the Symfony
+        // console.command discovery equivalent) — a new command needs no wiring here.
+        // Plugin-provided commands are picked up from the plugin catalog at dispatch time.
+        builder.Services.AddCalloraConsoleCommands(typeof(CalloraHostCompositionExtensions).Assembly);
         builder.Services.AddHostedService<LocalPluginDiscoveryHostedService>();
         builder.Services.AddHostedService<PluginRuntimeRehydrationHostedService>();
         builder.Services.AddHostedService<PluginUiAssetPublishHostedService>();
