@@ -1,0 +1,7 @@
+#nullable enable
+Callora.Workspace.Api.WorkspacePublicEndpoints
+Callora.Workspace.Api.WorkspaceThemeEndpoints
+Callora.Workspace.CalloraWorkspaceExtensions
+static Callora.Workspace.Api.WorkspacePublicEndpoints.MapWorkspacePublicEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
+static Callora.Workspace.Api.WorkspaceThemeEndpoints.MapWorkspaceThemeEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
+static Callora.Workspace.CalloraWorkspaceExtensions.MapCalloraWorkspace(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!

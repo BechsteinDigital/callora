@@ -23,6 +23,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- REV2 §7.3 (WP-G2): track the public surface so any change surfaces as a
+         reviewable diff in the baseline files. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Load-bearing despite no direct code usage: the host references the
          Communication foundation CONTRACT (not its implementation) so the
          assembly lives in the host default load context. Plugin ALCs defer all
