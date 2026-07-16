@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Extensibility;
 
 namespace Callora.Core.Application.Entitlements;
 
@@ -8,6 +9,7 @@ namespace Callora.Core.Application.Entitlements;
 /// Failed events are retried with backoff; exhausted jobs remain visible as
 /// dead letters under /api/jobs.
 /// </summary>
+[HostProtected]
 public sealed class MarketplaceEntitlementSyncJobHandler(MarketplaceEntitlementApplier applier) : IBackgroundJobHandler
 {
     public const string JobTypeName = "marketplace.entitlement-sync";
