@@ -15,9 +15,11 @@ public sealed class RecordingPluginLifecycleService : IPluginLifecycleService
 
     public IReadOnlyCollection<HostPluginDescriptor> Plugins { get; } = Array.Empty<HostPluginDescriptor>();
 
+    public List<PluginInstallationSnapshot> Installations { get; } = [];
+
     public Task<IReadOnlyList<PluginInstallationSnapshot>> GetInstallationsAsync(
         CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<PluginInstallationSnapshot>>(Array.Empty<PluginInstallationSnapshot>());
+        Task.FromResult<IReadOnlyList<PluginInstallationSnapshot>>(Installations);
 
     public Task<PluginLifecycleServiceResult> InstallAsync(
         InstallPluginCommand command,

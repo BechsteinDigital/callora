@@ -260,6 +260,12 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddHostedService<RecurringJobSchedulerHostedService>();
         builder.Services.AddHostedService<CalloraHostStartupHostedService>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.IPluginDiscoveryService, LocalPluginDiscoveryService>();
+        // Console commands (Symfony console.command equivalent): framework commands live
+        // here in DI; the skeleton runner dispatches to them (REV2 §6). Plugins may export
+        // their own ICalloraConsoleCommand.
+        builder.Services.AddScoped<Callora.Core.Application.Cli.CalloraConsoleRunner>();
+        builder.Services.AddScoped<Callora.Core.Application.Cli.ICalloraConsoleCommand, Callora.Core.Application.Cli.Commands.PluginRefreshCommand>();
+        builder.Services.AddScoped<Callora.Core.Application.Cli.ICalloraConsoleCommand, Callora.Core.Application.Cli.Commands.PluginListCommand>();
         builder.Services.AddHostedService<LocalPluginDiscoveryHostedService>();
         builder.Services.AddHostedService<PluginRuntimeRehydrationHostedService>();
         builder.Services.AddHostedService<PluginUiAssetPublishHostedService>();
