@@ -45,3 +45,28 @@ trim_trailing_whitespace = false
 
 [*.sh]
 end_of_line = lf
+
+# PublicApiAnalyzers (WP-G2, REV2 §7.3): track the public surface so any change
+# shows up as a reviewable diff in PublicAPI.*.txt. Only the break-detection rules
+# are kept (RS0016 missing-from-baseline, RS0017 stale-baseline-entry). The stricter
+# API-design lints are out of scope for baseline tracking and fight established
+# idioms, so they are disabled repo-wide:
+#   RS0026 — optional-parameter overloads (CancellationToken = default is pervasive)
+#   RS0027 — new public overload should not add an optional parameter
+#   RS0041 — oblivious reference types (mostly EF-generated migrations)
+[*.cs]
+# Break detectors: explicit error so the guarantee holds even if a project ever
+# turns off TreatWarningsAsErrors. RS0016 = new public symbol missing from the
+# baseline; RS0017 = baseline entry whose symbol was removed or changed.
+dotnet_diagnostic.RS0016.severity = error
+dotnet_diagnostic.RS0017.severity = error
+dotnet_diagnostic.RS0026.severity = none
+dotnet_diagnostic.RS0027.severity = none
+dotnet_diagnostic.RS0041.severity = none
+
+# EF Core migrations are generated persistence plumbing, not part of the tracked
+# public API — exclude them from public-surface tracking entirely.
+[**/Migrations/*.cs]
+dotnet_diagnostic.RS0016.severity = none
+dotnet_diagnostic.RS0017.severity = none
+dotnet_diagnostic.RS0037.severity = none
