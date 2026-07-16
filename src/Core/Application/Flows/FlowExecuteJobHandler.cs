@@ -2,6 +2,7 @@ using System.Text.Json;
 using Callora.Core.Application.Flows;
 using Callora.Core.Application.Flows.Contracts;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Extensibility;
 
 namespace Callora.Core.Application.Flows;
 
@@ -9,6 +10,7 @@ namespace Callora.Core.Application.Flows;
 /// Executes the action list of one matched flow sequentially. Unknown action
 /// types fail loudly so misconfigured flows surface in the job log.
 /// </summary>
+[HostProtected]
 public sealed class FlowExecuteJobHandler(
     IFlowStore flowStore,
     FlowActionRegistry actionRegistry,

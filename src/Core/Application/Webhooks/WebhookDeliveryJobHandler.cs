@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Callora.Core.Application.Webhooks;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Extensibility;
 
 namespace Callora.Core.Application.Webhooks;
 
@@ -10,6 +11,7 @@ namespace Callora.Core.Application.Webhooks;
 /// Delivers one webhook payload as signed HTTP POST. Non-success responses
 /// throw so the job queue retries with backoff up to MaxAttempts.
 /// </summary>
+[HostProtected]
 public sealed class WebhookDeliveryJobHandler(
     IWebhookSubscriptionStore store,
     IHttpClientFactory httpClientFactory,
