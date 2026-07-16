@@ -25,9 +25,21 @@ public static class PluginEndpoints
             .RequirePermission(BackendPermissionKeys.PluginRead);
 
         group.MapGet("/installed", async (
+            System.Security.Claims.ClaimsPrincipal user,
+            IPluginDiscoveryService discovery,
             IPluginLifecycleService lifecycleService,
             CancellationToken cancellationToken) =>
         {
+            // Reconcile the registry against the local plugin directories before listing,
+            // so the overview reflects the file system without a separate refresh call
+            // (Shopware plugin-list behaviour). Reconciliation writes (register/update/
+            // uninstall), so it runs only for callers who may modify the plugin registry
+            // (PluginCreate); read-only operators get the current list without side effects.
+            if (EndpointAuthorizationExtensions.UserHasPermission(user, BackendPermissionKeys.PluginCreate))
+            {
+                await discovery.RefreshAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             var installations = await lifecycleService.GetInstallationsAsync(cancellationToken).ConfigureAwait(false);
             return Results.Ok(installations);
         }).WithName("Plugins_InstalledList")

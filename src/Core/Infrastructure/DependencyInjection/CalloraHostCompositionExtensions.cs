@@ -259,6 +259,7 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddHostedService<BackgroundJobWorkerHostedService>();
         builder.Services.AddHostedService<RecurringJobSchedulerHostedService>();
         builder.Services.AddHostedService<CalloraHostStartupHostedService>();
+        builder.Services.AddScoped<Callora.Core.Application.Plugins.IPluginDiscoveryService, LocalPluginDiscoveryService>();
         builder.Services.AddHostedService<LocalPluginDiscoveryHostedService>();
         builder.Services.AddHostedService<PluginRuntimeRehydrationHostedService>();
         builder.Services.AddHostedService<PluginUiAssetPublishHostedService>();
