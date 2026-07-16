@@ -1,10 +1,12 @@
 using Callora.Core.Application.Policies;
+using Callora.Core.Extensibility;
 
 namespace Callora.Core.Infrastructure.Security;
 
 /// <summary>
 /// Projects role-function-action RBAC config to permission-key sets.
 /// </summary>
+[CalloraInternal("RBAC config projection — not a plugin contract (REV2 §7.2)")]
 public static class BackendRbacPermissionCatalog
 {
     public static IReadOnlyDictionary<string, IReadOnlyCollection<string>> Build(BackendHostOptions options)

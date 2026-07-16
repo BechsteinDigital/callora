@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Secrets.Contracts;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Callora.Core.Application.Secrets.Contracts;
 /// variables and configuration by default; extensible to vault providers.
 /// Secrets never live in the repository.
 /// </summary>
+[CalloraInternal("Host secret store — enforcement, not a plugin contract; plugins protect their own data via IPluginDataProtector (REV2 §7.2)")]
 public interface ISecretStore
 {
     /// <summary>

@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Security;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Callora.Core.Application.Security;
 /// stored personal data (Art. 15) and erasure including audit-trail
 /// anonymization (Art. 17).
 /// </summary>
+[CalloraInternal("GDPR data-subject aggregator — Core-owned, not a plugin contract (REV2 §7.2)")]
 public interface IUserDataSubjectService
 {
     /// <summary>All personal data stored for the user; null when unknown.</summary>

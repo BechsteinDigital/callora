@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Security;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace Callora.Core.Application.Security;
 /// seeding, migrations) are not workspace-scoped, so the filter is bypassed
 /// for them.
 /// </summary>
+[CalloraInternal("Workspace-scope resolution — enforcement, not a plugin contract (REV2 §7.2)")]
 public interface IWorkspaceScopeContext
 {
     /// <summary>True only for a workspace-bound caller — never for an operator.</summary>

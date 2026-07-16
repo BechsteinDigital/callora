@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Callora.Core.Application.Security;
+using Callora.Core.Extensibility;
 using Microsoft.AspNetCore.Authentication;
 
 namespace Callora.Core.Infrastructure.Security;
@@ -7,6 +8,7 @@ namespace Callora.Core.Infrastructure.Security;
 /// <summary>
 /// Projects RBAC role and permission claims from configured user-role assignments.
 /// </summary>
+[CalloraInternal("RBAC claims projection — not a plugin contract (REV2 §7.2)")]
 public sealed class BackendClaimsTransformation(IBackendRbacStore rbacStore) : IClaimsTransformation
 {
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)

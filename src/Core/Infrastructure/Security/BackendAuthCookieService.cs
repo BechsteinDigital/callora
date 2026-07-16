@@ -1,7 +1,9 @@
 using Callora.Core.Application.Policies;
+using Callora.Core.Extensibility;
 
 namespace Callora.Core.Infrastructure.Security;
 
+[CalloraInternal("Admin auth-cookie issuance — login enforcement, not a plugin contract (REV2 §7.2)")]
 public static class BackendAuthCookieService
 {
     public static string ResolveCookieName(BackendHostOptions options)

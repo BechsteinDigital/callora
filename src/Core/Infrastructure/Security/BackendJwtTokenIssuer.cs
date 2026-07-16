@@ -2,10 +2,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Callora.Core.Application.Policies;
+using Callora.Core.Extensibility;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Callora.Core.Infrastructure.Security;
 
+[CalloraInternal("Backend token issuance — not a plugin contract (REV2 §7.2)")]
 public static class BackendJwtTokenIssuer
 {
     public static string Issue(
