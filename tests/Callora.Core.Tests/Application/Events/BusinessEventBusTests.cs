@@ -1,6 +1,6 @@
 using Callora.Core.Application.Events.Business;
-using Callora.Core.Tests.Support;
 using Callora.Core.Application.Events.Contracts;
+using Callora.Core.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 

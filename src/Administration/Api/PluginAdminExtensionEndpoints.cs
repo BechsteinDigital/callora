@@ -1,10 +1,10 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Infrastructure.Security;
+using Microsoft.Extensions.Primitives;
 using System.Security.Claims;
 using System.Text.Json;
-using Callora.Core.Infrastructure.Security;
-using Callora.Core.Application.Plugins;
-using Microsoft.Extensions.Primitives;
-using Callora.Core.Application.Plugins.Contracts;
 
 namespace Callora.Administration.Api;
 
@@ -101,7 +101,9 @@ public static class PluginAdminExtensionEndpoints
     private static string[] ToArray(StringValues values)
     {
         if (values.Count == 0)
+        {
             return Array.Empty<string>();
+        }
 
         var result = new string[values.Count];
         for (var i = 0; i < values.Count; i++)
@@ -115,10 +117,14 @@ public static class PluginAdminExtensionEndpoints
     private static async Task<JsonElement?> ReadJsonBodyAsync(HttpContext context, CancellationToken cancellationToken)
     {
         if (context.Request.ContentLength is null or <= 0)
+        {
             return null;
+        }
 
         if (context.Request.Body is null)
+        {
             return null;
+        }
 
         try
         {

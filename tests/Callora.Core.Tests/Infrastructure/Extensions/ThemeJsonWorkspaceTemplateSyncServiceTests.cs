@@ -1,6 +1,6 @@
 using Callora.Core.Infrastructure.Extensions;
-using Microsoft.Extensions.Logging.Abstractions;
 using Callora.Core.Tests.Support;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Callora.Core.Tests.Infrastructure.Extensions;
 

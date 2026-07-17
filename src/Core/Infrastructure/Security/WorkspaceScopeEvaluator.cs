@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using Callora.Core.Extensibility;
+using System.Security.Claims;
 
 namespace Callora.Core.Infrastructure.Security;
 

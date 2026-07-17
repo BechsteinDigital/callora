@@ -1,6 +1,6 @@
-using System.Reflection;
 using Callora.Core.Application.Cli;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace Callora.Core.Infrastructure.DependencyInjection;
 

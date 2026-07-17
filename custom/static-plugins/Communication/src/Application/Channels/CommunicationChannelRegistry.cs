@@ -1,6 +1,6 @@
+using Callora.Plugin.Communication.Abstractions;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using Callora.Plugin.Communication.Abstractions;
 
 namespace Callora.Plugin.Communication.Application.Channels;
 
@@ -49,7 +49,9 @@ public sealed class CommunicationChannelRegistry : ICommunicationChannelRegistry
     public IReadOnlyList<ICommunicationChannel> GetChannels(string workspaceKey)
     {
         if (string.IsNullOrWhiteSpace(workspaceKey))
+        {
             return Array.Empty<ICommunicationChannel>();
+        }
 
         return _channelsByWorkspace.TryGetValue(workspaceKey.Trim(), out var channels)
             ? channels
@@ -60,7 +62,9 @@ public sealed class CommunicationChannelRegistry : ICommunicationChannelRegistry
     public IReadOnlyList<ICommunicationChannel> GetChannelsByCapability(string workspaceKey, string capability)
     {
         if (string.IsNullOrWhiteSpace(capability))
+        {
             return Array.Empty<ICommunicationChannel>();
+        }
 
         return GetChannels(workspaceKey)
             .Where(channel => channel.Capabilities.Contains(capability, StringComparer.OrdinalIgnoreCase))
@@ -92,7 +96,9 @@ public sealed class CommunicationChannelRegistry : ICommunicationChannelRegistry
         {
             var updated = current.Remove(channel);
             if (updated == current)
+            {
                 return;
+            }
 
             if (updated.IsEmpty)
             {

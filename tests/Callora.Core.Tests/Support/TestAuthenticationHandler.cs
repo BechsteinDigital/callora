@@ -1,9 +1,9 @@
-using System.Security.Claims;
-using System.Text.Encodings.Web;
 using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
 
 namespace Callora.Core.Tests.Support;
 

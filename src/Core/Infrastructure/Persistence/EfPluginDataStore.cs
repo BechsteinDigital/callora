@@ -1,5 +1,5 @@
-using Callora.Core.Domain.Plugins;
 using Callora.Core.Application.Data.Contracts;
+using Callora.Core.Domain.Plugins;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Core.Infrastructure.Persistence;

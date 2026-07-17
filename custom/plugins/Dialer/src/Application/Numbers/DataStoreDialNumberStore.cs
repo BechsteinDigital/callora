@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Callora.Core.Application.Data.Contracts;
+using System.Text.Json;
 
 namespace Callora.Plugins.Dialer.Application.Numbers;
 
@@ -55,7 +55,9 @@ public sealed class DataStoreDialNumberStore(IPluginDataStore dataStore) : IDial
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(numberId))
+        {
             return Task.FromResult(false);
+        }
 
         return dataStore.RemoveAsync(
             new PluginDataKey(DialerPlugin.Id, workspaceKey, Collection, numberId.Trim()),

@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using Callora.Core.Application.Security;
 using Callora.Core.Extensibility;
 using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace Callora.Core.Infrastructure.Security;
 
@@ -16,32 +16,45 @@ public sealed class BackendClaimsTransformation(IBackendRbacStore rbacStore) : I
         ArgumentNullException.ThrowIfNull(principal);
 
         if (principal.Identity is not ClaimsIdentity identity || !identity.IsAuthenticated)
+        {
             return principal;
+        }
 
         var effectiveRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var claim in principal.FindAll(ClaimTypes.Role))
+        {
             effectiveRoles.Add(claim.Value);
+        }
+
         foreach (var claim in principal.FindAll("role"))
+        {
             effectiveRoles.Add(claim.Value);
+        }
 
         var userId = ResolveUserId(principal);
         if (!string.IsNullOrWhiteSpace(userId))
         {
             var assignedRole = await rbacStore.GetUserRoleAsync(userId).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(assignedRole) && effectiveRoles.Add(assignedRole))
+            {
                 identity.AddClaim(new Claim(ClaimTypes.Role, assignedRole));
+            }
         }
 
         foreach (var role in effectiveRoles)
         {
             var permissions = await rbacStore.GetRolePermissionsAsync(role).ConfigureAwait(false);
             if (permissions is null)
+            {
                 continue;
+            }
 
             foreach (var permission in permissions)
             {
                 if (!principal.HasClaim(BackendClaimTypes.Permission, permission))
+                {
                     identity.AddClaim(new Claim(BackendClaimTypes.Permission, permission));
+                }
             }
         }
 

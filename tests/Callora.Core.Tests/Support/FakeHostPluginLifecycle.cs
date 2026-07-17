@@ -50,7 +50,9 @@ internal sealed class FakeHostPluginLifecycle : IHostPluginLifecycle
         LastInstallEntryTypeName = entryTypeName;
         InstalledAssemblyPaths.Add(assemblyPath);
         if (InstallHandler is not null)
+        {
             return Task.FromResult(InstallHandler(assemblyPath, entryTypeName));
+        }
 
         return Task.FromResult(InstallResult);
     }
@@ -61,7 +63,9 @@ internal sealed class FakeHostPluginLifecycle : IHostPluginLifecycle
     {
         ActivateCallCount++;
         if (ActivateHandler is not null)
+        {
             return Task.FromResult(ActivateHandler(pluginId));
+        }
 
         return Task.FromResult(ActivateResult with { PluginId = pluginId });
     }
@@ -72,7 +76,9 @@ internal sealed class FakeHostPluginLifecycle : IHostPluginLifecycle
     {
         DeactivateCallCount++;
         if (DeactivateHandler is not null)
+        {
             return Task.FromResult(DeactivateHandler(pluginId));
+        }
 
         return Task.FromResult(DeactivateResult with { PluginId = pluginId });
     }
@@ -83,7 +89,9 @@ internal sealed class FakeHostPluginLifecycle : IHostPluginLifecycle
     {
         UninstallCallCount++;
         if (UninstallHandler is not null)
+        {
             return Task.FromResult(UninstallHandler(pluginId));
+        }
 
         return Task.FromResult(UninstallResult with { PluginId = pluginId });
     }

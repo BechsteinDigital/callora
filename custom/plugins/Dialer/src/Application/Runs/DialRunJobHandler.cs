@@ -1,6 +1,6 @@
-using System.Text.Json;
 using Callora.Core.Application.Jobs.Contracts;
 using Callora.Plugins.Dialer.Application.Numbers;
+using System.Text.Json;
 
 namespace Callora.Plugins.Dialer.Application.Runs;
 

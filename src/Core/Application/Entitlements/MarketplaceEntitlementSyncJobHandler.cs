@@ -1,6 +1,6 @@
-using System.Text.Json;
 using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Extensibility;
+using System.Text.Json;
 
 namespace Callora.Core.Application.Entitlements;
 

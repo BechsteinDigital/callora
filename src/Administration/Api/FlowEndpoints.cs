@@ -41,7 +41,9 @@ public static class FlowEndpoints
                 CancellationToken cancellationToken) =>
             {
                 if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.TriggerEvent))
+                {
                     return ApiProblems.BadRequest("name and triggerEvent are required.");
+                }
 
                 var created = await store.UpsertAsync(
                     new FlowSnapshot(

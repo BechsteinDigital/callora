@@ -1,7 +1,7 @@
 using Callora.Core.Application.Jobs;
-using Callora.Core.Domain.Jobs;
 using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Application.Plugins;
+using Callora.Core.Domain.Jobs;
 
 namespace Callora.Core.Application.Jobs;
 
@@ -32,10 +32,14 @@ public sealed class RecurringJobEnqueuer(
             cancellationToken.ThrowIfCancellationRequested();
 
             if (!TryMarkDue(definition, nowUtc))
+            {
                 continue;
+            }
 
             if (await jobStore.HasActiveJobAsync(definition.JobType, nowUtc, cancellationToken).ConfigureAwait(false))
+            {
                 continue;
+            }
 
             var job = BackgroundJob.Create(
                 definition.JobType,

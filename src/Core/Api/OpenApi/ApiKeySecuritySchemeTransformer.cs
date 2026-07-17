@@ -30,12 +30,16 @@ internal sealed class ApiKeySecuritySchemeTransformer(BackendHostOptions options
         };
 
         if (document.Paths is null)
+        {
             return Task.CompletedTask;
+        }
 
         foreach (var pathItem in document.Paths.Values)
         {
             if (pathItem.Operations is null)
+            {
                 continue;
+            }
 
             foreach (var operation in pathItem.Operations.Values)
             {

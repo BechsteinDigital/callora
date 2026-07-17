@@ -34,13 +34,17 @@ public static class CalloraPluginCatalogExtensions
 
         var exports = catalog.GetExports(typeof(TContract));
         if (exports.Count == 0)
+        {
             return Array.Empty<TContract>();
+        }
 
         var typed = new List<TContract>(exports.Count);
         foreach (var export in exports)
         {
             if (export is TContract candidate)
+            {
                 typed.Add(candidate);
+            }
         }
 
         return typed;

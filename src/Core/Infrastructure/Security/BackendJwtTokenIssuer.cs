@@ -1,9 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using Callora.Core.Application.Policies;
 using Callora.Core.Extensibility;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace Callora.Core.Infrastructure.Security;
 

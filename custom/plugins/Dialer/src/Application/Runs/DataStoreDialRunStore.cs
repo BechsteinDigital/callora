@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Callora.Core.Application.Data.Contracts;
+using System.Text.Json;
 
 namespace Callora.Plugins.Dialer.Application.Runs;
 
@@ -38,13 +38,17 @@ public sealed class DataStoreDialRunStore(IPluginDataStore dataStore)
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(workspaceKey) || string.IsNullOrWhiteSpace(entryKey))
+        {
             return null;
+        }
 
         var json = await dataStore
             .GetAsync(BuildKey(workspaceKey.Trim(), entryKey.Trim()), cancellationToken)
             .ConfigureAwait(false);
         if (json is null)
+        {
             return null;
+        }
 
         try
         {

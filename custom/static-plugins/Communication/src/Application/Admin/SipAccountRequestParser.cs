@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Callora.Plugin.Communication.Application.Accounts;
+using System.Text.Json;
 
 namespace Callora.Plugin.Communication.Application.Admin;
 
@@ -21,13 +21,24 @@ public static class SipAccountRequestParser
 
         var json = body.Value;
         if (!TryReadRequiredString(json, "username", out var username, out errorMessage))
+        {
             return false;
+        }
+
         if (!TryReadRequiredString(json, "domain", out var domain, out errorMessage))
+        {
             return false;
+        }
+
         if (!TryReadRequiredString(json, "displayName", out var displayName, out errorMessage))
+        {
             return false;
+        }
+
         if (!TryReadRequiredString(json, "secret", out var secret, out errorMessage))
+        {
             return false;
+        }
 
         var isActive = true;
         if (json.TryGetProperty("isActive", out var isActiveElement))

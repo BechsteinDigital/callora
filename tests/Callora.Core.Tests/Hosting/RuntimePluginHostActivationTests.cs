@@ -1,10 +1,10 @@
-using System.Runtime.CompilerServices;
-using Callora.Core.Tests.Cli;
-using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Options;
+using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins;
+using Callora.Core.Tests.Cli;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Runtime.CompilerServices;
 
 namespace Callora.Core.Tests.Hosting;
 

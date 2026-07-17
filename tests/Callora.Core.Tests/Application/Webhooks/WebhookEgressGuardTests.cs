@@ -1,8 +1,8 @@
+using Callora.Core.Application.Policies;
+using Callora.Core.Application.Webhooks;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Callora.Core.Application.Policies;
-using Callora.Core.Application.Webhooks;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Webhooks;

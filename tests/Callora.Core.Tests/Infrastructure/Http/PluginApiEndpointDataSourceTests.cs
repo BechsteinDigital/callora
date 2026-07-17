@@ -1,8 +1,6 @@
-using System.Net;
-using System.Net.Http.Json;
+using Callora.Core.Application.Http.Contracts;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Infrastructure.Http;
-using Callora.Core.Application.Http.Contracts;
 using Callora.Core.Tests.Support;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -10,6 +8,8 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace Callora.Core.Tests.Infrastructure.Http;
 

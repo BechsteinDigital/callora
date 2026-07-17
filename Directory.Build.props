@@ -13,6 +13,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>10.0-recommended</AnalysisLevel>
+    <!-- PLAT-R5: die .editorconfig-Stilregeln (IDExxxx) werden build-wirksam, nicht
+         nur IDE-only. Zusammen mit TreatWarningsAsErrors erzwingt das Braces
+         (IDE0011) und File-Scoped-Namespaces (IDE0161) im CI, nicht per Review. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
     <!-- PLAT-201: Warnungen sind Build-Fehler; Ausnahmen unten sind begründet. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

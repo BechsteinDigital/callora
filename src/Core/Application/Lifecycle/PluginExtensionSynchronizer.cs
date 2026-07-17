@@ -1,7 +1,7 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Plugins;
-using Callora.Core.Domain.Extensions;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Domain.Extensions;
 
 namespace Callora.Core.Application.Lifecycle;
 
@@ -41,7 +41,9 @@ public sealed class PluginExtensionSynchronizer(
             var validation = await ValidateAsync(contributorRegistrations, capabilities, cancellationToken)
                 .ConfigureAwait(false);
             if (!validation.IsSuccess)
+            {
                 return validation;
+            }
 
             foreach (var registration in contributorRegistrations)
             {

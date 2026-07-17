@@ -1,15 +1,9 @@
+using Callora.Administration.Api;
+using Callora.Core.Api;
 using Callora.Core.Application.Audit;
 using Callora.Core.Application.Entitlements;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Security.Claims;
-using System.Text;
-using Callora.Core.Api;
-using Callora.Administration.Api;
-using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Lifecycle;
+using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Policies;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Tests.Support;
@@ -17,6 +11,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
 
 namespace Callora.Core.Tests.Api;
 
@@ -213,7 +213,9 @@ public sealed class JwtRbacIntegrationTests
         };
 
         foreach (var role in roles)
+        {
             claims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
         var descriptor = new SecurityTokenDescriptor
         {

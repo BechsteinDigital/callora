@@ -1,5 +1,5 @@
-using Callora.Core.Application.Events;
 using Callora.Core.Application.Audit;
+using Callora.Core.Application.Events;
 
 namespace Callora.Core.Application.Lifecycle;
 
@@ -119,7 +119,9 @@ public sealed class PluginLifecycleReporter(
     {
         var correlationId = PluginLifecycleTelemetry.GetCurrentCorrelationId();
         if (string.IsNullOrWhiteSpace(correlationId))
+        {
             return metadata;
+        }
 
         var enriched = metadata is null
             ? new Dictionary<string, string>(StringComparer.Ordinal)

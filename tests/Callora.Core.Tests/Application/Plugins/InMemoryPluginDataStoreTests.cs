@@ -1,5 +1,5 @@
-using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Data.Contracts;
+using Callora.Core.Application.Plugins;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Plugins;

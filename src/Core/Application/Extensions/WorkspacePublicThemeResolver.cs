@@ -1,7 +1,7 @@
-using System.Text.Json;
 using Callora.Core.Application.Configuration;
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Workspaces;
+using System.Text.Json;
 
 namespace Callora.Core.Application.Extensions;
 
@@ -65,7 +65,9 @@ public sealed class WorkspacePublicThemeResolver(
     private static string? NormalizeJsonValue(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
+        {
             return null;
+        }
 
         try
         {

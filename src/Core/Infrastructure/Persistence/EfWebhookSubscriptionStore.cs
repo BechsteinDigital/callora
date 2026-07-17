@@ -1,6 +1,6 @@
+using Callora.Core.Application.Secrets.Contracts;
 using Callora.Core.Application.Webhooks;
 using Callora.Core.Domain.Webhooks;
-using Callora.Core.Application.Secrets.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Core.Infrastructure.Persistence;

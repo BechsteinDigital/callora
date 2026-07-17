@@ -1,6 +1,6 @@
-using System.Collections.Concurrent;
 using Callora.Plugin.Communication.Abstractions;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 
 namespace Callora.Plugin.Communication.Application.Calls;
 
@@ -89,7 +89,9 @@ public sealed class VoipCallHub(
     public IReadOnlyList<CallSummary> List(string workspaceKey)
     {
         if (string.IsNullOrWhiteSpace(workspaceKey))
+        {
             return [];
+        }
 
         return _calls.Values
             .Where(tracked => string.Equals(tracked.WorkspaceKey, workspaceKey.Trim(), StringComparison.OrdinalIgnoreCase))
@@ -103,13 +105,19 @@ public sealed class VoipCallHub(
     {
         tracked = null;
         if (string.IsNullOrWhiteSpace(workspaceKey) || string.IsNullOrWhiteSpace(callId))
+        {
             return false;
+        }
 
         if (!_calls.TryGetValue(callId, out var candidate))
+        {
             return false;
+        }
 
         if (!string.Equals(candidate.WorkspaceKey, workspaceKey.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
             return false;
+        }
 
         tracked = candidate;
         return true;
@@ -119,13 +127,19 @@ public sealed class VoipCallHub(
     {
         call = null;
         if (string.IsNullOrWhiteSpace(workspaceKey) || string.IsNullOrWhiteSpace(callId))
+        {
             return false;
+        }
 
         if (!_calls.TryGetValue(callId, out var candidate))
+        {
             return false;
+        }
 
         if (!string.Equals(candidate.WorkspaceKey, workspaceKey.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
             return false;
+        }
 
         call = candidate.Call;
         return true;

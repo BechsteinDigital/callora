@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Callora.Host.Cli.Application;
+using System.Diagnostics;
 
 namespace Callora.Core.Tests.Cli;
 
@@ -74,7 +74,9 @@ public sealed class ScaffoldedPluginFixture : IAsyncLifetime
         {
             var solutionPath = Path.Combine(current.FullName, "Callora.Host.sln");
             if (File.Exists(solutionPath))
+            {
                 return current.FullName;
+            }
 
             current = current.Parent;
         }

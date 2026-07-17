@@ -19,7 +19,9 @@ public sealed class BackgroundJobHandlerResolver(
     public IBackgroundJobHandler? Resolve(string jobType)
     {
         if (string.IsNullOrWhiteSpace(jobType))
+        {
             return null;
+        }
 
         return HostPluginResolution.ResolvePluginWins(
             hostHandlers,

@@ -1,5 +1,5 @@
-using Callora.Core.Application.Entitlements;
 using Callora.Core.Application.Audit;
+using Callora.Core.Application.Entitlements;
 using Callora.Core.Domain.Entitlements;
 
 namespace Callora.Core.Application.Entitlements;
@@ -36,7 +36,9 @@ public sealed class MarketplaceEntitlementApplier(
 
         var isFirstProcessing = await eventStore.TryRecordAsync(record, cancellationToken).ConfigureAwait(false);
         if (!isFirstProcessing)
+        {
             return false;
+        }
 
         var isGrant = string.Equals(payload.Action, MarketplaceEntitlementActions.Grant, StringComparison.OrdinalIgnoreCase);
         await entitlementStore

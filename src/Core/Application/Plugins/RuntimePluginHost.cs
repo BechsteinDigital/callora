@@ -1,11 +1,11 @@
+using Callora.Core.Application.Options;
+using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Domain.Plugins.Contracts;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.Logging;
-using Callora.Core.Application.Plugins.Contracts;
-using Callora.Core.Domain.Plugins.Contracts;
-using Callora.Core.Application.Options;
 
 namespace Callora.Core.Application.Plugins;
 
@@ -80,7 +80,9 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(contractType);
         if (!_exports.TryGetValue(contractType, out var registrations) || registrations.Length == 0)
+        {
             return Array.Empty<object>();
+        }
 
         return registrations
             .OrderByDescending(static registration => registration.Sequence)
@@ -93,7 +95,9 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(contractType);
         if (!_exports.TryGetValue(contractType, out var registrations) || registrations.Length == 0)
+        {
             return Array.Empty<CalloraPluginExport>();
+        }
 
         return registrations
             .OrderByDescending(static registration => registration.Sequence)
@@ -129,7 +133,9 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         {
             var inspection = InspectPluginAssembly(fullPath, entryTypeName);
             if (inspection.Result is not null)
+            {
                 return inspection.Result;
+            }
 
             var record = inspection.Record!;
             if (_installed.TryGetValue(record.PluginId, out var existing))
@@ -405,7 +411,10 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             RemoveExportsByPlugin(record.PluginId);
 
             if (plugin is not null)
+            {
                 await SafeStopAsync(plugin, cancellationToken).ConfigureAwait(false);
+            }
+
             loadContext?.Unload();
 
             _logger.LogError(ex, "Plugin activation failed for {PluginId}.", record.PluginId);
@@ -560,11 +569,15 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
         var pluginVersion = hostContractsRef?.Version;
         if (pluginVersion is null)
+        {
             return null;
+        }
 
         var hostVersion = typeof(IHostManagedPlugin).Assembly.GetName().Version;
         if (hostVersion is null)
+        {
             return null;
+        }
 
         if (pluginVersion.Major != hostVersion.Major)
         {
@@ -590,7 +603,9 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     private static Type? ResolvePluginType(Assembly assembly, string? entryTypeName)
     {
         if (!string.IsNullOrWhiteSpace(entryTypeName))
+        {
             return assembly.GetType(entryTypeName, throwOnError: false, ignoreCase: false);
+        }
 
         return assembly
             .GetTypes()
@@ -694,14 +709,18 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         foreach (var (contractType, exports) in _exports)
         {
             if (exports.Length == 0)
+            {
                 continue;
+            }
 
             var filtered = exports
                 .Where(export => !string.Equals(export.PluginId, pluginId, StringComparison.OrdinalIgnoreCase))
                 .ToImmutableArray();
 
             if (filtered.Length == exports.Length)
+            {
                 continue;
+            }
 
             if (filtered.IsEmpty)
             {

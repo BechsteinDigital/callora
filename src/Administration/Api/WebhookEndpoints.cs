@@ -81,9 +81,14 @@ public static class WebhookEndpoints
             {
                 var existing = await store.GetAsync(id, cancellationToken);
                 if (existing is null)
+                {
                     return Results.NotFound();
+                }
+
                 if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, existing.WorkspaceKey))
+                {
                     return Results.Forbid();
+                }
 
                 await store.SetActiveAsync(id, isActive, cancellationToken);
                 return Results.NoContent();
@@ -98,9 +103,14 @@ public static class WebhookEndpoints
             {
                 var existing = await store.GetAsync(id, cancellationToken);
                 if (existing is null)
+                {
                     return Results.NotFound();
+                }
+
                 if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, existing.WorkspaceKey))
+                {
                     return Results.Forbid();
+                }
 
                 await store.DeleteAsync(id, cancellationToken);
                 return Results.NoContent();

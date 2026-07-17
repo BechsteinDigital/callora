@@ -1,5 +1,5 @@
-using Callora.Plugin.Communication.Abstractions;
 using Callora.Core.Application.Http.Contracts;
+using Callora.Plugin.Communication.Abstractions;
 
 namespace Callora.Plugin.Communication.Application.Calls;
 
@@ -22,7 +22,9 @@ public sealed class CallsController(VoipCallHub callHub, ICommunicationChannelRe
     public Task<ApiResult> ListChannelsAsync(ApiRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.WorkspaceKey))
+        {
             return Task.FromResult(BadRequest("workspaceKey is required."));
+        }
 
         var channels = channelRegistry
             .GetChannelsByCapability(request.WorkspaceKey, CommunicationCapabilities.Voice)
@@ -40,11 +42,15 @@ public sealed class CallsController(VoipCallHub callHub, ICommunicationChannelRe
     public async Task<ApiResult> PlaceAsync(ApiRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.WorkspaceKey))
+        {
             return BadRequest("workspaceKey is required.");
+        }
 
         var body = await request.ReadJsonAsync<PlaceCallRequestBody>(cancellationToken).ConfigureAwait(false);
         if (body is null || string.IsNullOrWhiteSpace(body.Target))
+        {
             return BadRequest("target is required.");
+        }
 
         try
         {
@@ -79,7 +85,9 @@ public sealed class CallsController(VoipCallHub callHub, ICommunicationChannelRe
     {
         var body = await request.ReadJsonAsync<SendDtmfRequestBody>(cancellationToken).ConfigureAwait(false);
         if (body is null || body.Tone is not { Length: 1 })
+        {
             return BadRequest("tone must be a single DTMF character.");
+        }
 
         var tone = body.Tone[0];
         return await ExecuteCallActionAsync(
@@ -93,7 +101,9 @@ public sealed class CallsController(VoipCallHub callHub, ICommunicationChannelRe
     public async Task StreamEventsAsync(ApiRequest request, ApiEventStream stream, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.WorkspaceKey))
+        {
             return;
+        }
 
         using var subscription = callHub.Subscribe(request.WorkspaceKey);
         await foreach (var callEvent in subscription.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
@@ -108,7 +118,9 @@ public sealed class CallsController(VoipCallHub callHub, ICommunicationChannelRe
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.WorkspaceKey))
+        {
             return BadRequest("workspaceKey is required.");
+        }
 
         var callId = request.RouteValues.GetValueOrDefault("callId");
         if (string.IsNullOrWhiteSpace(callId) ||

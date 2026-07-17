@@ -1,6 +1,6 @@
 using Callora.Core.Application.Audit;
-using System.Text.Json;
 using Callora.Core.Application.Policies;
+using System.Text.Json;
 
 namespace Callora.Core.Application.Audit;
 
@@ -22,7 +22,9 @@ public sealed class FileHostAuditStore(BackendHostOptions options) : IHostAuditS
         var path = options.AuditFilePath;
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrWhiteSpace(directory))
+        {
             Directory.CreateDirectory(directory);
+        }
 
         var json = JsonSerializer.Serialize(entry, JsonOptions);
         await _ioLock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -43,7 +45,9 @@ public sealed class FileHostAuditStore(BackendHostOptions options) : IHostAuditS
 
         var path = options.AuditFilePath;
         if (!File.Exists(path))
+        {
             return [];
+        }
 
         await _ioLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -53,10 +57,15 @@ public sealed class FileHostAuditStore(BackendHostOptions options) : IHostAuditS
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (string.IsNullOrWhiteSpace(line))
+                {
                     continue;
+                }
 
                 if (tail.Count == take)
+                {
                     tail.Dequeue();
+                }
+
                 tail.Enqueue(line);
             }
 
@@ -65,7 +74,9 @@ public sealed class FileHostAuditStore(BackendHostOptions options) : IHostAuditS
             {
                 var entry = JsonSerializer.Deserialize<HostAuditEntry>(line, JsonOptions);
                 if (entry is not null)
+                {
                     parsed.Add(entry);
+                }
             }
 
             return parsed;

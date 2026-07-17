@@ -1,6 +1,6 @@
-using System.Text.Json;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Plugins.Dialer.Application.Runs;
+using System.Text.Json;
 
 namespace Callora.Plugins.Dialer.Application.Admin;
 
@@ -11,7 +11,9 @@ public sealed class StartDialRunRouteHandler(DialRunCoordinator coordinator) : I
         CancellationToken cancellationToken = default)
     {
         if (!AdminRequestWorkspace.TryGet(request, out var workspaceKey, out var error))
+        {
             return error!;
+        }
 
         var options = ParseOptions(request.Body);
         var snapshot = await coordinator.StartRunAsync(workspaceKey, options, cancellationToken).ConfigureAwait(false);

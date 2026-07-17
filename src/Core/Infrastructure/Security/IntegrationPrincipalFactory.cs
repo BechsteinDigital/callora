@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using Callora.Core.Domain.Integrations;
 using Callora.Core.Extensibility;
+using System.Security.Claims;
 
 namespace Callora.Core.Infrastructure.Security;
 
@@ -28,7 +28,9 @@ public static class IntegrationPrincipalFactory
         };
 
         if (!string.IsNullOrWhiteSpace(integration.WorkspaceKey))
+        {
             claims.Add(new Claim(BackendClaimTypes.WorkspaceKey, integration.WorkspaceKey));
+        }
 
         var identity = new ClaimsIdentity(claims, authenticationType: ApiKeyAuthenticationDefaults.Scheme);
         return new ClaimsPrincipal(identity);

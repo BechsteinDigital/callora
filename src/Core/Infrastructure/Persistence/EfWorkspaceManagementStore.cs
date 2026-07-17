@@ -1,7 +1,7 @@
-using System.Linq.Expressions;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Workspaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using WorkspaceEntity = Callora.Core.Domain.Workspaces.Workspace;
 
 namespace Callora.Core.Infrastructure.Persistence;

@@ -17,15 +17,21 @@ public static class PluginAdminRouteMatcher
         foreach (var contributor in contributors)
         {
             if (!string.Equals(contributor.PluginId, normalizedPluginId, StringComparison.OrdinalIgnoreCase))
+            {
                 continue;
+            }
 
             foreach (var route in contributor.Routes)
             {
                 if (!string.Equals(NormalizeSegment(route.HttpMethod), normalizedMethod, StringComparison.Ordinal))
+                {
                     continue;
+                }
 
                 if (!TryMatchTemplate(route.RouteTemplate, normalizedPath, out var routeValues))
+                {
                     continue;
+                }
 
                 return new PluginAdminRouteMatch(contributor, route, routeValues);
             }
@@ -42,7 +48,9 @@ public static class PluginAdminRouteMatcher
     private static string NormalizePath(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
+        {
             return string.Empty;
+        }
 
         return string.Join(
             '/',
@@ -106,7 +114,9 @@ public static class PluginAdminRouteMatcher
 
         var candidate = templateSegment[1..^1].Trim();
         if (candidate.Length == 0)
+        {
             return false;
+        }
 
         routeValueName = candidate;
         return true;

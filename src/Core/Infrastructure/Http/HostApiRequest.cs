@@ -1,6 +1,6 @@
+using Callora.Core.Application.Http.Contracts;
 using System.Security.Claims;
 using System.Text.Json;
-using Callora.Core.Application.Http.Contracts;
 
 namespace Callora.Core.Infrastructure.Http;
 
@@ -32,7 +32,9 @@ public sealed class HostApiRequest(HttpContext httpContext) : ApiRequest
         get
         {
             if (httpContext.Request.Query.TryGetValue("workspaceKey", out var queryValue))
+            {
                 return queryValue.ToString();
+            }
 
             return httpContext.Request.RouteValues.TryGetValue("workspaceKey", out var routeValue)
                 ? routeValue?.ToString()

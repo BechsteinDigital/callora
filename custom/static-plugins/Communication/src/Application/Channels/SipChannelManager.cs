@@ -116,7 +116,9 @@ public sealed class SipChannelManager(
     private void RemoveWorkspaceRegistrations(string workspaceKey)
     {
         if (!_registrationsByWorkspace.Remove(workspaceKey, out var registrations))
+        {
             return;
+        }
 
         foreach (var registration in registrations)
         {

@@ -17,7 +17,9 @@ public static class HostPluginLifecycleExtensions
         foreach (var plugin in lifecycle.Plugins)
         {
             if (string.Equals(plugin.PluginId, pluginId, StringComparison.OrdinalIgnoreCase))
+            {
                 return plugin;
+            }
         }
 
         return null;

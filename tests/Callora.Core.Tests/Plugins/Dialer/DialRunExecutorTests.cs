@@ -1,6 +1,6 @@
+using Callora.Core.Tests.Support;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Channels;
-using Callora.Core.Tests.Support;
 using Callora.Plugins.Dialer.Application.Numbers;
 using Callora.Plugins.Dialer.Application.Runs;
 using Xunit;
@@ -175,7 +175,9 @@ public sealed class DialRunExecutorTests
         while (DateTimeOffset.UtcNow < deadline)
         {
             if (channel.PlacedCalls.Count > index)
+            {
                 return channel.PlacedCalls[index];
+            }
 
             await Task.Delay(TimeSpan.FromMilliseconds(10));
         }

@@ -26,6 +26,8 @@ public sealed class CalloraPermissionAttribute(string permissionKey) : Attribute
         }
 
         if (!EndpointAuthorizationExtensions.UserHasPermission(user, PermissionKey))
+        {
             context.Result = new ForbidResult();
+        }
     }
 }

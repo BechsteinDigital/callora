@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
 using Callora.Core.Application.Tenants;
+using System.Collections.Concurrent;
 
 namespace Callora.Core.Tests.Support;
 

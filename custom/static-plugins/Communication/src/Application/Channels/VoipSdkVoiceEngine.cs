@@ -80,7 +80,9 @@ public sealed class VoipSdkVoiceEngine : IVoiceEngine
         try
         {
             if (_connections.TryGetValue(account.SipAccountId, out var existing))
+            {
                 return existing;
+            }
 
             var client = new VoipClient(BuildRegistrarFriendlyConfiguration());
             try

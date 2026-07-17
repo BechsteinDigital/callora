@@ -1,9 +1,9 @@
 using Callora.Core.Api;
-using System.Security.Claims;
 using Callora.Core.Application.Extensions;
-using Callora.Core.Application.Workspaces;
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Workspaces;
 using Callora.Core.Infrastructure.Security;
+using System.Security.Claims;
 
 namespace Callora.Workspace.Api;
 

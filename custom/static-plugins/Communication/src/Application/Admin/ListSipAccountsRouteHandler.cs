@@ -10,7 +10,9 @@ public sealed class ListSipAccountsRouteHandler(ISipAccountStore store) : IHostA
         CancellationToken cancellationToken = default)
     {
         if (!AdminRequestWorkspace.TryGet(request, out var workspaceKey, out var error))
+        {
             return error!;
+        }
 
         var accounts = await store.ListAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         return new HostAdminApiResponse(200, accounts.Select(SipAccountMapper.ToApiModel).ToArray());

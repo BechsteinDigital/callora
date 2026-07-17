@@ -36,11 +36,15 @@ public static class NotificationEndpoints
             {
                 var existing = await store.GetAsync(id, cancellationToken);
                 if (existing is null)
+                {
                     return Results.NotFound();
+                }
                 // Global notifications (no workspace) stay operator-only for
                 // mutation; workspace-bound users only mark their own.
                 if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, existing.WorkspaceKey))
+                {
                     return Results.Forbid();
+                }
 
                 await store.MarkReadAsync(id, cancellationToken);
                 return Results.NoContent();

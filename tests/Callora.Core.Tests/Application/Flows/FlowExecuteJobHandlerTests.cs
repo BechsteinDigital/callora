@@ -1,9 +1,9 @@
-using System.Text.Json;
 using Callora.Core.Application.Flows;
-using Callora.Core.Tests.Support;
 using Callora.Core.Application.Flows.Contracts;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Text.Json;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Flows;

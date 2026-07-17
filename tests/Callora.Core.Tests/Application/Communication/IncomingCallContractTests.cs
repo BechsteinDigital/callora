@@ -1,5 +1,5 @@
-using Callora.Plugin.Communication.Abstractions;
 using Callora.Core.Tests.Support;
+using Callora.Plugin.Communication.Abstractions;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Communication;

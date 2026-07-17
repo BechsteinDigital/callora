@@ -30,7 +30,9 @@ public static class PluginLifecycleTelemetry
     {
         var activity = LifecycleActivitySource.StartActivity($"plugin.lifecycle.{action}", ActivityKind.Internal);
         if (activity is null)
+        {
             return null;
+        }
 
         activity.SetTag("plugin.lifecycle.action", action);
         activity.SetTag("plugin.lifecycle.scope", scope);

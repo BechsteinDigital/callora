@@ -1,6 +1,6 @@
-using System.Text;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Infrastructure.Plugins;
+using System.Text;
 
 namespace Callora.Core.Tests.Infrastructure.Plugins;
 
@@ -43,7 +43,9 @@ public sealed class JsonPluginPackageRegistryReaderTests
         finally
         {
             if (Directory.Exists(tempDir))
+            {
                 Directory.Delete(tempDir, recursive: true);
+            }
         }
     }
 
@@ -85,7 +87,9 @@ public sealed class JsonPluginPackageRegistryReaderTests
         finally
         {
             if (Directory.Exists(tempDir))
+            {
                 Directory.Delete(tempDir, recursive: true);
+            }
         }
     }
 
@@ -127,7 +131,9 @@ public sealed class JsonPluginPackageRegistryReaderTests
         finally
         {
             if (Directory.Exists(tempDir))
+            {
                 Directory.Delete(tempDir, recursive: true);
+            }
         }
     }
 
@@ -168,7 +174,9 @@ public sealed class JsonPluginPackageRegistryReaderTests
         finally
         {
             if (Directory.Exists(tempDir))
+            {
                 Directory.Delete(tempDir, recursive: true);
+            }
         }
     }
 
@@ -210,7 +218,9 @@ public sealed class JsonPluginPackageRegistryReaderTests
         finally
         {
             if (Directory.Exists(tempDir))
+            {
                 Directory.Delete(tempDir, recursive: true);
+            }
         }
     }
 }

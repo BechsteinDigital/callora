@@ -78,17 +78,23 @@ public sealed class DialRunExecutor(ICommunicationChannelRegistry channelRegistr
         void OnStateChanged(object? sender, CallStateChangedEventArgs args)
         {
             if (args.CurrentState == CallState.Connected)
+            {
                 sawConnected = true;
+            }
 
             if (args.CurrentState == CallState.Terminated)
+            {
                 terminated.TrySetResult();
+            }
         }
 
         call.StateChanged += OnStateChanged;
         try
         {
             if (call.State == CallState.Terminated)
+            {
                 terminated.TrySetResult();
+            }
 
             var timeoutTask = Task.Delay(timeout, cancellationToken);
             var completed = await Task.WhenAny(terminated.Task, timeoutTask).ConfigureAwait(false);

@@ -1,6 +1,6 @@
 using Callora.Core.Application.Jobs;
-using Callora.Core.Domain.Jobs;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Domain.Jobs;
 
 namespace Callora.Core.Infrastructure.Persistence;
 

@@ -1,6 +1,6 @@
 using Callora.Core.Application.Jobs;
-using Callora.Core.Application.Notifications;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Application.Notifications;
 using Callora.Core.Extensibility;
 using Microsoft.Extensions.Logging;
 

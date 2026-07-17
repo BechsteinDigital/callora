@@ -1,7 +1,7 @@
-using System.Buffers.Binary;
+using Callora.Core.Tests.Support;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Audio;
-using Callora.Core.Tests.Support;
+using System.Buffers.Binary;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Flows;

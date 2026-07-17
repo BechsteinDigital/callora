@@ -28,7 +28,9 @@ internal static class PluginScaffoldNaming
             .ToArray();
 
         if (segments.Length == 0)
+        {
             return "plugin";
+        }
 
         return string.Join('-', segments);
     }
@@ -39,12 +41,16 @@ internal static class PluginScaffoldNaming
         foreach (var character in value)
         {
             if (char.IsLetterOrDigit(character) || character is '-' or '_')
+            {
                 builder.Append(character);
+            }
         }
 
         var normalized = builder.ToString();
         if (string.IsNullOrWhiteSpace(normalized))
+        {
             return "Plugin";
+        }
 
         return normalized;
     }
@@ -58,7 +64,9 @@ internal static class PluginScaffoldNaming
             .ToArray();
 
         if (segments.Length == 0)
+        {
             return "Plugin";
+        }
 
         var builder = new StringBuilder();
         foreach (var segment in segments)
@@ -66,7 +74,9 @@ internal static class PluginScaffoldNaming
             var lowerSegment = segment.ToLowerInvariant();
             builder.Append(char.ToUpperInvariant(lowerSegment[0]));
             if (lowerSegment.Length > 1)
+            {
                 builder.Append(lowerSegment.AsSpan(1));
+            }
         }
 
         return builder.ToString();

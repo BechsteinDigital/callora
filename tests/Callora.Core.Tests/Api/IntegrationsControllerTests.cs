@@ -1,13 +1,7 @@
-using Callora.Core.Application.Audit;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Security.Claims;
-using System.Text;
-using Callora.Core.Api;
 using Callora.Administration.Api;
 using Callora.Administration.Api.Admin.Integrations;
+using Callora.Core.Api;
+using Callora.Core.Application.Audit;
 using Callora.Core.Application.Integrations;
 using Callora.Core.Application.Policies;
 using Callora.Core.Infrastructure.Security;
@@ -16,6 +10,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
 using Xunit;
 
 namespace Callora.Core.Tests.Api;
@@ -157,7 +157,9 @@ public sealed class IntegrationsControllerTests
 
         var claims = new List<Claim> { new("sub", subject) };
         foreach (var role in roles)
+        {
             claims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
         var descriptor = new SecurityTokenDescriptor
         {

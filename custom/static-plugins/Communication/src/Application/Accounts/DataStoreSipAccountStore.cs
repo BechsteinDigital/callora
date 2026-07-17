@@ -1,6 +1,6 @@
-using System.Text.Json;
 using Callora.Core.Application.Data.Contracts;
 using Callora.Core.Application.Secrets.Contracts;
+using System.Text.Json;
 
 namespace Callora.Plugin.Communication.Application.Accounts;
 
@@ -38,7 +38,9 @@ public sealed class DataStoreSipAccountStore(
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(sipAccountId))
+        {
             return null;
+        }
 
         var json = await dataStore
             .GetAsync(BuildKey(workspaceKey, sipAccountId.Trim()), cancellationToken)
@@ -87,7 +89,9 @@ public sealed class DataStoreSipAccountStore(
 
         var current = await GetAsync(workspaceKey, sipAccountId, cancellationToken).ConfigureAwait(false);
         if (current is null)
+        {
             return null;
+        }
 
         var updated = current with
         {
@@ -109,7 +113,9 @@ public sealed class DataStoreSipAccountStore(
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(sipAccountId))
+        {
             return Task.FromResult(false);
+        }
 
         return dataStore.RemoveAsync(BuildKey(workspaceKey, sipAccountId.Trim()), cancellationToken);
     }

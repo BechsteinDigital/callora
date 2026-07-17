@@ -1,10 +1,10 @@
-using System.Net;
 using Callora.Administration.Api.Admin.Integrations;
 using Callora.Core.Api.OpenApi;
 using Callora.Core.Application.Policies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net;
 using Xunit;
 
 namespace Callora.Core.Tests.Api;

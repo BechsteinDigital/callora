@@ -1,14 +1,14 @@
-using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Entitlements;
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Lifecycle;
+using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Policies;
 using Callora.Core.Domain.Extensions;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Extensions;
 using Callora.Core.Tests.Support;
 using System.Reflection;
-using Callora.Core.Application.Plugins.Contracts;
 
 namespace Callora.Core.Tests.Application.Lifecycle;
 

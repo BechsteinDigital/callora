@@ -1,8 +1,8 @@
 using Callora.Core.Application.Events;
+using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Callora.Core.Application.Events.Contracts;
 
 namespace Callora.Core.Infrastructure.Events;
 

@@ -10,7 +10,9 @@ public sealed class GetLatestDialRunRouteHandler(DialRunCoordinator coordinator)
         CancellationToken cancellationToken = default)
     {
         if (!AdminRequestWorkspace.TryGet(request, out var workspaceKey, out var error))
+        {
             return error!;
+        }
 
         var snapshot = await coordinator.GetLatestRunAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         if (snapshot is null)

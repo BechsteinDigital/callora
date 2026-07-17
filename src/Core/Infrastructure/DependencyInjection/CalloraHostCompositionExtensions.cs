@@ -1,11 +1,17 @@
 using Callora.Core.Api;
-using Callora.Core.Application.Extensions;
+using Callora.Core.Api.OpenApi;
+using Callora.Core.Application.Data.Contracts;
 using Callora.Core.Application.Entitlements;
-using Callora.Core.Application.Jobs;
 using Callora.Core.Application.Events;
-using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Events.Contracts;
+using Callora.Core.Application.Extensions;
+using Callora.Core.Application.Jobs;
+using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Application.Lifecycle;
+using Callora.Core.Application.Monitoring;
+using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Secrets.Contracts;
 using Callora.Core.Infrastructure.DependencyInjection;
 using Callora.Core.Infrastructure.Events;
 using Callora.Core.Infrastructure.Extensions;
@@ -14,16 +20,10 @@ using Callora.Core.Infrastructure.Plugins;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Infrastructure.Startup;
 using Microsoft.AspNetCore.DataProtection;
-using Callora.Core.Application.Monitoring;
-using Callora.Core.Api.OpenApi;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Callora.Core.Application.Data.Contracts;
-using Callora.Core.Application.Events.Contracts;
-using Callora.Core.Application.Jobs.Contracts;
-using Callora.Core.Application.Secrets.Contracts;
 
 namespace Callora.Core.Infrastructure.DependencyInjection;
 

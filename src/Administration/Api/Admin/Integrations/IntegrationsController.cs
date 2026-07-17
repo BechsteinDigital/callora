@@ -1,6 +1,6 @@
+using Callora.Core.Application.Audit;
 using Callora.Core.Application.Integrations;
 using Callora.Core.Application.Security;
-using Callora.Core.Application.Audit;
 using Callora.Core.Domain.Integrations;
 using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -46,11 +46,15 @@ public sealed class IntegrationsController : ControllerBase
     {
         var name = request.Name?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(name))
+        {
             return BadRequest(new { error = "name is required." });
+        }
 
         var role = request.Role?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(role))
+        {
             return BadRequest(new { error = "role is required." });
+        }
 
         // Operator roles would defeat the bounded-access purpose of an integration.
         if (string.Equals(role, BackendRoles.SuperAdmin, StringComparison.OrdinalIgnoreCase) ||
@@ -61,22 +65,33 @@ public sealed class IntegrationsController : ControllerBase
 
         var knownPermissions = await rbacStore.GetRolePermissionsAsync(role, cancellationToken).ConfigureAwait(false);
         if (knownPermissions is null)
+        {
             return BadRequest(new { error = $"Unknown RBAC role '{role}'." });
+        }
 
         var scope = string.IsNullOrWhiteSpace(request.Scope)
             ? BackendAuthScopes.Platform
             : request.Scope.Trim().ToLowerInvariant();
         if (scope != BackendAuthScopes.Platform && scope != BackendAuthScopes.Workspace)
+        {
             return BadRequest(new { error = "scope must be 'platform' or 'workspace'." });
+        }
 
         var workspaceKey = request.WorkspaceKey?.Trim();
         if (scope == BackendAuthScopes.Workspace && string.IsNullOrWhiteSpace(workspaceKey))
+        {
             return BadRequest(new { error = "workspaceKey is required for workspace scope." });
+        }
+
         if (scope == BackendAuthScopes.Platform)
+        {
             workspaceKey = null;
+        }
 
         if (await store.ExistsByNameAsync(name, cancellationToken).ConfigureAwait(false))
+        {
             return Conflict(new { error = $"An integration named '{name}' already exists." });
+        }
 
         var plaintextKey = IntegrationApiKey.Generate();
         var credential = new IntegrationCredential
@@ -126,7 +141,9 @@ public sealed class IntegrationsController : ControllerBase
     {
         var revoked = await store.RevokeAsync(id, cancellationToken).ConfigureAwait(false);
         if (!revoked)
+        {
             return NotFound();
+        }
 
         await auditStore.AppendAsync(
             new HostAuditEntry(

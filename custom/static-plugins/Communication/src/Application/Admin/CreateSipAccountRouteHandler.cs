@@ -13,7 +13,9 @@ public sealed class CreateSipAccountRouteHandler(
         CancellationToken cancellationToken = default)
     {
         if (!AdminRequestWorkspace.TryGet(request, out var workspaceKey, out var error))
+        {
             return error!;
+        }
 
         if (!SipAccountRequestParser.TryParseUpsert(request.Body, out var payload, out var errorMessage))
         {

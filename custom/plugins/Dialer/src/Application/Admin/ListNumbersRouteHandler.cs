@@ -10,7 +10,9 @@ public sealed class ListNumbersRouteHandler(IDialNumberStore store) : IHostAdmin
         CancellationToken cancellationToken = default)
     {
         if (!AdminRequestWorkspace.TryGet(request, out var workspaceKey, out var error))
+        {
             return error!;
+        }
 
         var numbers = await store.ListAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         return new HostAdminApiResponse(200, numbers);

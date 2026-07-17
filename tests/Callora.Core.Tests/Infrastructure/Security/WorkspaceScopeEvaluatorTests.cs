@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using Callora.Core.Infrastructure.Security;
+using System.Security.Claims;
 using Xunit;
 
 namespace Callora.Core.Tests.Infrastructure.Security;

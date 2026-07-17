@@ -16,11 +16,15 @@ internal sealed class PluginScaffolder
         CancellationToken cancellationToken)
     {
         if (!PluginScaffoldNaming.IsValidPluginId(request.PluginId))
+        {
             return PluginScaffoldResult.Fail("Invalid plugin id. Allowed: a-z, A-Z, 0-9, '.', '-', '_'.");
+        }
 
         var outputDirectory = Path.GetFullPath(request.OutputDirectory);
         if (!request.Force && Directory.Exists(outputDirectory) && Directory.EnumerateFileSystemEntries(outputDirectory).Any())
+        {
             return PluginScaffoldResult.Fail($"Output directory is not empty: {outputDirectory}");
+        }
 
         var projectName = $"Callora.Plugins.{PluginScaffoldNaming.ToPascalCase(request.Name)}";
         var pluginClassName = $"{PluginScaffoldNaming.ToPascalCase(request.Name)}Plugin";
@@ -83,7 +87,9 @@ internal sealed class PluginScaffolder
         {
             var solutionPath = Path.Combine(directoryInfo.FullName, "Callora.Host.sln");
             if (File.Exists(solutionPath))
+            {
                 return directoryInfo.FullName;
+            }
 
             directoryInfo = directoryInfo.Parent;
         }

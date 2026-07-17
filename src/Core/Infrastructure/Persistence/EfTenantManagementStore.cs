@@ -1,7 +1,7 @@
-using System.Linq.Expressions;
 using Callora.Core.Application.Tenants;
 using Callora.Core.Domain.Tenants;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Callora.Core.Infrastructure.Persistence;
 

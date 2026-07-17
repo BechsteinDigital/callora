@@ -10,7 +10,9 @@ public sealed class EfWorkspacePluginActivationReader(HostPersistenceDbContext d
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(workspaceKey))
+        {
             return [];
+        }
 
         var normalizedKey = workspaceKey.Trim();
         return await dbContext.WorkspacePluginActivations
