@@ -39,8 +39,10 @@ public sealed class WebhookEgressGuardTests
     public async Task Guard_BlocksLoopbackLiteral_AndAllowsInDevMode()
     {
         var strict = new WebhookEgressGuard(new BackendHostOptions());
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var blocked = await Assert.ThrowsAsync<WebhookTargetException>(() =>
             strict.EnsureAllowedAsync(new Uri("http://127.0.0.1:5000/hook")));
+        Assert.Equal(WebhookTargetException.TargetBlockedCode, blocked.ErrorCode);
+        Assert.Equal(400, blocked.StatusCode);
 
         var dev = new WebhookEgressGuard(new BackendHostOptions { AllowPrivateWebhookTargets = true });
         await dev.EnsureAllowedAsync(new Uri("http://127.0.0.1:5000/hook"));

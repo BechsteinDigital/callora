@@ -22,7 +22,7 @@ public sealed class WebhookEgressGuard(BackendHostOptions options)
 
         if (target.Scheme != Uri.UriSchemeHttps && target.Scheme != Uri.UriSchemeHttp)
         {
-            throw new InvalidOperationException("Webhook targets must use http(s).");
+            throw WebhookTargetException.InvalidScheme();
         }
 
         if (options.AllowPrivateWebhookTargets)
@@ -42,8 +42,7 @@ public sealed class WebhookEgressGuard(BackendHostOptions options)
 
         if (addresses.Length == 0 || addresses.Any(IsForbidden))
         {
-            throw new InvalidOperationException(
-                $"Webhook target '{target.Host}' resolves to a non-public address and was blocked.");
+            throw WebhookTargetException.Blocked(target.Host);
         }
     }
 

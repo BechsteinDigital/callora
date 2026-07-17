@@ -4235,3 +4235,16 @@ Callora.Core.Application.Events.MutableBusinessEvent
 Callora.Core.Application.Events.MutableBusinessEvent.EventName.get -> string!
 Callora.Core.Application.Events.MutableBusinessEvent.MutableBusinessEvent(string! eventName, string? workspaceKey) -> void
 Callora.Core.Application.Events.MutableBusinessEvent.WorkspaceKey.get -> string?
+Callora.Core.Application.Webhooks.WebhookTargetException
+Callora.Core.CalloraException
+Callora.Core.CalloraException.CalloraException(string! errorCode, int statusCode, string! message, System.Exception? innerException = null) -> void
+Callora.Core.CalloraException.ErrorCode.get -> string!
+Callora.Core.CalloraException.StatusCode.get -> int
+Callora.Core.Infrastructure.Http.CalloraExceptionHandler
+Callora.Core.Infrastructure.Http.CalloraExceptionHandler.CalloraExceptionHandler(Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Http.CalloraExceptionHandler!>! logger) -> void
+Callora.Core.Infrastructure.Http.CalloraExceptionHandler.TryHandleAsync(Microsoft.AspNetCore.Http.HttpContext! httpContext, System.Exception! exception, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<bool>
+const Callora.Core.Application.Webhooks.WebhookTargetException.InvalidSchemeCode = "WEBHOOK__INVALID_SCHEME" -> string!
+const Callora.Core.Application.Webhooks.WebhookTargetException.TargetBlockedCode = "WEBHOOK__TARGET_BLOCKED" -> string!
+static Callora.Core.Api.ApiProblems.FromException(Callora.Core.CalloraException! exception) -> Microsoft.AspNetCore.Http.IResult!
+static Callora.Core.Application.Webhooks.WebhookTargetException.Blocked(string! host) -> Callora.Core.Application.Webhooks.WebhookTargetException!
+static Callora.Core.Application.Webhooks.WebhookTargetException.InvalidScheme() -> Callora.Core.Application.Webhooks.WebhookTargetException!

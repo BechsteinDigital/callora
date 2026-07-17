@@ -30,6 +30,21 @@ public static class ApiProblems
     public static IResult ServiceUnavailable(string detail) =>
         Build(StatusCodes.Status503ServiceUnavailable, "Service Unavailable", "service-unavailable", detail);
 
+    /// <summary>
+    /// Renders a <see cref="CalloraException"/> as a problem response, carrying its stable
+    /// error code both as the problem type and as a machine-readable <c>code</c> member so a
+    /// client can branch on it.
+    /// </summary>
+    public static IResult FromException(CalloraException exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        return Results.Problem(
+            detail: exception.Message,
+            statusCode: exception.StatusCode,
+            type: TypeBaseUri + exception.ErrorCode,
+            extensions: new Dictionary<string, object?> { ["code"] = exception.ErrorCode });
+    }
+
     private static IResult Build(int statusCode, string title, string typeSlug, string detail) =>
         Results.Problem(
             detail: detail,

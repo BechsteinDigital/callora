@@ -58,6 +58,11 @@ public static class CalloraHostCompositionExtensions
             Callora.Core.Api.ApiProblems.TypeBaseUri = backendOptions.ProblemTypeBaseUri;
         }
 
+        // R4: a CalloraException thrown from any service is rendered as an RFC 9457 problem
+        // response with its stable error code; other exceptions fall through to 500.
+        builder.Services.AddProblemDetails();
+        builder.Services.AddExceptionHandler<Callora.Core.Infrastructure.Http.CalloraExceptionHandler>();
+
         builder.Services.AddBackendOpenApi();
 
         var hostRegistry = new ServiceCollectionHostRegistry(builder.Services);
@@ -265,6 +270,10 @@ public static class CalloraHostCompositionExtensions
     public static WebApplication MapCalloraHost(this WebApplication app)
     {
         var backendOptions = app.Services.GetRequiredService<BackendHostOptions>();
+
+        // R4: expected domain faults (CalloraException) become RFC 9457 problems. Registered
+        // first so it wraps the whole endpoint pipeline.
+        app.UseExceptionHandler();
 
         app.MapBackendOpenApi();
         app.Use(async (context, next) =>
