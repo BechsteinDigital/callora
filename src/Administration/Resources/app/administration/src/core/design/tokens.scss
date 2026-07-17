@@ -1,0 +1,22 @@
+:root {
+  --cal-color-bg: #0f1115;
+  --cal-color-surface: #1a1d24;
+  --cal-color-text: #e7e9ee;
+  --cal-color-muted: #9aa1ad;
+  --cal-color-accent: #4c8dff;
+  --cal-color-danger: #ff5c5c;
+  --cal-radius: 8px;
+  --cal-space: 8px;
+  --cal-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--cal-color-bg);
+  color: var(--cal-color-text);
+  font-family: var(--cal-font);
+}
