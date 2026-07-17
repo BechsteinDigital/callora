@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Plugins.Contracts;
 
 /// <summary>
@@ -6,5 +8,5 @@ namespace Callora.Core.Application.Plugins.Contracts;
 /// <param name="ExtensionPointId">Target extension point identifier.</param>
 /// <param name="Surface">Target surface code (for example: admin, workspace).</param>
 public sealed record HostPluginExtensionRegistration(
-    string ExtensionPointId,
+    [ExtensionPointId] string ExtensionPointId,
     string Surface);
