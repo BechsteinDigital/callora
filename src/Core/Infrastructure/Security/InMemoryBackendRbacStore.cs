@@ -74,7 +74,7 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
 
         if (string.Equals(role, BackendRoles.SuperAdmin, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("Role 'superadmin' is fixed and cannot be modified.");
+            throw BackendRbacException.RoleFixed(BackendRoles.SuperAdmin);
         }
 
         var normalizedPermissions = NormalizePermissions(permissions, role);
@@ -141,7 +141,7 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         {
             if (!_rolePermissions.ContainsKey(role.Trim()))
             {
-                throw new InvalidOperationException($"Role '{role}' is not defined.");
+                throw BackendRbacException.RoleNotFound(role);
             }
 
             _userRoles[userId.Trim()] = role.Trim();
@@ -172,7 +172,7 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
             var trimmed = permission.Trim().ToLowerInvariant();
             if (!BackendPermissionKeyValidator.IsValid(trimmed))
             {
-                throw new InvalidOperationException($"Permission '{permission}' is invalid for role '{role}'.");
+                throw BackendRbacException.PermissionInvalid(permission, role);
             }
 
             normalized.Add(trimmed);

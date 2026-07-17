@@ -4248,3 +4248,16 @@ const Callora.Core.Application.Webhooks.WebhookTargetException.TargetBlockedCode
 static Callora.Core.Api.ApiProblems.FromException(Callora.Core.CalloraException! exception) -> Microsoft.AspNetCore.Http.IResult!
 static Callora.Core.Application.Webhooks.WebhookTargetException.Blocked(string! host) -> Callora.Core.Application.Webhooks.WebhookTargetException!
 static Callora.Core.Application.Webhooks.WebhookTargetException.InvalidScheme() -> Callora.Core.Application.Webhooks.WebhookTargetException!
+Callora.Core.Application.Security.BackendRbacException
+Callora.Core.Application.Security.BackendUserException
+Callora.Core.Domain.Plugins.PluginInstallationException
+const Callora.Core.Application.Security.BackendRbacException.PermissionInvalidCode = "RBAC__PERMISSION_INVALID" -> string!
+const Callora.Core.Application.Security.BackendRbacException.RoleFixedCode = "RBAC__ROLE_FIXED" -> string!
+const Callora.Core.Application.Security.BackendRbacException.RoleNotFoundCode = "RBAC__ROLE_NOT_FOUND" -> string!
+const Callora.Core.Application.Security.BackendUserException.PasswordRequiredCode = "USER__PASSWORD_REQUIRED" -> string!
+const Callora.Core.Domain.Plugins.PluginInstallationException.AlreadyUninstalledCode = "PLUGIN__ALREADY_UNINSTALLED" -> string!
+static Callora.Core.Application.Security.BackendRbacException.PermissionInvalid(string! permission, string! role) -> Callora.Core.Application.Security.BackendRbacException!
+static Callora.Core.Application.Security.BackendRbacException.RoleFixed(string! roleName) -> Callora.Core.Application.Security.BackendRbacException!
+static Callora.Core.Application.Security.BackendRbacException.RoleNotFound(string! role) -> Callora.Core.Application.Security.BackendRbacException!
+static Callora.Core.Application.Security.BackendUserException.PasswordRequired() -> Callora.Core.Application.Security.BackendUserException!
+static Callora.Core.Domain.Plugins.PluginInstallationException.AlreadyUninstalled(string! pluginId) -> Callora.Core.Domain.Plugins.PluginInstallationException!

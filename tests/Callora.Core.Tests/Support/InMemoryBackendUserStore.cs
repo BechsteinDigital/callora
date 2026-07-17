@@ -139,7 +139,7 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
 
         if (!existedBefore && string.IsNullOrWhiteSpace(password))
         {
-            throw new InvalidOperationException("Password is required when creating a new user.");
+            throw BackendUserException.PasswordRequired();
         }
 
         user.Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();

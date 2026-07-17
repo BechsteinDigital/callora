@@ -60,7 +60,7 @@ public sealed class EfBackendRbacStore(HostPersistenceDbContext dbContext) : IBa
 
         if (entity is { IsSystem: true })
         {
-            throw new InvalidOperationException($"Role '{roleName}' is fixed and cannot be modified.");
+            throw BackendRbacException.RoleFixed(roleName);
         }
 
         if (entity is null)
@@ -172,7 +172,7 @@ public sealed class EfBackendRbacStore(HostPersistenceDbContext dbContext) : IBa
             .ConfigureAwait(false);
         if (roleEntity is null)
         {
-            throw new InvalidOperationException($"Role '{role}' is not defined.");
+            throw BackendRbacException.RoleNotFound(role);
         }
 
         var normalizedUserId = userId.Trim();
@@ -255,7 +255,7 @@ public sealed class EfBackendRbacStore(HostPersistenceDbContext dbContext) : IBa
             var trimmed = permission.Trim().ToLowerInvariant();
             if (!BackendPermissionKeyValidator.IsValid(trimmed))
             {
-                throw new InvalidOperationException($"Permission '{permission}' is invalid for role '{role}'.");
+                throw BackendRbacException.PermissionInvalid(permission, role);
             }
 
             normalized.Add(trimmed);
