@@ -11,6 +11,11 @@
   "capabilities": [
     "communication.voice"
   ],
+  "sensitiveFields": [
+    "phoneNumber",
+    "callerNumber",
+    "calleeNumber"
+  ],
   "dependencies": {
     "Callora.Host.PluginContracts": ">=0.1.0",
     "Callora.Plugin.Communication.Abstractions": ">=0.1.0"
