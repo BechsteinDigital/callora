@@ -65,10 +65,11 @@ public static class CalloraAdministrationExtensions
     }
 
     /// <summary>
-    /// Serves the admin SPA: any GET under /admin/* that does not match a static
-    /// file or API route falls back to the SPA entry document, so the client-side
-    /// router handles deep links (e.g. /admin/users). /admin collides with no
-    /// reserved API prefix (all are /api/* or /workspace/*).
+    /// Serves the admin SPA: any request under /admin/* that does not match a
+    /// static file or API route falls back to the SPA entry document, so the
+    /// client-side router handles deep links (e.g. /admin/users). Scoped to
+    /// /admin at lowest priority, so it never shadows /api/* routes; /admin
+    /// collides with no reserved API prefix (all are /api/* or /workspace/*).
     /// </summary>
     public static IEndpointRouteBuilder MapAdminSpaFallback(this IEndpointRouteBuilder endpoints)
     {
