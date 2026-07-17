@@ -124,12 +124,11 @@ public static class CalloraHostCompositionExtensions
             .WithMetrics(metrics => metrics
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
-                .AddMeter(PluginLifecycleTelemetry.MeterName)
-                .AddMeter(BackgroundJobTelemetry.MeterName)
-                // Call-Metriken kommen aus dem Voice-Plugin (PLAT-257); Meter-Name als
-                // Literal, damit der Host das Plugin nicht referenziert.
-                .AddMeter("Callora.Voip.Calls")
-                .AddMeter(Callora.Core.Application.Webhooks.WebhookTelemetry.MeterName));
+                // Domänenneutral: ein Wildcard erfasst alle Callora-Meter — die Core-
+                // Subsysteme (Callora.Core.PluginLifecycle/BackgroundJobs/Webhooks) ebenso
+                // wie Plugin-Meter (z. B. Callora.Voip.Calls) —, ohne dass der Core einen
+                // konkreten Plugin-Meter-Namen kennt.
+                .AddMeter("Callora.*"));
         if (!string.IsNullOrWhiteSpace(observabilityOptions.OtlpEndpoint))
         {
             openTelemetry.UseOtlpExporter(
