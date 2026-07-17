@@ -907,3 +907,4 @@ static Callora.Administration.CalloraAdministrationExtensions.AddCalloraAdminist
 static Callora.Administration.CalloraAdministrationExtensions.MapCalloraAdministration(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
 Callora.Administration.Api.AdminContextEndpoints
 static Callora.Administration.Api.AdminContextEndpoints.MapAdminContextEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.CalloraAdministrationExtensions.MapAdminSpaFallback(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
