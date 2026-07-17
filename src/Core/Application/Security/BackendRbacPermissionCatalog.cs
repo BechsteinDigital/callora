@@ -1,7 +1,7 @@
 using Callora.Core.Application.Policies;
 using Callora.Core.Extensibility;
 
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// Projects role-function-action RBAC config to permission-key sets.

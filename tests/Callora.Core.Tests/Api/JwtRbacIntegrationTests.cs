@@ -5,6 +5,7 @@ using Callora.Core.Application.Entitlements;
 using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Tests.Support;
 using Microsoft.AspNetCore.Builder;

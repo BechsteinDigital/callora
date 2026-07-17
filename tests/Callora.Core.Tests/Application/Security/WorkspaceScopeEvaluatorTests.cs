@@ -1,8 +1,8 @@
-using Callora.Core.Infrastructure.Security;
+using Callora.Core.Application.Security;
 using System.Security.Claims;
 using Xunit;
 
-namespace Callora.Core.Tests.Infrastructure.Security;
+namespace Callora.Core.Tests.Application.Security;
 
 public sealed class WorkspaceScopeEvaluatorTests
 {

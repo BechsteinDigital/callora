@@ -1,7 +1,7 @@
 using Callora.Core.Extensibility;
 using System.Security.Claims;
 
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// Decides whether a principal may act on a workspace. Fail-closed: platform

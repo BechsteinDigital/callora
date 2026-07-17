@@ -1,3 +1,4 @@
+using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;

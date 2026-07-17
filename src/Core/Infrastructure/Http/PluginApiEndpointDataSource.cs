@@ -1,7 +1,7 @@
 using Callora.Core.Api;
 using Callora.Core.Application.Http.Contracts;
 using Callora.Core.Application.Plugins;
-using Callora.Core.Infrastructure.Security;
+using Callora.Core.Application.Security;
 using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;

@@ -1,6 +1,6 @@
 using Callora.Core.Extensibility;
 
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// Maps a <see cref="Callora.Core.Domain.Workspaces.WorkspaceMembership"/>

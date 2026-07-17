@@ -1,6 +1,6 @@
 using Callora.Core.Extensibility;
 
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// The authorization outcome of a successful admin login: the session scope, an

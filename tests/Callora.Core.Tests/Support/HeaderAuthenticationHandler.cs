@@ -1,4 +1,4 @@
-using Callora.Core.Infrastructure.Security;
+using Callora.Core.Application.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

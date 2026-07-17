@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// The effective administration context derived from the authenticated principal:

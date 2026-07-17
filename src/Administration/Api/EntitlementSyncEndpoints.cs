@@ -1,6 +1,7 @@
 using Callora.Core.Api;
 using Callora.Core.Application.Entitlements;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
 using System.Text.Json;
 

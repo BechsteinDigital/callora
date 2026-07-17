@@ -1,3 +1,4 @@
+using Callora.Core.Application.Security;
 using Callora.Core.Domain.Integrations;
 using Callora.Core.Extensibility;
 using System.Security.Claims;

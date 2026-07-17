@@ -1,4 +1,5 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Security;
 using Callora.Core.Application.Webhooks;
 using Callora.Core.Infrastructure.Security;
 

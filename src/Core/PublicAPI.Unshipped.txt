@@ -3350,18 +3350,18 @@ Callora.Core.Infrastructure.Security.ApiKeyAuthenticationDefaults
 Callora.Core.Infrastructure.Security.ApiKeyAuthenticationHandler
 Callora.Core.Infrastructure.Security.ApiKeyAuthenticationHandler.ApiKeyAuthenticationHandler(Microsoft.Extensions.Options.IOptionsMonitor<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions!>! options, Microsoft.Extensions.Logging.ILoggerFactory! logger, System.Text.Encodings.Web.UrlEncoder! encoder, Callora.Core.Application.Policies.BackendHostOptions! hostOptions) -> void
 Callora.Core.Infrastructure.Security.BackendAuthCookieService
-Callora.Core.Infrastructure.Security.BackendAuthScopes
+Callora.Core.Application.Security.BackendAuthScopes
 Callora.Core.Infrastructure.Security.BackendClaimsTransformation
 Callora.Core.Infrastructure.Security.BackendClaimsTransformation.BackendClaimsTransformation(Callora.Core.Application.Security.IBackendRbacStore! rbacStore) -> void
 Callora.Core.Infrastructure.Security.BackendClaimsTransformation.TransformAsync(System.Security.Claims.ClaimsPrincipal! principal) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal!>!
-Callora.Core.Infrastructure.Security.BackendClaimTypes
+Callora.Core.Application.Security.BackendClaimTypes
 Callora.Core.Infrastructure.Security.BackendJwtTokenIssuer
-Callora.Core.Infrastructure.Security.BackendPermissionActions
-Callora.Core.Infrastructure.Security.BackendPermissionKeys
-Callora.Core.Infrastructure.Security.BackendPermissionKeyValidator
+Callora.Core.Application.Security.BackendPermissionActions
+Callora.Core.Application.Security.BackendPermissionKeys
+Callora.Core.Application.Security.BackendPermissionKeyValidator
 Callora.Core.Infrastructure.Security.BackendRateLimiting
-Callora.Core.Infrastructure.Security.BackendRbacPermissionCatalog
-Callora.Core.Infrastructure.Security.BackendRoles
+Callora.Core.Application.Security.BackendRbacPermissionCatalog
+Callora.Core.Application.Security.BackendRoles
 Callora.Core.Infrastructure.Security.BackendSecurityServiceCollectionExtensions
 Callora.Core.Infrastructure.Security.CalloraPermissionAttribute
 Callora.Core.Infrastructure.Security.CalloraPermissionAttribute.CalloraPermissionAttribute(string! permissionKey) -> void
@@ -3396,9 +3396,9 @@ Callora.Core.Infrastructure.Security.InMemoryBackendRbacStore.RemoveUserRoleAsyn
 Callora.Core.Infrastructure.Security.InMemoryBackendRbacStore.UpsertRoleAsync(string! role, System.Collections.Generic.IReadOnlyCollection<string!>! permissions, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Security.InMemoryBackendRbacStore.UpsertUserRoleAsync(string! userId, string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Security.IntegrationPrincipalFactory
-Callora.Core.Infrastructure.Security.WorkspaceRolePermissions
+Callora.Core.Application.Security.WorkspaceRolePermissions
 Callora.Core.Infrastructure.Security.WorkspaceScopeAuthorizationExtensions
-Callora.Core.Infrastructure.Security.WorkspaceScopeEvaluator
+Callora.Core.Application.Security.WorkspaceScopeEvaluator
 Callora.Core.Infrastructure.Startup.BackgroundJobWorkerHostedService
 Callora.Core.Infrastructure.Startup.BackgroundJobWorkerHostedService.BackgroundJobWorkerHostedService(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Callora.Core.Application.Jobs.BackgroundJobOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Startup.BackgroundJobWorkerHostedService!>! logger) -> void
 Callora.Core.Infrastructure.Startup.CalloraHostStartupHostedService
@@ -3495,56 +3495,56 @@ const Callora.Core.Domain.Extensions.ExtensionSurfaceCodes.Admin = "admin" -> st
 const Callora.Core.Domain.Extensions.ExtensionSurfaceCodes.Workspace = "workspace" -> string!
 const Callora.Core.Infrastructure.Mail.SmtpMailSender.ConfigPluginId = "host" -> string!
 const Callora.Core.Infrastructure.Security.ApiKeyAuthenticationDefaults.Scheme = "ApiKey" -> string!
-const Callora.Core.Infrastructure.Security.BackendAuthScopes.Platform = "platform" -> string!
-const Callora.Core.Infrastructure.Security.BackendAuthScopes.Workspace = "workspace" -> string!
-const Callora.Core.Infrastructure.Security.BackendClaimTypes.CalloraScope = "callora_scope" -> string!
-const Callora.Core.Infrastructure.Security.BackendClaimTypes.Permission = "permission" -> string!
-const Callora.Core.Infrastructure.Security.BackendClaimTypes.Scope = "scope" -> string!
-const Callora.Core.Infrastructure.Security.BackendClaimTypes.WorkspaceKey = "workspace_key" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionActions.Create = "create" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionActions.Delete = "delete" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionActions.Execute = "execute" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionActions.Read = "read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionActions.Update = "update" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.ConfigRead = "config.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.ConfigUpdate = "config.update" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.CustomFieldRead = "customfield.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.CustomFieldUpdate = "customfield.update" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.ExtensionRead = "extension.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.ExtensionUpdate = "extension.update" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.FlowManage = "flow.manage" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.FlowRead = "flow.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.IntegrationManage = "integration.manage" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.IntegrationRead = "integration.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.JobRead = "job.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.MediaManage = "media.manage" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.MediaRead = "media.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.NotificationRead = "notification.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.PluginCreate = "plugin.create" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.PluginDelete = "plugin.delete" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.PluginExecute = "plugin.execute" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.PluginRead = "plugin.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.RoleRead = "role.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.RoleUpdate = "role.update" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.TenantCreate = "tenant.create" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.TenantDelete = "tenant.delete" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.TenantRead = "tenant.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.TenantUpdate = "tenant.update" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.UserCreate = "user.create" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.UserDelete = "user.delete" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.UserRead = "user.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.UserUpdate = "user.update" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.WebhookManage = "webhook.manage" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.WebhookRead = "webhook.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.WorkspaceCreate = "workspace.create" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.WorkspaceDelete = "workspace.delete" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.WorkspaceRead = "workspace.read" -> string!
-const Callora.Core.Infrastructure.Security.BackendPermissionKeys.WorkspaceUpdate = "workspace.update" -> string!
+const Callora.Core.Application.Security.BackendAuthScopes.Platform = "platform" -> string!
+const Callora.Core.Application.Security.BackendAuthScopes.Workspace = "workspace" -> string!
+const Callora.Core.Application.Security.BackendClaimTypes.CalloraScope = "callora_scope" -> string!
+const Callora.Core.Application.Security.BackendClaimTypes.Permission = "permission" -> string!
+const Callora.Core.Application.Security.BackendClaimTypes.Scope = "scope" -> string!
+const Callora.Core.Application.Security.BackendClaimTypes.WorkspaceKey = "workspace_key" -> string!
+const Callora.Core.Application.Security.BackendPermissionActions.Create = "create" -> string!
+const Callora.Core.Application.Security.BackendPermissionActions.Delete = "delete" -> string!
+const Callora.Core.Application.Security.BackendPermissionActions.Execute = "execute" -> string!
+const Callora.Core.Application.Security.BackendPermissionActions.Read = "read" -> string!
+const Callora.Core.Application.Security.BackendPermissionActions.Update = "update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.ConfigRead = "config.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.ConfigUpdate = "config.update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.CustomFieldRead = "customfield.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.CustomFieldUpdate = "customfield.update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.ExtensionRead = "extension.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.ExtensionUpdate = "extension.update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.FlowManage = "flow.manage" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.FlowRead = "flow.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.IntegrationManage = "integration.manage" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.IntegrationRead = "integration.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.JobRead = "job.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.MediaManage = "media.manage" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.MediaRead = "media.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.NotificationRead = "notification.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.PluginCreate = "plugin.create" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.PluginDelete = "plugin.delete" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.PluginExecute = "plugin.execute" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.PluginRead = "plugin.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.RoleRead = "role.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.RoleUpdate = "role.update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.TenantCreate = "tenant.create" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.TenantDelete = "tenant.delete" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.TenantRead = "tenant.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.TenantUpdate = "tenant.update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.UserCreate = "user.create" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.UserDelete = "user.delete" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.UserRead = "user.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.UserUpdate = "user.update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.WebhookManage = "webhook.manage" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.WebhookRead = "webhook.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.WorkspaceCreate = "workspace.create" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.WorkspaceDelete = "workspace.delete" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.WorkspaceRead = "workspace.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.WorkspaceUpdate = "workspace.update" -> string!
 const Callora.Core.Infrastructure.Security.BackendRateLimiting.ApiPolicy = "api" -> string!
 const Callora.Core.Infrastructure.Security.BackendRateLimiting.AuthPolicy = "auth" -> string!
-const Callora.Core.Infrastructure.Security.BackendRoles.Admin = "admin" -> string!
-const Callora.Core.Infrastructure.Security.BackendRoles.HostApi = "host.api" -> string!
-const Callora.Core.Infrastructure.Security.BackendRoles.SuperAdmin = "superadmin" -> string!
+const Callora.Core.Application.Security.BackendRoles.Admin = "admin" -> string!
+const Callora.Core.Application.Security.BackendRoles.HostApi = "host.api" -> string!
+const Callora.Core.Application.Security.BackendRoles.SuperAdmin = "superadmin" -> string!
 override Callora.Core.Api.AuthMeApiResponse.Equals(object? obj) -> bool
 override Callora.Core.Api.AuthMeApiResponse.GetHashCode() -> int
 override Callora.Core.Api.AuthMeApiResponse.ToString() -> string!
@@ -4158,19 +4158,19 @@ static Callora.Core.Infrastructure.Security.BackendAuthCookieService.AppendAuthC
 static Callora.Core.Infrastructure.Security.BackendAuthCookieService.ClearAuthCookie(Microsoft.AspNetCore.Http.HttpResponse! response, Callora.Core.Application.Policies.BackendHostOptions! options, bool isHttps) -> void
 static Callora.Core.Infrastructure.Security.BackendAuthCookieService.ResolveCookieName(Callora.Core.Application.Policies.BackendHostOptions! options) -> string!
 static Callora.Core.Infrastructure.Security.BackendJwtTokenIssuer.Issue(Callora.Core.Application.Policies.BackendHostOptions! options, string! subject, string? displayName, string? email, System.Collections.Generic.IReadOnlyCollection<string!>! roles, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? customClaims = null, System.TimeSpan? lifetime = null, System.Collections.Generic.IReadOnlyCollection<string!>? permissions = null) -> string!
-static Callora.Core.Infrastructure.Security.BackendPermissionKeyValidator.IsValid(string! permissionKey) -> bool
+static Callora.Core.Application.Security.BackendPermissionKeyValidator.IsValid(string! permissionKey) -> bool
 static Callora.Core.Infrastructure.Security.BackendRateLimiting.AddBackendRateLimiting(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.Security.BackendRateLimiting.ResolveClientKey(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> string!
-static Callora.Core.Infrastructure.Security.BackendRbacPermissionCatalog.Build(Callora.Core.Application.Policies.BackendHostOptions! options) -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyCollection<string!>!>!
+static Callora.Core.Application.Security.BackendRbacPermissionCatalog.Build(Callora.Core.Application.Policies.BackendHostOptions! options) -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyCollection<string!>!>!
 static Callora.Core.Infrastructure.Security.BackendSecurityServiceCollectionExtensions.AddBackendApiSecurity(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.RequirePermission<TBuilder>(this TBuilder builder, string! permissionKey) -> TBuilder
 static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.UserHasPermission(System.Security.Claims.ClaimsPrincipal! user, string! permissionKey) -> bool
 static Callora.Core.Infrastructure.Security.IntegrationPrincipalFactory.Create(Callora.Core.Domain.Integrations.IntegrationCredential! integration) -> System.Security.Claims.ClaimsPrincipal!
-static Callora.Core.Infrastructure.Security.WorkspaceRolePermissions.ForRole(string? workspaceRole) -> System.Collections.Generic.IReadOnlyList<string!>!
+static Callora.Core.Application.Security.WorkspaceRolePermissions.ForRole(string? workspaceRole) -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Infrastructure.Security.WorkspaceScopeAuthorizationExtensions.RequireWorkspaceScope<TBuilder>(this TBuilder builder) -> TBuilder
-static Callora.Core.Infrastructure.Security.WorkspaceScopeEvaluator.HasWorkspaceAccess(System.Security.Claims.ClaimsPrincipal! user, string? requestedWorkspaceKey) -> bool
-static Callora.Core.Infrastructure.Security.WorkspaceScopeEvaluator.IsOperator(System.Security.Claims.ClaimsPrincipal! user) -> bool
-static readonly Callora.Core.Infrastructure.Security.BackendPermissionActions.All -> string![]!
+static Callora.Core.Application.Security.WorkspaceScopeEvaluator.HasWorkspaceAccess(System.Security.Claims.ClaimsPrincipal! user, string? requestedWorkspaceKey) -> bool
+static Callora.Core.Application.Security.WorkspaceScopeEvaluator.IsOperator(System.Security.Claims.ClaimsPrincipal! user) -> bool
+static readonly Callora.Core.Application.Security.BackendPermissionActions.All -> string![]!
 virtual Callora.Core.Application.Events.HostApplicationEventPublishNext<TEvent>.Invoke(TEvent appEvent, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 ~override Callora.Core.Application.Plugins.PluginActivationDecision.Equals(object obj) -> bool
 ~override Callora.Core.Application.Plugins.PluginActivationDecision.ToString() -> string
@@ -4301,54 +4301,54 @@ Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.RegistryS
 Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.SyncFromAssemblyAsync(string! pluginId, string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Callora.Core.Application.Webhooks.WebhookPayloadMinimizer.Minimize(string! bodyJson, System.Collections.Generic.IReadOnlySet<string!>! sensitiveFields) -> string!
 static Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ParseSensitiveFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<string!>!
-Callora.Core.Infrastructure.Security.AdminContextView
-Callora.Core.Infrastructure.Security.AdminContextView.AdminContextView(string! UserId, string? DisplayName, string? Email, System.Collections.Generic.IReadOnlyList<string!>! Roles, System.Collections.Generic.IReadOnlyList<string!>! Permissions, string? Scope, string? WorkspaceKey, bool IsOperator) -> void
-Callora.Core.Infrastructure.Security.AdminContextView.<Clone>$() -> Callora.Core.Infrastructure.Security.AdminContextView!
-Callora.Core.Infrastructure.Security.AdminContextView.Deconstruct(out string! UserId, out string? DisplayName, out string? Email, out System.Collections.Generic.IReadOnlyList<string!>! Roles, out System.Collections.Generic.IReadOnlyList<string!>! Permissions, out string? Scope, out string? WorkspaceKey, out bool IsOperator) -> void
-Callora.Core.Infrastructure.Security.AdminContextView.DisplayName.get -> string?
-Callora.Core.Infrastructure.Security.AdminContextView.DisplayName.init -> void
-Callora.Core.Infrastructure.Security.AdminContextView.Email.get -> string?
-Callora.Core.Infrastructure.Security.AdminContextView.Email.init -> void
-Callora.Core.Infrastructure.Security.AdminContextView.Equals(Callora.Core.Infrastructure.Security.AdminContextView? other) -> bool
-Callora.Core.Infrastructure.Security.AdminContextView.IsOperator.get -> bool
-Callora.Core.Infrastructure.Security.AdminContextView.IsOperator.init -> void
-Callora.Core.Infrastructure.Security.AdminContextView.Permissions.get -> System.Collections.Generic.IReadOnlyList<string!>!
-Callora.Core.Infrastructure.Security.AdminContextView.Permissions.init -> void
-Callora.Core.Infrastructure.Security.AdminContextView.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>!
-Callora.Core.Infrastructure.Security.AdminContextView.Roles.init -> void
-Callora.Core.Infrastructure.Security.AdminContextView.Scope.get -> string?
-Callora.Core.Infrastructure.Security.AdminContextView.Scope.init -> void
-Callora.Core.Infrastructure.Security.AdminContextView.UserId.get -> string!
-Callora.Core.Infrastructure.Security.AdminContextView.UserId.init -> void
-Callora.Core.Infrastructure.Security.AdminContextView.WorkspaceKey.get -> string?
-Callora.Core.Infrastructure.Security.AdminContextView.WorkspaceKey.init -> void
-override Callora.Core.Infrastructure.Security.AdminContextView.Equals(object? obj) -> bool
-override Callora.Core.Infrastructure.Security.AdminContextView.GetHashCode() -> int
-override Callora.Core.Infrastructure.Security.AdminContextView.ToString() -> string!
-static Callora.Core.Infrastructure.Security.AdminContextView.FromPrincipal(System.Security.Claims.ClaimsPrincipal! user) -> Callora.Core.Infrastructure.Security.AdminContextView?
-static Callora.Core.Infrastructure.Security.AdminContextView.operator !=(Callora.Core.Infrastructure.Security.AdminContextView? left, Callora.Core.Infrastructure.Security.AdminContextView? right) -> bool
-static Callora.Core.Infrastructure.Security.AdminContextView.operator ==(Callora.Core.Infrastructure.Security.AdminContextView? left, Callora.Core.Infrastructure.Security.AdminContextView? right) -> bool
+Callora.Core.Application.Security.AdminContextView
+Callora.Core.Application.Security.AdminContextView.AdminContextView(string! UserId, string? DisplayName, string? Email, System.Collections.Generic.IReadOnlyList<string!>! Roles, System.Collections.Generic.IReadOnlyList<string!>! Permissions, string? Scope, string? WorkspaceKey, bool IsOperator) -> void
+Callora.Core.Application.Security.AdminContextView.<Clone>$() -> Callora.Core.Application.Security.AdminContextView!
+Callora.Core.Application.Security.AdminContextView.Deconstruct(out string! UserId, out string? DisplayName, out string? Email, out System.Collections.Generic.IReadOnlyList<string!>! Roles, out System.Collections.Generic.IReadOnlyList<string!>! Permissions, out string? Scope, out string? WorkspaceKey, out bool IsOperator) -> void
+Callora.Core.Application.Security.AdminContextView.DisplayName.get -> string?
+Callora.Core.Application.Security.AdminContextView.DisplayName.init -> void
+Callora.Core.Application.Security.AdminContextView.Email.get -> string?
+Callora.Core.Application.Security.AdminContextView.Email.init -> void
+Callora.Core.Application.Security.AdminContextView.Equals(Callora.Core.Application.Security.AdminContextView? other) -> bool
+Callora.Core.Application.Security.AdminContextView.IsOperator.get -> bool
+Callora.Core.Application.Security.AdminContextView.IsOperator.init -> void
+Callora.Core.Application.Security.AdminContextView.Permissions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Application.Security.AdminContextView.Permissions.init -> void
+Callora.Core.Application.Security.AdminContextView.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Application.Security.AdminContextView.Roles.init -> void
+Callora.Core.Application.Security.AdminContextView.Scope.get -> string?
+Callora.Core.Application.Security.AdminContextView.Scope.init -> void
+Callora.Core.Application.Security.AdminContextView.UserId.get -> string!
+Callora.Core.Application.Security.AdminContextView.UserId.init -> void
+Callora.Core.Application.Security.AdminContextView.WorkspaceKey.get -> string?
+Callora.Core.Application.Security.AdminContextView.WorkspaceKey.init -> void
+override Callora.Core.Application.Security.AdminContextView.Equals(object? obj) -> bool
+override Callora.Core.Application.Security.AdminContextView.GetHashCode() -> int
+override Callora.Core.Application.Security.AdminContextView.ToString() -> string!
+static Callora.Core.Application.Security.AdminContextView.FromPrincipal(System.Security.Claims.ClaimsPrincipal! user) -> Callora.Core.Application.Security.AdminContextView?
+static Callora.Core.Application.Security.AdminContextView.operator !=(Callora.Core.Application.Security.AdminContextView? left, Callora.Core.Application.Security.AdminContextView? right) -> bool
+static Callora.Core.Application.Security.AdminContextView.operator ==(Callora.Core.Application.Security.AdminContextView? left, Callora.Core.Application.Security.AdminContextView? right) -> bool
 Callora.Core.Api.LoginApiRequest.Deconstruct(out string! Login, out string! Password, out string? WorkspaceKey) -> void
 Callora.Core.Api.LoginApiRequest.LoginApiRequest(string! Login, string! Password, string? WorkspaceKey = null) -> void
 Callora.Core.Api.LoginApiRequest.WorkspaceKey.get -> string?
 Callora.Core.Api.LoginApiRequest.WorkspaceKey.init -> void
-Callora.Core.Infrastructure.Security.AdminLoginGrant
-Callora.Core.Infrastructure.Security.AdminLoginGrant.AdminLoginGrant(string! Scope, string? WorkspaceKey, string? Role, System.Collections.Generic.IReadOnlyList<string!>! Permissions) -> void
-Callora.Core.Infrastructure.Security.AdminLoginGrant.<Clone>$() -> Callora.Core.Infrastructure.Security.AdminLoginGrant!
-Callora.Core.Infrastructure.Security.AdminLoginGrant.Deconstruct(out string! Scope, out string? WorkspaceKey, out string? Role, out System.Collections.Generic.IReadOnlyList<string!>! Permissions) -> void
-Callora.Core.Infrastructure.Security.AdminLoginGrant.Equals(Callora.Core.Infrastructure.Security.AdminLoginGrant? other) -> bool
-Callora.Core.Infrastructure.Security.AdminLoginGrant.Permissions.get -> System.Collections.Generic.IReadOnlyList<string!>!
-Callora.Core.Infrastructure.Security.AdminLoginGrant.Permissions.init -> void
-Callora.Core.Infrastructure.Security.AdminLoginGrant.Role.get -> string?
-Callora.Core.Infrastructure.Security.AdminLoginGrant.Role.init -> void
-Callora.Core.Infrastructure.Security.AdminLoginGrant.Scope.get -> string!
-Callora.Core.Infrastructure.Security.AdminLoginGrant.Scope.init -> void
-Callora.Core.Infrastructure.Security.AdminLoginGrant.WorkspaceKey.get -> string?
-Callora.Core.Infrastructure.Security.AdminLoginGrant.WorkspaceKey.init -> void
-Callora.Core.Infrastructure.Security.AdminLoginResolver
-override Callora.Core.Infrastructure.Security.AdminLoginGrant.Equals(object? obj) -> bool
-override Callora.Core.Infrastructure.Security.AdminLoginGrant.GetHashCode() -> int
-override Callora.Core.Infrastructure.Security.AdminLoginGrant.ToString() -> string!
-static Callora.Core.Infrastructure.Security.AdminLoginGrant.operator !=(Callora.Core.Infrastructure.Security.AdminLoginGrant? left, Callora.Core.Infrastructure.Security.AdminLoginGrant? right) -> bool
-static Callora.Core.Infrastructure.Security.AdminLoginGrant.operator ==(Callora.Core.Infrastructure.Security.AdminLoginGrant? left, Callora.Core.Infrastructure.Security.AdminLoginGrant? right) -> bool
-static Callora.Core.Infrastructure.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Infrastructure.Security.AdminLoginGrant?>!
+Callora.Core.Application.Security.AdminLoginGrant
+Callora.Core.Application.Security.AdminLoginGrant.AdminLoginGrant(string! Scope, string? WorkspaceKey, string? Role, System.Collections.Generic.IReadOnlyList<string!>! Permissions) -> void
+Callora.Core.Application.Security.AdminLoginGrant.<Clone>$() -> Callora.Core.Application.Security.AdminLoginGrant!
+Callora.Core.Application.Security.AdminLoginGrant.Deconstruct(out string! Scope, out string? WorkspaceKey, out string? Role, out System.Collections.Generic.IReadOnlyList<string!>! Permissions) -> void
+Callora.Core.Application.Security.AdminLoginGrant.Equals(Callora.Core.Application.Security.AdminLoginGrant? other) -> bool
+Callora.Core.Application.Security.AdminLoginGrant.Permissions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Application.Security.AdminLoginGrant.Permissions.init -> void
+Callora.Core.Application.Security.AdminLoginGrant.Role.get -> string?
+Callora.Core.Application.Security.AdminLoginGrant.Role.init -> void
+Callora.Core.Application.Security.AdminLoginGrant.Scope.get -> string!
+Callora.Core.Application.Security.AdminLoginGrant.Scope.init -> void
+Callora.Core.Application.Security.AdminLoginGrant.WorkspaceKey.get -> string?
+Callora.Core.Application.Security.AdminLoginGrant.WorkspaceKey.init -> void
+Callora.Core.Application.Security.AdminLoginResolver
+override Callora.Core.Application.Security.AdminLoginGrant.Equals(object? obj) -> bool
+override Callora.Core.Application.Security.AdminLoginGrant.GetHashCode() -> int
+override Callora.Core.Application.Security.AdminLoginGrant.ToString() -> string!
+static Callora.Core.Application.Security.AdminLoginGrant.operator !=(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
+static Callora.Core.Application.Security.AdminLoginGrant.operator ==(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
+static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!

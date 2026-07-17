@@ -1,9 +1,8 @@
 using Callora.Core.Application.Policies;
-using Callora.Core.Application.Security;
 using Callora.Core.Domain.Security;
 using Callora.Core.Extensibility;
 
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// Resolves the effective admin session for an authenticated user, unifying the

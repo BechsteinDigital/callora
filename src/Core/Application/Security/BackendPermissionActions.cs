@@ -1,4 +1,4 @@
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// Allowed action keys for role-function-action RBAC mapping.

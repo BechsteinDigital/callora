@@ -1,5 +1,6 @@
 using Callora.Core.Application.Integrations;
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Security;
 using Callora.Core.Extensibility;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;

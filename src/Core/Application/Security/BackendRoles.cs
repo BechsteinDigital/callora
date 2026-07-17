@@ -1,4 +1,4 @@
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// Role names recognized by backend authorization policies.
