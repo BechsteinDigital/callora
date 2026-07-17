@@ -11,6 +11,12 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
     <!-- Framework module; may consume Core's [CalloraInternal] surface. -->
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
+    <!-- The admin SPA (Resources/app/administration) builds into wwwroot/admin
+         and is bundled as a static web asset served under /admin (not the
+         default _content/Callora.Administration). Callora-Production inherits it
+         via the project/package reference. -->
+    <StaticWebAssetBasePath>admin</StaticWebAssetBasePath>
+    <AdminFrontendDir>$(MSBuildProjectDirectory)/Resources/app/administration</AdminFrontendDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,5 +37,24 @@
     <AdditionalFiles Include="PublicAPI.Shipped.txt" />
     <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
+
+  <!-- Build the admin SPA before the Web SDK collects static web assets, so the
+       Vite output in wwwroot/admin is bundled. Skip with -p:SkipAdminFrontend=true
+       for backend-only iteration (no Node needed). Incrementality keys on the
+       frontend sources so a rebuild triggers whenever they change. -->
+  <ItemGroup>
+    <AdminFrontendInputs Include="$(AdminFrontendDir)/src/**/*" />
+    <AdminFrontendInputs Include="$(AdminFrontendDir)/package.json;$(AdminFrontendDir)/package-lock.json;$(AdminFrontendDir)/vite.config.ts;$(AdminFrontendDir)/tsconfig.json;$(AdminFrontendDir)/index.html" />
+  </ItemGroup>
+
+  <Target Name="BuildAdminFrontend"
+          BeforeTargets="ResolveStaticWebAssetsInputs;BeforeBuild"
+          Condition="'$(SkipAdminFrontend)' != 'true'"
+          Inputs="@(AdminFrontendInputs)"
+          Outputs="$(MSBuildProjectDirectory)/wwwroot/admin/index.html">
+    <Message Importance="high" Text="Building admin shell frontend (npm ci + build)…" />
+    <Exec Command="npm ci" WorkingDirectory="$(AdminFrontendDir)" />
+    <Exec Command="npm run build" WorkingDirectory="$(AdminFrontendDir)" />
+  </Target>
 
 </Project>
