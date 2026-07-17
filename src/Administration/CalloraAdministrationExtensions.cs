@@ -58,6 +58,22 @@ public static class CalloraAdministrationExtensions
             app.MapTenantEndpoints();
         }
 
+        // Lowest priority: the admin SPA fallback for client-side routing.
+        app.MapAdminSpaFallback();
+
         return app;
+    }
+
+    /// <summary>
+    /// Serves the admin SPA: any GET under /admin/* that does not match a static
+    /// file or API route falls back to the SPA entry document, so the client-side
+    /// router handles deep links (e.g. /admin/users). /admin collides with no
+    /// reserved API prefix (all are /api/* or /workspace/*).
+    /// </summary>
+    public static IEndpointRouteBuilder MapAdminSpaFallback(this IEndpointRouteBuilder endpoints)
+    {
+        ArgumentNullException.ThrowIfNull(endpoints);
+        endpoints.MapFallbackToFile("/admin/{**path}", "admin/index.html");
+        return endpoints;
     }
 }
