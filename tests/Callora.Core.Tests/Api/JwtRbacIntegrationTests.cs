@@ -112,11 +112,13 @@ public sealed class JwtRbacIntegrationTests
             new RbacUserUpsertApiRequest("plugin.operator"));
         Assert.Equal(HttpStatusCode.Forbidden, aliceBeforeDelegation.StatusCode);
 
+        // Delegating RBAC-user administration requires role.* (platform RBAC),
+        // not user.* — the latter is the workspace-admin floor for /api/users.
         var createManagerRole = await adminClient.PutAsJsonAsync(
             "/api/security/rbac/roles/rbac.manager",
             new RbacRoleUpsertApiRequest(
             [
-                new RbacFunctionActionApiRequest("user", ["read", "update"])
+                new RbacFunctionActionApiRequest("role", ["read", "update"])
             ]));
         Assert.Equal(HttpStatusCode.OK, createManagerRole.StatusCode);
 
@@ -129,6 +131,43 @@ public sealed class JwtRbacIntegrationTests
             "/api/security/rbac/users/bob",
             new RbacUserUpsertApiRequest("plugin.operator"));
         Assert.Equal(HttpStatusCode.OK, aliceAfterDelegation.StatusCode);
+    }
+
+    [Fact]
+    public async Task WorkspaceFloorPermissions_CannotManageGlobalRbacUsers()
+    {
+        // A workspace admin carries the user.* floor (WorkspaceRolePermissions)
+        // for the workspace-scoped /api/users endpoints. That must NOT unlock the
+        // global RBAC-user administration under /api/security/rbac/users, whose
+        // BackendRbacUserRoles table has no workspace filter — otherwise a
+        // workspace admin could read all platform assignments and grant itself
+        // super admin. Those routes are gated on role.*, which is never in the floor.
+        var options = CreateOptions();
+        options.RbacRoles =
+        [
+            new BackendRbacRoleOptions
+            {
+                Role = "workspace.floor",
+                Functions =
+                [
+                    new BackendRbacFunctionOptions { Function = "user", Actions = ["read", "update"] }
+                ]
+            }
+        ];
+
+        await using var app = await CreateAppAsync(options);
+        var client = app.GetTestClient();
+        AuthenticateWithBearer(client, CreateJwt(options, "workspace-admin", ["workspace.floor"]));
+
+        var list = await client.GetAsync("/api/security/rbac/users");
+        var upsert = await client.PutAsJsonAsync(
+            "/api/security/rbac/users/bob",
+            new RbacUserUpsertApiRequest("workspace.floor"));
+        var delete = await client.DeleteAsync("/api/security/rbac/users/bob");
+
+        Assert.Equal(HttpStatusCode.Forbidden, list.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, upsert.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, delete.StatusCode);
     }
 
     [Fact]
