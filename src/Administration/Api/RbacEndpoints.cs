@@ -80,6 +80,15 @@ public static class RbacEndpoints
             .WithName("Rbac_Roles_Delete")
             .RequirePermission(BackendPermissionKeys.RoleUpdate);
 
+        // These routes manage GLOBAL RBAC role assignments on the unscoped
+        // BackendRbacUserRoles table (no WorkspaceKey → not covered by the
+        // workspace query filter/write-backstop). They are platform RBAC
+        // administration and MUST be gated on role.* — consistent with /roles
+        // and /permissions above. They must NOT use user.* : that key lives in
+        // the workspace-admin floor (WorkspaceRolePermissions, for the
+        // workspace-scoped /api/users endpoints) and would otherwise let any
+        // workspace admin read all platform role assignments and escalate
+        // themselves to super admin.
         group.MapGet("/users", async ([FromServices] IBackendRbacStore store, CancellationToken cancellationToken) =>
         {
             var users = (await store.GetUserRolesAsync(cancellationToken).ConfigureAwait(false))
@@ -90,7 +99,7 @@ public static class RbacEndpoints
             return Results.Ok(users);
         })
             .WithName("Rbac_Users_List")
-            .RequirePermission(BackendPermissionKeys.UserRead);
+            .RequirePermission(BackendPermissionKeys.RoleRead);
 
         group.MapPut("/users/{userId}", async (string userId, RbacUserUpsertApiRequest request, [FromServices] IBackendRbacStore store, CancellationToken cancellationToken) =>
         {
@@ -98,7 +107,7 @@ public static class RbacEndpoints
             return Results.Ok(new RbacUserApiResponse(userId, request.Role));
         })
             .WithName("Rbac_Users_Upsert")
-            .RequirePermission(BackendPermissionKeys.UserUpdate);
+            .RequirePermission(BackendPermissionKeys.RoleUpdate);
 
         group.MapDelete("/users/{userId}", async (string userId, [FromServices] IBackendRbacStore store, CancellationToken cancellationToken) =>
         {
@@ -106,6 +115,6 @@ public static class RbacEndpoints
             return removed ? Results.NoContent() : Results.NotFound();
         })
             .WithName("Rbac_Users_Delete")
-            .RequirePermission(BackendPermissionKeys.UserUpdate);
+            .RequirePermission(BackendPermissionKeys.RoleUpdate);
     }
 }
