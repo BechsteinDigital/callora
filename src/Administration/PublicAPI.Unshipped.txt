@@ -905,3 +905,5 @@ static Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.operator !=(
 static Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.operator ==(Callora.Administration.Api.WorkspaceThemeSettingsApiResponse? left, Callora.Administration.Api.WorkspaceThemeSettingsApiResponse? right) -> bool
 static Callora.Administration.CalloraAdministrationExtensions.AddCalloraAdministration(this Microsoft.AspNetCore.Builder.WebApplicationBuilder! builder) -> Microsoft.AspNetCore.Builder.WebApplicationBuilder!
 static Callora.Administration.CalloraAdministrationExtensions.MapCalloraAdministration(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
+Callora.Administration.Api.AdminContextEndpoints
+static Callora.Administration.Api.AdminContextEndpoints.MapAdminContextEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!

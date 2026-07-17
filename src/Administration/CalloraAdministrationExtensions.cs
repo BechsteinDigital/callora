@@ -28,6 +28,7 @@ public static class CalloraAdministrationExtensions
     {
         var options = app.Services.GetRequiredService<BackendHostOptions>();
 
+        app.MapAdminContextEndpoints();
         app.MapRbacEndpoints();
         app.MapUserEndpoints();
         app.MapPluginEndpoints();

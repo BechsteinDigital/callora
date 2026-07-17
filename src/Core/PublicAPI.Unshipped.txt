@@ -4303,3 +4303,30 @@ Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.RegistryS
 Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.SyncFromAssemblyAsync(string! pluginId, string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Callora.Core.Application.Webhooks.WebhookPayloadMinimizer.Minimize(string! bodyJson, System.Collections.Generic.IReadOnlySet<string!>! sensitiveFields) -> string!
 static Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ParseSensitiveFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Infrastructure.Security.AdminContextView
+Callora.Core.Infrastructure.Security.AdminContextView.AdminContextView(string! UserId, string? DisplayName, string? Email, System.Collections.Generic.IReadOnlyList<string!>! Roles, System.Collections.Generic.IReadOnlyList<string!>! Permissions, string? Scope, string? WorkspaceKey, bool IsOperator) -> void
+Callora.Core.Infrastructure.Security.AdminContextView.<Clone>$() -> Callora.Core.Infrastructure.Security.AdminContextView!
+Callora.Core.Infrastructure.Security.AdminContextView.Deconstruct(out string! UserId, out string? DisplayName, out string? Email, out System.Collections.Generic.IReadOnlyList<string!>! Roles, out System.Collections.Generic.IReadOnlyList<string!>! Permissions, out string? Scope, out string? WorkspaceKey, out bool IsOperator) -> void
+Callora.Core.Infrastructure.Security.AdminContextView.DisplayName.get -> string?
+Callora.Core.Infrastructure.Security.AdminContextView.DisplayName.init -> void
+Callora.Core.Infrastructure.Security.AdminContextView.Email.get -> string?
+Callora.Core.Infrastructure.Security.AdminContextView.Email.init -> void
+Callora.Core.Infrastructure.Security.AdminContextView.Equals(Callora.Core.Infrastructure.Security.AdminContextView? other) -> bool
+Callora.Core.Infrastructure.Security.AdminContextView.IsOperator.get -> bool
+Callora.Core.Infrastructure.Security.AdminContextView.IsOperator.init -> void
+Callora.Core.Infrastructure.Security.AdminContextView.Permissions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Infrastructure.Security.AdminContextView.Permissions.init -> void
+Callora.Core.Infrastructure.Security.AdminContextView.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Infrastructure.Security.AdminContextView.Roles.init -> void
+Callora.Core.Infrastructure.Security.AdminContextView.Scope.get -> string?
+Callora.Core.Infrastructure.Security.AdminContextView.Scope.init -> void
+Callora.Core.Infrastructure.Security.AdminContextView.UserId.get -> string!
+Callora.Core.Infrastructure.Security.AdminContextView.UserId.init -> void
+Callora.Core.Infrastructure.Security.AdminContextView.WorkspaceKey.get -> string?
+Callora.Core.Infrastructure.Security.AdminContextView.WorkspaceKey.init -> void
+override Callora.Core.Infrastructure.Security.AdminContextView.Equals(object? obj) -> bool
+override Callora.Core.Infrastructure.Security.AdminContextView.GetHashCode() -> int
+override Callora.Core.Infrastructure.Security.AdminContextView.ToString() -> string!
+static Callora.Core.Infrastructure.Security.AdminContextView.FromPrincipal(System.Security.Claims.ClaimsPrincipal! user) -> Callora.Core.Infrastructure.Security.AdminContextView?
+static Callora.Core.Infrastructure.Security.AdminContextView.operator !=(Callora.Core.Infrastructure.Security.AdminContextView? left, Callora.Core.Infrastructure.Security.AdminContextView? right) -> bool
+static Callora.Core.Infrastructure.Security.AdminContextView.operator ==(Callora.Core.Infrastructure.Security.AdminContextView? left, Callora.Core.Infrastructure.Security.AdminContextView? right) -> bool
