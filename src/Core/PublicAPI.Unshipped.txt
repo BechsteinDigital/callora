@@ -1021,10 +1021,7 @@ Callora.Core.Application.Lifecycle.PluginLifecycleErrorCodes
 Callora.Core.Application.Lifecycle.PluginLifecycleInstrumentation
 Callora.Core.Application.Lifecycle.PluginLifecycleReporter
 Callora.Core.Application.Lifecycle.PluginLifecycleReporter.PluginLifecycleReporter(Callora.Core.Application.Audit.IHostAuditStore! auditStore, Callora.Core.Application.Events.IHostApplicationEventPublisher! eventPublisher) -> void
-Callora.Core.Application.Lifecycle.PluginLifecycleReporter.PublishEventAsync(string! action, string? pluginId, bool isSuccess, string? requestedBy, string? message, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? metadata = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-Callora.Core.Application.Lifecycle.PluginLifecycleReporter.ReportAsync(string! action, string? pluginId, bool isSuccess, string? requestedBy, string? message, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? metadata = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Lifecycle.PluginLifecycleReporter.ReportInstallGateRejectAsync(string? pluginId, string? requestedBy, string? message, string! gateType, string! reasonCode, string! assemblyPath, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? additionalMetadata, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
-Callora.Core.Application.Lifecycle.PluginLifecycleReporter.WriteAuditAsync(string! action, string? pluginId, bool isSuccess, string? requestedBy, string? message, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? metadata = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Lifecycle.PluginLifecycleService
 Callora.Core.Application.Lifecycle.PluginLifecycleService.ActivateAsync(Callora.Core.Application.Lifecycle.PluginLifecycleCommand! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Lifecycle.PluginLifecycleServiceResult!>!
 Callora.Core.Application.Lifecycle.PluginLifecycleService.DeactivateAsync(Callora.Core.Application.Lifecycle.PluginLifecycleCommand! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Lifecycle.PluginLifecycleServiceResult!>!
@@ -4261,3 +4258,28 @@ static Callora.Core.Application.Security.BackendRbacException.RoleFixed(string! 
 static Callora.Core.Application.Security.BackendRbacException.RoleNotFound(string! role) -> Callora.Core.Application.Security.BackendRbacException!
 static Callora.Core.Application.Security.BackendUserException.PasswordRequired() -> Callora.Core.Application.Security.BackendUserException!
 static Callora.Core.Domain.Plugins.PluginInstallationException.AlreadyUninstalled(string! pluginId) -> Callora.Core.Domain.Plugins.PluginInstallationException!
+Callora.Core.Application.Lifecycle.PluginLifecycleReport
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.Action.get -> string!
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.Action.init -> void
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.<Clone>$() -> Callora.Core.Application.Lifecycle.PluginLifecycleReport!
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.Deconstruct(out string! Action, out string? PluginId, out bool IsSuccess, out string? RequestedBy, out string? Message, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>? Metadata) -> void
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.Equals(Callora.Core.Application.Lifecycle.PluginLifecycleReport? other) -> bool
+Callora.Core.Application.Lifecycle.PluginLifecycleReporter.PublishEventAsync(Callora.Core.Application.Lifecycle.PluginLifecycleReport! report, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Lifecycle.PluginLifecycleReporter.ReportAsync(Callora.Core.Application.Lifecycle.PluginLifecycleReport! report, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Lifecycle.PluginLifecycleReporter.WriteAuditAsync(Callora.Core.Application.Lifecycle.PluginLifecycleReport! report, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.IsSuccess.get -> bool
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.IsSuccess.init -> void
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.Message.get -> string?
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.Message.init -> void
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.Metadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.Metadata.init -> void
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.PluginId.get -> string?
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.PluginId.init -> void
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.PluginLifecycleReport(string! Action, string? PluginId, bool IsSuccess, string? RequestedBy, string? Message, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? Metadata = null) -> void
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.RequestedBy.get -> string?
+Callora.Core.Application.Lifecycle.PluginLifecycleReport.RequestedBy.init -> void
+override Callora.Core.Application.Lifecycle.PluginLifecycleReport.Equals(object? obj) -> bool
+override Callora.Core.Application.Lifecycle.PluginLifecycleReport.GetHashCode() -> int
+override Callora.Core.Application.Lifecycle.PluginLifecycleReport.ToString() -> string!
+static Callora.Core.Application.Lifecycle.PluginLifecycleReport.operator !=(Callora.Core.Application.Lifecycle.PluginLifecycleReport? left, Callora.Core.Application.Lifecycle.PluginLifecycleReport? right) -> bool
+static Callora.Core.Application.Lifecycle.PluginLifecycleReport.operator ==(Callora.Core.Application.Lifecycle.PluginLifecycleReport? left, Callora.Core.Application.Lifecycle.PluginLifecycleReport? right) -> bool

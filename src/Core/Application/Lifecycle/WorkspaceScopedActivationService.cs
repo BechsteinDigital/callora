@@ -39,17 +39,18 @@ public sealed class WorkspaceScopedActivationService(
             {
                 var message = $"Plugin '{normalizedPluginId}' is not installed and cannot be scoped to workspace '{normalizedWorkspaceKey}'.";
                 await reporter.ReportAsync(
-                        action: action,
-                        pluginId: normalizedPluginId,
-                        isSuccess: false,
-                        requestedBy: requestedBy,
-                        message: message,
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["workspaceKey"] = normalizedWorkspaceKey,
-                            ["scope"] = "workspace"
-                        },
-                        cancellationToken: cancellationToken)
+                        new PluginLifecycleReport(
+                            Action: action,
+                            PluginId: normalizedPluginId,
+                            IsSuccess: false,
+                            RequestedBy: requestedBy,
+                            Message: message,
+                            Metadata: new Dictionary<string, string>
+                            {
+                                ["workspaceKey"] = normalizedWorkspaceKey,
+                                ["scope"] = "workspace"
+                            }),
+                        cancellationToken)
                     .ConfigureAwait(false);
 
                 return new PluginLifecycleServiceResult(
@@ -66,17 +67,18 @@ public sealed class WorkspaceScopedActivationService(
             {
                 var message = $"Workspace '{normalizedWorkspaceKey}' does not exist.";
                 await reporter.WriteAuditAsync(
-                        action: action,
-                        pluginId: normalizedPluginId,
-                        isSuccess: false,
-                        requestedBy: requestedBy,
-                        message: message,
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["workspaceKey"] = normalizedWorkspaceKey,
-                            ["scope"] = "workspace"
-                        },
-                        cancellationToken: cancellationToken)
+                        new PluginLifecycleReport(
+                            Action: action,
+                            PluginId: normalizedPluginId,
+                            IsSuccess: false,
+                            RequestedBy: requestedBy,
+                            Message: message,
+                            Metadata: new Dictionary<string, string>
+                            {
+                                ["workspaceKey"] = normalizedWorkspaceKey,
+                                ["scope"] = "workspace"
+                            }),
+                        cancellationToken)
                     .ConfigureAwait(false);
 
                 return new PluginLifecycleServiceResult(
@@ -90,18 +92,19 @@ public sealed class WorkspaceScopedActivationService(
             {
                 var message = $"Tenant '{workspace.TenantKey}' is suspended and blocks workspace activation.";
                 await reporter.WriteAuditAsync(
-                        action: action,
-                        pluginId: normalizedPluginId,
-                        isSuccess: false,
-                        requestedBy: requestedBy,
-                        message: message,
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["workspaceKey"] = normalizedWorkspaceKey,
-                            ["tenantKey"] = workspace.TenantKey,
-                            ["scope"] = "workspace"
-                        },
-                        cancellationToken: cancellationToken)
+                        new PluginLifecycleReport(
+                            Action: action,
+                            PluginId: normalizedPluginId,
+                            IsSuccess: false,
+                            RequestedBy: requestedBy,
+                            Message: message,
+                            Metadata: new Dictionary<string, string>
+                            {
+                                ["workspaceKey"] = normalizedWorkspaceKey,
+                                ["tenantKey"] = workspace.TenantKey,
+                                ["scope"] = "workspace"
+                            }),
+                        cancellationToken)
                     .ConfigureAwait(false);
 
                 return new PluginLifecycleServiceResult(
@@ -115,18 +118,19 @@ public sealed class WorkspaceScopedActivationService(
             {
                 var message = $"Workspace '{normalizedWorkspaceKey}' is inactive and blocks plugin lifecycle updates.";
                 await reporter.WriteAuditAsync(
-                        action: action,
-                        pluginId: normalizedPluginId,
-                        isSuccess: false,
-                        requestedBy: requestedBy,
-                        message: message,
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["workspaceKey"] = normalizedWorkspaceKey,
-                            ["tenantKey"] = workspace.TenantKey,
-                            ["scope"] = "workspace"
-                        },
-                        cancellationToken: cancellationToken)
+                        new PluginLifecycleReport(
+                            Action: action,
+                            PluginId: normalizedPluginId,
+                            IsSuccess: false,
+                            RequestedBy: requestedBy,
+                            Message: message,
+                            Metadata: new Dictionary<string, string>
+                            {
+                                ["workspaceKey"] = normalizedWorkspaceKey,
+                                ["tenantKey"] = workspace.TenantKey,
+                                ["scope"] = "workspace"
+                            }),
+                        cancellationToken)
                     .ConfigureAwait(false);
 
                 return new PluginLifecycleServiceResult(
@@ -156,13 +160,14 @@ public sealed class WorkspaceScopedActivationService(
                 }
 
                 await reporter.ReportAsync(
-                        action: action,
-                        pluginId: normalizedPluginId,
-                        isSuccess: false,
-                        requestedBy: requestedBy,
-                        message: capabilityCheck.Message,
-                        metadata: capabilityMetadata,
-                        cancellationToken: cancellationToken)
+                        new PluginLifecycleReport(
+                            Action: action,
+                            PluginId: normalizedPluginId,
+                            IsSuccess: false,
+                            RequestedBy: requestedBy,
+                            Message: capabilityCheck.Message,
+                            Metadata: capabilityMetadata),
+                        cancellationToken)
                     .ConfigureAwait(false);
 
                 return new PluginLifecycleServiceResult(
@@ -181,20 +186,21 @@ public sealed class WorkspaceScopedActivationService(
                 .SetActiveAsync(normalizedPluginId, normalizedWorkspaceKey, workspace.TenantKey, isActive, cancellationToken)
                 .ConfigureAwait(false);
             await reporter.ReportAsync(
-                    action: action,
-                    pluginId: normalizedPluginId,
-                    isSuccess: true,
-                    requestedBy: requestedBy,
-                    message: isActive
-                        ? $"Workspace '{normalizedWorkspaceKey}' activation updated."
-                        : $"Workspace '{normalizedWorkspaceKey}' deactivation updated.",
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["workspaceKey"] = normalizedWorkspaceKey,
-                        ["tenantKey"] = workspace.TenantKey,
-                        ["scope"] = "workspace"
-                    },
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: action,
+                        PluginId: normalizedPluginId,
+                        IsSuccess: true,
+                        RequestedBy: requestedBy,
+                        Message: isActive
+                            ? $"Workspace '{normalizedWorkspaceKey}' activation updated."
+                            : $"Workspace '{normalizedWorkspaceKey}' deactivation updated.",
+                        Metadata: new Dictionary<string, string>
+                        {
+                            ["workspaceKey"] = normalizedWorkspaceKey,
+                            ["tenantKey"] = workspace.TenantKey,
+                            ["scope"] = "workspace"
+                        }),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(

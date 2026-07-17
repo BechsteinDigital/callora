@@ -197,13 +197,14 @@ public sealed class PluginInstaller(
         }
 
         await reporter.ReportAsync(
-                action: "plugin.install",
-                pluginId: result.PluginId,
-                isSuccess: result.IsSuccess,
-                requestedBy: requestedBy,
-                message: result.Message,
-                metadata: installMetadata,
-                cancellationToken: cancellationToken)
+                new PluginLifecycleReport(
+                    Action: "plugin.install",
+                    PluginId: result.PluginId,
+                    IsSuccess: result.IsSuccess,
+                    RequestedBy: requestedBy,
+                    Message: result.Message,
+                    Metadata: installMetadata),
+                cancellationToken)
             .ConfigureAwait(false);
 
         if (result.IsSuccess &&

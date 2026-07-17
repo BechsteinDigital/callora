@@ -40,22 +40,23 @@ public sealed class PluginUpdater(
             };
 
             await reporter.WriteAuditAsync(
-                    action: "plugin.update",
-                    pluginId: command.PluginId,
-                    isSuccess: false,
-                    requestedBy: command.RequestedBy,
-                    message: resolveMessage,
-                    metadata: failureMetadata,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.update",
+                        PluginId: command.PluginId,
+                        IsSuccess: false,
+                        RequestedBy: command.RequestedBy,
+                        Message: resolveMessage,
+                        Metadata: failureMetadata),
+                    cancellationToken)
                 .ConfigureAwait(false);
             await reporter.PublishEventAsync(
-                    action: "plugin.update",
-                    pluginId: command.PluginId,
-                    isSuccess: false,
-                    requestedBy: command.RequestedBy,
-                    message: resolveMessage,
-                    metadata: null,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.update",
+                        PluginId: command.PluginId,
+                        IsSuccess: false,
+                        RequestedBy: command.RequestedBy,
+                        Message: resolveMessage),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -113,22 +114,23 @@ public sealed class PluginUpdater(
             };
 
             await reporter.WriteAuditAsync(
-                    action: "plugin.update",
-                    pluginId: command.PluginId,
-                    isSuccess: false,
-                    requestedBy: command.RequestedBy,
-                    message: resolveMessage,
-                    metadata: failureMetadata,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.update",
+                        PluginId: command.PluginId,
+                        IsSuccess: false,
+                        RequestedBy: command.RequestedBy,
+                        Message: resolveMessage,
+                        Metadata: failureMetadata),
+                    cancellationToken)
                 .ConfigureAwait(false);
             await reporter.PublishEventAsync(
-                    action: "plugin.update",
-                    pluginId: command.PluginId,
-                    isSuccess: false,
-                    requestedBy: command.RequestedBy,
-                    message: resolveMessage,
-                    metadata: null,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.update",
+                        PluginId: command.PluginId,
+                        IsSuccess: false,
+                        RequestedBy: command.RequestedBy,
+                        Message: resolveMessage),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -177,13 +179,14 @@ public sealed class PluginUpdater(
             };
 
             await reporter.ReportAsync(
-                    action: "plugin.update",
-                    pluginId: pluginId,
-                    isSuccess: false,
-                    requestedBy: requestedBy,
-                    message: missingMessage,
-                    metadata: missingMetadata,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.update",
+                        PluginId: pluginId,
+                        IsSuccess: false,
+                        RequestedBy: requestedBy,
+                        Message: missingMessage,
+                        Metadata: missingMetadata),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -206,12 +209,13 @@ public sealed class PluginUpdater(
             if (!deactivate.IsSuccess)
             {
                 await reporter.ReportAsync(
-                        action: "plugin.update",
-                        pluginId: pluginId,
-                        isSuccess: false,
-                        requestedBy: requestedBy,
-                        message: deactivate.Message,
-                        cancellationToken: cancellationToken)
+                        new PluginLifecycleReport(
+                            Action: "plugin.update",
+                            PluginId: pluginId,
+                            IsSuccess: false,
+                            RequestedBy: requestedBy,
+                            Message: deactivate.Message),
+                        cancellationToken)
                     .ConfigureAwait(false);
 
                 return new PluginLifecycleServiceResult(
@@ -231,12 +235,13 @@ public sealed class PluginUpdater(
             }
 
             await reporter.ReportAsync(
-                    action: "plugin.update",
-                    pluginId: pluginId,
-                    isSuccess: false,
-                    requestedBy: requestedBy,
-                    message: uninstall.Message,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.update",
+                        PluginId: pluginId,
+                        IsSuccess: false,
+                        RequestedBy: requestedBy,
+                        Message: uninstall.Message),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -290,13 +295,14 @@ public sealed class PluginUpdater(
             }
 
             await reporter.ReportAsync(
-                    action: "plugin.update",
-                    pluginId: pluginId,
-                    isSuccess: true,
-                    requestedBy: requestedBy,
-                    message: install.Message,
-                    metadata: effectiveMetadata,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.update",
+                        PluginId: pluginId,
+                        IsSuccess: true,
+                        RequestedBy: requestedBy,
+                        Message: install.Message,
+                        Metadata: effectiveMetadata),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -343,13 +349,14 @@ public sealed class PluginUpdater(
         if (!rollbackInstall.IsSuccess)
         {
             await reporter.ReportAsync(
-                    action: "plugin.rollback",
-                    pluginId: pluginId,
-                    isSuccess: false,
-                    requestedBy: requestedBy,
-                    message: rollbackInstall.Message,
-                    metadata: rollbackMetadata,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.rollback",
+                        PluginId: pluginId,
+                        IsSuccess: false,
+                        RequestedBy: requestedBy,
+                        Message: rollbackInstall.Message,
+                        Metadata: rollbackMetadata),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -366,13 +373,14 @@ public sealed class PluginUpdater(
             if (!rollbackActivate.IsSuccess)
             {
                 await reporter.ReportAsync(
-                        action: "plugin.rollback",
-                        pluginId: pluginId,
-                        isSuccess: false,
-                        requestedBy: requestedBy,
-                        message: rollbackActivate.Message,
-                        metadata: rollbackMetadata,
-                        cancellationToken: cancellationToken)
+                        new PluginLifecycleReport(
+                            Action: "plugin.rollback",
+                            PluginId: pluginId,
+                            IsSuccess: false,
+                            RequestedBy: requestedBy,
+                            Message: rollbackActivate.Message,
+                            Metadata: rollbackMetadata),
+                        cancellationToken)
                     .ConfigureAwait(false);
 
                 return new PluginLifecycleServiceResult(
@@ -405,27 +413,29 @@ public sealed class PluginUpdater(
             .ConfigureAwait(false);
 
         await reporter.ReportAsync(
-                action: "plugin.rollback",
-                pluginId: pluginId,
-                isSuccess: true,
-                requestedBy: requestedBy,
-                message: "Rollback restored previous stable plugin version.",
-                metadata: rollbackMetadata,
-                cancellationToken: cancellationToken)
+                new PluginLifecycleReport(
+                    Action: "plugin.rollback",
+                    PluginId: pluginId,
+                    IsSuccess: true,
+                    RequestedBy: requestedBy,
+                    Message: "Rollback restored previous stable plugin version.",
+                    Metadata: rollbackMetadata),
+                cancellationToken)
             .ConfigureAwait(false);
 
         await reporter.ReportAsync(
-                action: "plugin.update",
-                pluginId: pluginId,
-                isSuccess: false,
-                requestedBy: requestedBy,
-                message: rollbackTrigger,
-                metadata: new Dictionary<string, string>
-                {
-                    ["rollbackTriggered"] = "true",
-                    ["rollbackAction"] = "plugin.rollback"
-                },
-                cancellationToken: cancellationToken)
+                new PluginLifecycleReport(
+                    Action: "plugin.update",
+                    PluginId: pluginId,
+                    IsSuccess: false,
+                    RequestedBy: requestedBy,
+                    Message: rollbackTrigger,
+                    Metadata: new Dictionary<string, string>
+                    {
+                        ["rollbackTriggered"] = "true",
+                        ["rollbackAction"] = "plugin.rollback"
+                    }),
+                cancellationToken)
             .ConfigureAwait(false);
 
         return new PluginLifecycleServiceResult(
