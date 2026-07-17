@@ -14,39 +14,29 @@ public sealed class PluginLifecycleReporter(
     /// Writes one audit entry and publishes one lifecycle event with identical payloads.
     /// </summary>
     public async Task ReportAsync(
-        string action,
-        string? pluginId,
-        bool isSuccess,
-        string? requestedBy,
-        string? message,
-        IReadOnlyDictionary<string, string>? metadata = null,
+        PluginLifecycleReport report,
         CancellationToken cancellationToken = default)
     {
-        await WriteAuditAsync(action, pluginId, isSuccess, requestedBy, message, metadata, cancellationToken)
-            .ConfigureAwait(false);
-        await PublishEventAsync(action, pluginId, isSuccess, requestedBy, message, metadata, cancellationToken)
-            .ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(report);
+        await WriteAuditAsync(report, cancellationToken).ConfigureAwait(false);
+        await PublishEventAsync(report, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Writes one audit entry without publishing an event.
     /// </summary>
     public Task WriteAuditAsync(
-        string action,
-        string? pluginId,
-        bool isSuccess,
-        string? requestedBy,
-        string? message,
-        IReadOnlyDictionary<string, string>? metadata = null,
+        PluginLifecycleReport report,
         CancellationToken cancellationToken = default)
     {
-        var effectiveMetadata = EnrichMetadataWithCorrelationId(metadata);
+        ArgumentNullException.ThrowIfNull(report);
+        var effectiveMetadata = EnrichMetadataWithCorrelationId(report.Metadata);
         return auditStore.WritePluginAuditAsync(
-            action,
-            pluginId,
-            isSuccess,
-            requestedBy,
-            message,
+            report.Action,
+            report.PluginId,
+            report.IsSuccess,
+            report.RequestedBy,
+            report.Message,
             effectiveMetadata,
             cancellationToken);
     }
@@ -55,23 +45,19 @@ public sealed class PluginLifecycleReporter(
     /// Publishes one lifecycle event without writing an audit entry.
     /// </summary>
     public Task PublishEventAsync(
-        string action,
-        string? pluginId,
-        bool isSuccess,
-        string? requestedBy,
-        string? message,
-        IReadOnlyDictionary<string, string>? metadata = null,
+        PluginLifecycleReport report,
         CancellationToken cancellationToken = default)
     {
-        var effectiveMetadata = EnrichMetadataWithCorrelationId(metadata);
+        ArgumentNullException.ThrowIfNull(report);
+        var effectiveMetadata = EnrichMetadataWithCorrelationId(report.Metadata);
         return eventPublisher.PublishAsync(
             new PluginLifecycleChangedEvent(
                 DateTimeOffset.UtcNow,
-                action,
-                pluginId,
-                isSuccess,
-                requestedBy,
-                message,
+                report.Action,
+                report.PluginId,
+                report.IsSuccess,
+                report.RequestedBy,
+                report.Message,
                 effectiveMetadata),
             cancellationToken);
     }
@@ -105,13 +91,14 @@ public sealed class PluginLifecycleReporter(
         }
 
         return ReportAsync(
-            action: "plugin.install",
-            pluginId: pluginId,
-            isSuccess: false,
-            requestedBy: requestedBy,
-            message: message,
-            metadata: metadata,
-            cancellationToken: cancellationToken);
+            new PluginLifecycleReport(
+                Action: "plugin.install",
+                PluginId: pluginId,
+                IsSuccess: false,
+                RequestedBy: requestedBy,
+                Message: message,
+                Metadata: metadata),
+            cancellationToken);
     }
 
     private static IReadOnlyDictionary<string, string>? EnrichMetadataWithCorrelationId(

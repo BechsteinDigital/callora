@@ -290,12 +290,13 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         if (!decision.IsAllowed)
         {
             await _reporter.ReportAsync(
-                    action: "plugin.activate",
-                    pluginId: command.PluginId,
-                    isSuccess: false,
-                    requestedBy: command.RequestedBy,
-                    message: decision.Reason,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.activate",
+                        PluginId: command.PluginId,
+                        IsSuccess: false,
+                        RequestedBy: command.RequestedBy,
+                        Message: decision.Reason),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -311,13 +312,14 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         if (!capabilityCheck.IsAllowed)
         {
             await _reporter.ReportAsync(
-                    action: "plugin.activate",
-                    pluginId: command.PluginId,
-                    isSuccess: false,
-                    requestedBy: command.RequestedBy,
-                    message: capabilityCheck.Message,
-                    metadata: capabilityCheck.Metadata,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.activate",
+                        PluginId: command.PluginId,
+                        IsSuccess: false,
+                        RequestedBy: command.RequestedBy,
+                        Message: capabilityCheck.Message,
+                        Metadata: capabilityCheck.Metadata),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -330,12 +332,13 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
 
         var result = await _lifecycle.ActivateAsync(command.PluginId, cancellationToken).ConfigureAwait(false);
         await _reporter.ReportAsync(
-                action: "plugin.activate",
-                pluginId: command.PluginId,
-                isSuccess: result.IsSuccess,
-                requestedBy: command.RequestedBy,
-                message: result.Message,
-                cancellationToken: cancellationToken)
+                new PluginLifecycleReport(
+                    Action: "plugin.activate",
+                    PluginId: command.PluginId,
+                    IsSuccess: result.IsSuccess,
+                    RequestedBy: command.RequestedBy,
+                    Message: result.Message),
+                cancellationToken)
             .ConfigureAwait(false);
 
         if (result.IsSuccess)
@@ -402,13 +405,14 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         if (!capabilityCheck.IsAllowed)
         {
             await _reporter.ReportAsync(
-                    action: "plugin.deactivate",
-                    pluginId: command.PluginId,
-                    isSuccess: false,
-                    requestedBy: command.RequestedBy,
-                    message: capabilityCheck.Message,
-                    metadata: capabilityCheck.Metadata,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.deactivate",
+                        PluginId: command.PluginId,
+                        IsSuccess: false,
+                        RequestedBy: command.RequestedBy,
+                        Message: capabilityCheck.Message,
+                        Metadata: capabilityCheck.Metadata),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -421,12 +425,13 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
 
         var result = await _lifecycle.DeactivateAsync(command.PluginId, cancellationToken).ConfigureAwait(false);
         await _reporter.ReportAsync(
-                action: "plugin.deactivate",
-                pluginId: command.PluginId,
-                isSuccess: result.IsSuccess,
-                requestedBy: command.RequestedBy,
-                message: result.Message,
-                cancellationToken: cancellationToken)
+                new PluginLifecycleReport(
+                    Action: "plugin.deactivate",
+                    PluginId: command.PluginId,
+                    IsSuccess: result.IsSuccess,
+                    RequestedBy: command.RequestedBy,
+                    Message: result.Message),
+                cancellationToken)
             .ConfigureAwait(false);
 
         if (result.IsSuccess)
@@ -460,13 +465,14 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         if (!capabilityCheck.IsAllowed)
         {
             await _reporter.ReportAsync(
-                    action: "plugin.uninstall",
-                    pluginId: command.PluginId,
-                    isSuccess: false,
-                    requestedBy: command.RequestedBy,
-                    message: capabilityCheck.Message,
-                    metadata: capabilityCheck.Metadata,
-                    cancellationToken: cancellationToken)
+                    new PluginLifecycleReport(
+                        Action: "plugin.uninstall",
+                        PluginId: command.PluginId,
+                        IsSuccess: false,
+                        RequestedBy: command.RequestedBy,
+                        Message: capabilityCheck.Message,
+                        Metadata: capabilityCheck.Metadata),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return new PluginLifecycleServiceResult(
@@ -479,12 +485,13 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
 
         var result = await _lifecycle.UninstallAsync(command.PluginId, cancellationToken).ConfigureAwait(false);
         await _reporter.ReportAsync(
-                action: "plugin.uninstall",
-                pluginId: command.PluginId,
-                isSuccess: result.IsSuccess,
-                requestedBy: command.RequestedBy,
-                message: result.Message,
-                cancellationToken: cancellationToken)
+                new PluginLifecycleReport(
+                    Action: "plugin.uninstall",
+                    PluginId: command.PluginId,
+                    IsSuccess: result.IsSuccess,
+                    RequestedBy: command.RequestedBy,
+                    Message: result.Message),
+                cancellationToken)
             .ConfigureAwait(false);
 
         if (result.IsSuccess)
