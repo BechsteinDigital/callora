@@ -6,6 +6,10 @@ namespace Callora.Core.Application.Migrations.Contracts;
 /// </summary>
 public interface IPluginMigrationRunner
 {
+    /// <summary>
+    /// Applies every migration not yet recorded for the plugin, in version order,
+    /// each in its own transaction with bookkeeping committed atomically.
+    /// </summary>
     Task RunAsync(
         string pluginId,
         IReadOnlyList<IPluginMigration> migrations,
