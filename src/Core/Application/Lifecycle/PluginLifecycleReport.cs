@@ -6,7 +6,7 @@ namespace Callora.Core.Application.Lifecycle;
 /// requested it, a human-readable message and optional metadata. Bundles the
 /// parameter group shared by <see cref="PluginLifecycleReporter"/>'s report,
 /// audit and event methods so callers pass one intent-revealing object instead
-/// of five positional arguments.
+/// of six positional arguments.
 /// </summary>
 /// <param name="Action">The lifecycle action, e.g. <c>plugin.install</c>.</param>
 /// <param name="PluginId">The plugin the action concerns, if any.</param>

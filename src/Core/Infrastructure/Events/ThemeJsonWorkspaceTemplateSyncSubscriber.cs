@@ -1,5 +1,6 @@
 using Callora.Core.Application.Events;
 using Callora.Core.Application.Extensions;
+using Callora.Core.Application.Lifecycle;
 
 namespace Callora.Core.Infrastructure.Events;
 
@@ -21,11 +22,11 @@ public sealed class ThemeJsonWorkspaceTemplateSyncSubscriber(
         {
             switch (action)
             {
-                case "plugin.install":
-                case "plugin.update":
+                case PluginLifecycleActions.Install:
+                case PluginLifecycleActions.Update:
                     await HandleInstallOrUpdateAsync(pluginId, appEvent.Metadata, cancellationToken).ConfigureAwait(false);
                     break;
-                case "plugin.uninstall":
+                case PluginLifecycleActions.Uninstall:
                     await syncService.ClearPluginDefinitionsAsync(pluginId, cancellationToken).ConfigureAwait(false);
                     break;
             }

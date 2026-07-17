@@ -41,7 +41,7 @@ public sealed class PluginUpdater(
 
             await reporter.WriteAuditAsync(
                     new PluginLifecycleReport(
-                        Action: "plugin.update",
+                        Action: PluginLifecycleActions.Update,
                         PluginId: command.PluginId,
                         IsSuccess: false,
                         RequestedBy: command.RequestedBy,
@@ -51,7 +51,7 @@ public sealed class PluginUpdater(
                 .ConfigureAwait(false);
             await reporter.PublishEventAsync(
                     new PluginLifecycleReport(
-                        Action: "plugin.update",
+                        Action: PluginLifecycleActions.Update,
                         PluginId: command.PluginId,
                         IsSuccess: false,
                         RequestedBy: command.RequestedBy,
@@ -115,7 +115,7 @@ public sealed class PluginUpdater(
 
             await reporter.WriteAuditAsync(
                     new PluginLifecycleReport(
-                        Action: "plugin.update",
+                        Action: PluginLifecycleActions.Update,
                         PluginId: command.PluginId,
                         IsSuccess: false,
                         RequestedBy: command.RequestedBy,
@@ -125,7 +125,7 @@ public sealed class PluginUpdater(
                 .ConfigureAwait(false);
             await reporter.PublishEventAsync(
                     new PluginLifecycleReport(
-                        Action: "plugin.update",
+                        Action: PluginLifecycleActions.Update,
                         PluginId: command.PluginId,
                         IsSuccess: false,
                         RequestedBy: command.RequestedBy,
@@ -180,7 +180,7 @@ public sealed class PluginUpdater(
 
             await reporter.ReportAsync(
                     new PluginLifecycleReport(
-                        Action: "plugin.update",
+                        Action: PluginLifecycleActions.Update,
                         PluginId: pluginId,
                         IsSuccess: false,
                         RequestedBy: requestedBy,
@@ -210,7 +210,7 @@ public sealed class PluginUpdater(
             {
                 await reporter.ReportAsync(
                         new PluginLifecycleReport(
-                            Action: "plugin.update",
+                            Action: PluginLifecycleActions.Update,
                             PluginId: pluginId,
                             IsSuccess: false,
                             RequestedBy: requestedBy,
@@ -236,7 +236,7 @@ public sealed class PluginUpdater(
 
             await reporter.ReportAsync(
                     new PluginLifecycleReport(
-                        Action: "plugin.update",
+                        Action: PluginLifecycleActions.Update,
                         PluginId: pluginId,
                         IsSuccess: false,
                         RequestedBy: requestedBy,
@@ -296,7 +296,7 @@ public sealed class PluginUpdater(
 
             await reporter.ReportAsync(
                     new PluginLifecycleReport(
-                        Action: "plugin.update",
+                        Action: PluginLifecycleActions.Update,
                         PluginId: pluginId,
                         IsSuccess: true,
                         RequestedBy: requestedBy,
@@ -338,7 +338,7 @@ public sealed class PluginUpdater(
     {
         var rollbackMetadata = new Dictionary<string, string>
         {
-            ["triggerAction"] = "plugin.update",
+            ["triggerAction"] = PluginLifecycleActions.Update,
             ["triggerMessage"] = rollbackTrigger,
             ["rollbackAssemblyPath"] = previousAssemblyPath
         };
@@ -350,7 +350,7 @@ public sealed class PluginUpdater(
         {
             await reporter.ReportAsync(
                     new PluginLifecycleReport(
-                        Action: "plugin.rollback",
+                        Action: PluginLifecycleActions.Rollback,
                         PluginId: pluginId,
                         IsSuccess: false,
                         RequestedBy: requestedBy,
@@ -374,7 +374,7 @@ public sealed class PluginUpdater(
             {
                 await reporter.ReportAsync(
                         new PluginLifecycleReport(
-                            Action: "plugin.rollback",
+                            Action: PluginLifecycleActions.Rollback,
                             PluginId: pluginId,
                             IsSuccess: false,
                             RequestedBy: requestedBy,
@@ -414,7 +414,7 @@ public sealed class PluginUpdater(
 
         await reporter.ReportAsync(
                 new PluginLifecycleReport(
-                    Action: "plugin.rollback",
+                    Action: PluginLifecycleActions.Rollback,
                     PluginId: pluginId,
                     IsSuccess: true,
                     RequestedBy: requestedBy,
@@ -425,7 +425,7 @@ public sealed class PluginUpdater(
 
         await reporter.ReportAsync(
                 new PluginLifecycleReport(
-                    Action: "plugin.update",
+                    Action: PluginLifecycleActions.Update,
                     PluginId: pluginId,
                     IsSuccess: false,
                     RequestedBy: requestedBy,
@@ -433,7 +433,7 @@ public sealed class PluginUpdater(
                     Metadata: new Dictionary<string, string>
                     {
                         ["rollbackTriggered"] = "true",
-                        ["rollbackAction"] = "plugin.rollback"
+                        ["rollbackAction"] = PluginLifecycleActions.Rollback
                     }),
                 cancellationToken)
             .ConfigureAwait(false);

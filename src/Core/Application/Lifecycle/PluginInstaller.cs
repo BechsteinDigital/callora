@@ -198,7 +198,7 @@ public sealed class PluginInstaller(
 
         await reporter.ReportAsync(
                 new PluginLifecycleReport(
-                    Action: "plugin.install",
+                    Action: PluginLifecycleActions.Install,
                     PluginId: result.PluginId,
                     IsSuccess: result.IsSuccess,
                     RequestedBy: requestedBy,
