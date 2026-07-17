@@ -112,6 +112,82 @@ public sealed class AuthAndUserEndpointsTests
     }
 
     [Fact]
+    public async Task ApiLogin_AsWorkspaceMember_WithWorkspaceKey_ReturnsWorkspaceScopedToken()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginApiRequest("alice", "pass-1", "workspace-a"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<LoginApiResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal("workspace-a", payload!.WorkspaceKey);
+
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(payload.AccessToken);
+        Assert.Contains(token.Claims, x =>
+            x.Type == BackendClaimTypes.CalloraScope && x.Value == BackendAuthScopes.Workspace);
+    }
+
+    [Fact]
+    public async Task ApiLogin_AsWorkspaceAdmin_WithWorkspaceKey_IssuesScopedPermissions()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginApiRequest("carol", "pass-carol", "workspace-a"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<LoginApiResponse>();
+        Assert.Equal(BackendRoles.Admin, payload!.Role);
+
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(payload.AccessToken);
+        var permissions = token.Claims
+            .Where(x => x.Type == BackendClaimTypes.Permission)
+            .Select(x => x.Value)
+            .ToArray();
+
+        Assert.Contains(BackendPermissionKeys.FlowManage, permissions);
+        Assert.DoesNotContain("*", permissions);
+    }
+
+    [Fact]
+    public async Task ApiLogin_AsWorkspaceMember_ForeignWorkspace_ReturnsForbidden()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginApiRequest("alice", "pass-1", "workspace-b"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApiLogin_AsOperator_WithWorkspaceKey_StaysPlatformScoped()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginApiRequest("root", "pass-root", "workspace-a"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<LoginApiResponse>();
+        Assert.Null(payload!.WorkspaceKey);
+
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(payload.AccessToken);
+        Assert.Contains(token.Claims, x =>
+            x.Type == BackendClaimTypes.CalloraScope && x.Value == BackendAuthScopes.Platform);
+    }
+
+    [Fact]
     public async Task Users_List_AsWorkspaceUser_OnlyShowsOwnWorkspace()
     {
         await using var app = await CreateAppAsync();

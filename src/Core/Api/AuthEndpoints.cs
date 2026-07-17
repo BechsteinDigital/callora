@@ -15,56 +15,27 @@ public static class AuthEndpoints
             .WithTags("Auth")
             .AllowAnonymous();
 
-        apiGroup.MapPost("/login", async (
+        // The shared admin login (ADR-014 §3.3): every administrative role signs in
+        // here. Platform operators omit the workspace key and get a platform-scoped
+        // session; workspace admins name their workspace and get a workspace-scoped
+        // one. The scope decision lives in AdminLoginResolver.
+        apiGroup.MapPost("/login", (
             LoginApiRequest request,
             BackendHostOptions options,
             IBackendUserStore userStore,
             IBackendRbacStore rbacStore,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
-        {
-            var user = await userStore.AuthenticateAsync(request.Login, request.Password, cancellationToken).ConfigureAwait(false);
-            if (user is null)
-            {
-                return Results.Unauthorized();
-            }
-
-            var role = await rbacStore.GetUserRoleAsync(user.ExternalId, cancellationToken).ConfigureAwait(false);
-            if (!IsPlatformOperatorRole(options, role))
-            {
-                return Results.Forbid();
-            }
-
-            var roles = string.IsNullOrWhiteSpace(role) ? Array.Empty<string>() : [role];
-            var token = BackendJwtTokenIssuer.Issue(
+            HandleAdminLoginAsync(
+                request.Login,
+                request.Password,
+                request.WorkspaceKey,
                 options,
-                subject: user.ExternalId,
-                displayName: user.DisplayName,
-                email: user.Email,
-                roles: roles,
-                customClaims: new Dictionary<string, string>
-                {
-                    [BackendClaimTypes.CalloraScope] = BackendAuthScopes.Platform
-                },
-                lifetime: AccessTokenLifetime);
-
-            BackendAuthCookieService.AppendAuthCookie(
-                httpContext.Response,
-                options,
-                token,
-                AccessTokenLifetime,
-                httpContext.Request.IsHttps);
-
-            return Results.Ok(new LoginApiResponse(
-                AccessToken: token,
-                TokenType: "Bearer",
-                ExpiresInSeconds: (int)AccessTokenLifetime.TotalSeconds,
-                UserId: user.ExternalId,
-                DisplayName: user.DisplayName,
-                Email: user.Email,
-                Role: role,
-                WorkspaceKey: null));
-        }).WithName("Auth_Api_Login")
+                userStore,
+                rbacStore,
+                httpContext,
+                cancellationToken))
+            .WithName("Auth_Api_Login")
             .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
 
         apiGroup.MapPost("/logout", (
@@ -105,82 +76,89 @@ public static class AuthEndpoints
             .WithTags("Workspace Auth")
             .AllowAnonymous();
 
-        workspaceGroup.MapPost("/login", async (
+        // Deprecated alias — the workspace-admin login is now the shared admin
+        // login above (ADR-014 §14). Retained so the existing workspace shell keeps
+        // working until its calls are migrated during the admin-shell rebuild (#30).
+        // New clients POST /api/auth/login with an optional workspaceKey.
+        workspaceGroup.MapPost("/login", (
             WorkspaceLoginApiRequest request,
             BackendHostOptions options,
             IBackendUserStore userStore,
+            IBackendRbacStore rbacStore,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
-        {
-            var user = await userStore.AuthenticateAsync(request.Login, request.Password, cancellationToken).ConfigureAwait(false);
-            if (user is null)
-            {
-                return Results.Unauthorized();
-            }
-
-            var workspaceKey = request.WorkspaceKey.Trim();
-
-            // The workspace role (WorkspaceMembership.Role), not a global RBAC
-            // role, drives what the session may do inside this workspace.
-            var role = await userStore
-                .GetWorkspaceRoleAsync(user.ExternalId, workspaceKey, cancellationToken)
-                .ConfigureAwait(false);
-            if (role is null)
-            {
-                return Results.Forbid();
-            }
-
-            var roles = string.IsNullOrWhiteSpace(role) ? Array.Empty<string>() : [role];
-            var permissions = WorkspaceRolePermissions.ForRole(role);
-            var token = BackendJwtTokenIssuer.Issue(
+            HandleAdminLoginAsync(
+                request.Login,
+                request.Password,
+                request.WorkspaceKey,
                 options,
-                subject: user.ExternalId,
-                displayName: user.DisplayName,
-                email: user.Email,
-                roles: roles,
-                customClaims: new Dictionary<string, string>
-                {
-                    [BackendClaimTypes.CalloraScope] = BackendAuthScopes.Workspace,
-                    [BackendClaimTypes.WorkspaceKey] = workspaceKey
-                },
-                lifetime: AccessTokenLifetime,
-                permissions: permissions);
-
-            BackendAuthCookieService.AppendAuthCookie(
-                httpContext.Response,
-                options,
-                token,
-                AccessTokenLifetime,
-                httpContext.Request.IsHttps);
-
-            return Results.Ok(new LoginApiResponse(
-                AccessToken: token,
-                TokenType: "Bearer",
-                ExpiresInSeconds: (int)AccessTokenLifetime.TotalSeconds,
-                UserId: user.ExternalId,
-                DisplayName: user.DisplayName,
-                Email: user.Email,
-                Role: role,
-                WorkspaceKey: workspaceKey));
-        }).WithName("Auth_Workspace_Login")
+                userStore,
+                rbacStore,
+                httpContext,
+                cancellationToken))
+            .WithName("Auth_Workspace_Login")
             .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
     }
 
-    private static bool IsPlatformOperatorRole(BackendHostOptions options, string? role)
+    private static async Task<IResult> HandleAdminLoginAsync(
+        string login,
+        string password,
+        string? workspaceKey,
+        BackendHostOptions options,
+        IBackendUserStore userStore,
+        IBackendRbacStore rbacStore,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(role))
+        var user = await userStore.AuthenticateAsync(login, password, cancellationToken).ConfigureAwait(false);
+        if (user is null)
         {
-            return false;
+            return Results.Unauthorized();
         }
 
-        foreach (var operatorRole in options.PlatformOperatorRoles ?? [])
+        var grant = await AdminLoginResolver
+            .ResolveAsync(user, workspaceKey, userStore, rbacStore, options, cancellationToken)
+            .ConfigureAwait(false);
+        if (grant is null)
         {
-            if (string.Equals(operatorRole?.Trim(), role.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
+            return Results.Forbid();
         }
 
-        return false;
+        var roles = string.IsNullOrWhiteSpace(grant.Role) ? Array.Empty<string>() : [grant.Role];
+        var customClaims = new Dictionary<string, string>
+        {
+            [BackendClaimTypes.CalloraScope] = grant.Scope
+        };
+        if (!string.IsNullOrWhiteSpace(grant.WorkspaceKey))
+        {
+            customClaims[BackendClaimTypes.WorkspaceKey] = grant.WorkspaceKey;
+        }
+
+        var token = BackendJwtTokenIssuer.Issue(
+            options,
+            subject: user.ExternalId,
+            displayName: user.DisplayName,
+            email: user.Email,
+            roles: roles,
+            customClaims: customClaims,
+            lifetime: AccessTokenLifetime,
+            permissions: grant.Permissions);
+
+        BackendAuthCookieService.AppendAuthCookie(
+            httpContext.Response,
+            options,
+            token,
+            AccessTokenLifetime,
+            httpContext.Request.IsHttps);
+
+        return Results.Ok(new LoginApiResponse(
+            AccessToken: token,
+            TokenType: "Bearer",
+            ExpiresInSeconds: (int)AccessTokenLifetime.TotalSeconds,
+            UserId: user.ExternalId,
+            DisplayName: user.DisplayName,
+            Email: user.Email,
+            Role: grant.Role,
+            WorkspaceKey: grant.WorkspaceKey));
     }
 }
