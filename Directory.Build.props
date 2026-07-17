@@ -17,10 +17,23 @@
          nur IDE-only. Zusammen mit TreatWarningsAsErrors erzwingt das Braces
          (IDE0011) und File-Scoped-Namespaces (IDE0161) im CI, nicht per Review. -->
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- PLAT-R5c: XML-Doku erzeugen — dient zwei Zwecken: (1) setzt DocumentationMode
+         auf Parse, damit der CAL0003-Analyzer die ///-Kommentare überhaupt sieht;
+         (2) speist DocFX/IntelliSense. Die eingebaute CS1591 (fehlende Doku) ist unten
+         per NoWarn aus: sie lässt sich nicht per Pfad auf die kuratierte Vertragsfläche
+         beschränken (Compiler-Warnung, kein Hochstufen von none) — das übernimmt CAL0003
+         gezielt. Test-Projekte brauchen keine XML-Doku. -->
+    <GenerateDocumentationFile Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">true</GenerateDocumentationFile>
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
     <!-- PLAT-201: Warnungen sind Build-Fehler; Ausnahmen unten sind begründet. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);CS1573;CS1574;CS1734;CA1001;CA1068;CA1305;CA1510;CA1513;CA1716;CA1805;CA1806;CA1822;CA1832;CA1848;CA1859;CA1861;CA1865;CA2012;CA2016;CA2208;CA2249;CA5350;CA5351</NoWarn>
+    <!-- CS1591: die eingebaute "fehlende XML-Doku"-Warnung gilt für die GESAMTE public
+         Fläche und lässt sich nicht per Pfad auf die Vertragsfläche verengen. Callora
+         zieht die Grenze über [CalloraInternal], nicht über public — daher übernimmt der
+         CAL0003-Analyzer die Doku-Pflicht gezielt für die Vertragsfläche (.Contracts /
+         Extensibility / [CalloraExtensible]) und CS1591 bleibt aus. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <!-- CA1711: Domänen-Suffixe (AudioStream, JobQueue, …) sind fachlich korrekt,
          die Typen erben nicht von den gleichnamigen BCL-Typen.
          CA1873: Logging liegt ausschließlich auf Cold-Paths (Call-Start, Purge,
