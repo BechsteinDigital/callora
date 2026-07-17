@@ -6,9 +6,9 @@ namespace Callora.Core.Extensibility;
 /// API is usable but is not a sanctioned extension surface.
 /// </summary>
 /// <remarks>
-/// The marker is declared now so extension points can be annotated as they are designed.
-/// Analyzer enforcement of the "extend only what is <see cref="CalloraExtensibleAttribute"/>"
-/// rule is a later stage; today the attribute is documentation-carrying intent.
+/// Marked surfaces are enforced by CAL0003: they must carry XML documentation so the
+/// extension contract stays legible. A stricter "plugins may derive only from marked types"
+/// rule remains a later stage; until then the marker records intent rather than blocking.
 /// </remarks>
 [AttributeUsage(
     AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Method |
