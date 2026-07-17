@@ -4220,3 +4220,11 @@ const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceThemeDefini
 const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceThemeSettings = "workspace.theme.settings" -> string!
 Callora.Core.Extensibility.ExtensionPointIdAttribute
 Callora.Core.Extensibility.ExtensionPointIdAttribute.ExtensionPointIdAttribute() -> void
+Callora.Core.Application.Events.MutableHostEvent
+Callora.Core.Application.Events.MutableHostEvent.Cancel() -> void
+Callora.Core.Application.Events.MutableHostEvent.IsCanceled.get -> bool
+Callora.Core.Application.Events.MutableHostEvent.IsPropagationStopped.get -> bool
+Callora.Core.Application.Events.MutableHostEvent.MutableHostEvent(System.DateTimeOffset occurredAtUtc) -> void
+Callora.Core.Application.Events.MutableHostEvent.OccurredAtUtc.get -> System.DateTimeOffset
+Callora.Core.Application.Events.MutableHostEvent.State.get -> System.Collections.Generic.IDictionary<string!, object?>!
+Callora.Core.Application.Events.MutableHostEvent.StopPropagation() -> void
