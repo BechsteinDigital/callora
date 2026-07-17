@@ -4218,3 +4218,5 @@ const Callora.Core.Domain.Extensions.CalloraExtensionPoints.AdminNavigationMain 
 const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceNavigationMain = "workspace.navigation.main" -> string!
 const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceThemeDefinition = "workspace.theme.definition" -> string!
 const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceThemeSettings = "workspace.theme.settings" -> string!
+Callora.Core.Extensibility.ExtensionPointIdAttribute
+Callora.Core.Extensibility.ExtensionPointIdAttribute.ExtensionPointIdAttribute() -> void

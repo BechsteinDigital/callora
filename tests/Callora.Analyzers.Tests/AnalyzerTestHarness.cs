@@ -90,6 +90,28 @@ internal static class AnalyzerTestHarness
             .ToImmutableArray();
     }
 
+    /// <summary>
+    /// Runs <see cref="CalloraExtensionPointIdAnalyzer"/> over <paramref name="source"/> and
+    /// returns the CAL0004 diagnostics.
+    /// </summary>
+    public static async Task<ImmutableArray<Diagnostic>> RunExtensionPointIdAsync(string source)
+    {
+        var compilation = CSharpCompilation.Create(
+            "ExtensionPointConsumer",
+            new[] { Parse(source) },
+            RuntimeReferences,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+
+        var withAnalyzers = compilation.WithAnalyzers(
+            ImmutableArray.Create<DiagnosticAnalyzer>(new CalloraExtensionPointIdAnalyzer()),
+            new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty));
+
+        var diagnostics = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
+        return diagnostics
+            .Where(d => d.Id == CalloraExtensionPointIdAnalyzer.DiagnosticId)
+            .ToImmutableArray();
+    }
+
     private static SyntaxTree Parse(string source)
         => CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
 
