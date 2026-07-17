@@ -27,6 +27,14 @@ public sealed class BusinessEventBus(
         foreach (var listener in listeners)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            // A mutable business event (MutableBusinessEvent) can stop the fan-out; read-only
+            // events never implement this, so the check is inert for them.
+            if (businessEvent is IHostEventPropagationState { IsPropagationStopped: true })
+            {
+                break;
+            }
+
             try
             {
                 await listener.OnBusinessEventAsync(businessEvent, cancellationToken).ConfigureAwait(false);
