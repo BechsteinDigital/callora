@@ -1,5 +1,5 @@
-using Callora.Core.Application.Persistence;
 using Callora.Core.Application.Events;
+using Callora.Core.Application.Persistence;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Events;
 using Callora.Core.Tests.Support;

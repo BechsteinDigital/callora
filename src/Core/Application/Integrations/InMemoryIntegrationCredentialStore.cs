@@ -1,6 +1,6 @@
-using System.Collections.Concurrent;
 using Callora.Core.Application.Integrations;
 using Callora.Core.Domain.Integrations;
+using System.Collections.Concurrent;
 
 namespace Callora.Core.Application.Integrations;
 
@@ -52,7 +52,9 @@ public sealed class InMemoryIntegrationCredentialStore : IIntegrationCredentialS
     public Task<bool> RevokeAsync(Guid id, CancellationToken cancellationToken = default)
     {
         if (!_byId.TryGetValue(id, out var credential) || !credential.IsActive)
+        {
             return Task.FromResult(false);
+        }
 
         credential.IsActive = false;
         credential.RevokedAtUtc = DateTimeOffset.UtcNow;

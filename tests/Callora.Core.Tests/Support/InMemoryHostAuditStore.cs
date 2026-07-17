@@ -11,7 +11,10 @@ internal sealed class InMemoryHostAuditStore : IHostAuditStore
     {
         cancellationToken.ThrowIfCancellationRequested();
         lock (_sync)
+        {
             _entries.Add(entry);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -19,6 +22,8 @@ internal sealed class InMemoryHostAuditStore : IHostAuditStore
     {
         cancellationToken.ThrowIfCancellationRequested();
         lock (_sync)
+        {
             return Task.FromResult<IReadOnlyList<HostAuditEntry>>(_entries.TakeLast(Math.Max(1, take)).ToArray());
+        }
     }
 }

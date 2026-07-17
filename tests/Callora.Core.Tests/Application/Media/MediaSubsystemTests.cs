@@ -1,7 +1,7 @@
-using System.Text;
 using Callora.Core.Application.Media;
 using Callora.Core.Application.Policies;
 using Callora.Core.Infrastructure.Media;
+using System.Text;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Media;

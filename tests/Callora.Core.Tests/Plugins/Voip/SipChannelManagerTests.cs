@@ -1,6 +1,6 @@
-using Callora.Plugin.Communication.Abstractions;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Tests.Support;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Accounts;
 using Callora.Plugin.Communication.Application.Channels;
 using Xunit;

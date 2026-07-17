@@ -38,7 +38,9 @@ public sealed class InMemoryBackgroundJobStore : IBackgroundJobStore
                 .FirstOrDefault();
 
             if (job is null)
+            {
                 return Task.FromResult<BackgroundJob?>(null);
+            }
 
             job.MarkRunning(nowUtc, leaseDuration);
             return Task.FromResult<BackgroundJob?>(job);

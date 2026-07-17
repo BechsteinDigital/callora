@@ -1,6 +1,6 @@
+using Callora.Core.Domain.Plugins.Contracts;
 using System.Reflection;
 using System.Text.Json;
-using Callora.Core.Domain.Plugins.Contracts;
 
 namespace Callora.Host.Cli.Application;
 
@@ -39,7 +39,9 @@ internal sealed class PluginContractTester
 
         var manifest = await ReadManifestAsync(registryPath, issues, cancellationToken).ConfigureAwait(false);
         if (manifest is null)
+        {
             return PluginContractTestResult.Failure(issues);
+        }
 
         ValidateManifestRequiredFields(manifest, assemblyPath, issues);
         ValidateAssemblyContracts(assemblyPath, request.EntryTypeName, manifest.EntryTypeName, issues);
@@ -52,7 +54,9 @@ internal sealed class PluginContractTester
     private static string ResolveRegistryPath(string assemblyPath, string? explicitRegistryPath)
     {
         if (!string.IsNullOrWhiteSpace(explicitRegistryPath))
+        {
             return Path.GetFullPath(explicitRegistryPath);
+        }
 
         var assemblyDirectory = Path.GetDirectoryName(assemblyPath) ?? Directory.GetCurrentDirectory();
         return Path.Combine(assemblyDirectory, "registry.json");
@@ -68,7 +72,9 @@ internal sealed class PluginContractTester
             var json = await File.ReadAllTextAsync(registryPath, cancellationToken).ConfigureAwait(false);
             var manifest = JsonSerializer.Deserialize<PluginRegistryManifest>(json, JsonOptions);
             if (manifest is not null)
+            {
                 return manifest;
+            }
 
             issues.Add(new PluginContractTestIssue(
                 PluginContractTestIssueCodes.ManifestParseError,
@@ -224,7 +230,9 @@ internal sealed class PluginContractTester
 
         Type? pluginType = null;
         if (!string.IsNullOrWhiteSpace(entryTypeName))
+        {
             pluginType = assembly.GetType(entryTypeName, throwOnError: false, ignoreCase: false);
+        }
 
         pluginType ??= assembly.GetTypes().FirstOrDefault(static type =>
             !type.IsAbstract

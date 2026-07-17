@@ -1,5 +1,5 @@
-using Callora.Plugin.Communication.Abstractions;
 using Callora.Core.Tests.Support;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Channels;
 using Xunit;
 using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;

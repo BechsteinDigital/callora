@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Callora.Core.Application.Extensions;
+using System.Text.Json;
 
 namespace Callora.Core.Infrastructure.Extensions;
 

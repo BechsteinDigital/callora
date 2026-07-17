@@ -45,9 +45,14 @@ public static class MediaEndpoints
                 CancellationToken cancellationToken) =>
             {
                 if (!MediaUploadPolicy.IsAllowedContentType(file.ContentType))
+                {
                     return ApiProblems.BadRequest($"Content type '{file.ContentType}' is not allowed.");
+                }
+
                 if (!MediaUploadPolicy.IsAllowedSize(file.Length))
+                {
                     return ApiProblems.BadRequest($"File size must be between 1 byte and {MediaUploadPolicy.MaxSizeBytes} bytes.");
+                }
 
                 var item = await store.AddAsync(
                     workspaceKey,

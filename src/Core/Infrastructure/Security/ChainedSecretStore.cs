@@ -13,7 +13,9 @@ public sealed class ChainedSecretStore(IReadOnlyList<ISecretStore> providers) : 
         {
             var value = await provider.GetSecretAsync(name, cancellationToken).ConfigureAwait(false);
             if (value is not null)
+            {
                 return value;
+            }
         }
 
         return null;

@@ -11,7 +11,9 @@ public sealed class ConfigurationSecretStore(IConfiguration configuration) : ISe
     public Task<string?> GetSecretAsync(string name, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
             return Task.FromResult<string?>(null);
+        }
 
         var value = configuration[$"Secrets:{name.Trim()}"];
         return Task.FromResult(string.IsNullOrEmpty(value) ? null : value);

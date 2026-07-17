@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace Callora.Core.Tests.Infrastructure.Security;
 

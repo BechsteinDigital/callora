@@ -30,7 +30,9 @@ public static class CustomFieldEndpoints
                 CancellationToken cancellationToken) =>
             {
                 if (!HasEntityAccess(httpContext, entityName, entityId))
+                {
                     return Results.Forbid();
+                }
 
                 return Results.Ok(await store.GetValuesAsync(entityName, entityId, cancellationToken));
             })
@@ -45,7 +47,9 @@ public static class CustomFieldEndpoints
                 CancellationToken cancellationToken) =>
             {
                 if (!HasEntityAccess(httpContext, entityName, entityId))
+                {
                     return Results.Forbid();
+                }
 
                 var values = (request.ValuesByKey ?? []).ToDictionary(
                     pair => pair.Key,

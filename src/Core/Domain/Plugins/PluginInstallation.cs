@@ -108,6 +108,8 @@ public sealed class PluginInstallation
     private void EnsureNotUninstalled()
     {
         if (State == PluginInstallationState.Uninstalled)
+        {
             throw new InvalidOperationException($"Plugin '{PluginId}' is already uninstalled.");
+        }
     }
 }

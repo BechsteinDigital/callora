@@ -19,25 +19,38 @@ internal static class PluginScaffoldCommandParser
             {
                 case "--name":
                     if (!TryReadValue(args, ref index, out name))
+                    {
                         return PluginScaffoldCommandParseResult.Fail("Missing value for --name.");
+                    }
+
                     break;
                 case "--id":
                     if (!TryReadValue(args, ref index, out pluginId))
+                    {
                         return PluginScaffoldCommandParseResult.Fail("Missing value for --id.");
+                    }
+
                     break;
                 case "--output":
                     if (!TryReadValue(args, ref index, out outputDirectory))
+                    {
                         return PluginScaffoldCommandParseResult.Fail("Missing value for --output.");
+                    }
+
                     break;
                 case "--force":
                     force = true;
                     break;
                 default:
                     if (argument.StartsWith("--", StringComparison.Ordinal))
+                    {
                         return PluginScaffoldCommandParseResult.Fail($"Unknown option '{argument}'.");
+                    }
 
                     if (positionalName is not null)
+                    {
                         return PluginScaffoldCommandParseResult.Fail("Only one positional plugin name is allowed.");
+                    }
 
                     positionalName = argument;
                     break;
@@ -46,7 +59,9 @@ internal static class PluginScaffoldCommandParser
 
         var effectiveName = name ?? positionalName;
         if (string.IsNullOrWhiteSpace(effectiveName))
+        {
             return PluginScaffoldCommandParseResult.Fail("Plugin name is required.");
+        }
 
         var safeSegment = PluginScaffoldNaming.ToSafePathSegment(effectiveName);
         var effectiveOutputDirectory = string.IsNullOrWhiteSpace(outputDirectory)

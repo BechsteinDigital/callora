@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
 using Callora.Core.Application.Data.Contracts;
+using System.Collections.Concurrent;
 
 namespace Callora.Core.Application.Plugins;
 

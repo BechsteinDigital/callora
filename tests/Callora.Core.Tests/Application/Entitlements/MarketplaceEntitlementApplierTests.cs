@@ -1,7 +1,7 @@
 using Callora.Core.Application.Entitlements;
+using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Application.Policies;
 using Callora.Core.Tests.Support;
-using Callora.Core.Application.Jobs.Contracts;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Entitlements;

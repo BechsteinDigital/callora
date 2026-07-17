@@ -1,6 +1,6 @@
 using Callora.Core.Application.Jobs;
-using Callora.Core.Domain.Jobs;
 using Callora.Core.Application.Jobs.Contracts;
+using Callora.Core.Domain.Jobs;
 
 namespace Callora.Core.Application.Jobs;
 
@@ -26,7 +26,9 @@ public sealed class BackgroundJobProcessor(
             .TryClaimNextDueAsync(nowUtc, options.LeaseDuration, cancellationToken)
             .ConfigureAwait(false);
         if (job is null)
+        {
             return false;
+        }
 
         var startedAt = System.Diagnostics.Stopwatch.GetTimestamp();
         var handler = handlerResolver.Resolve(job.JobType);

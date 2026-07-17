@@ -1,8 +1,8 @@
-using System.Text.Json;
 using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Tests.Cli;
 using Callora.Plugin.Communication.Application;
 using Callora.Plugin.Communication.Application.Persistence;
+using System.Text.Json;
 
 namespace Callora.Core.Tests.Plugins.Voip;
 

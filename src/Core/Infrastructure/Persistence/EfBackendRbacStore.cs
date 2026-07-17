@@ -59,7 +59,9 @@ public sealed class EfBackendRbacStore(HostPersistenceDbContext dbContext) : IBa
             .ConfigureAwait(false);
 
         if (entity is { IsSystem: true })
+        {
             throw new InvalidOperationException($"Role '{roleName}' is fixed and cannot be modified.");
+        }
 
         if (entity is null)
         {
@@ -114,10 +116,14 @@ public sealed class EfBackendRbacStore(HostPersistenceDbContext dbContext) : IBa
             .SingleOrDefaultAsync(x => x.Name == role.Trim(), cancellationToken)
             .ConfigureAwait(false);
         if (entity is null)
+        {
             return false;
+        }
 
         if (entity.IsSystem)
+        {
             return false;
+        }
 
         dbContext.BackendRbacRoles.Remove(entity);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -165,7 +171,9 @@ public sealed class EfBackendRbacStore(HostPersistenceDbContext dbContext) : IBa
             .SingleOrDefaultAsync(x => x.Name == role.Trim(), cancellationToken)
             .ConfigureAwait(false);
         if (roleEntity is null)
+        {
             throw new InvalidOperationException($"Role '{role}' is not defined.");
+        }
 
         var normalizedUserId = userId.Trim();
         var userEntity = await dbContext.BackendUsers
@@ -222,13 +230,17 @@ public sealed class EfBackendRbacStore(HostPersistenceDbContext dbContext) : IBa
             .SingleOrDefaultAsync(x => x.ExternalId == normalizedUserId, cancellationToken)
             .ConfigureAwait(false);
         if (userEntity is null)
+        {
             return false;
+        }
 
         var row = await dbContext.BackendRbacUserRoles
             .SingleOrDefaultAsync(x => x.UserId == userEntity.Id, cancellationToken)
             .ConfigureAwait(false);
         if (row is null)
+        {
             return false;
+        }
 
         dbContext.BackendRbacUserRoles.Remove(row);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -242,7 +254,9 @@ public sealed class EfBackendRbacStore(HostPersistenceDbContext dbContext) : IBa
         {
             var trimmed = permission.Trim().ToLowerInvariant();
             if (!BackendPermissionKeyValidator.IsValid(trimmed))
+            {
                 throw new InvalidOperationException($"Permission '{permission}' is invalid for role '{role}'.");
+            }
 
             normalized.Add(trimmed);
         }

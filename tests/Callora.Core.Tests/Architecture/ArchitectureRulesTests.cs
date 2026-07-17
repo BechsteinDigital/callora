@@ -131,7 +131,9 @@ public sealed class ArchitectureRulesTests
         while (current is not null)
         {
             if (File.Exists(Path.Combine(current.FullName, "Callora.Host.sln")))
+            {
                 return current.FullName;
+            }
 
             current = current.Parent!;
         }

@@ -1,7 +1,7 @@
-using System.Text.Json;
-using Callora.Core.Application.Persistence;
 using Callora.Core.Application.Audit;
+using Callora.Core.Application.Persistence;
 using Callora.Core.Domain.Audit;
+using System.Text.Json;
 
 namespace Callora.Core.Infrastructure.Persistence;
 

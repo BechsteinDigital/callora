@@ -35,7 +35,9 @@ public sealed class EfBackgroundJobStore(HostPersistenceDbContext dbContext) : I
             .ConfigureAwait(false);
 
         if (candidateId is null)
+        {
             return null;
+        }
 
         var leaseExpiresAtUtc = nowUtc + leaseDuration;
         var leaseToken = Guid.NewGuid();
@@ -54,7 +56,9 @@ public sealed class EfBackgroundJobStore(HostPersistenceDbContext dbContext) : I
             .ConfigureAwait(false);
 
         if (claimed == 0)
+        {
             return null;
+        }
 
         return await dbContext.BackgroundJobs
             .SingleAsync(x => x.Id == candidateId, cancellationToken)
@@ -97,7 +101,9 @@ public sealed class EfBackgroundJobStore(HostPersistenceDbContext dbContext) : I
     public Task<bool> HasActiveJobAsync(string jobType, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(jobType))
+        {
             return Task.FromResult(false);
+        }
 
         var normalizedJobType = jobType.Trim();
         return dbContext.BackgroundJobs

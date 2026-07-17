@@ -21,7 +21,9 @@ public sealed class EfMarketplaceEntitlementEventStore(HostPersistenceDbContext 
             .AnyAsync(x => x.EventId == record.EventId, cancellationToken)
             .ConfigureAwait(false);
         if (alreadyProcessed)
+        {
             return false;
+        }
 
         dbContext.MarketplaceEntitlementEvents.Add(record);
         try

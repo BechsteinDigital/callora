@@ -1,6 +1,6 @@
-using System.Text.Json;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Domain.Extensions;
+using System.Text.Json;
 
 namespace Callora.Core.Infrastructure.Plugins;
 
@@ -42,7 +42,9 @@ public sealed class JsonPluginPackageRegistryReader : IPluginPackageRegistryRead
             var json = await File.ReadAllTextAsync(registryPath, cancellationToken).ConfigureAwait(false);
             var dto = JsonSerializer.Deserialize<PluginRegistryJsonDto>(json, JsonOptions);
             if (dto is null)
+            {
                 return Invalid(registryPath, "registry.json is empty.");
+            }
 
             if (string.IsNullOrWhiteSpace(dto.ContractVersion))
             {
@@ -69,17 +71,34 @@ public sealed class JsonPluginPackageRegistryReader : IPluginPackageRegistryRead
             }
 
             if (string.IsNullOrWhiteSpace(dto.SchemaVersion))
+            {
                 return Invalid(registryPath, "registry.json: 'schemaVersion' is required.");
+            }
+
             if (string.IsNullOrWhiteSpace(dto.Name))
+            {
                 return Invalid(registryPath, "registry.json: 'name' is required.");
+            }
+
             if (string.IsNullOrWhiteSpace(dto.PluginId))
+            {
                 return Invalid(registryPath, "registry.json: 'pluginId' is required.");
+            }
+
             if (string.IsNullOrWhiteSpace(dto.Version))
+            {
                 return Invalid(registryPath, "registry.json: 'version' is required.");
+            }
+
             if (string.IsNullOrWhiteSpace(dto.AssemblyFileName))
+            {
                 return Invalid(registryPath, "registry.json: 'assemblyFileName' is required.");
+            }
+
             if (string.IsNullOrWhiteSpace(dto.EntryTypeName))
+            {
                 return Invalid(registryPath, "registry.json: 'entryTypeName' is required.");
+            }
 
             var extensions = new List<PluginPackageExtensionRegistration>();
             if (dto.Extensions is not null)

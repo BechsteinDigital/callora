@@ -23,7 +23,9 @@ public static class WorkspaceScopeAuthorizationExtensions
             policy.RequireAssertion(context =>
             {
                 if (context.Resource is not HttpContext httpContext)
+                {
                     return false;
+                }
 
                 return WorkspaceScopeEvaluator.HasWorkspaceAccess(
                     context.User,
@@ -36,7 +38,9 @@ public static class WorkspaceScopeAuthorizationExtensions
     private static string? ResolveRequestedWorkspaceKey(HttpContext httpContext)
     {
         if (httpContext.Request.Query.TryGetValue(WorkspaceKeyParameterName, out var queryValue))
+        {
             return queryValue.ToString();
+        }
 
         return httpContext.Request.RouteValues.TryGetValue(WorkspaceKeyParameterName, out var routeValue)
             ? routeValue?.ToString()

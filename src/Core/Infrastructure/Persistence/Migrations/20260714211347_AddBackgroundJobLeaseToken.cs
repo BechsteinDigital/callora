@@ -1,30 +1,29 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+using System;
 
 #nullable disable
 
-namespace Callora.Core.Infrastructure.Persistence.Migrations
+namespace Callora.Core.Infrastructure.Persistence.Migrations;
+
+/// <inheritdoc />
+public partial class AddBackgroundJobLeaseToken : Migration
 {
     /// <inheritdoc />
-    public partial class AddBackgroundJobLeaseToken : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<Guid>(
-                name: "LeaseToken",
-                table: "background_jobs",
-                type: "uuid",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
-        }
+        migrationBuilder.AddColumn<Guid>(
+            name: "LeaseToken",
+            table: "background_jobs",
+            type: "uuid",
+            nullable: false,
+            defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn(
-                name: "LeaseToken",
-                table: "background_jobs");
-        }
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropColumn(
+            name: "LeaseToken",
+            table: "background_jobs");
     }
 }

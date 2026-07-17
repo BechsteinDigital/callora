@@ -1,7 +1,7 @@
 using Callora.Core.Application.Persistence;
 using Callora.Core.Application.Plugins;
-using Callora.Core.Domain.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Domain.Plugins;
 
 namespace Callora.Core.Application.Lifecycle;
 

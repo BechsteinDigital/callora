@@ -15,15 +15,24 @@ internal static class PluginContractTestCommandParser
             {
                 case "--assembly":
                     if (!TryReadValue(args, ref index, out assemblyPath))
+                    {
                         return PluginContractTestCommandParseResult.Fail("Missing value for --assembly.");
+                    }
+
                     break;
                 case "--registry":
                     if (!TryReadValue(args, ref index, out registryPath))
+                    {
                         return PluginContractTestCommandParseResult.Fail("Missing value for --registry.");
+                    }
+
                     break;
                 case "--entry-type":
                     if (!TryReadValue(args, ref index, out entryTypeName))
+                    {
                         return PluginContractTestCommandParseResult.Fail("Missing value for --entry-type.");
+                    }
+
                     break;
                 default:
                     return PluginContractTestCommandParseResult.Fail($"Unknown option '{argument}'.");
@@ -31,7 +40,9 @@ internal static class PluginContractTestCommandParser
         }
 
         if (string.IsNullOrWhiteSpace(assemblyPath))
+        {
             return PluginContractTestCommandParseResult.Fail("Option --assembly is required.");
+        }
 
         return PluginContractTestCommandParseResult.Success(
             new PluginContractTestRequest(

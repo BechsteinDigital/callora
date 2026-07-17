@@ -27,7 +27,9 @@ public sealed class DataProtectionPluginDataProtector(IDataProtectionProvider da
     {
         plaintext = string.Empty;
         if (string.IsNullOrWhiteSpace(pluginId) || string.IsNullOrEmpty(protectedValue))
+        {
             return false;
+        }
 
         try
         {

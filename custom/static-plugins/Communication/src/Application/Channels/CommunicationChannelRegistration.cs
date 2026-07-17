@@ -16,7 +16,9 @@ internal sealed class CommunicationChannelRegistration(
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
+        {
             return;
+        }
 
         registry.Unregister(workspaceKey, channel);
     }

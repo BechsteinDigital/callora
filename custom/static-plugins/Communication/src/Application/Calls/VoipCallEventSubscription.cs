@@ -1,5 +1,5 @@
-using System.Threading.Channels;
 using Callora.Plugin.Communication.Abstractions;
+using System.Threading.Channels;
 
 namespace Callora.Plugin.Communication.Application.Calls;
 

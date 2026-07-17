@@ -1,6 +1,6 @@
+using Callora.Analyzers;
 using System.Linq;
 using System.Threading.Tasks;
-using Callora.Analyzers;
 using Xunit;
 
 namespace Callora.Analyzers.Tests;

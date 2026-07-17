@@ -36,6 +36,8 @@ public sealed class FileHostAuditStoreThreadSafetyTests
         Assert.Equal(64, pluginIds.Count);
 
         if (File.Exists(auditPath))
+        {
             File.Delete(auditPath);
+        }
     }
 }

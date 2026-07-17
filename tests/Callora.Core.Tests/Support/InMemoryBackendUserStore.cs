@@ -1,7 +1,7 @@
-using System.Collections.Concurrent;
 using Callora.Core.Application.Security;
 using Callora.Core.Domain.Security;
 using Microsoft.AspNetCore.Identity;
+using System.Collections.Concurrent;
 
 namespace Callora.Core.Tests.Support;
 

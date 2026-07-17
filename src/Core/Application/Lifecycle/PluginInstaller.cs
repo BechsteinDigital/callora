@@ -171,7 +171,9 @@ public sealed class PluginInstaller(
         if (sourceMetadata is not null)
         {
             foreach (var (key, value) in sourceMetadata)
+            {
                 installMetadata[key] = value;
+            }
         }
         if (package is not null)
         {

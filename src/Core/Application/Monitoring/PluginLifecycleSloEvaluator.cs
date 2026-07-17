@@ -15,7 +15,9 @@ public sealed class PluginLifecycleSloEvaluator
         ArgumentNullException.ThrowIfNull(snapshot);
 
         if (snapshot.TotalOperationCount <= 0)
+        {
             return new PluginLifecycleSloEvaluationResult(0, 0d, 1d, []);
+        }
 
         var failures = Math.Clamp(snapshot.FailedOperationCount, 0, snapshot.TotalOperationCount);
         var errorRate = failures / (double)snapshot.TotalOperationCount;

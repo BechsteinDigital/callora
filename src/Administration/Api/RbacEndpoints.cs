@@ -1,8 +1,8 @@
+using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
-using Callora.Core.Application.Plugins;
 using Microsoft.AspNetCore.Mvc;
-using Callora.Core.Application.Plugins.Contracts;
 
 namespace Callora.Administration.Api;
 

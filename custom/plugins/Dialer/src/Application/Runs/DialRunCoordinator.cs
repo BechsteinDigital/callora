@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Callora.Core.Application.Jobs.Contracts;
+using System.Text.Json;
 
 namespace Callora.Plugins.Dialer.Application.Runs;
 
@@ -64,7 +64,9 @@ public sealed class DialRunCoordinator(
     public Task<DialRunSnapshot?> GetLatestRunAsync(string workspaceKey, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(workspaceKey))
+        {
             return Task.FromResult<DialRunSnapshot?>(null);
+        }
 
         return runStore.GetLatestAsync(workspaceKey.Trim(), cancellationToken);
     }

@@ -1,7 +1,7 @@
 using Callora.Core.Application.Lifecycle;
+using Callora.Core.Application.Options;
 using Callora.Core.Infrastructure.Plugins;
 using Callora.Core.Tests.Support;
-using Callora.Core.Application.Options;
 
 namespace Callora.Core.Tests.Infrastructure.Plugins;
 

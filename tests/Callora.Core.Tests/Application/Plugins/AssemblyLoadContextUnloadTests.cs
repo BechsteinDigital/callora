@@ -1,5 +1,5 @@
-using System.Runtime.CompilerServices;
 using Callora.Core.Application.Plugins;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Plugins;

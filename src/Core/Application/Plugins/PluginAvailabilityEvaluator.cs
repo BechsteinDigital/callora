@@ -1,9 +1,9 @@
 using Callora.Core.Application.Entitlements;
 using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Persistence;
+using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Plugins;
-using Callora.Core.Application.Plugins.Contracts;
 
 namespace Callora.Core.Application.Plugins;
 

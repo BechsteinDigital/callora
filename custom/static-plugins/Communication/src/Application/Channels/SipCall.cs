@@ -72,7 +72,9 @@ public sealed class SipCall : IVoipCall
         {
             var mapped = SipCallStateMapper.Map(engineState);
             if (mapped == _state || _state == CallState.Terminated)
+            {
                 return;
+            }
 
             payload = new CallStateChangedEventArgs(_state, mapped);
             _state = mapped;

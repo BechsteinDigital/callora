@@ -1,8 +1,8 @@
-using System.Text.Json;
 using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Application.Mail.Contracts;
 using Callora.Core.Extensibility;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Callora.Core.Application.Mail;
 

@@ -1,13 +1,13 @@
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text.Encodings.Web;
-using System.Text;
 using Callora.Core.Application.Integrations;
 using Callora.Core.Application.Policies;
 using Callora.Core.Extensibility;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Encodings.Web;
 
 namespace Callora.Core.Infrastructure.Security;
 
@@ -21,11 +21,15 @@ public sealed class ApiKeyAuthenticationHandler(
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!Request.Headers.TryGetValue(hostOptions.ApiKeyHeaderName, out var providedValues))
+        {
             return AuthenticateResult.NoResult();
+        }
 
         var providedKey = providedValues.ToString();
         if (string.IsNullOrWhiteSpace(providedKey))
+        {
             return AuthenticateResult.Fail($"Missing '{hostOptions.ApiKeyHeaderName}' header.");
+        }
 
         // 1) Named integration (PLAT-264): a hashed lookup resolves the credential
         // to its own RBAC role and scope — never platform super-admin.
@@ -57,12 +61,16 @@ public sealed class ApiKeyAuthenticationHandler(
     private bool IsKnownBootstrapKey(string provided)
     {
         if (string.IsNullOrWhiteSpace(provided))
+        {
             return false;
+        }
 
         foreach (var key in hostOptions.ApiKeys ?? [])
         {
             if (ConstantTimeEquals(key, provided))
+            {
                 return true;
+            }
         }
 
         return false;

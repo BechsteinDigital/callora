@@ -13,7 +13,9 @@ public sealed class EnvironmentSecretStore : ISecretStore
     public Task<string?> GetSecretAsync(string name, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
             return Task.FromResult<string?>(null);
+        }
 
         var variableName = Prefix + NormalizeName(name);
         var value = Environment.GetEnvironmentVariable(variableName);

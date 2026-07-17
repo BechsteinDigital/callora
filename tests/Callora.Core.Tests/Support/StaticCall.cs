@@ -81,7 +81,9 @@ public sealed class StaticCall : ICall
     {
         var previous = _state;
         if (previous == newState || previous == CallState.Terminated)
+        {
             return;
+        }
 
         _state = newState;
         StateChanged?.Invoke(this, new CallStateChangedEventArgs(previous, newState));

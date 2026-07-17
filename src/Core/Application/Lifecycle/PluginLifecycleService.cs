@@ -1,11 +1,11 @@
-using Callora.Core.Application.Entitlements;
 using Callora.Core.Application.Audit;
+using Callora.Core.Application.Entitlements;
 using Callora.Core.Application.Events;
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Persistence;
 using Callora.Core.Application.Plugins;
-using Callora.Core.Application.Workspaces;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Application.Workspaces;
 
 namespace Callora.Core.Application.Lifecycle;
 

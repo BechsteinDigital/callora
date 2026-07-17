@@ -1,5 +1,5 @@
-using System.Data.Common;
 using Callora.Core.Extensibility;
+using System.Data.Common;
 
 namespace Callora.Core.Application.Migrations.Contracts;
 

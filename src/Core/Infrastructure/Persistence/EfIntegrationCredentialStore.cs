@@ -62,7 +62,9 @@ public sealed class EfIntegrationCredentialStore(HostPersistenceDbContext dbCont
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
             .ConfigureAwait(false);
         if (row is null || !row.IsActive)
+        {
             return false;
+        }
 
         row.IsActive = false;
         row.RevokedAtUtc = DateTimeOffset.UtcNow;

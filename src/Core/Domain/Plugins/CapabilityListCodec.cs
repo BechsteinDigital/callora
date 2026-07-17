@@ -13,7 +13,9 @@ public static class CapabilityListCodec
     public static string? Join(IReadOnlyList<string>? capabilities)
     {
         if (capabilities is null || capabilities.Count == 0)
+        {
             return null;
+        }
 
         var normalized = capabilities
             .Where(static x => !string.IsNullOrWhiteSpace(x))
@@ -30,7 +32,9 @@ public static class CapabilityListCodec
     public static IReadOnlyList<string> Split(string? encoded)
     {
         if (string.IsNullOrWhiteSpace(encoded))
+        {
             return Array.Empty<string>();
+        }
 
         return encoded
             .Split(Separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

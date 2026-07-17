@@ -15,10 +15,14 @@ public sealed class AllowlistPluginActivationPolicy(BackendHostOptions options) 
         CancellationToken cancellationToken = default)
     {
         if (!options.RequireAllowlistForActivation)
+        {
             return ValueTask.FromResult(PluginActivationDecision.Allow());
+        }
 
         if (_allowlist.Contains(pluginId))
+        {
             return ValueTask.FromResult(PluginActivationDecision.Allow());
+        }
 
         return ValueTask.FromResult(
             PluginActivationDecision.Deny(

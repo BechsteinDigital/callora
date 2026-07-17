@@ -11,9 +11,14 @@ public sealed class LocalNuGetPackagePluginAssemblyResolver : INuGetPluginAssemb
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(packageId))
+        {
             return ValueTask.FromResult(NuGetPluginAssemblyResolveResult.Failure("packageId is required."));
+        }
+
         if (string.IsNullOrWhiteSpace(packageVersion))
+        {
             return ValueTask.FromResult(NuGetPluginAssemblyResolveResult.Failure("packageVersion is required."));
+        }
 
         var packagesRoot = GetPackagesRoot();
         var packageRoot = Path.Combine(packagesRoot, packageId.ToLowerInvariant(), packageVersion.ToLowerInvariant());
@@ -39,7 +44,9 @@ public sealed class LocalNuGetPackagePluginAssemblyResolver : INuGetPluginAssemb
     {
         var overridePath = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
         if (!string.IsNullOrWhiteSpace(overridePath))
+        {
             return overridePath;
+        }
 
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         return Path.Combine(home, ".nuget", "packages");
@@ -66,7 +73,9 @@ public sealed class LocalNuGetPackagePluginAssemblyResolver : INuGetPluginAssemb
         {
             var libFolder = Path.Combine(packageRoot, "lib", tfm);
             if (!Directory.Exists(libFolder))
+            {
                 continue;
+            }
 
             var match = Directory
                 .EnumerateFiles(libFolder, "*.dll", SearchOption.TopDirectoryOnly)
@@ -74,7 +83,9 @@ public sealed class LocalNuGetPackagePluginAssemblyResolver : INuGetPluginAssemb
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .FirstOrDefault();
             if (match is not null)
+            {
                 return match;
+            }
         }
 
         return Directory

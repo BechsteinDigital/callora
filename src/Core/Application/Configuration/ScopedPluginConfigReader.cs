@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Callora.Core.Application.Configuration.Contracts;
+using System.Text.Json;
 
 namespace Callora.Core.Application.Configuration;
 
@@ -29,7 +29,9 @@ public sealed class ScopedPluginConfigReader(IServiceScopeFactory scopeFactory) 
     {
         var json = await GetRawAsync(pluginId, configKey, workspaceKey, cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(json))
+        {
             return null;
+        }
 
         try
         {
@@ -68,7 +70,9 @@ public sealed class ScopedPluginConfigReader(IServiceScopeFactory scopeFactory) 
     {
         var json = await GetRawAsync(pluginId, configKey, workspaceKey, cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(json))
+        {
             return fallback;
+        }
 
         return int.TryParse(json.Trim('"'), out var value) ? value : fallback;
     }

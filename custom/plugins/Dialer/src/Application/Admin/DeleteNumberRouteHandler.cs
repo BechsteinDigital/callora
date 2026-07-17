@@ -10,7 +10,9 @@ public sealed class DeleteNumberRouteHandler(IDialNumberStore store) : IHostAdmi
         CancellationToken cancellationToken = default)
     {
         if (!AdminRequestWorkspace.TryGet(request, out var workspaceKey, out var error))
+        {
             return error!;
+        }
 
         if (!request.RouteValues.TryGetValue("numberId", out var numberId) || string.IsNullOrWhiteSpace(numberId))
         {

@@ -37,7 +37,9 @@ public sealed class EfSipAccountStore(
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(sipAccountId))
+        {
             return null;
+        }
 
         await using var db = dbContextFactory.CreateDbContext();
         var row = await FindAsync(db, workspaceKey, sipAccountId.Trim(), cancellationToken).ConfigureAwait(false);
@@ -89,7 +91,9 @@ public sealed class EfSipAccountStore(
         await using var db = dbContextFactory.CreateDbContext();
         var row = await FindAsync(db, workspaceKey, sipAccountId.Trim(), cancellationToken).ConfigureAwait(false);
         if (row is null)
+        {
             return null;
+        }
 
         row.Username = request.Username.Trim();
         row.Domain = request.Domain.Trim();
@@ -107,7 +111,9 @@ public sealed class EfSipAccountStore(
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(sipAccountId))
+        {
             return false;
+        }
 
         var key = workspaceKey.Trim();
         var id = sipAccountId.Trim();

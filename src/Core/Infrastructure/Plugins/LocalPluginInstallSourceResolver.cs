@@ -1,8 +1,8 @@
-using System.Text.Json;
-using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Lifecycle;
-using Callora.Core.Infrastructure.Startup;
 using Callora.Core.Application.Options;
+using Callora.Core.Application.Plugins;
+using Callora.Core.Infrastructure.Startup;
+using System.Text.Json;
 
 namespace Callora.Core.Infrastructure.Plugins;
 

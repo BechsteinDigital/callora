@@ -1,6 +1,6 @@
 using Callora.Core.Application.Entitlements;
-using System.Collections.Concurrent;
 using Callora.Core.Application.Policies;
+using System.Collections.Concurrent;
 
 namespace Callora.Core.Application.Entitlements;
 

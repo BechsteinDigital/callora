@@ -1,11 +1,11 @@
-using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Entitlements;
-using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using Callora.Core.Application.Lifecycle;
+using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Policies;
 using Callora.Core.Tests.Support;
-using Callora.Core.Application.Plugins.Contracts;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 
 namespace Callora.Core.Tests.Application.Lifecycle;
 
@@ -155,7 +155,9 @@ public sealed class PluginLifecycleTelemetryTests
             InstrumentPublished = (instrument, meterListener) =>
             {
                 if (instrument.Meter.Name == PluginLifecycleTelemetry.MeterName)
+                {
                     meterListener.EnableMeasurementEvents(instrument);
+                }
             }
         };
 
@@ -179,10 +181,14 @@ public sealed class PluginLifecycleTelemetryTests
         ReadOnlySpan<KeyValuePair<string, object?>> tags)
     {
         if (!TryReadTags(tags, out var action, out var scope, out var pluginId, out var outcome, out var correlationId))
+        {
             return;
+        }
 
         if (!string.Equals(pluginId, ownPluginId, StringComparison.Ordinal))
+        {
             return;
+        }
 
         lock (metricMeasurements)
         {

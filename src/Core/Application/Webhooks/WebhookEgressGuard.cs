@@ -1,7 +1,7 @@
+using Callora.Core.Application.Policies;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using Callora.Core.Application.Policies;
 
 namespace Callora.Core.Application.Webhooks;
 

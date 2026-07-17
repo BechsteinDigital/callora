@@ -1,6 +1,6 @@
-using System.Data.Common;
 using Callora.Core.Application.Persistence.Contracts;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
 
 namespace Callora.Core.Application.Plugins;
 

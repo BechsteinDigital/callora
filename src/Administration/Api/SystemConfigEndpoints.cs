@@ -57,10 +57,14 @@ public static class SystemConfigEndpoints
                 CancellationToken cancellationToken) =>
             {
                 if (string.IsNullOrWhiteSpace(request.PluginId) || !SystemConfigScopes.IsValid(request.Scope))
+                {
                     return ApiProblems.BadRequest("pluginId and a valid scope (global|tenant|workspace) are required.");
+                }
 
                 if (request.Scope != SystemConfigScopes.Global && string.IsNullOrWhiteSpace(request.ScopeKey))
+                {
                     return ApiProblems.BadRequest("scopeKey is required for tenant and workspace scope.");
+                }
 
                 // Explicit per-scope authorization (the scope key travels in
                 // the body): global and tenant values are operator-only;
@@ -69,7 +73,9 @@ public static class SystemConfigEndpoints
                     ? WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, request.ScopeKey)
                     : WorkspaceScopeEvaluator.IsOperator(httpContext.User);
                 if (!allowed)
+                {
                     return Results.Forbid();
+                }
 
                 var values = (request.ValuesByKey ?? []).ToDictionary(
                     pair => pair.Key,

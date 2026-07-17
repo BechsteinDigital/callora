@@ -1,6 +1,6 @@
-using System.Net;
 using Callora.Core.Application.Configuration.Contracts;
 using Callora.Core.Application.Mail.Contracts;
+using System.Net;
 
 namespace Callora.Core.Infrastructure.Mail;
 

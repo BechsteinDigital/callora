@@ -1,8 +1,8 @@
-using System.Reflection;
 using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Flows.Contracts;
 using Callora.Core.Application.Jobs.Contracts;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace Callora.Core.Infrastructure.DependencyInjection;
 

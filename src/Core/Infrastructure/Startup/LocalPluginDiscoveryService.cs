@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Options;
 using Callora.Core.Application.Persistence;
@@ -6,6 +5,7 @@ using Callora.Core.Application.Plugins;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Plugins;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Callora.Core.Infrastructure.Startup;
 

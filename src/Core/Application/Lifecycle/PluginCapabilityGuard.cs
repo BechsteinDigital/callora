@@ -28,18 +28,24 @@ public sealed class PluginCapabilityGuard(
             .GetByPluginIdAsync(pluginId, cancellationToken)
             .ConfigureAwait(false);
         if (installation is null)
+        {
             return CapabilityCheckResult.Allowed;
+        }
 
         var required = installation.GetRequiredCapabilities();
         if (required.Count == 0)
+        {
             return CapabilityCheckResult.Allowed;
+        }
 
         var activeInScope = await LoadActiveInScopeAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         var installations = await installationRepository.ListAsync(cancellationToken).ConfigureAwait(false);
         foreach (var capability in required)
         {
             if (HasActiveProvider(installations, pluginId, capability, workspaceKey, activeInScope))
+            {
                 continue;
+            }
 
             var scopeSuffix = workspaceKey is null ? "." : $" in workspace '{workspaceKey}'.";
             return CapabilityCheckResult.Denied(
@@ -66,30 +72,42 @@ public sealed class PluginCapabilityGuard(
             .GetByPluginIdAsync(pluginId, cancellationToken)
             .ConfigureAwait(false);
         if (installation is null)
+        {
             return CapabilityCheckResult.Allowed;
+        }
 
         var provided = installation.GetProvidedCapabilities();
         if (provided.Count == 0)
+        {
             return CapabilityCheckResult.Allowed;
+        }
 
         var activeInScope = await LoadActiveInScopeAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         var installations = await installationRepository.ListAsync(cancellationToken).ConfigureAwait(false);
         foreach (var dependent in installations)
         {
             if (IsSamePlugin(dependent.PluginId, pluginId) || dependent.State == PluginInstallationState.Uninstalled)
+            {
                 continue;
+            }
 
             var requiredByDependent = dependent.GetRequiredCapabilities();
             if (requiredByDependent.Count == 0)
+            {
                 continue;
+            }
 
             if (!IsActiveInScope(dependent, workspaceKey, activeInScope))
+            {
                 continue;
+            }
 
             foreach (var capability in requiredByDependent)
             {
                 if (!provided.Contains(capability, StringComparer.OrdinalIgnoreCase))
+                {
                     continue;
+                }
 
                 var hasAlternative = HasActiveProvider(
                     installations,
@@ -98,7 +116,9 @@ public sealed class PluginCapabilityGuard(
                     workspaceKey: workspaceKey,
                     activeInScope: activeInScope);
                 if (hasAlternative)
+                {
                     continue;
+                }
 
                 var scopeSuffix = workspaceKey is null ? "." : $" in workspace '{workspaceKey}'.";
                 return CapabilityCheckResult.Denied(
@@ -123,7 +143,9 @@ public sealed class PluginCapabilityGuard(
         CancellationToken cancellationToken)
     {
         if (workspaceKey is null)
+        {
             return null;
+        }
 
         var active = await activationReader
             .ListActivePluginIdsAsync(workspaceKey, cancellationToken)
@@ -147,10 +169,14 @@ public sealed class PluginCapabilityGuard(
             }
 
             if (!candidate.GetProvidedCapabilities().Contains(capability, StringComparer.OrdinalIgnoreCase))
+            {
                 continue;
+            }
 
             if (IsActiveInScope(candidate, workspaceKey, activeInScope))
+            {
                 return true;
+            }
         }
 
         return false;
@@ -162,7 +188,9 @@ public sealed class PluginCapabilityGuard(
         IReadOnlySet<string>? activeInScope)
     {
         if (workspaceKey is null)
+        {
             return installation.State == PluginInstallationState.Active;
+        }
 
         return activeInScope is not null && activeInScope.Contains(installation.PluginId);
     }

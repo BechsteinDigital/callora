@@ -1,6 +1,6 @@
+using Callora.Core.Tests.Support;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Channels;
-using Callora.Core.Tests.Support;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Communication;

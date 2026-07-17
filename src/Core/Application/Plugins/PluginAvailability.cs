@@ -16,13 +16,40 @@ public sealed record PluginAvailability(bool IsAvailable, IReadOnlyList<PluginAv
     public static PluginAvailability From(PluginAvailabilityInputs inputs)
     {
         var unmet = new List<PluginAvailabilityFactor>();
-        if (!inputs.BundledOrInstalled) unmet.Add(PluginAvailabilityFactor.BundledOrInstalled);
-        if (!inputs.RuntimeHealthy) unmet.Add(PluginAvailabilityFactor.RuntimeHealthy);
-        if (!inputs.Entitled) unmet.Add(PluginAvailabilityFactor.Entitled);
-        if (!inputs.WorkspaceEnabled) unmet.Add(PluginAvailabilityFactor.WorkspaceEnabled);
-        if (!inputs.TenantActive) unmet.Add(PluginAvailabilityFactor.TenantActive);
-        if (!inputs.WorkspaceActive) unmet.Add(PluginAvailabilityFactor.WorkspaceActive);
-        if (!inputs.RequiredCapabilitiesAvailable) unmet.Add(PluginAvailabilityFactor.RequiredCapabilitiesAvailable);
+        if (!inputs.BundledOrInstalled)
+        {
+            unmet.Add(PluginAvailabilityFactor.BundledOrInstalled);
+        }
+
+        if (!inputs.RuntimeHealthy)
+        {
+            unmet.Add(PluginAvailabilityFactor.RuntimeHealthy);
+        }
+
+        if (!inputs.Entitled)
+        {
+            unmet.Add(PluginAvailabilityFactor.Entitled);
+        }
+
+        if (!inputs.WorkspaceEnabled)
+        {
+            unmet.Add(PluginAvailabilityFactor.WorkspaceEnabled);
+        }
+
+        if (!inputs.TenantActive)
+        {
+            unmet.Add(PluginAvailabilityFactor.TenantActive);
+        }
+
+        if (!inputs.WorkspaceActive)
+        {
+            unmet.Add(PluginAvailabilityFactor.WorkspaceActive);
+        }
+
+        if (!inputs.RequiredCapabilitiesAvailable)
+        {
+            unmet.Add(PluginAvailabilityFactor.RequiredCapabilitiesAvailable);
+        }
 
         return new PluginAvailability(unmet.Count == 0, unmet);
     }

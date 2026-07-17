@@ -1,5 +1,5 @@
-using Callora.Core.Application.Security;
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Security;
 
 namespace Callora.Core.Infrastructure.Security;
 
@@ -21,7 +21,9 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         foreach (var (role, permissions) in BackendRbacPermissionCatalog.Build(options))
         {
             if (string.Equals(role, BackendRoles.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+            {
                 continue;
+            }
 
             _rolePermissions[role] = permissions;
         }
@@ -29,7 +31,9 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         foreach (var assignment in options.RbacUserAssignments)
         {
             if (string.IsNullOrWhiteSpace(assignment.UserId) || string.IsNullOrWhiteSpace(assignment.Role))
+            {
                 continue;
+            }
 
             _userRoles[assignment.UserId.Trim()] = assignment.Role.Trim();
         }
@@ -40,8 +44,10 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
     {
         cancellationToken.ThrowIfCancellationRequested();
         lock (_sync)
+        {
             return Task.FromResult<IReadOnlyDictionary<string, IReadOnlyCollection<string>>>(
                 new Dictionary<string, IReadOnlyCollection<string>>(_rolePermissions, StringComparer.OrdinalIgnoreCase));
+        }
     }
 
     public Task<IReadOnlyCollection<string>?> GetRolePermissionsAsync(
@@ -50,9 +56,11 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
     {
         cancellationToken.ThrowIfCancellationRequested();
         lock (_sync)
+        {
             return Task.FromResult(_rolePermissions.TryGetValue(role, out var permissions)
                 ? permissions
                 : null);
+        }
     }
 
     public Task UpsertRoleAsync(
@@ -65,11 +73,15 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         ArgumentNullException.ThrowIfNull(permissions);
 
         if (string.Equals(role, BackendRoles.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+        {
             throw new InvalidOperationException("Role 'superadmin' is fixed and cannot be modified.");
+        }
 
         var normalizedPermissions = NormalizePermissions(permissions, role);
         lock (_sync)
+        {
             _rolePermissions[role.Trim()] = normalizedPermissions;
+        }
 
         return Task.CompletedTask;
     }
@@ -82,10 +94,14 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         ArgumentException.ThrowIfNullOrWhiteSpace(role);
 
         if (string.Equals(role, BackendRoles.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+        {
             return Task.FromResult(false);
+        }
 
         lock (_sync)
+        {
             return Task.FromResult(_rolePermissions.Remove(role.Trim()));
+        }
     }
 
     public Task<IReadOnlyDictionary<string, string>> GetUserRolesAsync(
@@ -93,8 +109,10 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
     {
         cancellationToken.ThrowIfCancellationRequested();
         lock (_sync)
+        {
             return Task.FromResult<IReadOnlyDictionary<string, string>>(
                 new Dictionary<string, string>(_userRoles, StringComparer.OrdinalIgnoreCase));
+        }
     }
 
     public Task<string?> GetUserRoleAsync(
@@ -105,7 +123,9 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
         lock (_sync)
+        {
             return Task.FromResult(_userRoles.GetValueOrDefault(userId.Trim()));
+        }
     }
 
     public Task UpsertUserRoleAsync(
@@ -120,7 +140,9 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         lock (_sync)
         {
             if (!_rolePermissions.ContainsKey(role.Trim()))
+            {
                 throw new InvalidOperationException($"Role '{role}' is not defined.");
+            }
 
             _userRoles[userId.Trim()] = role.Trim();
         }
@@ -136,7 +158,9 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
         lock (_sync)
+        {
             return Task.FromResult(_userRoles.Remove(userId.Trim()));
+        }
     }
 
     private static IReadOnlyCollection<string> NormalizePermissions(IReadOnlyCollection<string> permissions, string role)
@@ -147,7 +171,9 @@ public sealed class InMemoryBackendRbacStore : IBackendRbacStore
         {
             var trimmed = permission.Trim().ToLowerInvariant();
             if (!BackendPermissionKeyValidator.IsValid(trimmed))
+            {
                 throw new InvalidOperationException($"Permission '{permission}' is invalid for role '{role}'.");
+            }
 
             normalized.Add(trimmed);
         }

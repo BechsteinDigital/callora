@@ -17,7 +17,9 @@ internal sealed class PluginInspectionLoadContext : AssemblyLoadContext
     {
         var resolvedPath = _dependencyResolver.ResolveAssemblyToPath(assemblyName);
         if (resolvedPath is null)
+        {
             return null;
+        }
 
         return LoadFromAssemblyPath(resolvedPath);
     }
