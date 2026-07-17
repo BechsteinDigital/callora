@@ -65,4 +65,58 @@ public sealed class AdminSpaServingTests
         await app.StopAsync();
         webRoot.Delete(recursive: true);
     }
+
+    [Fact]
+    public async Task AdminAssetRequest_IsServedByStaticFiles_NotTheSpaShell()
+    {
+        var webRoot = Directory.CreateTempSubdirectory("callora-admin-spa-asset");
+        var adminDir = Directory.CreateDirectory(Path.Combine(webRoot.FullName, "admin"));
+        var assetsDir = Directory.CreateDirectory(Path.Combine(adminDir.FullName, "assets"));
+        await File.WriteAllTextAsync(
+            Path.Combine(adminDir.FullName, "index.html"),
+            "<!doctype html><title>callora-admin</title>");
+        await File.WriteAllTextAsync(
+            Path.Combine(assetsDir.FullName, "app.js"),
+            "export const marker = 'ASSET_JS';");
+
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = webRoot.FullName });
+        builder.WebHost.UseTestServer();
+        var app = builder.Build();
+        app.UseStaticFiles();
+        app.MapAdminSpaFallback();
+        await app.StartAsync();
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync("/admin/assets/app.js");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("ASSET_JS", body);            // the real asset via static files
+        Assert.DoesNotContain("callora-admin", body); // NOT the SPA shell (nonfile fell through)
+
+        await app.StopAsync();
+        webRoot.Delete(recursive: true);
+    }
+
+    [Fact]
+    public async Task AdminRoute_WhenIndexMissing_Returns404_NotServerError()
+    {
+        var webRoot = Directory.CreateTempSubdirectory("callora-admin-spa-noindex");
+        // deliberately no admin/index.html
+
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = webRoot.FullName });
+        builder.WebHost.UseTestServer();
+        var app = builder.Build();
+        app.UseStaticFiles();
+        app.MapAdminSpaFallback();
+        await app.StartAsync();
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync("/admin/");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        await app.StopAsync();
+        webRoot.Delete(recursive: true);
+    }
 }
