@@ -109,7 +109,7 @@ public sealed class PluginInstallation
     {
         if (State == PluginInstallationState.Uninstalled)
         {
-            throw new InvalidOperationException($"Plugin '{PluginId}' is already uninstalled.");
+            throw PluginInstallationException.AlreadyUninstalled(PluginId);
         }
     }
 }

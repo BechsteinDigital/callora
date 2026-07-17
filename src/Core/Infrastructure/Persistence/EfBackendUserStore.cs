@@ -151,7 +151,7 @@ public sealed class EfBackendUserStore(
         {
             if (string.IsNullOrWhiteSpace(password))
             {
-                throw new InvalidOperationException("Password is required when creating a new user.");
+                throw BackendUserException.PasswordRequired();
             }
 
             user = new BackendUser
