@@ -6,6 +6,9 @@ namespace Callora.Core.Application.Media.Contracts;
 /// </summary>
 public interface IMediaLibrary
 {
+    /// <summary>
+    /// Lists the workspace media assets, optionally restricted to one folder.
+    /// </summary>
     Task<IReadOnlyList<MediaAssetInfo>> ListAsync(
         string workspaceKey,
         string? folder = null,

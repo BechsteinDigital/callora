@@ -7,5 +7,6 @@ namespace Callora.Core.Application.Mail.Contracts;
 /// </summary>
 public interface IMailSender
 {
+    /// <summary>Sends the message through the configured SMTP transport.</summary>
     Task SendAsync(MailMessage message, CancellationToken cancellationToken = default);
 }

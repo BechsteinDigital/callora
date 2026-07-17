@@ -6,6 +6,10 @@ namespace Callora.Core.Application.Notifications.Contracts;
 /// </summary>
 public interface INotificationPublisher
 {
+    /// <summary>
+    /// Publishes one notification to the admin notification center.
+    /// <paramref name="level"/> is a value from <see cref="NotificationLevels"/>.
+    /// </summary>
     Task PublishAsync(
         string title,
         string message,

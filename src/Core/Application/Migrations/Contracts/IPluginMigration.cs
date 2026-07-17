@@ -14,6 +14,7 @@ public interface IPluginMigration
     /// <summary>Monotonically increasing version, e.g. 1, 2, 3.</summary>
     int Version { get; }
 
+    /// <summary>Short human-readable summary of what the migration changes.</summary>
     string Description { get; }
 
     /// <summary>

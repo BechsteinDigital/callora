@@ -5,8 +5,13 @@ namespace Callora.Core.Application.Plugins.Contracts;
 /// </summary>
 public enum HostPluginState
 {
+    /// <summary>Assembly loaded and recorded, but not yet serving.</summary>
     Installed = 0,
+
+    /// <summary>Started and serving its exports to the host.</summary>
     Active = 1,
+
+    /// <summary>Previously active, now stopped but still installed.</summary>
     Inactive = 2,
 
     /// <summary>Activation failed; the plugin is installed but not serving.</summary>
