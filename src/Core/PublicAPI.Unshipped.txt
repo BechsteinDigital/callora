@@ -4221,10 +4221,17 @@ const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceThemeSettin
 Callora.Core.Extensibility.ExtensionPointIdAttribute
 Callora.Core.Extensibility.ExtensionPointIdAttribute.ExtensionPointIdAttribute() -> void
 Callora.Core.Application.Events.MutableHostEvent
-Callora.Core.Application.Events.MutableHostEvent.Cancel() -> void
-Callora.Core.Application.Events.MutableHostEvent.IsCanceled.get -> bool
-Callora.Core.Application.Events.MutableHostEvent.IsPropagationStopped.get -> bool
 Callora.Core.Application.Events.MutableHostEvent.MutableHostEvent(System.DateTimeOffset occurredAtUtc) -> void
 Callora.Core.Application.Events.MutableHostEvent.OccurredAtUtc.get -> System.DateTimeOffset
-Callora.Core.Application.Events.MutableHostEvent.State.get -> System.Collections.Generic.IDictionary<string!, object?>!
-Callora.Core.Application.Events.MutableHostEvent.StopPropagation() -> void
+abstract Callora.Core.Application.Events.MutableBusinessEvent.ToEventData() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Core.Application.Events.InterceptableEvent
+Callora.Core.Application.Events.InterceptableEvent.Cancel() -> void
+Callora.Core.Application.Events.InterceptableEvent.InterceptableEvent() -> void
+Callora.Core.Application.Events.InterceptableEvent.IsCanceled.get -> bool
+Callora.Core.Application.Events.InterceptableEvent.IsPropagationStopped.get -> bool
+Callora.Core.Application.Events.InterceptableEvent.State.get -> System.Collections.Generic.IDictionary<string!, object?>!
+Callora.Core.Application.Events.InterceptableEvent.StopPropagation() -> void
+Callora.Core.Application.Events.MutableBusinessEvent
+Callora.Core.Application.Events.MutableBusinessEvent.EventName.get -> string!
+Callora.Core.Application.Events.MutableBusinessEvent.MutableBusinessEvent(string! eventName, string? workspaceKey) -> void
+Callora.Core.Application.Events.MutableBusinessEvent.WorkspaceKey.get -> string?
