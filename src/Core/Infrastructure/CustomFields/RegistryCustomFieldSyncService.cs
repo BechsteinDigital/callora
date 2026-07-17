@@ -10,8 +10,6 @@ namespace Callora.Core.Infrastructure.CustomFields;
 /// </summary>
 public sealed class RegistryCustomFieldSyncService(ICustomFieldStore store)
 {
-    private static readonly string[] AllowedEntityNames = ["workspace", "call", "user"];
-
     public async Task SyncFromAssemblyAsync(
         string pluginId,
         string version,
@@ -57,7 +55,9 @@ public sealed class RegistryCustomFieldSyncService(ICustomFieldStore store)
         foreach (var entity in customFields.EnumerateObject())
         {
             var entityName = entity.Name.Trim().ToLowerInvariant();
-            if (!AllowedEntityNames.Contains(entityName) || entity.Value.ValueKind != JsonValueKind.Object)
+            // Domain-neutral: no entity whitelist — a plugin owns its entity names.
+            // Only skip empty or structurally malformed declarations.
+            if (string.IsNullOrEmpty(entityName) || entity.Value.ValueKind != JsonValueKind.Object)
             {
                 continue;
             }
