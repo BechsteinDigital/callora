@@ -18,25 +18,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { RouterLink, RouterView } from 'vue-router'
 import { useAuthStore } from '@/core/auth/authStore'
 import UserMenu from '@/core/ui/UserMenu.vue'
 
-const store = useAuthStore()
-const ctx = store.context
-const router = useRouter()
-
-// On a hard reload the in-memory context is empty; rehydrate it from the
-// cookie session, or bounce to login if the session is gone.
-onMounted(async () => {
-  if (!ctx.value) {
-    const ok = await store.loadContext()
-    if (!ok) {
-      router.push('/login')
-    }
-  }
-})
+// Context rehydration on a hard reload is handled by the route guard
+// (authGuard), which runs and awaits /api/admin/context before this mounts.
+const ctx = useAuthStore().context
 </script>
 
 <style scoped lang="scss">

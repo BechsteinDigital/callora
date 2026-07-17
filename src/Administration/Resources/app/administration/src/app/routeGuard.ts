@@ -8,13 +8,21 @@ declare module 'vue-router' {
 }
 
 /**
- * Client-side navigation guard: public routes always pass; every other route
- * requires a loaded admin context, otherwise it redirects to /login. This is a
- * UX gate only — server-side authorization stays authoritative.
+ * Client-side navigation guard. Public routes always pass. For protected routes
+ * the admin context must be present; on a hard reload it is empty, so the guard
+ * rehydrates it once from the cookie session via /api/admin/context. If that
+ * fails (no/expired session) it redirects to /login. This is a UX gate only —
+ * server-side authorization stays authoritative.
  */
-export function authGuard(to: RouteLocationNormalized): true | string {
+export async function authGuard(to: RouteLocationNormalized): Promise<true | string> {
   if (to.meta.public) {
     return true
   }
-  return useAuthStore().context.value ? true : '/login'
+
+  const store = useAuthStore()
+  if (store.context.value) {
+    return true
+  }
+
+  return (await store.loadContext()) ? true : '/login'
 }
