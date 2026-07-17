@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Extensibility.Contracts;
 
 /// <summary>
@@ -9,6 +11,7 @@ namespace Callora.Core.Application.Extensibility.Contracts;
 /// receives the inner service and must delegate to it for unchanged paths.
 /// </summary>
 /// <typeparam name="TService">The decorated service contract.</typeparam>
+[CalloraExtensible("Extension point — implement and export to decorate a platform service (REV2 §8.2)")]
 public interface IServiceDecorator<TService>
     where TService : class
 {

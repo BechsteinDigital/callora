@@ -4212,3 +4212,9 @@ Callora.Core.Application.Cli.ICalloraConsoleCommand
 Callora.Core.Application.Cli.ICalloraConsoleCommand.Description.get -> string!
 Callora.Core.Application.Cli.ICalloraConsoleCommand.ExecuteAsync(System.Collections.Generic.IReadOnlyList<string!>! args, System.IO.TextWriter! output, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
 Callora.Core.Application.Cli.ICalloraConsoleCommand.Name.get -> string!
+Callora.Core.Domain.Extensions.CalloraExtensionPoints
+const Callora.Core.Domain.Extensions.CalloraExtensionPoints.AdminApiRoute = "admin.api.route" -> string!
+const Callora.Core.Domain.Extensions.CalloraExtensionPoints.AdminNavigationMain = "admin.navigation.main" -> string!
+const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceNavigationMain = "workspace.navigation.main" -> string!
+const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceThemeDefinition = "workspace.theme.definition" -> string!
+const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceThemeSettings = "workspace.theme.settings" -> string!

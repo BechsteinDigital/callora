@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Events.Contracts;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace Callora.Core.Application.Events.Contracts;
 /// Any subsystem or plugin publishes these through <c>IBusinessEventBus</c>;
 /// the platform routes them to every interested consumer.
 /// </summary>
+[CalloraExtensible("Extension point — implement to define a plugin business event (REV2 §8.2)")]
 public interface IBusinessEvent : IHostEvent
 {
     /// <summary>

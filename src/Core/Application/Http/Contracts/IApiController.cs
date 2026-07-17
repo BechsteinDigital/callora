@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Http.Contracts;
 
 /// <summary>
@@ -7,4 +9,5 @@ namespace Callora.Core.Application.Http.Contracts;
 /// again on deactivation. Controllers derive from
 /// <see cref="AdminApiController"/> or <see cref="WorkspaceApiController"/>.
 /// </summary>
+[CalloraExtensible("Extension point — implement (via AdminApiController/WorkspaceApiController) to expose a plugin API controller (REV2 §8.2)")]
 public interface IApiController;

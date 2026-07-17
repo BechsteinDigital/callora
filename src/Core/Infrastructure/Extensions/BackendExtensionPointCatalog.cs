@@ -11,23 +11,23 @@ public static class BackendExtensionPointCatalog
         return
         [
             new ExtensionPointDefinition(
-                ExtensionPointId: "workspace.navigation.main",
+                ExtensionPointId: CalloraExtensionPoints.WorkspaceNavigationMain,
                 Surface: ExtensionSurface.Workspace,
                 RequiredScope: "workspace.navigation"),
             new ExtensionPointDefinition(
-                ExtensionPointId: "workspace.theme.definition",
+                ExtensionPointId: CalloraExtensionPoints.WorkspaceThemeDefinition,
                 Surface: ExtensionSurface.Workspace,
                 RequiredScope: "workspace.theme.read"),
             new ExtensionPointDefinition(
-                ExtensionPointId: "workspace.theme.settings",
+                ExtensionPointId: CalloraExtensionPoints.WorkspaceThemeSettings,
                 Surface: ExtensionSurface.Workspace,
                 RequiredScope: "workspace.theme.write"),
             new ExtensionPointDefinition(
-                ExtensionPointId: "admin.navigation.main",
+                ExtensionPointId: CalloraExtensionPoints.AdminNavigationMain,
                 Surface: ExtensionSurface.Admin,
                 RequiredScope: "admin.navigation"),
             new ExtensionPointDefinition(
-                ExtensionPointId: "admin.api.route",
+                ExtensionPointId: CalloraExtensionPoints.AdminApiRoute,
                 Surface: ExtensionSurface.Admin,
                 RequiredScope: "admin.api.route")
         ];
