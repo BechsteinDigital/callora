@@ -65,16 +65,33 @@ public static class CalloraAdministrationExtensions
     }
 
     /// <summary>
-    /// Serves the admin SPA: any request under /admin/* that does not match a
-    /// static file or API route falls back to the SPA entry document, so the
-    /// client-side router handles deep links (e.g. /admin/users). Scoped to
-    /// /admin at lowest priority, so it never shadows /api/* routes; /admin
-    /// collides with no reserved API prefix (all are /api/* or /workspace/*).
+    /// Serves the admin SPA under /admin/*. This is a concrete route, NOT
+    /// MapFallbackToFile: a fallback has lowest priority and would lose to the
+    /// workspace storefront catch-all <c>/{**path}</c>, which then redirects
+    /// /admin to <see cref="BackendHostOptions.AdminShellBaseUrl"/> — a
+    /// self-redirect loop when the shell is served locally ("/admin/"). As a
+    /// concrete route it outranks that catch-all. Static assets under /admin are
+    /// served earlier by UseStaticFiles; every other /admin request returns the
+    /// SPA entry document so the client-side router handles deep links
+    /// (e.g. /admin/users). The <c>nonfile</c> constraint lets asset paths
+    /// (/admin/assets/*.js|css, which carry an extension) fall through to the
+    /// static-file/SWA pipeline instead of being answered with index.html.
+    /// index.html is resolved through the web-root file provider, which includes
+    /// static web assets under <c>dotnet run</c> (dev) and the physical file
+    /// after publish.
     /// </summary>
     public static IEndpointRouteBuilder MapAdminSpaFallback(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
-        endpoints.MapFallbackToFile("/admin/{**path}", "admin/index.html");
+        endpoints.MapGet("/admin/{**path:nonfile}", (IWebHostEnvironment environment) =>
+        {
+            var indexFile = environment.WebRootFileProvider.GetFileInfo("admin/index.html");
+            return indexFile.Exists
+                ? Results.File(indexFile.CreateReadStream(), "text/html; charset=utf-8")
+                : Results.NotFound();
+        })
+        .AllowAnonymous()
+        .ExcludeFromDescription();
         return endpoints;
     }
 }
