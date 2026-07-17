@@ -1,7 +1,8 @@
 namespace Callora.Core.Domain.CustomFields;
 
 /// <summary>
-/// One custom field a plugin attaches to a core entity (workspace, call, user).
+/// One custom field a plugin attaches to an entity — a core entity such as
+/// workspace or user, or an entity the plugin itself defines.
 /// </summary>
 public sealed class CustomFieldDefinition
 {
@@ -11,7 +12,7 @@ public sealed class CustomFieldDefinition
 
     public string Version { get; set; } = string.Empty;
 
-    /// <summary>Target entity name: workspace, call or user.</summary>
+    /// <summary>Target entity name: a core entity (e.g. workspace, user) or a plugin-defined entity.</summary>
     public string EntityName { get; set; } = string.Empty;
 
     public string FieldKey { get; set; } = string.Empty;
