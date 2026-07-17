@@ -4,28 +4,18 @@ using System.Text.Json.Nodes;
 namespace Callora.Core.Application.Webhooks;
 
 /// <summary>
-/// Data minimization for outbound webhook payloads (PLAT-244): masks values
-/// of known person-related fields (phone numbers, display names, e-mail
-/// addresses) recursively before the payload leaves the platform.
+/// Data minimization for outbound webhook payloads (PLAT-244): masks values of
+/// the supplied sensitive field names recursively before the payload leaves the
+/// platform. The field set is domain-neutral — the core carries a generic
+/// baseline and plugins declare their own via <see cref="SensitivePayloadFieldRegistry"/>.
 /// Subscriptions opt in to unmasked payloads explicitly.
 /// </summary>
 public static class WebhookPayloadMinimizer
 {
-    private static readonly HashSet<string> SensitiveFieldNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "targetValue",
-        "targetDisplayName",
-        "target",
-        "phoneNumber",
-        "callerNumber",
-        "calleeNumber",
-        "displayName",
-        "email"
-    };
-
-    public static string Minimize(string bodyJson)
+    public static string Minimize(string bodyJson, IReadOnlySet<string> sensitiveFields)
     {
         ArgumentNullException.ThrowIfNull(bodyJson);
+        ArgumentNullException.ThrowIfNull(sensitiveFields);
 
         JsonNode? root;
         try
@@ -42,7 +32,7 @@ public static class WebhookPayloadMinimizer
             return bodyJson;
         }
 
-        MaskNode(root);
+        MaskNode(root, sensitiveFields);
         return root.ToJsonString();
     }
 
@@ -59,7 +49,7 @@ public static class WebhookPayloadMinimizer
             : "***";
     }
 
-    private static void MaskNode(JsonNode node)
+    private static void MaskNode(JsonNode node, IReadOnlySet<string> sensitiveFields)
     {
         switch (node)
         {
@@ -68,7 +58,7 @@ public static class WebhookPayloadMinimizer
                 {
                     var child = jsonObject[propertyName];
                     if (child is JsonValue value &&
-                        SensitiveFieldNames.Contains(propertyName) &&
+                        sensitiveFields.Contains(propertyName) &&
                         value.TryGetValue<string>(out var text))
                     {
                         jsonObject[propertyName] = MaskValue(text);
@@ -77,7 +67,7 @@ public static class WebhookPayloadMinimizer
 
                     if (child is not null)
                     {
-                        MaskNode(child);
+                        MaskNode(child, sensitiveFields);
                     }
                 }
 
@@ -87,7 +77,7 @@ public static class WebhookPayloadMinimizer
                 {
                     if (element is not null)
                     {
-                        MaskNode(element);
+                        MaskNode(element, sensitiveFields);
                     }
                 }
 

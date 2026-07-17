@@ -2117,7 +2117,6 @@ Callora.Core.Application.Webhooks.WebhookDeliveryPayload.SubscriptionId.init -> 
 Callora.Core.Application.Webhooks.WebhookDeliveryPayload.WebhookDeliveryPayload(System.Guid SubscriptionId, string! EventName, string! BodyJson) -> void
 Callora.Core.Application.Webhooks.WebhookDispatcher
 Callora.Core.Application.Webhooks.WebhookDispatcher.DispatchAsync(string! eventName, string? workspaceKey, object! payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-Callora.Core.Application.Webhooks.WebhookDispatcher.WebhookDispatcher(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Callora.Core.Application.Jobs.Contracts.IBackgroundJobQueue! jobQueue, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Webhooks.WebhookDispatcher!>! logger) -> void
 Callora.Core.Application.Webhooks.WebhookEgressGuard
 Callora.Core.Application.Webhooks.WebhookEgressGuard.ConnectAsync(System.Net.Http.SocketsHttpConnectionContext! context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Stream!>
 Callora.Core.Application.Webhooks.WebhookEgressGuard.EnsureAllowedAsync(System.Uri! target, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
@@ -4098,7 +4097,6 @@ static Callora.Core.Application.Webhooks.WebhookDeliveryPayload.operator !=(Call
 static Callora.Core.Application.Webhooks.WebhookDeliveryPayload.operator ==(Callora.Core.Application.Webhooks.WebhookDeliveryPayload? left, Callora.Core.Application.Webhooks.WebhookDeliveryPayload? right) -> bool
 static Callora.Core.Application.Webhooks.WebhookEgressGuard.IsForbidden(System.Net.IPAddress! address) -> bool
 static Callora.Core.Application.Webhooks.WebhookPayloadMinimizer.MaskValue(string! value) -> string!
-static Callora.Core.Application.Webhooks.WebhookPayloadMinimizer.Minimize(string! bodyJson) -> string!
 static Callora.Core.Application.Webhooks.WebhookSignature.Compute(string! secret, string! body) -> string!
 static Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.operator !=(Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot? left, Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot? right) -> bool
 static Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.operator ==(Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot? left, Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot? right) -> bool
@@ -4290,3 +4288,18 @@ const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Install = "plugi
 const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Rollback = "plugin.rollback" -> string!
 const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Uninstall = "plugin.uninstall" -> string!
 const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Update = "plugin.update" -> string!
+Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry
+Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry.ClearPluginFields(string! pluginId) -> void
+Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry.EffectiveFields() -> System.Collections.Generic.IReadOnlySet<string!>!
+Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry.RegisterPluginFields(string! pluginId, System.Collections.Generic.IReadOnlyCollection<string!>! fields) -> void
+Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry.SensitivePayloadFieldRegistry() -> void
+Callora.Core.Application.Webhooks.WebhookDispatcher.WebhookDispatcher(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Callora.Core.Application.Jobs.Contracts.IBackgroundJobQueue! jobQueue, Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry! sensitiveFieldRegistry, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Webhooks.WebhookDispatcher!>! logger) -> void
+Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber
+Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber.HandleAsync(Callora.Core.Application.Events.PluginLifecycleChangedEvent! appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber.PluginSensitiveFieldSyncSubscriber(Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService! syncService, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber!>! logger) -> void
+Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService
+Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ClearPlugin(string! pluginId) -> void
+Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.RegistrySensitiveFieldSyncService(Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry! registry) -> void
+Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.SyncFromAssemblyAsync(string! pluginId, string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Callora.Core.Application.Webhooks.WebhookPayloadMinimizer.Minimize(string! bodyJson, System.Collections.Generic.IReadOnlySet<string!>! sensitiveFields) -> string!
+static Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ParseSensitiveFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<string!>!

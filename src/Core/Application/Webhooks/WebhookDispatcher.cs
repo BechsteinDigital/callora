@@ -12,6 +12,7 @@ namespace Callora.Core.Application.Webhooks;
 public sealed class WebhookDispatcher(
     IServiceScopeFactory scopeFactory,
     IBackgroundJobQueue jobQueue,
+    SensitivePayloadFieldRegistry sensitiveFieldRegistry,
     ILogger<WebhookDispatcher> logger)
 {
     public const string DeliveryJobType = "webhook.deliver";
@@ -58,7 +59,7 @@ public sealed class WebhookDispatcher(
             {
                 var subscriptionBody = subscription.IncludeSensitiveData
                     ? body
-                    : minimizedBody ??= WebhookPayloadMinimizer.Minimize(body);
+                    : minimizedBody ??= WebhookPayloadMinimizer.Minimize(body, sensitiveFieldRegistry.EffectiveFields());
                 var jobPayload = JsonSerializer.Serialize(
                     new WebhookDeliveryPayload(subscription.Id, eventName, subscriptionBody), JsonOptions);
                 await jobQueue.EnqueueAsync(

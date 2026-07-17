@@ -219,6 +219,12 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<Callora.Core.Application.CustomFields.ICustomFieldStore, EfCustomFieldStore>();
         builder.Services.AddScoped<Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService>();
         builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginCustomFieldSyncSubscriber>();
+        // Webhook data-minimization: domain-neutral field set — core baseline plus
+        // plugin-declared "sensitiveFields" (PLAT-244). Registry is a singleton
+        // because the singleton WebhookDispatcher depends on it.
+        builder.Services.AddSingleton<Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry>();
+        builder.Services.AddScoped<Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService>();
+        builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginSensitiveFieldSyncSubscriber>();
         builder.Services.AddScoped<Callora.Core.Application.Persistence.IPluginSchemaDropper,
             EfPluginSchemaDropper>();
         builder.Services.AddScoped<Callora.Core.Application.Persistence.IPluginDataDocumentCleaner,
