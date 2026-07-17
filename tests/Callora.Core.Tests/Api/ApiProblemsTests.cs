@@ -1,4 +1,5 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Webhooks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -27,5 +28,17 @@ public sealed class ApiProblemsTests
 
         Assert.Equal(StatusCodes.Status400BadRequest, badRequest.ProblemDetails.Status);
         Assert.Equal(StatusCodes.Status409Conflict, conflict.ProblemDetails.Status);
+    }
+
+    [Fact]
+    public void FromException_CarriesStatusTypeAndCode()
+    {
+        var result = ApiProblems.FromException(WebhookTargetException.Blocked("evil.example"));
+
+        var problem = Assert.IsType<ProblemHttpResult>(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, problem.ProblemDetails.Status);
+        Assert.Equal("WEBHOOK__TARGET_BLOCKED", problem.ProblemDetails.Extensions["code"]);
+        Assert.EndsWith("WEBHOOK__TARGET_BLOCKED", problem.ProblemDetails.Type, StringComparison.Ordinal);
+        Assert.Contains("evil.example", problem.ProblemDetails.Detail!, StringComparison.Ordinal);
     }
 }
