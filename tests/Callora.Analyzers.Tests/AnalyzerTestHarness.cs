@@ -63,6 +63,33 @@ internal static class AnalyzerTestHarness
             .ToImmutableArray();
     }
 
+    /// <summary>
+    /// Runs <see cref="CalloraContractDocumentationAnalyzer"/> over <paramref name="source"/>
+    /// and returns the CAL0003 diagnostics. Parses with <see cref="DocumentationMode.Parse"/>
+    /// so the analyzer can read the doc comments — the real build gets this from
+    /// GenerateDocumentationFile.
+    /// </summary>
+    public static async Task<ImmutableArray<Diagnostic>> RunDocumentationAsync(string source)
+    {
+        var tree = CSharpSyntaxTree.ParseText(
+            source,
+            new CSharpParseOptions(LanguageVersion.Latest, DocumentationMode.Parse));
+        var compilation = CSharpCompilation.Create(
+            "DocConsumer",
+            new[] { tree },
+            RuntimeReferences,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+
+        var withAnalyzers = compilation.WithAnalyzers(
+            ImmutableArray.Create<DiagnosticAnalyzer>(new CalloraContractDocumentationAnalyzer()),
+            new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty));
+
+        var diagnostics = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
+        return diagnostics
+            .Where(d => d.Id == CalloraContractDocumentationAnalyzer.DiagnosticId)
+            .ToImmutableArray();
+    }
+
     private static SyntaxTree Parse(string source)
         => CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
 
