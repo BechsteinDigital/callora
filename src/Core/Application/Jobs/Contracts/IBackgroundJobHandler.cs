@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Jobs.Contracts;
 
 /// <summary>
@@ -10,6 +12,7 @@ namespace Callora.Core.Application.Jobs.Contracts;
 /// expires). Handlers must therefore be idempotent — running the same job
 /// twice must not double an external effect (send, charge, provision).
 /// </remarks>
+[CalloraExtensible("Extension point — implement and export to handle a background job type (REV2 §8.2)")]
 public interface IBackgroundJobHandler
 {
     /// <summary>Job type this handler executes.</summary>
