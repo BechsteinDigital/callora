@@ -24,11 +24,9 @@ Callora.Core.Api.AuthMeApiResponse.UserId.init -> void
 Callora.Core.Api.ListPagination
 Callora.Core.Api.LoginApiRequest
 Callora.Core.Api.LoginApiRequest.<Clone>$() -> Callora.Core.Api.LoginApiRequest!
-Callora.Core.Api.LoginApiRequest.Deconstruct(out string! Login, out string! Password) -> void
 Callora.Core.Api.LoginApiRequest.Equals(Callora.Core.Api.LoginApiRequest? other) -> bool
 Callora.Core.Api.LoginApiRequest.Login.get -> string!
 Callora.Core.Api.LoginApiRequest.Login.init -> void
-Callora.Core.Api.LoginApiRequest.LoginApiRequest(string! Login, string! Password) -> void
 Callora.Core.Api.LoginApiRequest.Password.get -> string!
 Callora.Core.Api.LoginApiRequest.Password.init -> void
 Callora.Core.Api.LoginApiResponse
@@ -4330,3 +4328,27 @@ override Callora.Core.Infrastructure.Security.AdminContextView.ToString() -> str
 static Callora.Core.Infrastructure.Security.AdminContextView.FromPrincipal(System.Security.Claims.ClaimsPrincipal! user) -> Callora.Core.Infrastructure.Security.AdminContextView?
 static Callora.Core.Infrastructure.Security.AdminContextView.operator !=(Callora.Core.Infrastructure.Security.AdminContextView? left, Callora.Core.Infrastructure.Security.AdminContextView? right) -> bool
 static Callora.Core.Infrastructure.Security.AdminContextView.operator ==(Callora.Core.Infrastructure.Security.AdminContextView? left, Callora.Core.Infrastructure.Security.AdminContextView? right) -> bool
+Callora.Core.Api.LoginApiRequest.Deconstruct(out string! Login, out string! Password, out string? WorkspaceKey) -> void
+Callora.Core.Api.LoginApiRequest.LoginApiRequest(string! Login, string! Password, string? WorkspaceKey = null) -> void
+Callora.Core.Api.LoginApiRequest.WorkspaceKey.get -> string?
+Callora.Core.Api.LoginApiRequest.WorkspaceKey.init -> void
+Callora.Core.Infrastructure.Security.AdminLoginGrant
+Callora.Core.Infrastructure.Security.AdminLoginGrant.AdminLoginGrant(string! Scope, string? WorkspaceKey, string? Role, System.Collections.Generic.IReadOnlyList<string!>! Permissions) -> void
+Callora.Core.Infrastructure.Security.AdminLoginGrant.<Clone>$() -> Callora.Core.Infrastructure.Security.AdminLoginGrant!
+Callora.Core.Infrastructure.Security.AdminLoginGrant.Deconstruct(out string! Scope, out string? WorkspaceKey, out string? Role, out System.Collections.Generic.IReadOnlyList<string!>! Permissions) -> void
+Callora.Core.Infrastructure.Security.AdminLoginGrant.Equals(Callora.Core.Infrastructure.Security.AdminLoginGrant? other) -> bool
+Callora.Core.Infrastructure.Security.AdminLoginGrant.Permissions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Infrastructure.Security.AdminLoginGrant.Permissions.init -> void
+Callora.Core.Infrastructure.Security.AdminLoginGrant.Role.get -> string?
+Callora.Core.Infrastructure.Security.AdminLoginGrant.Role.init -> void
+Callora.Core.Infrastructure.Security.AdminLoginGrant.Scope.get -> string!
+Callora.Core.Infrastructure.Security.AdminLoginGrant.Scope.init -> void
+Callora.Core.Infrastructure.Security.AdminLoginGrant.WorkspaceKey.get -> string?
+Callora.Core.Infrastructure.Security.AdminLoginGrant.WorkspaceKey.init -> void
+Callora.Core.Infrastructure.Security.AdminLoginResolver
+override Callora.Core.Infrastructure.Security.AdminLoginGrant.Equals(object? obj) -> bool
+override Callora.Core.Infrastructure.Security.AdminLoginGrant.GetHashCode() -> int
+override Callora.Core.Infrastructure.Security.AdminLoginGrant.ToString() -> string!
+static Callora.Core.Infrastructure.Security.AdminLoginGrant.operator !=(Callora.Core.Infrastructure.Security.AdminLoginGrant? left, Callora.Core.Infrastructure.Security.AdminLoginGrant? right) -> bool
+static Callora.Core.Infrastructure.Security.AdminLoginGrant.operator ==(Callora.Core.Infrastructure.Security.AdminLoginGrant? left, Callora.Core.Infrastructure.Security.AdminLoginGrant? right) -> bool
+static Callora.Core.Infrastructure.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Infrastructure.Security.AdminLoginGrant?>!
