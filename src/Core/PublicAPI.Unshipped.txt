@@ -4283,3 +4283,10 @@ override Callora.Core.Application.Lifecycle.PluginLifecycleReport.GetHashCode() 
 override Callora.Core.Application.Lifecycle.PluginLifecycleReport.ToString() -> string!
 static Callora.Core.Application.Lifecycle.PluginLifecycleReport.operator !=(Callora.Core.Application.Lifecycle.PluginLifecycleReport? left, Callora.Core.Application.Lifecycle.PluginLifecycleReport? right) -> bool
 static Callora.Core.Application.Lifecycle.PluginLifecycleReport.operator ==(Callora.Core.Application.Lifecycle.PluginLifecycleReport? left, Callora.Core.Application.Lifecycle.PluginLifecycleReport? right) -> bool
+Callora.Core.Application.Lifecycle.PluginLifecycleActions
+const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Activate = "plugin.activate" -> string!
+const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Deactivate = "plugin.deactivate" -> string!
+const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Install = "plugin.install" -> string!
+const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Rollback = "plugin.rollback" -> string!
+const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Uninstall = "plugin.uninstall" -> string!
+const Callora.Core.Application.Lifecycle.PluginLifecycleActions.Update = "plugin.update" -> string!

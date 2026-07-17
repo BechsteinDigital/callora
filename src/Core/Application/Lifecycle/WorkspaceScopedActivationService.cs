@@ -31,7 +31,7 @@ public sealed class WorkspaceScopedActivationService(
         var workspaceLock = await lockRegistry.AcquireAsync(lockKey, cancellationToken).ConfigureAwait(false);
         try
         {
-            var action = isActive ? "plugin.activate" : "plugin.deactivate";
+            var action = isActive ? PluginLifecycleActions.Activate : PluginLifecycleActions.Deactivate;
             var installation = await installationRepository
                 .GetByPluginIdAsync(normalizedPluginId, cancellationToken)
                 .ConfigureAwait(false);

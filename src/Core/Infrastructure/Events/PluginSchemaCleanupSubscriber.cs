@@ -1,4 +1,5 @@
 using Callora.Core.Application.Events;
+using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Persistence;
 using Callora.Core.Infrastructure.Persistence;
 
@@ -21,7 +22,7 @@ public sealed class PluginSchemaCleanupSubscriber(
     public async Task HandleAsync(PluginLifecycleChangedEvent appEvent, CancellationToken cancellationToken = default)
     {
         if (!appEvent.IsSuccess ||
-            !string.Equals(appEvent.Action?.Trim(), "plugin.uninstall", StringComparison.Ordinal) ||
+            !string.Equals(appEvent.Action?.Trim(), PluginLifecycleActions.Uninstall, StringComparison.Ordinal) ||
             string.IsNullOrWhiteSpace(appEvent.PluginId))
         {
             return;

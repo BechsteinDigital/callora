@@ -92,7 +92,7 @@ public sealed class PluginLifecycleReporter(
 
         return ReportAsync(
             new PluginLifecycleReport(
-                Action: "plugin.install",
+                Action: PluginLifecycleActions.Install,
                 PluginId: pluginId,
                 IsSuccess: false,
                 RequestedBy: requestedBy,

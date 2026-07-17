@@ -1,4 +1,5 @@
 using Callora.Core.Application.Events;
+using Callora.Core.Application.Lifecycle;
 using Callora.Core.Infrastructure.CustomFields;
 
 namespace Callora.Core.Infrastructure.Events;
@@ -25,8 +26,8 @@ public sealed class PluginCustomFieldSyncSubscriber(
         {
             switch (action)
             {
-                case "plugin.install":
-                case "plugin.update":
+                case PluginLifecycleActions.Install:
+                case PluginLifecycleActions.Update:
                     if (appEvent.Metadata is not null &&
                         appEvent.Metadata.TryGetValue("assemblyPath", out var assemblyPath) &&
                         !string.IsNullOrWhiteSpace(assemblyPath))
@@ -39,7 +40,7 @@ public sealed class PluginCustomFieldSyncSubscriber(
                             .ConfigureAwait(false);
                     }
                     break;
-                case "plugin.uninstall":
+                case PluginLifecycleActions.Uninstall:
                     await syncService.ClearPluginDefinitionsAsync(pluginId, cancellationToken).ConfigureAwait(false);
                     break;
             }
