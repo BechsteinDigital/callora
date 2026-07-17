@@ -11,11 +11,11 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
     <!-- Framework module; may consume Core's [CalloraInternal] surface. -->
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
-    <!-- The admin SPA (Resources/app/administration) builds into wwwroot/admin
-         and is bundled as a static web asset served under /admin (not the
-         default _content/Callora.Administration). Callora-Production inherits it
-         via the project/package reference. -->
-    <StaticWebAssetBasePath>admin</StaticWebAssetBasePath>
+    <!-- The admin SPA (Resources/app/administration) builds into wwwroot/admin.
+         As a Web SDK project the static-web-asset base path is already the root,
+         so wwwroot/admin is served at /admin — no StaticWebAssetBasePath needed
+         (setting it to "admin" would double the segment to /admin/admin).
+         Callora-Production inherits the assets via the project/package reference. -->
     <AdminFrontendDir>$(MSBuildProjectDirectory)/Resources/app/administration</AdminFrontendDir>
   </PropertyGroup>
 
