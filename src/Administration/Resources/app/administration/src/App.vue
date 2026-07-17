@@ -1,3 +1,7 @@
 <template>
-  <div>Callora Administration</div>
+  <RouterView />
 </template>
+
+<script setup lang="ts">
+import { RouterView } from 'vue-router'
+</script>
