@@ -1,4 +1,4 @@
-using Callora.Core.Infrastructure.Security;
+using Callora.Core.Application.Security;
 
 namespace Callora.Administration.Api;
 

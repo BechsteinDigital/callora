@@ -4,6 +4,7 @@ using Callora.Core.Api;
 using Callora.Core.Application.Audit;
 using Callora.Core.Application.Integrations;
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Tests.Support;
 using Microsoft.AspNetCore.Builder;

@@ -1,6 +1,6 @@
-using Callora.Core.Infrastructure.Security;
+using Callora.Core.Application.Security;
 
-namespace Callora.Core.Tests.Infrastructure.Security;
+namespace Callora.Core.Tests.Application.Security;
 
 public sealed class WorkspaceRolePermissionsTests
 {

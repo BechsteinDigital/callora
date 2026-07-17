@@ -1,6 +1,6 @@
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Security;
 using Callora.Core.Domain.Security;
-using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

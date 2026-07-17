@@ -1,4 +1,4 @@
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// Values of the <see cref="BackendClaimTypes.CalloraScope"/> claim.

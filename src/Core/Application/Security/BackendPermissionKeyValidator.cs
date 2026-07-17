@@ -1,6 +1,6 @@
 using Callora.Core.Extensibility;
 
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// Validates permission keys following &lt;function&gt;.&lt;action&gt; schema.

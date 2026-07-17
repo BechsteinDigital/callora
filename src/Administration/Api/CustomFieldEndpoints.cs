@@ -1,5 +1,6 @@
 using Callora.Core.Api;
 using Callora.Core.Application.CustomFields;
+using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
 
 namespace Callora.Administration.Api;

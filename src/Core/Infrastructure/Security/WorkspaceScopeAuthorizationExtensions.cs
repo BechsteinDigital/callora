@@ -1,3 +1,5 @@
+using Callora.Core.Application.Security;
+
 namespace Callora.Core.Infrastructure.Security;
 
 /// <summary>

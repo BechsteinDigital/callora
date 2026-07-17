@@ -1,4 +1,4 @@
-namespace Callora.Core.Infrastructure.Security;
+namespace Callora.Core.Application.Security;
 
 /// <summary>
 /// Claim types used by backend authorization policies.

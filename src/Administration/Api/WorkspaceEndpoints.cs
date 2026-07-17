@@ -1,5 +1,6 @@
 using Callora.Core.Api;
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Security;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Infrastructure.Security;

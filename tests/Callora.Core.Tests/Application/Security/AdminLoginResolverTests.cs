@@ -1,9 +1,10 @@
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Tests.Support;
 using Xunit;
 
-namespace Callora.Core.Tests.Infrastructure.Security;
+namespace Callora.Core.Tests.Application.Security;
 
 public sealed class AdminLoginResolverTests
 {
