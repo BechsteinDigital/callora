@@ -15,6 +15,9 @@ export const router = createRouter({
       component: () => import('@/app/AppShell.vue'),
       children: [
         { path: '', component: () => import('@/modules/dashboard/DashboardView.vue') },
+        { path: 'users', component: () => import('@/modules/users/UsersListView.vue') },
+        { path: 'users/new', component: () => import('@/modules/users/UserDetailView.vue') },
+        { path: 'users/:userId', component: () => import('@/modules/users/UserDetailView.vue') },
       ],
     },
   ],
