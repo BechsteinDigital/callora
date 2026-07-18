@@ -8,6 +8,7 @@
         <RouterLink to="/roles">Rollen</RouterLink>
         <RouterLink to="/workspaces">Workspaces</RouterLink>
         <RouterLink to="/plugins">Plugins</RouterLink>
+        <RouterLink to="/media">Medien</RouterLink>
         <RouterLink to="/config">Konfiguration</RouterLink>
       </nav>
     </aside>
