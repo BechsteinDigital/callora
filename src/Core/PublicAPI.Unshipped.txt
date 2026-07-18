@@ -4358,3 +4358,17 @@ Callora.Core.Infrastructure.Security.BackendCsrfProtectionExtensions
 Callora.Core.Infrastructure.Security.BackendCsrfValidator
 static Callora.Core.Infrastructure.Security.BackendCsrfProtectionExtensions.UseBackendCsrfGuard(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
 static Callora.Core.Infrastructure.Security.BackendCsrfValidator.IsForbidden(string! method, bool hasAuthCookie, string? originHeader, string? refererHeader, string! requestOrigin, System.Collections.Generic.IReadOnlyCollection<string!>! allowedOrigins) -> bool
+Callora.Core.Application.Policies.BackendHostOptions.InitialOperator.get -> Callora.Core.Application.Policies.BackendInitialOperatorOptions!
+Callora.Core.Application.Policies.BackendHostOptions.InitialOperator.set -> void
+Callora.Core.Application.Policies.BackendInitialOperatorOptions
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.BackendInitialOperatorOptions() -> void
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.DisplayName.get -> string?
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.DisplayName.set -> void
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.Email.get -> string?
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.Email.set -> void
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.Enabled.get -> bool
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.Enabled.set -> void
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.ExternalId.get -> string!
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.ExternalId.set -> void
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.Password.get -> string!
+Callora.Core.Application.Policies.BackendInitialOperatorOptions.Password.set -> void
