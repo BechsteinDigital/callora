@@ -39,6 +39,12 @@
       </tbody>
     </table>
 
+    <div v-if="!loading && nextCursor" class="more">
+      <button type="button" class="link" :disabled="loadingMore" @click="loadMore">
+        {{ loadingMore ? 'Lädt…' : `Mehr laden (${members.length}${total ? ` von ${total}` : ''})` }}
+      </button>
+    </div>
+
     <form v-if="canManage" class="add" @submit.prevent="add">
       <input v-model="userId" name="memberUserId" class="add-input" placeholder="Benutzer-Login" />
       <input v-model="role" name="memberRole" class="add-input" placeholder="Rolle" />
@@ -59,7 +65,10 @@ const props = defineProps<{ workspaceKey: string; canManage: boolean }>()
 
 const members = ref<WorkspaceMember[]>([])
 const loading = ref(true)
+const loadingMore = ref(false)
 const error = ref<string | null>(null)
+const total = ref(0)
+const nextCursor = ref<string | null>(null)
 const userId = ref('')
 const role = ref('')
 const adding = ref(false)
@@ -68,15 +77,38 @@ const busyUserId = ref<string | null>(null)
 // Resolve the workspaces service through the override registry: a plugin may replace it.
 const api = useService('workspacesApi', workspacesApi)
 
+// (Re)loads from the first page.
 async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    members.value = await api.listMembers(props.workspaceKey)
+    const page = await api.listMembers(props.workspaceKey)
+    members.value = page.items
+    total.value = page.total
+    nextCursor.value = page.nextCursor
   } catch (e) {
     error.value = (e as Error).message
   } finally {
     loading.value = false
+  }
+}
+
+// Fetches the next page (cursor-based) and appends it to the current list.
+async function loadMore(): Promise<void> {
+  if (!nextCursor.value || loadingMore.value) {
+    return
+  }
+  loadingMore.value = true
+  error.value = null
+  try {
+    const page = await api.listMembers(props.workspaceKey, nextCursor.value)
+    members.value = [...members.value, ...page.items]
+    total.value = page.total
+    nextCursor.value = page.nextCursor
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    loadingMore.value = false
   }
 }
 
@@ -194,6 +226,19 @@ onMounted(load)
   background: none;
   border: 0;
   color: var(--cal-color-danger);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.more {
+  margin-top: var(--cal-space);
+}
+
+.link {
+  background: none;
+  border: 0;
+  color: var(--cal-color-accent);
   cursor: pointer;
   font: inherit;
   padding: 0;

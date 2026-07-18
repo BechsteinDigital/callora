@@ -40,6 +40,16 @@ export interface WorkspaceMember {
   assignedAtUtc: string
 }
 
+// One page of members (PagedApiResponse<WorkspaceMemberApiResponse>). nextCursor is
+// null on the last page.
+export interface WorkspaceMembersPage {
+  items: WorkspaceMember[]
+  total: number
+  nextCursor: string | null
+}
+
+export const MEMBERS_PAGE_SIZE = 50
+
 const basePath = '/api/workspaces'
 
 export const workspacesApi = {
@@ -61,12 +71,16 @@ export const workspacesApi = {
     await unwrap(await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}`, { method: 'DELETE' }))
   },
 
-  // Members are a paged sub-resource; the first page is returned here (a later
-  // increment can page via the response cursor).
-  async listMembers(workspaceKey: string): Promise<WorkspaceMember[]> {
-    const res = await unwrap(await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}/members`))
-    const page = (await res.json()) as { items: WorkspaceMember[] }
-    return page.items
+  // Members are a cursor-paged sub-resource; returns one page. Pass the previous
+  // page's nextCursor to fetch the following page.
+  async listMembers(workspaceKey: string, cursor?: string): Promise<WorkspaceMembersPage> {
+    const params = new URLSearchParams({ limit: String(MEMBERS_PAGE_SIZE) })
+    if (cursor) {
+      params.set('cursor', cursor)
+    }
+    return (
+      await unwrap(await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}/members?${params.toString()}`))
+    ).json()
   },
 
   // Assign or change a member's workspace role (the user must already exist).
