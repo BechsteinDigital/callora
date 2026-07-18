@@ -59,7 +59,10 @@ public sealed class BackendRbacDatabaseSeeder(
             }
         }
 
+        // Demo admin: development convenience, re-seeded on every start when enabled.
         await EnsureDemoAdminUserAsync(dbContext, superAdminRole, cancellationToken).ConfigureAwait(false);
+        // Initial operator: production bootstrap, seeded once on an empty install.
+        await EnsureInitialOperatorAsync(dbContext, superAdminRole, cancellationToken).ConfigureAwait(false);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -77,7 +80,50 @@ public sealed class BackendRbacDatabaseSeeder(
             return;
         }
 
-        var externalId = demoUser.ExternalId.Trim();
+        await UpsertOperatorAsync(
+            dbContext, demoUser.ExternalId, demoUser.Email, demoUser.DisplayName, demoUser.Password, superAdminRole, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private async Task EnsureInitialOperatorAsync(
+        HostPersistenceDbContext dbContext,
+        BackendRbacRole superAdminRole,
+        CancellationToken cancellationToken)
+    {
+        var op = options.InitialOperator;
+        if (op is null ||
+            !op.Enabled ||
+            string.IsNullOrWhiteSpace(op.ExternalId) ||
+            string.IsNullOrWhiteSpace(op.Password))
+        {
+            return;
+        }
+
+        // Bootstrap only: never touch an install that already has users, so a
+        // password changed later through the admin UI is never reset. Checks the
+        // pending local context too, so a demo-admin seeded in the same run counts.
+        var hasUsers = dbContext.BackendUsers.Local.Count > 0 ||
+                       await dbContext.BackendUsers.AnyAsync(cancellationToken).ConfigureAwait(false);
+        if (hasUsers)
+        {
+            return;
+        }
+
+        await UpsertOperatorAsync(
+            dbContext, op.ExternalId, op.Email, op.DisplayName, op.Password, superAdminRole, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private async Task UpsertOperatorAsync(
+        HostPersistenceDbContext dbContext,
+        string externalId,
+        string? email,
+        string? displayName,
+        string password,
+        BackendRbacRole superAdminRole,
+        CancellationToken cancellationToken)
+    {
+        externalId = externalId.Trim();
         var user = await dbContext.BackendUsers
             .SingleOrDefaultAsync(x => x.ExternalId == externalId, cancellationToken)
             .ConfigureAwait(false);
@@ -99,9 +145,9 @@ public sealed class BackendRbacDatabaseSeeder(
             user.UpdatedAtUtc = nowUtc;
         }
 
-        user.Email = string.IsNullOrWhiteSpace(demoUser.Email) ? null : demoUser.Email.Trim();
-        user.DisplayName = string.IsNullOrWhiteSpace(demoUser.DisplayName) ? null : demoUser.DisplayName.Trim();
-        user.PasswordHash = passwordHasher.HashPassword(user, demoUser.Password);
+        user.Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+        user.DisplayName = string.IsNullOrWhiteSpace(displayName) ? null : displayName.Trim();
+        user.PasswordHash = passwordHasher.HashPassword(user, password);
         user.PasswordHashAlgorithm = "aspnet.identity.v3";
 
         var assignment = await dbContext.BackendRbacUserRoles

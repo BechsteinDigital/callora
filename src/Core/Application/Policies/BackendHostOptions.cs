@@ -133,6 +133,12 @@ public sealed class BackendHostOptions
     public BackendDemoAdminUserOptions DemoAdminUser { get; set; } = new();
 
     /// <summary>
+    /// One-time bootstrap operator for a fresh deployment (seeded only when no
+    /// users exist yet). See <see cref="BackendInitialOperatorOptions"/>.
+    /// </summary>
+    public BackendInitialOperatorOptions InitialOperator { get; set; } = new();
+
+    /// <summary>
     /// Central feature flags (PLAT-263): a name→enabled map for gating risky
     /// features and cloud rollouts, queried via <c>/api/features</c>.
     /// </summary>
