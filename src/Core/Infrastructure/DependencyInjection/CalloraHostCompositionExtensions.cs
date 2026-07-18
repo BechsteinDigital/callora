@@ -144,7 +144,7 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton<IPluginExtensionRegistrationStore, InMemoryPluginExtensionRegistrationStore>();
         builder.Services.AddSingleton<IPluginPackageRegistryReader, JsonPluginPackageRegistryReader>();
         builder.Services.AddSingleton<IPluginSignatureTrustStore, ConfiguredPluginSignatureTrustStore>();
-        builder.Services.AddSingleton<IPluginPackageSignatureVerifier, AuthenticodePluginPackageSignatureVerifier>();
+        builder.Services.AddSingleton<IPluginPackageSignatureVerifier, ManifestSignaturePluginPackageVerifier>();
         builder.Services.AddSingleton<INuGetPluginAssemblyResolver, LocalNuGetPackagePluginAssemblyResolver>();
         builder.Services.AddSingleton<ILocalPluginProjectBuilder, LocalPluginProjectBuilder>();
         builder.Services.AddSingleton<ILocalPluginInstallSourceResolver, LocalPluginInstallSourceResolver>();
