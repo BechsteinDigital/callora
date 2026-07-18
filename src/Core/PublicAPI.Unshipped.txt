@@ -2950,7 +2950,7 @@ Callora.Core.Infrastructure.Media.FileSystemMediaStorage.OpenReadAsync(System.Gu
 Callora.Core.Infrastructure.Media.FileSystemMediaStorage.WriteAsync(System.Guid mediaId, System.IO.Stream! content, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.BackendPersistenceServiceCollectionExtensions
 Callora.Core.Infrastructure.Persistence.BackendRbacDatabaseSeeder
-Callora.Core.Infrastructure.Persistence.BackendRbacDatabaseSeeder.BackendRbacDatabaseSeeder(Callora.Core.Application.Policies.BackendHostOptions! options, Microsoft.AspNetCore.Identity.IPasswordHasher<Callora.Core.Domain.Security.BackendUser!>! passwordHasher) -> void
+Callora.Core.Infrastructure.Persistence.BackendRbacDatabaseSeeder.BackendRbacDatabaseSeeder(Callora.Core.Application.Policies.BackendHostOptions! options, Microsoft.AspNetCore.Identity.IPasswordHasher<Callora.Core.Domain.Security.BackendUser!>! passwordHasher, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Persistence.BackendRbacDatabaseSeeder!>! logger) -> void
 Callora.Core.Infrastructure.Persistence.BackendRbacDatabaseSeeder.SeedAsync(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.Configurations.BackendRbacRoleEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.BackendRbacRoleEntityTypeConfiguration.BackendRbacRoleEntityTypeConfiguration() -> void

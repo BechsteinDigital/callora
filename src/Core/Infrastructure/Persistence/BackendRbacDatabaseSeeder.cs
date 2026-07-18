@@ -3,13 +3,19 @@ using Callora.Core.Application.Security;
 using Callora.Core.Domain.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Callora.Core.Infrastructure.Persistence;
 
 public sealed class BackendRbacDatabaseSeeder(
     BackendHostOptions options,
-    IPasswordHasher<BackendUser> passwordHasher)
+    IPasswordHasher<BackendUser> passwordHasher,
+    ILogger<BackendRbacDatabaseSeeder> logger)
 {
+    // A bootstrap operator is a real super-admin; a trivially short password would
+    // be a standing risk. Below this length the operator is refused, not weakened.
+    private const int MinInitialOperatorPasswordLength = 12;
+
     public async Task SeedAsync(
         HostPersistenceDbContext dbContext,
         CancellationToken cancellationToken = default)
@@ -99,6 +105,23 @@ public sealed class BackendRbacDatabaseSeeder(
             return;
         }
 
+        // Persistent reminder for every start while the bootstrap operator stays on:
+        // its credentials live in configuration/.env. After first sign-in, rotate the
+        // password and set BackendHost__InitialOperator__Enabled=false, then remove
+        // the credentials from .env.
+        logger.LogWarning(
+            "InitialOperator is enabled: bootstrap credentials are in configuration/.env. After first sign-in, change the password, set BackendHost__InitialOperator__Enabled=false, and remove the credentials from .env.");
+
+        if (op.Password.Length < MinInitialOperatorPasswordLength)
+        {
+            // Fail closed: a too-weak bootstrap password yields no operator (loud
+            // warning) rather than a weak super-admin.
+            logger.LogWarning(
+                "InitialOperator password is shorter than the required minimum of {MinLength} characters; no bootstrap operator was seeded. Set a stronger BackendHost__InitialOperator__Password.",
+                MinInitialOperatorPasswordLength);
+            return;
+        }
+
         // Bootstrap only: never touch an install that already has users, so a
         // password changed later through the admin UI is never reset. Checks the
         // pending local context too, so a demo-admin seeded in the same run counts.
@@ -109,6 +132,10 @@ public sealed class BackendRbacDatabaseSeeder(
             return;
         }
 
+        // Concurrent-start safety: the unique ExternalId/Email index makes a
+        // duplicate operator impossible. If two fresh nodes race past the emptiness
+        // check, one SaveChanges wins; the other fails its startup seed and restarts —
+        // on restart the table is no longer empty, so it takes the skip path above.
         await UpsertOperatorAsync(
             dbContext, op.ExternalId, op.Email, op.DisplayName, op.Password, superAdminRole, cancellationToken)
             .ConfigureAwait(false);
