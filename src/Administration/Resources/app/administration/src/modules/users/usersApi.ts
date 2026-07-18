@@ -1,4 +1,4 @@
-import { apiFetch } from '@/core/http'
+import { apiFetch, jsonInit, unwrap } from '@/core/http'
 
 // Shapes mirror the backend responses (camelCase JSON).
 export interface BackendUser {
@@ -28,19 +28,6 @@ export interface UpdateUserInput {
   displayName: string | null
   // null leaves the stored password untouched (backend contract).
   password: string | null
-}
-
-// Surfaces the RFC 9457 problem detail as an Error message; the caller shows it.
-async function unwrap(res: Response): Promise<Response> {
-  if (res.ok) {
-    return res
-  }
-  const problem = (await res.json().catch(() => null)) as { detail?: string; title?: string } | null
-  throw new Error(problem?.detail ?? problem?.title ?? `HTTP ${res.status}`)
-}
-
-function jsonInit(method: string, body: unknown): RequestInit {
-  return { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
 }
 
 const usersPath = '/api/users'
