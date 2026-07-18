@@ -4,6 +4,7 @@ using Callora.Core.Domain.Security;
 using Callora.Core.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -43,7 +44,7 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
     }
 
     private static BackendRbacDatabaseSeeder Seeder(BackendHostOptions options) =>
-        new(options, new PasswordHasher<BackendUser>());
+        new(options, new PasswordHasher<BackendUser>(), NullLogger<BackendRbacDatabaseSeeder>.Instance);
 
     // A fresh, isolated database per test — creating a new one avoids dropping the
     // container's currently-open database (Postgres 55006) and keeps tests
@@ -82,7 +83,7 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
         var hostOptions = new BackendHostOptions
         {
             DemoAdminUser = { Enabled = false },
-            InitialOperator = { Enabled = true, ExternalId = "root", Email = "root@x.io", Password = "s3cret-pw" },
+            InitialOperator = { Enabled = true, ExternalId = "root", Email = "root@x.io", Password = "s3cret-pw-1234" },
         };
 
         await using (var ctx = new HostPersistenceDbContext(options))
@@ -122,7 +123,7 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
         var hostOptions = new BackendHostOptions
         {
             DemoAdminUser = { Enabled = false },
-            InitialOperator = { Enabled = true, ExternalId = "root", Password = "s3cret-pw" },
+            InitialOperator = { Enabled = true, ExternalId = "root", Password = "s3cret-pw-1234" },
         };
 
         await using (var ctx = new HostPersistenceDbContext(options))
@@ -135,6 +136,28 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task InitialOperator_SeedsUser_WhenPasswordExactlyMinimumLength()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        var options = await FreshDbAsync();
+
+        var hostOptions = new BackendHostOptions
+        {
+            DemoAdminUser = { Enabled = false },
+            // Exactly 12 characters — the boundary is allowed (guards a <= off-by-one).
+            InitialOperator = { Enabled = true, ExternalId = "root", Password = "twelvechars!" },
+        };
+
+        await using (var ctx = new HostPersistenceDbContext(options))
+        {
+            await Seeder(hostOptions).SeedAsync(ctx);
+        }
+
+        await using var verify = new HostPersistenceDbContext(options);
+        Assert.True(await verify.BackendUsers.AnyAsync(x => x.ExternalId == "root"));
+    }
+
+    [SkippableFact]
     public async Task InitialOperator_Disabled_SeedsNoUser()
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
@@ -143,7 +166,29 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
         var hostOptions = new BackendHostOptions
         {
             DemoAdminUser = { Enabled = false },
-            InitialOperator = { Enabled = false, ExternalId = "root", Password = "s3cret-pw" },
+            InitialOperator = { Enabled = false, ExternalId = "root", Password = "s3cret-pw-1234" },
+        };
+
+        await using (var ctx = new HostPersistenceDbContext(options))
+        {
+            await Seeder(hostOptions).SeedAsync(ctx);
+        }
+
+        await using var verify = new HostPersistenceDbContext(options);
+        Assert.False(await verify.BackendUsers.AnyAsync());
+    }
+
+    [SkippableFact]
+    public async Task InitialOperator_SeedsNoUser_WhenPasswordBelowMinimumLength()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        var options = await FreshDbAsync();
+
+        var hostOptions = new BackendHostOptions
+        {
+            DemoAdminUser = { Enabled = false },
+            // 8 characters — below the 12-character minimum: refused, not weakened.
+            InitialOperator = { Enabled = true, ExternalId = "root", Password = "short-pw" },
         };
 
         await using (var ctx = new HostPersistenceDbContext(options))
