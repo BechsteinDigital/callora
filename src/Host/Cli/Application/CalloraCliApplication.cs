@@ -73,6 +73,28 @@ public static class CalloraCliApplication
             return 1;
         }
 
+        if (IsPluginSignCommand(args))
+        {
+            var signParseResult = PluginSignCommandParser.TryParse(args, currentDirectory);
+            if (!signParseResult.IsSuccess || signParseResult.Request is null)
+            {
+                await standardError.WriteLineAsync(signParseResult.ErrorMessage).ConfigureAwait(false);
+                await standardError.WriteLineAsync(Usage).ConfigureAwait(false);
+                return 1;
+            }
+
+            var signer = new PluginSigner();
+            var signResult = await signer.SignAsync(signParseResult.Request, cancellationToken).ConfigureAwait(false);
+            if (!signResult.IsSuccess)
+            {
+                await standardError.WriteLineAsync(signResult.ErrorMessage).ConfigureAwait(false);
+                return 1;
+            }
+
+            await standardOutput.WriteLineAsync($"Plugin signature written: {signResult.OutputPath}").ConfigureAwait(false);
+            return 0;
+        }
+
         await standardError.WriteLineAsync("Unsupported command.").ConfigureAwait(false);
         await standardError.WriteLineAsync(Usage).ConfigureAwait(false);
         return 1;
@@ -91,8 +113,14 @@ public static class CalloraCliApplication
         && string.Equals(args[0], "plugin", StringComparison.OrdinalIgnoreCase)
         && string.Equals(args[1], "test-contract", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsPluginSignCommand(IReadOnlyList<string> args) =>
+        args.Count >= 2
+        && string.Equals(args[0], "plugin", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(args[1], "sign", StringComparison.OrdinalIgnoreCase);
+
     private const string Usage =
         "Usage:\n"
         + "  callora plugin new [name] [--name <display-name>] [--id <plugin-id>] [--output <directory>] [--force]\n"
-        + "  callora plugin test-contract --assembly <path-to-dll> [--registry <path-to-registry.json>] [--entry-type <full-type-name>]";
+        + "  callora plugin test-contract --assembly <path-to-dll> [--registry <path-to-registry.json>] [--entry-type <full-type-name>]\n"
+        + "  callora plugin sign --plugin <plugin-directory> --key <private-key.pem> [--out <plugin.signature.json>]";
 }
