@@ -12,6 +12,10 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
     <!-- Core declares and legitimately consumes the [CalloraInternal] surface. -->
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
+    <!-- Baustein 1: als NuGet-Paket in den lokalen Feed. -->
+    <IsPackable>true</IsPackable>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <Description>Callora platform core: framework runtime, domain logic (Identity/RBAC, tenancy), persistence and hosting composition.</Description>
   </PropertyGroup>
 
   <ItemGroup>

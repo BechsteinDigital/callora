@@ -11,6 +11,12 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
     <!-- Framework module; may consume Core's [CalloraInternal] surface. -->
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
+    <!-- Baustein 1: als NuGet-Paket in den lokalen Feed. Die gebaute Admin-SPA
+         reist als Static Web Asset mit (staticwebassets/admin/**); ein
+         konsumierender Host bekommt sie automatisch unter /admin. -->
+    <IsPackable>true</IsPackable>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <Description>Callora operator API and colocated admin shell (Vue SPA served at /admin via static web assets).</Description>
     <!-- The admin SPA (Resources/app/administration) builds into wwwroot/admin.
          As a Web SDK project the static-web-asset base path is already the root,
          so wwwroot/admin is served at /admin — no StaticWebAssetBasePath needed
@@ -56,5 +62,14 @@
     <Exec Command="npm ci" WorkingDirectory="$(AdminFrontendDir)" />
     <Exec Command="npm run build" WorkingDirectory="$(AdminFrontendDir)" />
   </Target>
+
+  <!-- Baustein 1: die Frontend-QUELLE (TS/Vite/npm, inkl. node_modules) gehört
+       NICHT ins NuGet-Paket — nur die gebaute SPA unter wwwroot/admin reist als
+       Static Web Asset mit. Ohne dies zieht das Web-SDK Resources/app/administration
+       als content/ ins nupkg. Betrifft nur die Paketierung, nicht Build/Run. -->
+  <ItemGroup>
+    <Content Remove="Resources/**" />
+    <None Remove="Resources/**" />
+  </ItemGroup>
 
 </Project>
