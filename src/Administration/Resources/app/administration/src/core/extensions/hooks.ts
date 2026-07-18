@@ -22,13 +22,15 @@ type HookHandler<T> = (ctx: HookContext<T>) => void | Promise<void>
 interface HookRegistration {
   readonly handler: HookHandler<unknown>
   readonly order: number
+  // Owning plugin (set by the loader), or null for a host/test registration.
+  readonly pluginId: string | null
 }
 
 const hooks = new Map<string, HookRegistration[]>()
 
-export function registerHook<T>(name: string, handler: HookHandler<T>, order = 0): void {
+export function registerHook<T>(name: string, handler: HookHandler<T>, order = 0, pluginId: string | null = null): void {
   const list = hooks.get(name) ?? []
-  list.push({ handler: handler as HookHandler<unknown>, order })
+  list.push({ handler: handler as HookHandler<unknown>, order, pluginId })
   hooks.set(name, list)
 }
 
