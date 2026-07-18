@@ -54,4 +54,31 @@ describe('workspacesApi', () => {
       workspacesApi.upsert('acme', { displayName: 'A', workspaceType: 't', isActive: true, publicBaseUrl: 'bad' }),
     ).rejects.toThrow('Workspace public URL is invalid.')
   })
+
+  it('unwraps the paged member list to its items', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      respond({ items: [{ userId: 'alice', role: 'admin' }], total: 1, nextCursor: null }),
+    )
+    globalThis.fetch = fetchMock
+    const members = await workspacesApi.listMembers('acme')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/members')
+    expect(members).toEqual([{ userId: 'alice', role: 'admin' }])
+  })
+
+  it('upserts a member via the member route with the role body', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(respond({ userId: 'a b', role: 'admin' }))
+    globalThis.fetch = fetchMock
+    await workspacesApi.upsertMember('acme', 'a b', 'admin')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/members/a%20b')
+    expect(fetchMock.mock.calls[0][1].method).toBe('PUT')
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual({ role: 'admin' })
+  })
+
+  it('removes a member via DELETE with an encoded user id', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(respond(null, 204))
+    globalThis.fetch = fetchMock
+    await workspacesApi.removeMember('acme', 'a b')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/members/a%20b')
+    expect(fetchMock.mock.calls[0][1].method).toBe('DELETE')
+  })
 })
