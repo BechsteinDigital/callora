@@ -10,12 +10,16 @@ export interface ExtensionRegistration {
   readonly component: Component
   // Ascending; ties keep registration order. Mirrors the plugin navigation Order.
   readonly order: number
+  // Owning plugin (set by the loader), or null for a host/test registration.
+  readonly pluginId: string | null
 }
 
 const registrations: ExtensionRegistration[] = []
 
-export function registerExtension(slot: string, component: Component, order = 0): void {
-  registrations.push({ slot, component, order })
+// Slots are ADDITIVE (every registration renders), so there is no conflict to
+// resolve; pluginId is retained only for diagnostics/attribution.
+export function registerExtension(slot: string, component: Component, order = 0, pluginId: string | null = null): void {
+  registrations.push({ slot, component, order, pluginId })
 }
 
 // Returns the components registered for a slot, ordered. Stable: equal orders

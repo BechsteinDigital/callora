@@ -1,6 +1,6 @@
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, type Component } from 'vue'
 import { registerExtension } from './registry'
-import { registerHook } from './hooks'
+import { registerHook, type HookContext } from './hooks'
 import { registerService } from './services'
 
 // Backend manifest (published by PluginUiAssetPublisher) and asset root.
@@ -25,14 +25,54 @@ export interface PluginUiManifest {
   styleEntries?: PluginUiStyleEntry[]
 }
 
+// A resolved asset URL together with the plugin that owns it, so registrations
+// made while it loads can be attributed and load failures reported per plugin.
+export interface PluginUiAssetRef {
+  url: string
+  pluginId: string
+}
+
 // The global API a plugin bundle (a classic script, loaded at runtime) registers
-// against — no build-time dependency on the shell. Vue primitives are shared so a
-// plugin builds components without bundling its own Vue.
+// against — no build-time dependency on the shell. The owning pluginId is injected
+// by the loader (authoritative), so a plugin only supplies the extension itself and
+// an optional priority. Vue primitives are shared so a plugin builds components
+// without bundling its own Vue.
+//
+// ATTRIBUTION LIMIT: registrations are attributed to a plugin only when made
+// SYNCHRONOUSLY at bundle top-level (during the bundle's load window). A call
+// deferred via setTimeout / dynamic import runs after the window closes and is
+// recorded with pluginId null (indistinguishable from a host registration).
+// Register at top-level to be attributed.
 export interface CalloraAdminGlobal {
-  registerExtension: typeof registerExtension
-  registerHook: typeof registerHook
-  registerService: typeof registerService
+  registerExtension(slot: string, component: Component, order?: number): void
+  registerHook<T>(name: string, handler: (ctx: HookContext<T>) => void | Promise<void>, order?: number): void
+  registerService<T>(key: string, implementation: T, meta?: { priority?: number }): void
   vue: { h: typeof h; defineComponent: typeof defineComponent }
+}
+
+// The plugin whose bundle is currently executing; register* calls made during that
+// window are attributed to it. Set around each sequential script load.
+let currentPluginId: string | null = null
+
+export type PluginUiLoadStatus = 'loaded' | 'failed'
+
+// Per-bundle load outcome, surfaced in Plugin-Management so a silently dropped
+// plugin UI (404, timeout, broken bundle) is diagnosable rather than invisible.
+export interface PluginUiLoadResult {
+  readonly pluginId: string
+  readonly url: string
+  readonly status: PluginUiLoadStatus
+  readonly detail?: string
+}
+
+const loadResults: PluginUiLoadResult[] = []
+
+export function getPluginUiLoadResults(): readonly PluginUiLoadResult[] {
+  return [...loadResults]
+}
+
+export function resetPluginUiLoadResults(): void {
+  loadResults.length = 0
 }
 
 // "custom/plugins/<...>" → "<...>"; strips backslashes and leading slashes.
@@ -59,26 +99,29 @@ function isJavaScript(path: string): boolean {
   return p.endsWith('.js') || p.endsWith('.mjs')
 }
 
-// Pure selection: the admin-surface script + style URLs from a manifest.
-export function selectAdminAssets(manifest: PluginUiManifest): { scripts: string[]; styles: string[] } {
-  // Total by design: a null/garbage manifest body (a malformed response) yields
-  // empty selections rather than throwing into the bootstrap path.
+// Pure selection: the admin-surface script + style assets from a manifest, each
+// with its owning pluginId. Total by design: a null/garbage manifest body yields
+// empty selections rather than throwing into the bootstrap path.
+export function selectAdminAssets(manifest: PluginUiManifest): { scripts: PluginUiAssetRef[]; styles: PluginUiAssetRef[] } {
   const styles = (manifest?.styleEntries ?? [])
     .filter((e) => e.surface === SURFACE)
-    .map((e) => resolveUrl(e.stylePath))
-    .filter(Boolean)
+    .map((e) => ({ url: resolveUrl(e.stylePath), pluginId: e.pluginId }))
+    .filter((ref) => ref.url)
   const scripts = (manifest?.entries ?? [])
     .filter((e) => e.surface === SURFACE && isJavaScript(e.entryPath))
-    .map((e) => resolveUrl(e.entryPath))
-    .filter(Boolean)
+    .map((e) => ({ url: resolveUrl(e.entryPath), pluginId: e.pluginId }))
+    .filter((ref) => ref.url)
   return { scripts, styles }
 }
 
 export function installGlobalApi(): void {
+  // Wrappers inject the currently-loading pluginId so registrations are attributed
+  // without the plugin declaring (or spoofing) its own id.
   const api: CalloraAdminGlobal = {
-    registerExtension,
-    registerHook,
-    registerService,
+    registerExtension: (slot, component, order) => registerExtension(slot, component, order, currentPluginId),
+    registerHook: (name, handler, order) => registerHook(name, handler, order, currentPluginId),
+    registerService: (key, implementation, meta) =>
+      registerService(key, implementation, { pluginId: currentPluginId, priority: meta?.priority }),
     vue: { h, defineComponent },
   }
   ;(globalThis as unknown as { CalloraAdmin?: CalloraAdminGlobal }).CalloraAdmin = api
@@ -112,9 +155,11 @@ function appendScript(url: string): Promise<void> {
 
 // Loads plugin admin UI from the backend manifest. Installs the global API first
 // so plugin scripts can register. A missing manifest is tolerated (early dev);
-// one broken bundle does not block the others. Styles load first (cascade order),
-// then scripts sequentially (a later bundle may extend an earlier one).
+// one broken bundle does not block the others and is recorded as a load result.
+// Styles load first (cascade order), then scripts sequentially — each attributed
+// to its plugin so registrations are owned and failures are diagnosable.
 export async function loadPluginExtensions(): Promise<void> {
+  resetPluginUiLoadResults()
   installGlobalApi()
 
   let manifest: PluginUiManifest
@@ -131,18 +176,23 @@ export async function loadPluginExtensions(): Promise<void> {
   }
 
   const { scripts, styles } = selectAdminAssets(manifest)
-  for (const url of styles) {
+  for (const { url } of styles) {
     try {
       appendStylesheet(url)
     } catch {
       // A malformed style URL must not block the other assets or the mount.
     }
   }
-  for (const url of scripts) {
+  for (const { url, pluginId } of scripts) {
+    currentPluginId = pluginId
     try {
       await appendScript(url)
-    } catch {
-      // A broken plugin bundle must not block the others.
+      loadResults.push({ pluginId, url, status: 'loaded' })
+    } catch (e) {
+      // A broken plugin bundle must not block the others; record it for diagnosis.
+      loadResults.push({ pluginId, url, status: 'failed', detail: (e as Error).message })
+    } finally {
+      currentPluginId = null
     }
   }
 }

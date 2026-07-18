@@ -4,9 +4,12 @@ import {
   selectAdminAssets,
   installGlobalApi,
   loadPluginExtensions,
+  getPluginUiLoadResults,
+  resetPluginUiLoadResults,
   type CalloraAdminGlobal,
   type PluginUiManifest,
 } from './loader'
+import { registerService, getServiceConflicts, resetServices } from './services'
 
 function globalApi(): CalloraAdminGlobal | undefined {
   return (globalThis as unknown as { CalloraAdmin?: CalloraAdminGlobal }).CalloraAdmin
@@ -15,6 +18,7 @@ function globalApi(): CalloraAdminGlobal | undefined {
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  resetPluginUiLoadResults()
   delete (globalThis as unknown as { CalloraAdmin?: CalloraAdminGlobal }).CalloraAdmin
 })
 
@@ -50,8 +54,8 @@ describe('selectAdminAssets', () => {
       ],
     }
     const { scripts, styles } = selectAdminAssets(manifest)
-    expect(scripts).toEqual(['/plugin-assets/a/admin.js'])
-    expect(styles).toEqual(['/plugin-assets/a/admin.css'])
+    expect(scripts).toEqual([{ url: '/plugin-assets/a/admin.js', pluginId: 'a' }])
+    expect(styles).toEqual([{ url: '/plugin-assets/a/admin.css', pluginId: 'a' }])
   })
 
   it('ignores admin entries that are not JavaScript', () => {
@@ -61,7 +65,7 @@ describe('selectAdminAssets', () => {
         { pluginId: 'a', surface: 'admin', entryPath: 'custom/plugins/a/admin.mjs' },
       ],
     }
-    expect(selectAdminAssets(manifest).scripts).toEqual(['/plugin-assets/a/admin.mjs'])
+    expect(selectAdminAssets(manifest).scripts).toEqual([{ url: '/plugin-assets/a/admin.mjs', pluginId: 'a' }])
   })
 
   it('tolerates a manifest without entries or styleEntries', () => {
@@ -159,5 +163,72 @@ describe('loadPluginExtensions', () => {
     })
 
     await expect(loadPluginExtensions()).resolves.toBeUndefined()
+  })
+
+  it('records a loaded result per plugin script', async () => {
+    const manifest: PluginUiManifest = {
+      entries: [{ pluginId: 'acme', surface: 'admin', entryPath: 'custom/plugins/acme/admin.js' }],
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(manifest) }))
+    vi.spyOn(document.head, 'appendChild').mockImplementation((node: unknown) => {
+      const el = node as HTMLScriptElement
+      if (el.tagName === 'SCRIPT') {
+        Promise.resolve().then(() => el.onload?.(new Event('load')))
+      }
+      return node as Node
+    })
+
+    await loadPluginExtensions()
+
+    const results = getPluginUiLoadResults()
+    expect(results).toHaveLength(1)
+    expect(results[0]).toMatchObject({ pluginId: 'acme', status: 'loaded' })
+    expect(results[0].url).toContain('/plugin-assets/acme/admin.js')
+  })
+
+  it('records a failed result for a broken bundle', async () => {
+    const manifest: PluginUiManifest = {
+      entries: [{ pluginId: 'acme', surface: 'admin', entryPath: 'custom/plugins/acme/broken.js' }],
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(manifest) }))
+    vi.spyOn(document.head, 'appendChild').mockImplementation((node: unknown) => {
+      const el = node as HTMLScriptElement
+      if (el.tagName === 'SCRIPT') {
+        Promise.resolve().then(() => el.onerror?.(new Event('error')))
+      }
+      return node as Node
+    })
+
+    await loadPluginExtensions()
+
+    const results = getPluginUiLoadResults()
+    expect(results).toHaveLength(1)
+    expect(results[0]).toMatchObject({ pluginId: 'acme', status: 'failed' })
+  })
+
+  it('attributes a plugin service registration to the loading plugin and reports the conflict', async () => {
+    resetServices()
+    // A host default is already registered; the plugin overrides it during load.
+    registerService('usersApi', { name: 'host' })
+    const manifest: PluginUiManifest = {
+      entries: [{ pluginId: 'acme', surface: 'admin', entryPath: 'custom/plugins/acme/admin.js' }],
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(manifest) }))
+    vi.spyOn(document.head, 'appendChild').mockImplementation((node: unknown) => {
+      const el = node as HTMLScriptElement
+      if (el.tagName === 'SCRIPT') {
+        // Simulate the plugin bundle registering during its (attributed) load window.
+        globalApi()?.registerService('usersApi', { name: 'acme' })
+        Promise.resolve().then(() => el.onload?.(new Event('load')))
+      }
+      return node as Node
+    })
+
+    await loadPluginExtensions()
+
+    expect(getServiceConflicts()).toEqual([
+      { key: 'usersApi', activePluginId: 'acme', shadowedPluginIds: [null] },
+    ])
+    resetServices()
   })
 })

@@ -4,16 +4,22 @@ import PluginsListView from './PluginsListView.vue'
 import type { AdminContext } from '@/core/auth/adminContext'
 import type { PluginInstallation } from './pluginsApi'
 import { registerHook, resetHooks } from '@/core/extensions/hooks'
-import { resetServices } from '@/core/extensions/services'
+import { registerService, resetServices } from '@/core/extensions/services'
 
-const { listMock, activateMock, deactivateMock, installLocalMock, uninstallMock, contextRef } = vi.hoisted(() => ({
-  listMock: vi.fn(),
-  activateMock: vi.fn(),
-  deactivateMock: vi.fn(),
-  installLocalMock: vi.fn(),
-  uninstallMock: vi.fn(),
-  contextRef: { value: null as AdminContext | null },
-}))
+const { listMock, activateMock, deactivateMock, installLocalMock, uninstallMock, contextRef, uiLoadResultsRef } =
+  vi.hoisted(() => ({
+    listMock: vi.fn(),
+    activateMock: vi.fn(),
+    deactivateMock: vi.fn(),
+    installLocalMock: vi.fn(),
+    uninstallMock: vi.fn(),
+    contextRef: { value: null as AdminContext | null },
+    uiLoadResultsRef: {
+      value: [] as Array<{ pluginId: string; url: string; status: string; detail?: string }>,
+    },
+  }))
+
+vi.mock('@/core/extensions/loader', () => ({ getPluginUiLoadResults: () => uiLoadResultsRef.value }))
 
 vi.mock('./pluginsApi', () => ({
   isPluginActive: (state: number) => state === 1,
@@ -60,6 +66,7 @@ beforeEach(() => {
   deactivateMock.mockResolvedValue(okResult)
   installLocalMock.mockResolvedValue(okResult)
   uninstallMock.mockResolvedValue(okResult)
+  uiLoadResultsRef.value = []
   resetHooks()
   resetServices()
 })
@@ -165,5 +172,34 @@ describe('PluginsListView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Abhängigkeit fehlt')
+  })
+
+  it('surfaces a service override conflict in the diagnostics section', async () => {
+    contextRef.value = ctx(['plugin.read'])
+    // Two plugins claim the same service → the registry records a conflict.
+    registerService('usersApi', { name: 'a' }, { pluginId: 'alpha', priority: 1 })
+    registerService('usersApi', { name: 'b' }, { pluginId: 'beta', priority: 5 })
+    const wrapper = mount(PluginsListView)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('Service-Konflikte')
+    expect(text).toContain('usersApi')
+    expect(text).toContain('beta') // active owner (higher priority)
+    expect(text).toContain('alpha') // shadowed owner
+  })
+
+  it('surfaces a failed plugin UI load in the diagnostics section', async () => {
+    contextRef.value = ctx(['plugin.read'])
+    uiLoadResultsRef.value = [
+      { pluginId: 'communication', url: '/plugin-assets/communication/admin.js', status: 'failed', detail: 'SyntaxError' },
+    ]
+    const wrapper = mount(PluginsListView)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('Fehlgeschlagene Plugin-UIs')
+    expect(text).toContain('communication')
+    expect(text).toContain('SyntaxError')
   })
 })

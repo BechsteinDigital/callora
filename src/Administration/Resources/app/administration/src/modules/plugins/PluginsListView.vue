@@ -77,6 +77,30 @@
         </tr>
       </tbody>
     </table>
+
+    <section v-if="uiLoadFailures.length || serviceConflicts.length" class="diagnostics">
+      <h2>Diagnose der Admin-Erweiterungen</h2>
+
+      <div v-if="uiLoadFailures.length" class="diag-block">
+        <h3>Fehlgeschlagene Plugin-UIs</h3>
+        <ul>
+          <li v-for="(r, i) in uiLoadFailures" :key="i">
+            <span class="mono">{{ r.pluginId }}</span> — {{ r.url }}<template v-if="r.detail">: {{ r.detail }}</template>
+          </li>
+        </ul>
+      </div>
+
+      <div v-if="serviceConflicts.length" class="diag-block">
+        <h3>Service-Konflikte</h3>
+        <ul>
+          <li v-for="c in serviceConflicts" :key="c.key">
+            <span class="mono">{{ c.key }}</span> — aktiv:
+            <strong>{{ c.activePluginId ?? 'Host' }}</strong>, überschattet:
+            {{ c.shadowedPluginIds.map((p) => p ?? 'Host').join(', ') }}
+          </li>
+        </ul>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -87,8 +111,9 @@ import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
-import { useService } from '@/core/extensions/services'
+import { useService, getServiceConflicts } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import { getPluginUiLoadResults } from '@/core/extensions/loader'
 
 const plugins = ref<PluginInstallation[]>([])
 const loading = ref(true)
@@ -107,6 +132,11 @@ const canInstall = computed(() => hasPermission(ctx.value, 'plugin.create'))
 
 // Resolve the plugins service through the override registry: a plugin may replace it.
 const api = useService('pluginsApi', pluginsApi)
+
+// Extension diagnostics captured at bootstrap (loader load results + service
+// override conflicts). Read once — this state is stable after the shell mounts.
+const uiLoadFailures = getPluginUiLoadResults().filter((r) => r.status === 'failed')
+const serviceConflicts = getServiceConflicts()
 
 async function load(): Promise<void> {
   loading.value = true
@@ -316,5 +346,33 @@ onMounted(load)
 
 .notice {
   color: var(--cal-color-accent);
+}
+
+.diagnostics {
+  margin-top: calc(var(--cal-space) * 3);
+  border-top: 1px solid var(--cal-color-surface);
+  padding-top: calc(var(--cal-space) * 2);
+}
+
+.diagnostics h2 {
+  font-size: 1.05em;
+  margin-bottom: var(--cal-space);
+}
+
+.diag-block {
+  margin-bottom: calc(var(--cal-space) * 1.5);
+}
+
+.diag-block h3 {
+  font-size: 0.9em;
+  color: var(--cal-color-danger);
+  margin-bottom: 4px;
+}
+
+.diag-block ul {
+  margin: 0;
+  padding-left: calc(var(--cal-space) * 2);
+  color: var(--cal-color-muted);
+  font-size: 0.9em;
 }
 </style>
