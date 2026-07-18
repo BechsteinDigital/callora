@@ -9,6 +9,12 @@
     <Company>Bechstein Digital</Company>
     <Product>Callora.Host</Product>
     <RepositoryType>git</RepositoryType>
+    <!-- Paket-Metadaten für den lokalen Feed (Baustein 1). Wirken nur, wenn ein
+         Projekt IsPackable setzt — sonst inert. Lizenz/IsPackable/Description
+         stehen pro Modul, weil die Core-Module (AGPL) und der SDK-Contract
+         (Apache) unterschiedlich lizenziert sind. -->
+    <RepositoryUrl>https://github.com/BechsteinDigital/callora</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/BechsteinDigital/callora</PackageProjectUrl>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>

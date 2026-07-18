@@ -113,5 +113,10 @@ graphify-out/
 # Vom PluginUiAssetPublisher generiert (bei jedem Start neu aufgebaut)
 src/Core/wwwroot/plugin-assets/
 
+# Vom Admin-Frontend-Build (Vite) generiert. Hierher aus wwwroot/.gitignore
+# verschoben: eine .gitignore INNERHALB von wwwroot reist als Static Web Asset
+# mit und bricht das NuGet-pack (NU5119). Baustein 1.
+src/Administration/wwwroot/admin/
+
 custom/plugins/*/node_modules/
 custom/static-plugins/*/node_modules/
