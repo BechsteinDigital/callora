@@ -36,6 +36,8 @@
         <RouterLink class="cancel" to="/workspaces">Abbrechen</RouterLink>
       </div>
     </form>
+
+    <WorkspaceMembers v-if="isEdit && loaded" :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
   </section>
 </template>
 
@@ -43,8 +45,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { workspacesApi, type Workspace } from './workspacesApi'
+import { useAuthStore } from '@/core/auth/authStore'
+import { hasPermission } from '@/core/auth/permissions'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
+import WorkspaceMembers from './WorkspaceMembers.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
@@ -62,6 +67,11 @@ const isActive = ref(true)
 const loaded = ref<Workspace | null>(null)
 const error = ref<string | null>(null)
 const saving = ref(false)
+
+// Member add/remove goes through the PUT/DELETE member routes, gated on
+// workspace.update — same key that guards the workspace upsert. UI-only.
+const ctx = useAuthStore().context
+const canManage = computed(() => hasPermission(ctx.value, 'workspace.update'))
 
 // The key and display name are required; the type is required by the backend too.
 const canSubmit = computed(

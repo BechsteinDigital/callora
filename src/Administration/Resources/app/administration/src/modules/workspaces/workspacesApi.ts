@@ -29,6 +29,17 @@ export interface WorkspaceUpsert {
   publicBaseUrl: string | null
 }
 
+// Mirrors WorkspaceMemberApiResponse. The role is a workspace-scoped role name
+// (free-form on the backend; only non-empty is enforced).
+export interface WorkspaceMember {
+  workspaceKey: string
+  userId: string
+  email: string | null
+  displayName: string | null
+  role: string
+  assignedAtUtc: string
+}
+
 const basePath = '/api/workspaces'
 
 export const workspacesApi = {
@@ -48,5 +59,33 @@ export const workspacesApi = {
   // Cascading purge on the backend (workspace + workspace-bound data, one transaction).
   async remove(workspaceKey: string): Promise<void> {
     await unwrap(await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}`, { method: 'DELETE' }))
+  },
+
+  // Members are a paged sub-resource; the first page is returned here (a later
+  // increment can page via the response cursor).
+  async listMembers(workspaceKey: string): Promise<WorkspaceMember[]> {
+    const res = await unwrap(await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}/members`))
+    const page = (await res.json()) as { items: WorkspaceMember[] }
+    return page.items
+  },
+
+  // Assign or change a member's workspace role (the user must already exist).
+  async upsertMember(workspaceKey: string, userId: string, role: string): Promise<WorkspaceMember> {
+    return (
+      await unwrap(
+        await apiFetch(
+          `${basePath}/${encodeURIComponent(workspaceKey)}/members/${encodeURIComponent(userId)}`,
+          jsonInit('PUT', { role }),
+        ),
+      )
+    ).json()
+  },
+
+  async removeMember(workspaceKey: string, userId: string): Promise<void> {
+    await unwrap(
+      await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}/members/${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+      }),
+    )
   },
 }
