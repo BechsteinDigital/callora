@@ -5,6 +5,7 @@
       <nav>
         <RouterLink to="/">Übersicht</RouterLink>
         <RouterLink to="/users">Benutzer</RouterLink>
+        <RouterLink to="/roles">Rollen</RouterLink>
       </nav>
     </aside>
     <div class="main">
