@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import UserDetailView from './UserDetailView.vue'
 import type { AdminContext } from '@/core/auth/adminContext'
 import type { BackendUser } from './usersApi'
+import { registerHook, resetHooks } from '@/core/extensions/hooks'
 
 const {
   getMock,
@@ -71,6 +72,7 @@ beforeEach(() => {
     m.mockReset()
   }
   listRolesMock.mockResolvedValue([{ role: 'superadmin', permissions: ['*'] }])
+  resetHooks()
 })
 
 describe('UserDetailView', () => {
@@ -118,5 +120,39 @@ describe('UserDetailView', () => {
 
     expect(wrapper.find('select[name="role"]').exists()).toBe(false)
     expect(listRolesMock).not.toHaveBeenCalled()
+  })
+
+  it('aborts save when a before-save hook cancels', async () => {
+    routeParams.value = {}
+    contextRef.value = ctx(['*'])
+    registerHook('users.before-save', (h) => h.cancel('vom Plugin abgelehnt'))
+
+    const wrapper = mount(UserDetailView)
+    await flushPromises()
+    await wrapper.find('input[name="externalId"]').setValue('op')
+    await wrapper.find('input[name="password"]').setValue('secret')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(createMock).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('vom Plugin abgelehnt')
+  })
+
+  it('applies before-save hook mutations to the created user', async () => {
+    routeParams.value = {}
+    contextRef.value = ctx(['*'])
+    createMock.mockResolvedValue({ externalId: 'op' })
+    registerHook<{ email: string | null }>('users.before-save', (h) => {
+      h.payload.email = 'hooked@x.io'
+    })
+
+    const wrapper = mount(UserDetailView)
+    await flushPromises()
+    await wrapper.find('input[name="externalId"]').setValue('op')
+    await wrapper.find('input[name="password"]').setValue('secret')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ email: 'hooked@x.io' }))
   })
 })

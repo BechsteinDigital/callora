@@ -45,6 +45,8 @@ import { hasPermission } from '@/core/auth/permissions'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
+import { useService } from '@/core/extensions/services'
+import { runHook } from '@/core/extensions/hooks'
 
 const route = useRoute()
 const router = useRouter()
@@ -69,18 +71,21 @@ const canAssignRole = computed(
   () => hasPermission(ctx.value, 'role.read') && hasPermission(ctx.value, 'role.update'),
 )
 
+// Resolve the user service through the override registry: a plugin may replace it.
+const api = useService('usersApi', usersApi)
+
 async function load(): Promise<void> {
   try {
     if (canAssignRole.value) {
-      roles.value = await usersApi.listRoles()
+      roles.value = await api.listRoles()
     }
     if (isEdit.value && userId.value) {
-      const user = await usersApi.get(userId.value)
+      const user = await api.get(userId.value)
       externalId.value = user.externalId
       email.value = user.email ?? ''
       displayName.value = user.displayName ?? ''
       if (canAssignRole.value) {
-        const assignments = await usersApi.listRoleAssignments()
+        const assignments = await api.listRoleAssignments()
         initialRole.value = assignments[userId.value] ?? ''
         role.value = initialRole.value
       }
@@ -90,30 +95,54 @@ async function load(): Promise<void> {
   }
 }
 
+// A before-save hook may enrich the mutable fields or veto; identity and mode are
+// read-only context (a plugin does not rewrite who is being saved).
+interface UserSaveDraft {
+  readonly externalId: string
+  readonly isEdit: boolean
+  email: string | null
+  displayName: string | null
+  role: string | null
+}
+
 async function save(): Promise<void> {
+  const id = isEdit.value && userId.value ? userId.value : externalId.value
+  const draft: UserSaveDraft = {
+    externalId: id,
+    isEdit: isEdit.value,
+    email: email.value || null,
+    displayName: displayName.value || null,
+    role: canAssignRole.value ? role.value : null,
+  }
+  const before = await runHook('users.before-save', draft)
+  if (before.canceled) {
+    error.value = before.cancelReason ?? 'Speichern abgebrochen.'
+    return
+  }
+
   saving.value = true
   error.value = null
   try {
-    const id = isEdit.value && userId.value ? userId.value : externalId.value
     if (isEdit.value) {
-      await usersApi.update(id, {
-        email: email.value || null,
-        displayName: displayName.value || null,
+      await api.update(id, {
+        email: draft.email,
+        displayName: draft.displayName,
         // Empty stays null so the backend keeps the current password.
         password: password.value || null,
       })
     } else {
-      await usersApi.create({
-        externalId: externalId.value,
-        email: email.value || null,
-        displayName: displayName.value || null,
+      await api.create({
+        externalId: id,
+        email: draft.email,
+        displayName: draft.displayName,
         password: password.value,
       })
     }
     // Assigning a role needs role.update; only send it when it actually changed.
-    if (canAssignRole.value && role.value && role.value !== initialRole.value) {
-      await usersApi.assignRole(id, role.value)
+    if (canAssignRole.value && draft.role && draft.role !== initialRole.value) {
+      await api.assignRole(id, draft.role)
     }
+    await runHook('users.after-save', { userId: id })
     router.push('/users')
   } catch (e) {
     error.value = (e as Error).message

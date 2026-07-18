@@ -48,6 +48,8 @@ import { rolesApi, SYSTEM_ROLE, type Role } from './rolesApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
+import { useService } from '@/core/extensions/services'
+import { runHook } from '@/core/extensions/hooks'
 
 const roles = ref<Role[]>([])
 const loading = ref(true)
@@ -55,6 +57,9 @@ const error = ref<string | null>(null)
 
 const ctx = useAuthStore().context
 const canManage = computed(() => hasPermission(ctx.value, 'role.update'))
+
+// Resolve the roles service through the override registry: a plugin may replace it.
+const api = useService('rolesApi', rolesApi)
 
 function describePermissions(role: Role): string {
   if (role.permissions.includes('*')) {
@@ -67,7 +72,7 @@ async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    roles.value = await rolesApi.list()
+    roles.value = await api.list()
   } catch (e) {
     error.value = (e as Error).message
   } finally {
@@ -79,8 +84,14 @@ async function remove(role: Role): Promise<void> {
   if (!window.confirm(`Rolle „${role.role}“ löschen?`)) {
     return
   }
+  const before = await runHook('roles.before-delete', { role: role.role })
+  if (before.canceled) {
+    error.value = before.cancelReason ?? 'Löschen abgebrochen.'
+    return
+  }
   try {
-    await rolesApi.remove(role.role)
+    await api.remove(role.role)
+    await runHook('roles.after-delete', { role: role.role })
     await load()
   } catch (e) {
     error.value = (e as Error).message
