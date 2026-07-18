@@ -26,6 +26,8 @@
         </select>
       </label>
 
+      <ExtensionSlot name="users.detail.fields" :ctx="{ userId: userId ?? externalId }" />
+
       <div class="buttons">
         <BaseButton type="submit" :disabled="saving">{{ isEdit ? 'Speichern' : 'Anlegen' }}</BaseButton>
         <RouterLink class="cancel" to="/users">Abbrechen</RouterLink>
@@ -42,6 +44,7 @@ import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
+import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 
 const route = useRoute()
 const router = useRouter()

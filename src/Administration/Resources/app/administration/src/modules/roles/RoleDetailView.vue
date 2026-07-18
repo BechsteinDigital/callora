@@ -20,6 +20,8 @@
         <p v-if="!grouped.length" class="hint">Keine Rechte verfügbar.</p>
       </fieldset>
 
+      <ExtensionSlot name="roles.detail.fields" :ctx="{ role: editRole ?? roleName }" />
+
       <div class="buttons">
         <BaseButton type="submit" :disabled="saving">{{ isEdit ? 'Speichern' : 'Anlegen' }}</BaseButton>
         <RouterLink class="cancel" to="/roles">Abbrechen</RouterLink>
@@ -34,6 +36,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { rolesApi, type Permission } from './rolesApi'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
+import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 
 const route = useRoute()
 const router = useRouter()

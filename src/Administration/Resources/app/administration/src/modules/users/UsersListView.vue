@@ -2,7 +2,10 @@
   <section class="users">
     <header class="head">
       <h1>Benutzer</h1>
-      <RouterLink v-if="canCreate" class="new" to="/users/new">Neu anlegen</RouterLink>
+      <div class="head-actions">
+        <ExtensionSlot name="users.list.toolbar" />
+        <RouterLink v-if="canCreate" class="new" to="/users/new">Neu anlegen</RouterLink>
+      </div>
     </header>
 
     <p v-if="error" class="error">{{ error }}</p>
@@ -29,6 +32,7 @@
           <td class="actions">
             <RouterLink v-if="canUpdate" :to="`/users/${u.externalId}`">Bearbeiten</RouterLink>
             <button v-if="canDelete" type="button" class="link-danger" @click="remove(u)">Löschen</button>
+            <ExtensionSlot name="users.list.row-actions" :ctx="u" />
           </td>
         </tr>
         <tr v-if="!users.length">
@@ -45,6 +49,7 @@ import { RouterLink } from 'vue-router'
 import { usersApi, type BackendUser } from './usersApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
+import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 
 const users = ref<BackendUser[]>([])
 const roleAssignments = ref<Record<string, string>>({})
@@ -105,6 +110,12 @@ onMounted(load)
   justify-content: space-between;
   align-items: center;
   margin-bottom: calc(var(--cal-space) * 2);
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space);
 }
 
 .new {
