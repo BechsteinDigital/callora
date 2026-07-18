@@ -50,6 +50,8 @@ import { usersApi, type BackendUser } from './usersApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
+import { useService } from '@/core/extensions/services'
+import { runHook } from '@/core/extensions/hooks'
 
 const users = ref<BackendUser[]>([])
 const roleAssignments = ref<Record<string, string>>({})
@@ -63,6 +65,9 @@ const canDelete = computed(() => hasPermission(ctx.value, 'user.delete'))
 const canReadRoles = computed(() => hasPermission(ctx.value, 'role.read'))
 const columnCount = computed(() => (canReadRoles.value ? 6 : 5))
 
+// Resolve the user service through the override registry: a plugin may replace it.
+const api = useService('usersApi', usersApi)
+
 function roleFor(userId: string): string {
   return roleAssignments.value[userId] ?? '—'
 }
@@ -71,10 +76,10 @@ async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    users.value = await usersApi.list()
+    users.value = await api.list()
     // Role assignments live behind role.read — only fetch them when allowed,
     // otherwise the request would 403 and mask the user list.
-    roleAssignments.value = canReadRoles.value ? await usersApi.listRoleAssignments() : {}
+    roleAssignments.value = canReadRoles.value ? await api.listRoleAssignments() : {}
   } catch (e) {
     error.value = (e as Error).message
   } finally {
@@ -89,8 +94,14 @@ async function remove(user: BackendUser): Promise<void> {
   if (!confirmed) {
     return
   }
+  const before = await runHook('users.before-delete', { userId: user.externalId })
+  if (before.canceled) {
+    error.value = before.cancelReason ?? 'Löschen abgebrochen.'
+    return
+  }
   try {
-    await usersApi.remove(user.externalId)
+    await api.remove(user.externalId)
+    await runHook('users.after-delete', { userId: user.externalId })
     await load()
   } catch (e) {
     error.value = (e as Error).message

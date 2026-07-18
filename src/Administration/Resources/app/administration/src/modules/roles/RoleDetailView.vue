@@ -37,6 +37,8 @@ import { rolesApi, type Permission } from './rolesApi'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
+import { useService } from '@/core/extensions/services'
+import { runHook } from '@/core/extensions/hooks'
 
 const route = useRoute()
 const router = useRouter()
@@ -48,6 +50,9 @@ const permissions = ref<Permission[]>([])
 const selected = ref<string[]>([])
 const error = ref<string | null>(null)
 const saving = ref(false)
+
+// Resolve the roles service through the override registry: a plugin may replace it.
+const api = useService('rolesApi', rolesApi)
 
 // All available permissions grouped by their function for the checkbox matrix.
 const grouped = computed(() => {
@@ -62,10 +67,10 @@ const grouped = computed(() => {
 
 async function load(): Promise<void> {
   try {
-    permissions.value = await rolesApi.listPermissions()
+    permissions.value = await api.listPermissions()
     if (isEdit.value && editRole.value) {
       roleName.value = editRole.value
-      const roles = await rolesApi.list()
+      const roles = await api.list()
       const current = roles.find((r) => r.role === editRole.value)
       // Drop the "*" wildcard — it is not a selectable concrete permission.
       selected.value = current ? current.permissions.filter((p) => p !== '*') : []
@@ -75,16 +80,31 @@ async function load(): Promise<void> {
   }
 }
 
+// A before-save hook may adjust the permission set or veto; the role name is
+// read-only context.
+interface RoleSaveDraft {
+  readonly role: string
+  permissions: string[]
+}
+
 async function save(): Promise<void> {
   const name = isEdit.value && editRole.value ? editRole.value : roleName.value.trim()
   if (!name) {
     error.value = 'Name ist erforderlich.'
     return
   }
+  const draft: RoleSaveDraft = { role: name, permissions: [...selected.value] }
+  const before = await runHook('roles.before-save', draft)
+  if (before.canceled) {
+    error.value = before.cancelReason ?? 'Speichern abgebrochen.'
+    return
+  }
+
   saving.value = true
   error.value = null
   try {
-    await rolesApi.upsert(name, selected.value)
+    await api.upsert(name, draft.permissions)
+    await runHook('roles.after-save', { role: name })
     router.push('/roles')
   } catch (e) {
     error.value = (e as Error).message
