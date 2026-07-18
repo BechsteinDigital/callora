@@ -69,6 +69,36 @@ jobs:
           path: ./test-results/**/coverage.cobertura.xml
           if-no-files-found: warn
 
+  admin-frontend:
+    name: Admin Shell (Vitest + Build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src/Administration/Resources/app/administration
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/Administration/Resources/app/administration/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Die Vitest-Suite (Slots/Hooks/Services/Loader + alle Admin-Module) läuft
+      # als eigener Gate-Schritt, damit UI-Verhaltensregressionen main nicht
+      # erreichen; der Build (vue-tsc + vite) folgt als Typ-/Bundle-Check.
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
   build-shells:
     name: Build ${{ matrix.shell }}
     runs-on: ubuntu-latest
