@@ -1,20 +1,50 @@
-# Callora Host
+# Callora Framework
 
-Standalone host platform repository for Callora.
+Modular .NET application framework for communication products: a domain-neutral
+core plus an Administration UI, Workspaces, RBAC and a real backend/frontend
+plugin model.
 
-## Scope
-- Host backend API (`src/Core`)
-- Host plugin contracts (`src/Host/PluginContracts`)
-- Hosting/runtime lifecycle (`src/Hosting`)
-- Module abstractions used by host runtime (`src/Abstractions`)
+This repository is the **framework** — a set of packable libraries — not a
+standalone host. The runnable process entrypoint and package composition live in
+the separate **`callora-production`** repository, which assembles these packages
+into a distribution (one app container + Postgres). The same framework can back
+several distributions (community, enterprise, OEM/customer-specific hosts).
 
-## Build
+## Repository layout
+- `src/Core` — domain-neutral platform core (packable library `Callora.Core`)
+- `src/Administration` — Administration module + colocated Vue 3 admin shell
+  (`Resources/app/administration`); ships its built SPA as a static web asset,
+  served at `/admin` in the consuming host
+- `src/Workspace` — Workspace module
+- `src/Analyzers` — Roslyn analyzers guarding the public API surface
+- `src/Host/Cli` — `callora` CLI (e.g. the plugin contract-test kit)
+- `custom/static-plugins/*` — system-tier plugins (e.g. Communication)
+- `custom/plugins/*` — dynamically installable plugins
+- Composition / process entrypoint: external `callora-production` repository
+
+## Build & test
 ```bash
 dotnet restore Callora.Host.sln
-dotnet build Callora.Host.sln
-./scripts/build-admin-ui.sh
-dotnet test tests/Callora.Core.Tests/Callora.Core.Tests.csproj
+dotnet build Callora.Host.sln          # also builds the admin SPA (vue-tsc + vite)
+dotnet test Callora.Host.sln
 ```
+The admin SPA is built by the .NET build; run its Vitest suite directly:
+```bash
+cd src/Administration/Resources/app/administration
+npm ci && npm run test
+```
+Skip the frontend build (no Node required): `dotnet build -p:SkipAdminFrontend=true`.
+
+## Administration (admin shell)
+- Vue 3 SPA (Vite + TypeScript), colocated in
+  `src/Administration/Resources/app/administration`.
+- Management modules: users/operators, RBAC roles, plugins, workspaces (+ members),
+  system configuration, media.
+- Extensibility (Vue-native, not free component overrides): additive **Slots**,
+  intervening **Hooks** (mutate/cancel/observe), controlled **Service-Overrides**.
+- Plugin admin UIs are loaded at runtime by the micro-frontend loader (backend
+  manifest → `/plugin-assets`), so install + activate + browser refresh surfaces
+  a plugin's UI without a restart.
 
 ## Environment
 - Template: `.env.example`
@@ -47,11 +77,9 @@ API ist danach erreichbar unter:
 - Lokales Env-Setup: `docs/LOCAL_ENVIRONMENT.md`
 
 ## Notes
-- This split keeps current project references local.
-- Later, `src/Abstractions` can become its own package if desired.
-- Host API supports plugin lifecycle (`install/activate/deactivate/uninstall`) and `install/nuget`.
-- Admin UI shell source is located in `apps/admin-shell` and is deployed separately from the backend host.
-- Workspace shell source is located in `apps/workspace-shell` and is deployed separately from the backend host.
+- Backend API supports the plugin lifecycle (`install/activate/deactivate/uninstall`) and `install/nuget`.
+- Admin shell source lives in `src/Administration/Resources/app/administration` (colocated) and ships with the Administration package.
+- Workspace shell source lives in `apps/workspace-shell` and is deployed separately.
 
 ## Communication Plugin (System-Tier)
 - Projekt: `custom/static-plugins/Communication/Callora.Plugin.Communication.csproj`
