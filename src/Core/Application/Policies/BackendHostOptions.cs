@@ -101,6 +101,15 @@ public sealed class BackendHostOptions
     public string[] PlatformOperatorRoles { get; set; } = ["superadmin"];
 
     /// <summary>
+    /// Additional origins (<c>scheme://host[:port]</c>) accepted as the source of
+    /// cookie-authenticated, state-changing requests, on top of same-origin. Set
+    /// this only when the admin shell is served from a different origin than the
+    /// API; empty by default (same-origin only). Requests authenticated by
+    /// header (Bearer/API key) are never subject to this check.
+    /// </summary>
+    public string[] AllowedCsrfOrigins { get; set; } = [];
+
+    /// <summary>
     /// Base URI for RFC 9457 problem types. Defaults to a URN so no
     /// registered domain is required; point it at a documentation host
     /// (ending with "/") once one exists.
