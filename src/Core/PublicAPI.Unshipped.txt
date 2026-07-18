@@ -3249,9 +3249,6 @@ Callora.Core.Infrastructure.Persistence.ScopedPluginDataStore.SetAsync(Callora.C
 Callora.Core.Infrastructure.Persistence.WorkspaceDataPurgeService
 Callora.Core.Infrastructure.Persistence.WorkspaceDataPurgeService.PurgeAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Persistence.WorkspaceDataPurgeService.WorkspaceDataPurgeService(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext, Callora.Core.Application.Media.IMediaStorage! mediaStorage, Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger! pluginPurger, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Persistence.WorkspaceDataPurgeService!>! logger) -> void
-Callora.Core.Infrastructure.Plugins.AuthenticodePluginPackageSignatureVerifier
-Callora.Core.Infrastructure.Plugins.AuthenticodePluginPackageSignatureVerifier.AuthenticodePluginPackageSignatureVerifier(Callora.Core.Application.Plugins.IPluginSignatureTrustStore! trustStore, Callora.Core.Application.Policies.BackendHostOptions! options) -> void
-Callora.Core.Infrastructure.Plugins.AuthenticodePluginPackageSignatureVerifier.VerifyAsync(string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult!>
 Callora.Core.Infrastructure.Plugins.ConfiguredPluginSignatureTrustStore
 Callora.Core.Infrastructure.Plugins.ConfiguredPluginSignatureTrustStore.ConfiguredPluginSignatureTrustStore(Callora.Core.Application.Policies.BackendHostOptions! options) -> void
 Callora.Core.Infrastructure.Plugins.ConfiguredPluginSignatureTrustStore.GetTrustedSigners() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.TrustedPluginSigner!>!
@@ -4423,3 +4420,12 @@ static Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.operator
 static Callora.Core.Application.Plugins.Signing.PluginSignatureManifestSerializer.Deserialize(string! json) -> Callora.Core.Application.Plugins.Signing.PluginSignatureManifest?
 static Callora.Core.Application.Plugins.Signing.PluginSignatureManifestSerializer.SerializeCanonical(Callora.Core.Application.Plugins.Signing.PluginSignatureManifest! manifest) -> byte[]!
 static Callora.Core.Application.Plugins.Signing.PluginSignatureManifestSerializer.SerializeToFileJson(Callora.Core.Application.Plugins.Signing.PluginSignatureManifest! manifest) -> string!
+Callora.Core.Application.Plugins.IPluginSignatureTrustStore.ResolvePublicKeyPem(string? signerFingerprint) -> string?
+Callora.Core.Application.Policies.BackendTrustedSignerOptions.PublicKey.get -> string!
+Callora.Core.Application.Policies.BackendTrustedSignerOptions.PublicKey.set -> void
+Callora.Core.Infrastructure.Plugins.ConfiguredPluginSignatureTrustStore.ResolvePublicKeyPem(string? signerFingerprint) -> string?
+Callora.Core.Infrastructure.Plugins.ManifestSignaturePluginPackageVerifier
+Callora.Core.Infrastructure.Plugins.ManifestSignaturePluginPackageVerifier.ManifestSignaturePluginPackageVerifier(Callora.Core.Application.Plugins.IPluginSignatureTrustStore! trustStore, Callora.Core.Application.Policies.BackendHostOptions! options) -> void
+Callora.Core.Infrastructure.Plugins.ManifestSignaturePluginPackageVerifier.VerifyAsync(string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult!>
+const Callora.Core.Application.Lifecycle.PluginLifecycleErrorCodes.PluginPackageContentHashMismatch = "PLUGIN_PACKAGE_CONTENT_HASH_MISMATCH" -> string!
+const Callora.Core.Application.Plugins.PluginPackageSignatureErrorCodes.ContentHashMismatch = "PLUGIN_PACKAGE_CONTENT_HASH_MISMATCH" -> string!
