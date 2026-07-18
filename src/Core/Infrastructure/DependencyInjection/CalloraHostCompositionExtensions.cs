@@ -290,6 +290,10 @@ public static class CalloraHostCompositionExtensions
         app.UseStaticFiles();
         app.UseRateLimiter();
         app.UseAuthentication();
+        // CSRF guard: cookie-authenticated state changes must originate same-origin
+        // (or an explicitly allowed origin). Header-authenticated requests carry no
+        // cookie and are exempt. Layered on top of the auth cookie's SameSite=Lax.
+        app.UseBackendCsrfGuard(backendOptions);
         app.UseAuthorization();
 
         // Liveness (/health, vom Frontdoor geprobt): Prozess antwortet, keine

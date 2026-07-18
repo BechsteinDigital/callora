@@ -4352,3 +4352,9 @@ override Callora.Core.Application.Security.AdminLoginGrant.ToString() -> string!
 static Callora.Core.Application.Security.AdminLoginGrant.operator !=(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
 static Callora.Core.Application.Security.AdminLoginGrant.operator ==(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
 static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!
+Callora.Core.Application.Policies.BackendHostOptions.AllowedCsrfOrigins.get -> string![]!
+Callora.Core.Application.Policies.BackendHostOptions.AllowedCsrfOrigins.set -> void
+Callora.Core.Infrastructure.Security.BackendCsrfProtectionExtensions
+Callora.Core.Infrastructure.Security.BackendCsrfValidator
+static Callora.Core.Infrastructure.Security.BackendCsrfProtectionExtensions.UseBackendCsrfGuard(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
+static Callora.Core.Infrastructure.Security.BackendCsrfValidator.IsForbidden(string! method, bool hasAuthCookie, string? originHeader, string? refererHeader, string! requestOrigin, System.Collections.Generic.IReadOnlyCollection<string!>! allowedOrigins) -> bool
