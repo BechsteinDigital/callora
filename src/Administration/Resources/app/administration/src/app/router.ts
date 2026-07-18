@@ -21,6 +21,7 @@ export const router = createRouter({
         { path: 'roles', component: () => import('@/modules/roles/RolesListView.vue') },
         { path: 'roles/new', component: () => import('@/modules/roles/RoleDetailView.vue') },
         { path: 'roles/:role', component: () => import('@/modules/roles/RoleDetailView.vue') },
+        { path: 'plugins', component: () => import('@/modules/plugins/PluginsListView.vue') },
       ],
     },
   ],
