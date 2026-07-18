@@ -14,20 +14,33 @@ public sealed class PluginUiAssetPublisher(
     CalloraHostingOptions hostingOptions,
     ILogger<PluginUiAssetPublisher> logger) : IPluginUiAssetPublisher
 {
+    // Only built JavaScript is a valid entry — the browser loader loads .js/.mjs
+    // exclusively. Listing a .ts source entry would land in the manifest but be
+    // silently ignored by the client, so TypeScript sources are NOT entry
+    // candidates; they are detected separately only to warn about an unbuilt plugin.
     private static readonly string[] EntryCandidates =
     [
-        "main.ts",
         "main.js",
-        "index.ts",
+        "main.mjs",
         "index.js",
-        "app.ts",
+        "index.mjs",
         "app.js",
-        "src/main.ts",
+        "app.mjs",
         "src/main.js",
-        "src/index.ts",
+        "src/main.mjs",
         "src/index.js",
-        "src/app.ts",
-        "src/app.js"
+        "src/index.mjs",
+        "src/app.js",
+        "src/app.mjs"
+    ];
+    private static readonly string[] TypeScriptEntryCandidates =
+    [
+        "main.ts",
+        "index.ts",
+        "app.ts",
+        "src/main.ts",
+        "src/index.ts",
+        "src/app.ts"
     ];
     private static readonly string[] StyleEntryCandidates =
     [
@@ -46,11 +59,17 @@ public sealed class PluginUiAssetPublisher(
 
     public async Task PublishAllAsync(CancellationToken cancellationToken = default)
     {
-        var pluginAssetsRoot = Path.Combine(ResolveWebRootPath(), "plugin-assets");
-        var buildDirectory = Path.Combine(pluginAssetsRoot, ".build");
+        var webRootPath = ResolveWebRootPath();
+        var pluginAssetsRoot = Path.Combine(webRootPath, "plugin-assets");
+        // Build into a staging directory so the live assets keep serving until the
+        // new set is complete; a crash mid-build leaves the previous publish intact
+        // instead of an empty asset root. Dot-prefixed → excluded from static serving.
+        var stagingRoot = Path.Combine(webRootPath, ".plugin-assets-staging");
+        var backupRoot = Path.Combine(webRootPath, ".plugin-assets-old");
+        var buildDirectory = Path.Combine(stagingRoot, ".build");
         var manifestPath = Path.Combine(buildDirectory, "ui-assets.manifest.json");
 
-        RecreateDirectory(pluginAssetsRoot);
+        RecreateDirectory(stagingRoot);
         Directory.CreateDirectory(buildDirectory);
 
         var installations = await installationRepository.ListAsync(cancellationToken).ConfigureAwait(false);
@@ -117,7 +136,7 @@ public sealed class PluginUiAssetPublisher(
                 pluginId,
                 pluginRoot,
                 "admin",
-                pluginAssetsRoot,
+                stagingRoot,
                 entries,
                 styleEntries);
 
@@ -125,14 +144,14 @@ public sealed class PluginUiAssetPublisher(
                 pluginId,
                 pluginRoot,
                 "workspace",
-                pluginAssetsRoot,
+                stagingRoot,
                 entries,
                 styleEntries);
 
             PublishWorkspaceTemplates(
                 pluginId,
                 pluginRoot,
-                pluginAssetsRoot,
+                stagingRoot,
                 workspaceTemplates);
         }
 
@@ -157,6 +176,39 @@ public sealed class PluginUiAssetPublisher(
 
         var json = JsonSerializer.Serialize(manifest, JsonOptions);
         await File.WriteAllTextAsync(manifestPath, json, cancellationToken).ConfigureAwait(false);
+
+        // Swap the completed staging set in for the live one. The manifest and its
+        // assets move together, so a client never sees a manifest that references
+        // not-yet-copied assets; the exposure window is two renames rather than a
+        // full delete-then-copy.
+        SwapPublishedAssets(pluginAssetsRoot, stagingRoot, backupRoot);
+    }
+
+    private static void SwapPublishedAssets(string liveRoot, string stagingRoot, string backupRoot)
+    {
+        // Recovery note: a crash between the two Moves below leaves no live root but a
+        // populated backup. The next run rebuilds staging from scratch and this method
+        // runs again — it deletes that backup first (losing only the PREVIOUS assets,
+        // never the freshly built ones) and moves the new staging into place. The state
+        // stays consistent; there is no partial-merge and no loss of the new build.
+        if (Directory.Exists(backupRoot))
+        {
+            Directory.Delete(backupRoot, recursive: true);
+        }
+
+        // Move the live set aside (a rename, not a copy), then move staging into
+        // place. Same volume (siblings under wwwroot) → each Move is an atomic rename.
+        if (Directory.Exists(liveRoot))
+        {
+            Directory.Move(liveRoot, backupRoot);
+        }
+
+        Directory.Move(stagingRoot, liveRoot);
+
+        if (Directory.Exists(backupRoot))
+        {
+            Directory.Delete(backupRoot, recursive: true);
+        }
     }
 
     private string ResolveWebRootPath()
@@ -329,12 +381,25 @@ public sealed class PluginUiAssetPublisher(
 
         if (entryRelativePath is null)
         {
+            // A source dir with a TypeScript entry but no built .js means an unbuilt
+            // plugin — its UI would never load. Make that diagnosable rather than silent.
+            if (HasTypeScriptEntry(sourceDirectory))
+            {
+                logger.LogWarning(
+                    "Plugin {PluginId} surface '{Surface}' has a TypeScript entry but no built JavaScript entry; its UI will not load. Build the plugin (Resources/public) before publishing.",
+                    pluginId,
+                    surface);
+            }
+
             return;
         }
 
         var entryPath = ToManifestPath(Path.Combine(pluginId, "app", surface, entryRelativePath));
         manifestEntries.Add(new PluginUiAssetManifestEntry(pluginId, surface, entryPath));
     }
+
+    private static bool HasTypeScriptEntry(string sourceDirectory) =>
+        TypeScriptEntryCandidates.Any(candidate => File.Exists(Path.Combine(sourceDirectory, candidate)));
 
     private static void CopyDirectoryExcept(string sourceDirectory, string targetDirectory, string exceptSubdirectory)
     {
