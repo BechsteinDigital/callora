@@ -88,6 +88,15 @@ public sealed class BackendHostOptions
     /// RBAC roles whose members may sign in through the platform-operator
     /// login (/api/auth/login). Workspace members without one of these
     /// roles must use the workspace login.
+    /// <para>
+    /// Being an operator grants platform <em>scope</em> (reach across
+    /// workspaces), not blanket authority. Only the super-admin role bypasses
+    /// permission checks; any other operator role draws its concrete rights from
+    /// its <see cref="RbacRoles"/> definition. An operator role listed here but
+    /// missing from <see cref="RbacRoles"/> therefore reaches every workspace
+    /// yet is denied every permission-gated action (403) — such roles must be
+    /// granted permissions in <see cref="RbacRoles"/>.
+    /// </para>
     /// </summary>
     public string[] PlatformOperatorRoles { get; set; } = ["superadmin"];
 

@@ -43,6 +43,10 @@ public static class AdminLoginResolver
             .ConfigureAwait(false);
         if (IsPlatformOperatorRole(options, globalRole))
         {
+            // The grant carries no permissions by design: super admins bypass
+            // permission checks by role, and any other operator role has its
+            // permissions projected from RBAC at request time
+            // (BackendClaimsTransformation). Platform scope = reach, not authority.
             return new AdminLoginGrant(
                 Scope: BackendAuthScopes.Platform,
                 WorkspaceKey: null,
