@@ -16,6 +16,13 @@ public static class WorkspaceScopeEvaluator
     /// True for platform operators: super admins and sessions stamped with the
     /// platform scope at issuance. Required for global- and tenant-scoped
     /// mutations. A missing scope claim never grants operator access.
+    /// <para>
+    /// This governs <em>spatial reach</em> (may the principal act across
+    /// workspaces), not <em>authority</em> (what it may do). Operator status
+    /// does not bypass permission checks: <c>RequirePermission</c> is bypassed
+    /// only by the super-admin role — every other operator still needs the
+    /// concrete permission, projected from its RBAC role at request time.
+    /// </para>
     /// </summary>
     public static bool IsOperator(ClaimsPrincipal user)
     {
