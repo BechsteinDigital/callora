@@ -2,7 +2,10 @@
   <section class="roles">
     <header class="head">
       <h1>Rollen</h1>
-      <RouterLink v-if="canManage" class="new" to="/roles/new">Neu anlegen</RouterLink>
+      <div class="head-actions">
+        <ExtensionSlot name="roles.list.toolbar" />
+        <RouterLink v-if="canManage" class="new" to="/roles/new">Neu anlegen</RouterLink>
+      </div>
     </header>
 
     <p v-if="error" class="error">{{ error }}</p>
@@ -44,6 +47,7 @@ import { RouterLink } from 'vue-router'
 import { rolesApi, SYSTEM_ROLE, type Role } from './rolesApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
+import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 
 const roles = ref<Role[]>([])
 const loading = ref(true)
@@ -96,6 +100,12 @@ onMounted(load)
   justify-content: space-between;
   align-items: center;
   margin-bottom: calc(var(--cal-space) * 2);
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space);
 }
 
 .new {
