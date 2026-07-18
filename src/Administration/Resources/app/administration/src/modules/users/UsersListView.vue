@@ -1,0 +1,161 @@
+<template>
+  <section class="users">
+    <header class="head">
+      <h1>Benutzer</h1>
+      <RouterLink v-if="canCreate" class="new" to="/users/new">Neu anlegen</RouterLink>
+    </header>
+
+    <p v-if="error" class="error">{{ error }}</p>
+    <p v-else-if="loading">Lädt…</p>
+
+    <table v-else class="grid">
+      <thead>
+        <tr>
+          <th>Login</th>
+          <th>E-Mail</th>
+          <th>Name</th>
+          <th v-if="canReadRoles">Rolle</th>
+          <th>Passwort</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="u in users" :key="u.externalId">
+          <td>{{ u.externalId }}</td>
+          <td>{{ u.email ?? '—' }}</td>
+          <td>{{ u.displayName ?? '—' }}</td>
+          <td v-if="canReadRoles">{{ roleFor(u.externalId) }}</td>
+          <td>{{ u.hasPassword ? '✓' : '—' }}</td>
+          <td class="actions">
+            <RouterLink v-if="canUpdate" :to="`/users/${u.externalId}`">Bearbeiten</RouterLink>
+            <button v-if="canDelete" type="button" class="link-danger" @click="remove(u)">Löschen</button>
+          </td>
+        </tr>
+        <tr v-if="!users.length">
+          <td :colspan="columnCount" class="empty">Keine Benutzer vorhanden.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import { usersApi, type BackendUser } from './usersApi'
+import { useAuthStore } from '@/core/auth/authStore'
+import { hasPermission } from '@/core/auth/permissions'
+
+const users = ref<BackendUser[]>([])
+const roleAssignments = ref<Record<string, string>>({})
+const loading = ref(true)
+const error = ref<string | null>(null)
+
+const ctx = useAuthStore().context
+const canCreate = computed(() => hasPermission(ctx.value, 'user.create'))
+const canUpdate = computed(() => hasPermission(ctx.value, 'user.update'))
+const canDelete = computed(() => hasPermission(ctx.value, 'user.delete'))
+const canReadRoles = computed(() => hasPermission(ctx.value, 'role.read'))
+const columnCount = computed(() => (canReadRoles.value ? 6 : 5))
+
+function roleFor(userId: string): string {
+  return roleAssignments.value[userId] ?? '—'
+}
+
+async function load(): Promise<void> {
+  loading.value = true
+  error.value = null
+  try {
+    users.value = await usersApi.list()
+    // Role assignments live behind role.read — only fetch them when allowed,
+    // otherwise the request would 403 and mask the user list.
+    roleAssignments.value = canReadRoles.value ? await usersApi.listRoleAssignments() : {}
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    loading.value = false
+  }
+}
+
+async function remove(user: BackendUser): Promise<void> {
+  const confirmed = window.confirm(
+    `Benutzer „${user.externalId}“ löschen? Das anonymisiert auch den Audit-Trail (Art. 17).`,
+  )
+  if (!confirmed) {
+    return
+  }
+  try {
+    await usersApi.remove(user.externalId)
+    await load()
+  } catch (e) {
+    error.value = (e as Error).message
+  }
+}
+
+onMounted(load)
+</script>
+
+<style scoped lang="scss">
+.users {
+  padding: calc(var(--cal-space) * 3);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: calc(var(--cal-space) * 2);
+}
+
+.new {
+  text-decoration: none;
+  padding: var(--cal-space) calc(var(--cal-space) * 1.5);
+  border-radius: var(--cal-radius);
+  background: var(--cal-color-accent);
+  color: #fff;
+}
+
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.grid th,
+.grid td {
+  text-align: left;
+  padding: var(--cal-space);
+  border-bottom: 1px solid var(--cal-color-surface);
+}
+
+.grid th {
+  color: var(--cal-color-muted);
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  gap: calc(var(--cal-space) * 1.5);
+}
+
+.actions a {
+  color: var(--cal-color-accent);
+  text-decoration: none;
+}
+
+.link-danger {
+  background: none;
+  border: 0;
+  color: var(--cal-color-danger);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.empty {
+  color: var(--cal-color-muted);
+}
+
+.error {
+  color: var(--cal-color-danger);
+}
+</style>

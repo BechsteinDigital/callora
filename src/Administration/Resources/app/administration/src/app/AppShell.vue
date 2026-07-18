@@ -4,6 +4,7 @@
       <div class="brand">Callora</div>
       <nav>
         <RouterLink to="/">Übersicht</RouterLink>
+        <RouterLink to="/users">Benutzer</RouterLink>
       </nav>
     </aside>
     <div class="main">
