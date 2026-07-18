@@ -4372,3 +4372,54 @@ Callora.Core.Application.Policies.BackendInitialOperatorOptions.ExternalId.get -
 Callora.Core.Application.Policies.BackendInitialOperatorOptions.ExternalId.set -> void
 Callora.Core.Application.Policies.BackendInitialOperatorOptions.Password.get -> string!
 Callora.Core.Application.Policies.BackendInitialOperatorOptions.Password.set -> void
+Callora.Core.Application.Plugins.Signing.PluginContentHasher
+Callora.Core.Application.Plugins.Signing.PluginSignatureAlgorithms
+Callora.Core.Application.Plugins.Signing.PluginSignatureCryptography
+Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash
+Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.<Clone>$() -> Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash!
+Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.Deconstruct(out string! Path, out string! Sha256) -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.Equals(Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash? other) -> bool
+Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.Path.get -> string!
+Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.Path.init -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.PluginSignatureFileHash(string! Path, string! Sha256) -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.Sha256.get -> string!
+Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.Sha256.init -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Algorithm.get -> string!
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Algorithm.init -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.<Clone>$() -> Callora.Core.Application.Plugins.Signing.PluginSignatureManifest!
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Deconstruct(out string! SchemaVersion, out string! PluginId, out string! Version, out string! Algorithm, out string! SignerFingerprint, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash!>! Files, out string? Signature) -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Equals(Callora.Core.Application.Plugins.Signing.PluginSignatureManifest? other) -> bool
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Files.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash!>!
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Files.init -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.PluginId.get -> string!
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.PluginId.init -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.PluginSignatureManifest(string! SchemaVersion, string! PluginId, string! Version, string! Algorithm, string! SignerFingerprint, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash!>! Files, string? Signature) -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.SchemaVersion.get -> string!
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.SchemaVersion.init -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifestSerializer
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Signature.get -> string?
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Signature.init -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.SignerFingerprint.get -> string!
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.SignerFingerprint.init -> void
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Version.get -> string!
+Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Version.init -> void
+const Callora.Core.Application.Plugins.Signing.PluginSignatureAlgorithms.EcdsaP256Sha256 = "ECDSA-P256-SHA256" -> string!
+override Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.ToString() -> string!
+override Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.ToString() -> string!
+static Callora.Core.Application.Plugins.Signing.PluginContentHasher.HashFile(string! absolutePath) -> string!
+static Callora.Core.Application.Plugins.Signing.PluginContentHasher.ResolveContained(string! pluginRoot, string! relativePath) -> string!
+static Callora.Core.Application.Plugins.Signing.PluginSignatureCryptography.ComputeFingerprint(System.Security.Cryptography.ECDsa! key) -> string!
+static Callora.Core.Application.Plugins.Signing.PluginSignatureCryptography.Sign(System.ReadOnlySpan<byte> canonicalBytes, System.Security.Cryptography.ECDsa! privateKey) -> string!
+static Callora.Core.Application.Plugins.Signing.PluginSignatureCryptography.Verify(System.ReadOnlySpan<byte> canonicalBytes, string! signatureBase64, System.Security.Cryptography.ECDsa! publicKey) -> bool
+static Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.operator !=(Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash? left, Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash? right) -> bool
+static Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.operator ==(Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash? left, Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash? right) -> bool
+static Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.operator !=(Callora.Core.Application.Plugins.Signing.PluginSignatureManifest? left, Callora.Core.Application.Plugins.Signing.PluginSignatureManifest? right) -> bool
+static Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.operator ==(Callora.Core.Application.Plugins.Signing.PluginSignatureManifest? left, Callora.Core.Application.Plugins.Signing.PluginSignatureManifest? right) -> bool
+static Callora.Core.Application.Plugins.Signing.PluginSignatureManifestSerializer.Deserialize(string! json) -> Callora.Core.Application.Plugins.Signing.PluginSignatureManifest?
+static Callora.Core.Application.Plugins.Signing.PluginSignatureManifestSerializer.SerializeCanonical(Callora.Core.Application.Plugins.Signing.PluginSignatureManifest! manifest) -> byte[]!
+static Callora.Core.Application.Plugins.Signing.PluginSignatureManifestSerializer.SerializeToFileJson(Callora.Core.Application.Plugins.Signing.PluginSignatureManifest! manifest) -> string!
