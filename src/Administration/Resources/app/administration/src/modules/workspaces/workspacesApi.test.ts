@@ -55,14 +55,22 @@ describe('workspacesApi', () => {
     ).rejects.toThrow('Workspace public URL is invalid.')
   })
 
-  it('unwraps the paged member list to its items', async () => {
+  it('returns the first member page with a limit', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(
       respond({ items: [{ userId: 'alice', role: 'admin' }], total: 1, nextCursor: null }),
     )
     globalThis.fetch = fetchMock
-    const members = await workspacesApi.listMembers('acme')
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/members')
-    expect(members).toEqual([{ userId: 'alice', role: 'admin' }])
+    const page = await workspacesApi.listMembers('acme')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/members?limit=50')
+    expect(page.items).toEqual([{ userId: 'alice', role: 'admin' }])
+    expect(page.nextCursor).toBeNull()
+  })
+
+  it('passes the cursor for the next member page', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(respond({ items: [], total: 60, nextCursor: null }))
+    globalThis.fetch = fetchMock
+    await workspacesApi.listMembers('acme', 'cur123')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/members?limit=50&cursor=cur123')
   })
 
   it('upserts a member via the member route with the role body', async () => {

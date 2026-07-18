@@ -35,8 +35,12 @@ function mountMembers(canManage: boolean) {
   return mount(WorkspaceMembers, { props: { workspaceKey: 'acme', canManage } })
 }
 
+function page(items: WorkspaceMember[], nextCursor: string | null = null, total = items.length) {
+  return { items, total, nextCursor }
+}
+
 beforeEach(() => {
-  listMembersMock.mockReset().mockResolvedValue([member({ userId: 'alice', role: 'admin' })])
+  listMembersMock.mockReset().mockResolvedValue(page([member({ userId: 'alice', role: 'admin' })]))
   upsertMemberMock.mockReset().mockResolvedValue(member({}))
   removeMemberMock.mockReset().mockResolvedValue(undefined)
   resetHooks()
@@ -59,6 +63,70 @@ describe('WorkspaceMembers', () => {
 
     expect(wrapper.find('form.add').exists()).toBe(false)
     expect(wrapper.find('.link-danger').exists()).toBe(false)
+  })
+
+  it('loads and appends the next page via the cursor', async () => {
+    listMembersMock
+      .mockResolvedValueOnce(page([member({ userId: 'alice' })], 'cursor-1', 2))
+      .mockResolvedValueOnce(page([member({ userId: 'bob', displayName: 'Bob' })], null, 2))
+    const wrapper = mountMembers(false)
+    await flushPromises()
+
+    // First page shows the "Mehr laden" affordance while a cursor remains.
+    const moreButton = wrapper.findAll('button').find((b) => b.text().includes('Mehr laden'))
+    expect(moreButton).toBeDefined()
+    expect(wrapper.text()).not.toContain('Bob')
+
+    await moreButton!.trigger('click')
+    await flushPromises()
+
+    expect(listMembersMock).toHaveBeenLastCalledWith('acme', 'cursor-1')
+    expect(wrapper.text()).toContain('alice')
+    expect(wrapper.text()).toContain('Bob')
+    // Cursor exhausted → no more button.
+    expect(wrapper.findAll('button').find((b) => b.text().includes('Mehr laden'))).toBeUndefined()
+  })
+
+  it('resets to the first page after a mutation (no accumulated leak)', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    listMembersMock
+      .mockResolvedValueOnce(page([member({ userId: 'alice' })], 'cursor-1', 2))
+      .mockResolvedValueOnce(page([member({ userId: 'bob', displayName: 'Bob' })], null, 2))
+      .mockResolvedValueOnce(page([member({ userId: 'alice' })], 'cursor-1', 2)) // reload after remove
+    const wrapper = mountMembers(true)
+    await flushPromises()
+
+    await wrapper.findAll('button').find((b) => b.text().includes('Mehr laden'))!.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Bob') // page 2 accumulated
+
+    await wrapper.find('.link-danger').trigger('click') // remove → reload from page 1
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Bob') // accumulated page dropped on reload
+    expect(wrapper.text()).toContain('alice')
+  })
+
+  it('ignores a second load-more while one is in flight', async () => {
+    let resolveSecond!: (value: unknown) => void
+    listMembersMock
+      .mockResolvedValueOnce(page([member({ userId: 'alice' })], 'cursor-1', 2))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecond = resolve
+          }),
+      )
+    const wrapper = mountMembers(false)
+    await flushPromises()
+
+    const button = wrapper.findAll('button').find((b) => b.text().includes('Mehr laden'))!
+    await button.trigger('click') // loadMore in flight
+    await button.trigger('click') // guarded by loadingMore
+
+    expect(listMembersMock).toHaveBeenCalledTimes(2) // initial + exactly one loadMore
+    resolveSecond(page([member({ userId: 'bob' })], null, 2))
+    await flushPromises()
   })
 
   it('assigns a member and reloads', async () => {
