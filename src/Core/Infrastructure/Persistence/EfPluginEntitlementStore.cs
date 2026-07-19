@@ -125,4 +125,27 @@ public sealed class EfPluginEntitlementStore(
             .ExecuteDeleteAsync(cancellationToken)
             .ConfigureAwait(false);
     }
+
+    public async ValueTask<IReadOnlyList<PluginEntitlementSnapshot>> ListAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await dbContext.PluginEntitlements
+            .AsNoTracking()
+            .OrderBy(x => x.PluginId)
+            .ThenBy(x => x.TenantKey)
+            .ThenBy(x => x.WorkspaceKey)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return rows
+            .Select(x => new PluginEntitlementSnapshot(
+                x.PluginId,
+                x.WorkspaceKey,
+                x.TenantKey,
+                x.IsEntitled,
+                x.Source,
+                x.CreatedAtUtc,
+                x.UpdatedAtUtc))
+            .ToList();
+    }
 }

@@ -20,4 +20,13 @@ public interface IPluginEntitlementStore
     ValueTask ClearForPluginAsync(
         string pluginId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists every recorded entitlement decision across all scopes, for operator
+    /// review. This enumerates the explicit rows only — the configured
+    /// <see cref="Callora.Core.Application.Policies.BackendHostOptions.DefaultPluginEntitlement"/>
+    /// fallback that applies where no row exists is not materialised here.
+    /// </summary>
+    ValueTask<IReadOnlyList<PluginEntitlementSnapshot>> ListAsync(
+        CancellationToken cancellationToken = default);
 }
