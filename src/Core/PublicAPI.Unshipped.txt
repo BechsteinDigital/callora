@@ -4429,3 +4429,9 @@ Callora.Core.Infrastructure.Plugins.ManifestSignaturePluginPackageVerifier.Manif
 Callora.Core.Infrastructure.Plugins.ManifestSignaturePluginPackageVerifier.VerifyAsync(string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult!>
 const Callora.Core.Application.Lifecycle.PluginLifecycleErrorCodes.PluginPackageContentHashMismatch = "PLUGIN_PACKAGE_CONTENT_HASH_MISMATCH" -> string!
 const Callora.Core.Application.Plugins.PluginPackageSignatureErrorCodes.ContentHashMismatch = "PLUGIN_PACKAGE_CONTENT_HASH_MISMATCH" -> string!
+Callora.Core.Application.Policies.BackendHostOptions.RevokedContentHashes.get -> string![]!
+Callora.Core.Application.Policies.BackendHostOptions.RevokedContentHashes.set -> void
+Callora.Core.Application.Policies.BackendHostOptions.RevokedSignerFingerprints.get -> string![]!
+Callora.Core.Application.Policies.BackendHostOptions.RevokedSignerFingerprints.set -> void
+const Callora.Core.Application.Lifecycle.PluginLifecycleErrorCodes.PluginPackageRevoked = "PLUGIN_PACKAGE_REVOKED" -> string!
+const Callora.Core.Application.Plugins.PluginPackageSignatureErrorCodes.Revoked = "PLUGIN_PACKAGE_REVOKED" -> string!

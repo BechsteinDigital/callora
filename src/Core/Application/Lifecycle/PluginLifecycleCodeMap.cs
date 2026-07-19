@@ -38,6 +38,7 @@ public static class PluginLifecycleCodeMap
             PluginPackageSignatureErrorCodes.InvalidSignature => PluginLifecycleErrorCodes.PluginPackageSignatureInvalid,
             PluginPackageSignatureErrorCodes.UntrustedSigner => PluginLifecycleErrorCodes.PluginPackageSignerUntrusted,
             PluginPackageSignatureErrorCodes.ContentHashMismatch => PluginLifecycleErrorCodes.PluginPackageContentHashMismatch,
+            PluginPackageSignatureErrorCodes.Revoked => PluginLifecycleErrorCodes.PluginPackageRevoked,
             _ => signatureErrorCode,
         };
 }

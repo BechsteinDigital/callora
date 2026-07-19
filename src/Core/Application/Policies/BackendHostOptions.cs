@@ -130,6 +130,20 @@ public sealed class BackendHostOptions
 
     public bool AllowUnsignedPlugins { get; set; }
 
+    /// <summary>
+    /// Signer key fingerprints (SHA-256 of the SPKI) that are revoked: a plugin
+    /// signed by one is rejected even if the signer is otherwise trusted. Enforced
+    /// at install and — via runtime rehydration re-verification — at load.
+    /// </summary>
+    public string[] RevokedSignerFingerprints { get; set; } = [];
+
+    /// <summary>
+    /// Revoked plugin assembly content hashes (SHA-256, hex). A plugin whose assembly
+    /// hashes to one is rejected regardless of signature — the way to kill a specific
+    /// compromised build (including an otherwise-allowed unsigned one).
+    /// </summary>
+    public string[] RevokedContentHashes { get; set; } = [];
+
     public BackendDemoAdminUserOptions DemoAdminUser { get; set; } = new();
 
     /// <summary>
