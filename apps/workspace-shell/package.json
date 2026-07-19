@@ -10,11 +10,11 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "nuxt": "^4.4.2"
+    "nuxt": "^4.5.0"
   },
   "devDependencies": {
     "sass": "^1.80.0",
-    "@vue/language-core": "^2.2.12",
-    "vue-tsc": "^2.2.12"
+    "@vue/language-core": "^3.3.7",
+    "vue-tsc": "^3.3.7"
   }
 }
