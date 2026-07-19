@@ -2,6 +2,8 @@ import * as Vue from 'vue'
 import './styles/tokens.scss'
 import { createSurfaceRegistry, type SurfaceRegistry } from './surface-registry'
 import { mountSurface } from './mount'
+import { resolveSurfaceContext } from './surface-context'
+import { loadSurfacePlugins } from './plugin-loader'
 
 declare global {
   interface Window {
@@ -22,3 +24,12 @@ window.calloraSurface = registry
 // Mount whichever surface shape the SSR output rendered — whole app (#callora-app)
 // and/or islands (data-callora-island). Absent both, the runtime does nothing.
 mountSurface(registry)
+
+// Then load the workspace's plugin bundles; they register into calloraSurface and the
+// reactive mounts pick them up. Loading is fire-and-forget and self-tolerant, so it
+// never blocks or breaks the already-mounted shell.
+const contextRoot =
+  document.getElementById('callora-app') ?? document.querySelector<HTMLElement>('[data-workspace]')
+if (contextRoot) {
+  void loadSurfacePlugins(resolveSurfaceContext(contextRoot))
+}
