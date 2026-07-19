@@ -9,10 +9,21 @@ export interface SurfaceContext {
   surfaceKey: string
 }
 
-/** Reads the surface context off the SSR-rendered mount root. */
+/** Reads the surface context off a single element's data-* attributes. */
 export function readSurfaceContext(root: HTMLElement): SurfaceContext {
   return {
     workspaceKey: root.dataset.workspace ?? 'default',
     surfaceKey: root.dataset.surface ?? 'default',
   }
+}
+
+/**
+ * Resolves the surface context for an element that may not carry the data-* itself —
+ * an island inside SSR content inherits it from the nearest ancestor that does (the
+ * content template puts data-workspace on a wrapper). The #callora-app root carries
+ * it directly, so this also covers the whole-app case.
+ */
+export function resolveSurfaceContext(el: HTMLElement): SurfaceContext {
+  const source = el.closest<HTMLElement>('[data-workspace]') ?? el
+  return readSurfaceContext(source)
 }

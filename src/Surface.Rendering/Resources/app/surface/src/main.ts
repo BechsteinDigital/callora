@@ -1,9 +1,7 @@
 import * as Vue from 'vue'
-import { createApp } from 'vue'
-import App from './App.vue'
 import './styles/tokens.scss'
-import { readSurfaceContext } from './surface-context'
 import { createSurfaceRegistry, type SurfaceRegistry } from './surface-registry'
+import { mountSurface } from './mount'
 
 declare global {
   interface Window {
@@ -21,10 +19,6 @@ window.CalloraVue = Vue
 const registry = window.calloraSurface ?? createSurfaceRegistry()
 window.calloraSurface = registry
 
-// The SSR SurfaceShell renders the mount root; if it is absent (e.g. the shell was
-// swapped for a full SSR template), the runtime simply does nothing.
-const root = document.getElementById('callora-app')
-if (root) {
-  const context = readSurfaceContext(root)
-  createApp(App, { context, registry }).mount(root)
-}
+// Mount whichever surface shape the SSR output rendered — whole app (#callora-app)
+// and/or islands (data-callora-island). Absent both, the runtime does nothing.
+mountSurface(registry)
