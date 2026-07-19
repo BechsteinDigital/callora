@@ -12,28 +12,48 @@ internal sealed class BundleFileLoader
 {
     private readonly ISurfaceTemplateBundleProvider _provider;
     private readonly HashSet<string> _bundlesInScope;
+    private readonly string? _primaryBundleId;
 
-    public BundleFileLoader(ISurfaceTemplateBundleProvider provider, IEnumerable<string> bundlesInScope)
+    public BundleFileLoader(ISurfaceTemplateBundleProvider provider, IReadOnlyList<string> bundlesInScope)
     {
         _provider = provider;
         _bundlesInScope = new HashSet<string>(bundlesInScope, StringComparer.OrdinalIgnoreCase);
+        // A plain relative name (e.g. Nunjucks '{% extends "base.njk" %}') resolves
+        // against the primary bundle — the first in the surface's chain, i.e. the
+        // rendering plugin's own views root. Cross-bundle references use '@id/path'.
+        _primaryBundleId = bundlesInScope.Count > 0 ? bundlesInScope[0] : null;
     }
 
     public string? TryLoad(string templateName)
     {
-        if (string.IsNullOrWhiteSpace(templateName) || templateName[0] != '@')
+        if (string.IsNullOrWhiteSpace(templateName))
         {
             return null;
         }
 
-        var slash = templateName.IndexOf('/', StringComparison.Ordinal);
-        if (slash <= 1 || slash == templateName.Length - 1)
+        string bundleId;
+        string relativePath;
+        if (templateName[0] == '@')
         {
-            return null;
-        }
+            var slash = templateName.IndexOf('/', StringComparison.Ordinal);
+            if (slash <= 1 || slash == templateName.Length - 1)
+            {
+                return null;
+            }
 
-        var bundleId = templateName[1..slash];
-        var relativePath = templateName[(slash + 1)..];
+            bundleId = templateName[1..slash];
+            relativePath = templateName[(slash + 1)..];
+        }
+        else
+        {
+            if (_primaryBundleId is null)
+            {
+                return null;
+            }
+
+            bundleId = _primaryBundleId;
+            relativePath = templateName;
+        }
 
         if (!_bundlesInScope.Contains(bundleId) ||
             !_provider.TryGetBundleRoot(bundleId, out var root) ||
