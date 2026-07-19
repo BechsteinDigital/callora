@@ -1,0 +1,39 @@
+#nullable enable
+Callora.Surface.Rendering.Api.SurfaceRenderEndpoints
+Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions
+Callora.Surface.Rendering.ISurfaceRenderer
+Callora.Surface.Rendering.ISurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context) -> string!
+Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer
+Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context) -> string!
+Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer.ScribanSurfaceRenderer() -> void
+Callora.Surface.Rendering.SurfaceRenderContext
+Callora.Surface.Rendering.SurfaceRenderContext.<Clone>$() -> Callora.Surface.Rendering.SurfaceRenderContext!
+Callora.Surface.Rendering.SurfaceRenderContext.Deconstruct(out string! TenantKey, out string! WorkspaceKey, out string! SurfaceKey, out string! SurfaceType, out string! Locale, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Tokens) -> void
+Callora.Surface.Rendering.SurfaceRenderContext.Equals(Callora.Surface.Rendering.SurfaceRenderContext? other) -> bool
+Callora.Surface.Rendering.SurfaceRenderContext.Locale.get -> string!
+Callora.Surface.Rendering.SurfaceRenderContext.Locale.init -> void
+Callora.Surface.Rendering.SurfaceRenderContext.SurfaceKey.get -> string!
+Callora.Surface.Rendering.SurfaceRenderContext.SurfaceKey.init -> void
+Callora.Surface.Rendering.SurfaceRenderContext.SurfaceRenderContext(string! TenantKey, string! WorkspaceKey, string! SurfaceKey, string! SurfaceType, string! Locale, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Tokens) -> void
+Callora.Surface.Rendering.SurfaceRenderContext.SurfaceType.get -> string!
+Callora.Surface.Rendering.SurfaceRenderContext.SurfaceType.init -> void
+Callora.Surface.Rendering.SurfaceRenderContext.TenantKey.get -> string!
+Callora.Surface.Rendering.SurfaceRenderContext.TenantKey.init -> void
+Callora.Surface.Rendering.SurfaceRenderContext.Tokens.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Surface.Rendering.SurfaceRenderContext.Tokens.init -> void
+Callora.Surface.Rendering.SurfaceRenderContext.WorkspaceKey.get -> string!
+Callora.Surface.Rendering.SurfaceRenderContext.WorkspaceKey.init -> void
+Callora.Surface.Rendering.SurfaceShellTemplates
+Callora.Surface.Rendering.SurfaceTemplateException
+Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message, System.Exception! innerException) -> void
+Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message) -> void
+Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException() -> void
+const Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot = "<!doctype html>\n<html lang=\"{{ locale }}\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <title>{{ surface.key }}</title>\n</head>\n<body>\n  <div id=\"callora-app\" data-workspace=\"{{ workspace.key }}\" data-surface=\"{{ surface.key }}\"></div>\n</body>\n</html>" -> string!
+override Callora.Surface.Rendering.SurfaceRenderContext.Equals(object? obj) -> bool
+override Callora.Surface.Rendering.SurfaceRenderContext.GetHashCode() -> int
+override Callora.Surface.Rendering.SurfaceRenderContext.ToString() -> string!
+static Callora.Surface.Rendering.Api.SurfaceRenderEndpoints.MapSurfaceRenderEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.AddCalloraSurfaceRendering(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.MapCalloraSurfaceRendering(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
+static Callora.Surface.Rendering.SurfaceRenderContext.operator !=(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
+static Callora.Surface.Rendering.SurfaceRenderContext.operator ==(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool

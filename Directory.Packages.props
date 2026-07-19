@@ -34,6 +34,12 @@
     <!-- Pin transitive Microsoft.OpenApi above the vulnerable 2.0.0 (GHSA-v5pm-xwqc-g5wc). -->
     <PackageVersion Include="Microsoft.OpenApi" Version="2.10.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.11" />
+    <!-- Surface-Template-Engine (ADR-015): schneller .NET-Template-Compiler,
+         im gehärteten Sandbox-Modus für untrusted Template-Bundles genutzt.
+         >= 7.0.0 wegen GHSA-5wr9-m6jw-xx44 (MemberFilter-Bypass bei
+         TemplateContext-Reuse) und weiterer < 7.0.0-Advisories — der Renderer
+         erzeugt zusätzlich pro Render einen frischen TemplateContext. -->
+    <PackageVersion Include="Scriban" Version="7.2.5" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
