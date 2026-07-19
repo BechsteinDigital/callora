@@ -7,18 +7,10 @@
       </div>
     </header>
 
-    <label v-if="showPicker && workspaces.length" class="ws-select">Workspace
-      <select v-model="selectedWorkspace" name="workspace" class="select" @change="onWorkspaceChange">
-        <option v-for="w in workspaces" :key="w.workspaceKey" :value="w.workspaceKey">
-          {{ w.displayName }} ({{ w.workspaceKey }})
-        </option>
-      </select>
-    </label>
-
     <p v-if="error" class="error">{{ error }}</p>
     <p v-if="notice" class="notice">{{ notice }}</p>
 
-    <form v-if="canManage && selectedWorkspace" class="upload" @submit.prevent="upload">
+    <form v-if="canManage && activeWorkspace" class="upload" @submit.prevent="upload">
       <input
         ref="fileInput"
         type="file"
@@ -34,7 +26,7 @@
     </form>
 
     <p v-if="loading">Lädt…</p>
-    <p v-else-if="!selectedWorkspace" class="empty">Kein Workspace ausgewählt.</p>
+    <p v-else-if="!activeWorkspace" class="empty">Kein Workspace ausgewählt.</p>
 
     <ul v-else class="grid">
       <li v-for="item in items" :key="item.id" class="card">
@@ -66,10 +58,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { mediaApi, MEDIA_ALLOWED_CONTENT_TYPES, MEDIA_MAX_SIZE_BYTES, type MediaItem } from './mediaApi'
 import { formatBytes, isImageType, isAudioType } from './mediaFormat'
-import { workspacesApi, type Workspace } from '@/modules/workspaces/workspacesApi'
+import { useWorkspaceContext } from '@/core/workspace/workspaceContext'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import BaseButton from '@/core/ui/BaseButton.vue'
@@ -79,18 +71,16 @@ import { runHook } from '@/core/extensions/hooks'
 
 const ctx = useAuthStore().context
 const canManage = computed(() => hasPermission(ctx.value, 'media.manage'))
-// A workspace-scoped admin manages their own workspace (no workspace.read needed);
-// an operator without a fixed workspace picks one from the list.
-const fixedWorkspace = computed(() => ctx.value?.workspaceKey ?? null)
-const showPicker = computed(() => !fixedWorkspace.value)
+
+// The workspace comes from the global context (topbar switcher or the bound
+// admin's fixed workspace) — no per-view picker.
+const { activeWorkspace, ensure: ensureWorkspace } = useWorkspaceContext()
 
 // Resolve the media service through the override registry: a plugin may replace it.
 const api = useService('mediaApi', mediaApi)
 
 const acceptTypes = MEDIA_ALLOWED_CONTENT_TYPES.join(',')
 
-const workspaces = ref<Workspace[]>([])
-const selectedWorkspace = ref('')
 const items = ref<MediaItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -102,11 +92,11 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 
 function contentUrl(item: MediaItem): string {
-  return api.contentUrl(selectedWorkspace.value, item.id)
+  return api.contentUrl(activeWorkspace.value, item.id)
 }
 
 async function loadMedia(): Promise<void> {
-  if (!selectedWorkspace.value) {
+  if (!activeWorkspace.value) {
     items.value = []
     loading.value = false
     return
@@ -114,17 +104,12 @@ async function loadMedia(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    items.value = await api.list(selectedWorkspace.value)
+    items.value = await api.list(activeWorkspace.value)
   } catch (e) {
     error.value = (e as Error).message
   } finally {
     loading.value = false
   }
-}
-
-async function onWorkspaceChange(): Promise<void> {
-  notice.value = null
-  await loadMedia()
 }
 
 function onFileChange(event: Event): void {
@@ -171,8 +156,8 @@ async function upload(): Promise<void> {
       error.value = before.cancelReason ?? 'Upload abgebrochen.'
       return
     }
-    await api.upload(selectedWorkspace.value, file, draft.folder || undefined)
-    await runHook('media.after-upload', { workspaceKey: selectedWorkspace.value, fileName: file.name })
+    await api.upload(activeWorkspace.value, file, draft.folder || undefined)
+    await runHook('media.after-upload', { workspaceKey: activeWorkspace.value, fileName: file.name })
     if (fileInput.value) {
       fileInput.value.value = ''
     }
@@ -196,15 +181,15 @@ async function remove(item: MediaItem): Promise<void> {
   }
   error.value = null
   notice.value = null
-  const before = await runHook('media.before-delete', { workspaceKey: selectedWorkspace.value, id: item.id })
+  const before = await runHook('media.before-delete', { workspaceKey: activeWorkspace.value, id: item.id })
   if (before.canceled) {
     error.value = before.cancelReason ?? 'Löschen abgebrochen.'
     return
   }
   busyId.value = item.id
   try {
-    await api.remove(selectedWorkspace.value, item.id)
-    await runHook('media.after-delete', { workspaceKey: selectedWorkspace.value, id: item.id })
+    await api.remove(activeWorkspace.value, item.id)
+    await runHook('media.after-delete', { workspaceKey: activeWorkspace.value, id: item.id })
     await loadMedia()
   } catch (e) {
     error.value = (e as Error).message
@@ -213,20 +198,23 @@ async function remove(item: MediaItem): Promise<void> {
   }
 }
 
-onMounted(async () => {
-  try {
-    if (fixedWorkspace.value) {
-      selectedWorkspace.value = fixedWorkspace.value
-    } else {
-      workspaces.value = await workspacesApi.list()
-      selectedWorkspace.value = workspaces.value[0]?.workspaceKey ?? ''
-    }
-  } catch (e) {
+// Reload when the active workspace resolves or the operator switches it. The
+// immediate run covers a fixed admin's initial load; an operator's first real
+// load follows ensure() populating the selection below.
+watch(
+  activeWorkspace,
+  () => {
+    notice.value = null
+    void loadMedia()
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
+  void ensureWorkspace().catch((e) => {
     error.value = (e as Error).message
     loading.value = false
-    return
-  }
-  await loadMedia()
+  })
 })
 </script>
 
@@ -246,24 +234,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: var(--cal-space);
-}
-
-.ws-select {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--cal-color-muted);
-  margin-bottom: calc(var(--cal-space) * 1.5);
-  max-width: 360px;
-}
-
-.select {
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
 }
 
 .upload {
