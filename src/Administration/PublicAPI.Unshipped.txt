@@ -908,3 +908,19 @@ static Callora.Administration.CalloraAdministrationExtensions.MapCalloraAdminist
 Callora.Administration.Api.AdminContextEndpoints
 static Callora.Administration.Api.AdminContextEndpoints.MapAdminContextEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.CalloraAdministrationExtensions.MapAdminSpaFallback(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+Callora.Administration.Api.PluginSignatureStatusApiResponse
+Callora.Administration.Api.PluginSignatureStatusApiResponse.<Clone>$() -> Callora.Administration.Api.PluginSignatureStatusApiResponse!
+Callora.Administration.Api.PluginSignatureStatusApiResponse.Deconstruct(out string! PluginId, out string! State, out string? SignerFingerprint) -> void
+Callora.Administration.Api.PluginSignatureStatusApiResponse.Equals(Callora.Administration.Api.PluginSignatureStatusApiResponse? other) -> bool
+Callora.Administration.Api.PluginSignatureStatusApiResponse.PluginId.get -> string!
+Callora.Administration.Api.PluginSignatureStatusApiResponse.PluginId.init -> void
+Callora.Administration.Api.PluginSignatureStatusApiResponse.PluginSignatureStatusApiResponse(string! PluginId, string! State, string? SignerFingerprint) -> void
+Callora.Administration.Api.PluginSignatureStatusApiResponse.SignerFingerprint.get -> string?
+Callora.Administration.Api.PluginSignatureStatusApiResponse.SignerFingerprint.init -> void
+Callora.Administration.Api.PluginSignatureStatusApiResponse.State.get -> string!
+Callora.Administration.Api.PluginSignatureStatusApiResponse.State.init -> void
+override Callora.Administration.Api.PluginSignatureStatusApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.PluginSignatureStatusApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.PluginSignatureStatusApiResponse.ToString() -> string!
+static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator !=(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool
+static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator ==(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool

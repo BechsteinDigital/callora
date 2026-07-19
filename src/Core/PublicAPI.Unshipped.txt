@@ -4435,3 +4435,12 @@ Callora.Core.Application.Policies.BackendHostOptions.RevokedSignerFingerprints.g
 Callora.Core.Application.Policies.BackendHostOptions.RevokedSignerFingerprints.set -> void
 const Callora.Core.Application.Lifecycle.PluginLifecycleErrorCodes.PluginPackageRevoked = "PLUGIN_PACKAGE_REVOKED" -> string!
 const Callora.Core.Application.Plugins.PluginPackageSignatureErrorCodes.Revoked = "PLUGIN_PACKAGE_REVOKED" -> string!
+Callora.Core.Application.Plugins.PluginSignatureStateMapper
+Callora.Core.Application.Plugins.PluginSignatureStates
+const Callora.Core.Application.Plugins.PluginSignatureStates.ContentHashMismatch = "content-hash-mismatch" -> string!
+const Callora.Core.Application.Plugins.PluginSignatureStates.Invalid = "invalid" -> string!
+const Callora.Core.Application.Plugins.PluginSignatureStates.Revoked = "revoked" -> string!
+const Callora.Core.Application.Plugins.PluginSignatureStates.SignedTrusted = "signed-trusted" -> string!
+const Callora.Core.Application.Plugins.PluginSignatureStates.NotSigned = "unsigned" -> string!
+const Callora.Core.Application.Plugins.PluginSignatureStates.Untrusted = "untrusted" -> string!
+static Callora.Core.Application.Plugins.PluginSignatureStateMapper.Map(Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult! result) -> string!

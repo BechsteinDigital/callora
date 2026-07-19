@@ -29,6 +29,7 @@
           <th>Plugin</th>
           <th>Id</th>
           <th>Status</th>
+          <th>Signatur</th>
           <th></th>
         </tr>
       </thead>
@@ -40,6 +41,17 @@
             <span class="badge" :class="isPluginActive(p.state) ? 'badge-active' : 'badge-inactive'">
               {{ isPluginActive(p.state) ? 'Aktiv' : 'Inaktiv' }}
             </span>
+          </td>
+          <td>
+            <span
+              v-if="signatureStates[p.pluginId]"
+              class="badge"
+              :class="signatureBadgeClass(signatureStates[p.pluginId])"
+              :title="signatureStates[p.pluginId]"
+            >
+              {{ signatureLabel(signatureStates[p.pluginId]) }}
+            </span>
+            <span v-else class="sig-unknown">—</span>
           </td>
           <td class="actions">
             <button
@@ -73,7 +85,7 @@
           </td>
         </tr>
         <tr v-if="!plugins.length">
-          <td colspan="4" class="empty">Keine Plugins installiert.</td>
+          <td colspan="5" class="empty">Keine Plugins installiert.</td>
         </tr>
       </tbody>
     </table>
@@ -122,6 +134,7 @@ const notice = ref<string | null>(null)
 const busyId = ref<string | null>(null)
 const installId = ref('')
 const installing = ref(false)
+const signatureStates = ref<Record<string, string>>({})
 
 const ctx = useAuthStore().context
 // Lifecycle actions map to the backend permissions: activate/deactivate need
@@ -148,6 +161,34 @@ async function load(): Promise<void> {
   } finally {
     loading.value = false
   }
+  // Signature status is best-effort: it re-verifies each plugin and must not block
+  // or fail the list if the report errors.
+  try {
+    const report = await api.signatureReport()
+    signatureStates.value = Object.fromEntries(report.map((r) => [r.pluginId, r.state]))
+  } catch {
+    signatureStates.value = {}
+  }
+}
+
+const SIGNATURE_LABELS: Record<string, string> = {
+  'signed-trusted': 'Signiert',
+  unsigned: 'Unsigniert',
+  untrusted: 'Nicht vertraut',
+  revoked: 'Widerrufen',
+  'content-hash-mismatch': 'Hash-Fehler',
+  invalid: 'Ungültig',
+}
+
+function signatureLabel(state: string): string {
+  return SIGNATURE_LABELS[state] ?? state
+}
+
+function signatureBadgeClass(state: string): string {
+  if (state === 'signed-trusted') {
+    return 'badge-active'
+  }
+  return state === 'unsigned' ? 'badge-inactive' : 'badge-danger'
 }
 
 // Shared runner for the state-changing actions: before/after hooks (a plugin may
@@ -304,6 +345,15 @@ onMounted(load)
 .badge-inactive {
   color: var(--cal-color-muted);
   border: 1px solid var(--cal-color-muted);
+}
+
+.badge-danger {
+  color: var(--cal-color-danger);
+  border: 1px solid var(--cal-color-danger);
+}
+
+.sig-unknown {
+  color: var(--cal-color-muted);
 }
 
 .actions {
