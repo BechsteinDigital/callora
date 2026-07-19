@@ -2841,12 +2841,18 @@ Callora.Core.Domain.Workspaces.WorkspaceMembership.WorkspaceId.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceMembership.WorkspaceMembership() -> void
 Callora.Core.Extensibility.CalloraExtensibleAttribute
 Callora.Core.Extensibility.CalloraExtensibleAttribute.CalloraExtensibleAttribute() -> void
+Callora.Core.Extensibility.CalloraExtensibleAttribute.CalloraExtensibleAttribute(Callora.Core.Extensibility.ExtensionPointMode mode, string? note = null) -> void
 Callora.Core.Extensibility.CalloraExtensibleAttribute.CalloraExtensibleAttribute(string! note) -> void
+Callora.Core.Extensibility.CalloraExtensibleAttribute.Mode.get -> Callora.Core.Extensibility.ExtensionPointMode
 Callora.Core.Extensibility.CalloraExtensibleAttribute.Note.get -> string?
 Callora.Core.Extensibility.CalloraInternalAttribute
 Callora.Core.Extensibility.CalloraInternalAttribute.CalloraInternalAttribute() -> void
 Callora.Core.Extensibility.CalloraInternalAttribute.CalloraInternalAttribute(string! reason) -> void
 Callora.Core.Extensibility.CalloraInternalAttribute.Reason.get -> string?
+Callora.Core.Extensibility.ExtensionPointMode
+Callora.Core.Extensibility.ExtensionPointMode.Contributable = 0 -> Callora.Core.Extensibility.ExtensionPointMode
+Callora.Core.Extensibility.ExtensionPointMode.Decoratable = 1 -> Callora.Core.Extensibility.ExtensionPointMode
+Callora.Core.Extensibility.ExtensionPointMode.Replaceable = 2 -> Callora.Core.Extensibility.ExtensionPointMode
 Callora.Core.Infrastructure.Configuration.RegistryConfigSchemaSyncService
 Callora.Core.Infrastructure.Configuration.RegistryConfigSchemaSyncService.ClearPluginDefinitionsAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Configuration.RegistryConfigSchemaSyncService.RegistryConfigSchemaSyncService(Callora.Core.Application.Configuration.ISystemConfigStore! store) -> void

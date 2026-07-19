@@ -26,6 +26,22 @@ public sealed class CalloraExtensibleAttribute : Attribute
     /// <param name="note">Human-readable note on how the extension point is meant to be used.</param>
     public CalloraExtensibleAttribute(string note) => Note = note;
 
+    /// <summary>Marks the target as an extension point of a specific mode, optionally with guidance.</summary>
+    /// <param name="mode">What a plugin may do with this surface.</param>
+    /// <param name="note">Optional guidance for implementers of this extension point.</param>
+    public CalloraExtensibleAttribute(ExtensionPointMode mode, string? note = null)
+    {
+        Mode = mode;
+        Note = note;
+    }
+
     /// <summary>Optional guidance for implementers of this extension point.</summary>
     public string? Note { get; }
+
+    /// <summary>
+    /// What a plugin may do with this surface. Defaults to
+    /// <see cref="ExtensionPointMode.Contributable"/> — the common case for a marked
+    /// contract; decoratable or replaceable host services state their mode explicitly.
+    /// </summary>
+    public ExtensionPointMode Mode { get; }
 }
