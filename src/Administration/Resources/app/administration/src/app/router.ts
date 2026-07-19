@@ -22,6 +22,7 @@ export const router = createRouter({
         { path: 'roles/new', component: () => import('@/modules/roles/RoleDetailView.vue') },
         { path: 'roles/:role', component: () => import('@/modules/roles/RoleDetailView.vue') },
         { path: 'plugins', component: () => import('@/modules/plugins/PluginsListView.vue') },
+        { path: 'entitlements', component: () => import('@/modules/entitlements/EntitlementsListView.vue') },
         { path: 'workspaces', component: () => import('@/modules/workspaces/WorkspacesListView.vue') },
         { path: 'workspaces/new', component: () => import('@/modules/workspaces/WorkspaceDetailView.vue') },
         { path: 'workspaces/:workspaceKey', component: () => import('@/modules/workspaces/WorkspaceDetailView.vue') },
