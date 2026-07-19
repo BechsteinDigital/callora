@@ -183,6 +183,33 @@ public sealed class WorkspaceEndpointsTests
         Assert.Contains(WorkspaceEventTypes.Deleted, names);
     }
 
+    [Fact]
+    public async Task UpsertAndRemoveMember_PublishMembershipBusinessEvents()
+    {
+        await using var app = await CreateAppAsync();
+        var bus = (RecordingBusinessEventBus)app.Services.GetRequiredService<IBusinessEventBus>();
+
+        var workspaceClient = app.GetTestClient();
+        workspaceClient.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        _ = await workspaceClient.PutAsJsonAsync(
+            "/api/workspaces/workspace-m",
+            new UpsertWorkspaceApiRequest(null, "Workspace M", "team", true));
+
+        var upsertMemberClient = app.GetTestClient();
+        upsertMemberClient.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        _ = await upsertMemberClient.PutAsJsonAsync(
+            "/api/workspaces/workspace-m/members/alice",
+            new UpsertWorkspaceMemberApiRequest("owner"));
+
+        var removeMemberClient = app.GetTestClient();
+        removeMemberClient.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        _ = await removeMemberClient.DeleteAsync("/api/workspaces/workspace-m/members/alice");
+
+        var names = bus.Published.Select(static x => x.EventName).ToArray();
+        Assert.Contains(WorkspaceMemberEventTypes.Assigned, names);
+        Assert.Contains(WorkspaceMemberEventTypes.Removed, names);
+    }
+
     private sealed class RecordingBusinessEventBus : IBusinessEventBus
     {
         public List<IBusinessEvent> Published { get; } = [];
