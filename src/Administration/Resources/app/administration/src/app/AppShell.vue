@@ -11,6 +11,7 @@
         <RouterLink to="/plugins">Plugins</RouterLink>
         <RouterLink to="/media">Medien</RouterLink>
         <RouterLink v-if="canViewJobs" to="/jobs">Jobs</RouterLink>
+        <RouterLink v-if="canViewWebhooks" to="/webhooks">Webhooks</RouterLink>
         <RouterLink to="/config">Konfiguration</RouterLink>
       </nav>
     </aside>
@@ -45,6 +46,9 @@ const canManageTenants = computed(() => hasPermission(ctx.value, 'tenant.read'))
 // Job monitoring is read-only and gated on job.read server-side; mirror that for
 // the nav affordance (hiding is convenience, not a security boundary).
 const canViewJobs = computed(() => hasPermission(ctx.value, 'job.read'))
+
+// Webhook management is gated on webhook.read server-side; mirror it for the nav.
+const canViewWebhooks = computed(() => hasPermission(ctx.value, 'webhook.read'))
 </script>
 
 <style scoped lang="scss">
