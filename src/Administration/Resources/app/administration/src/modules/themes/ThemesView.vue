@@ -39,7 +39,7 @@
       <form v-if="canManage" class="assign" @submit.prevent="assign">
         <label class="pick">Theme
           <select v-model.number="selectedIndex" name="themeDefinition" class="select">
-            <option v-for="(d, i) in definitions" :key="d.templateKey" :value="i">
+            <option v-for="(d, i) in definitions" :key="`${d.templateKey}:${d.pluginId}:${d.version}`" :value="i">
               {{ d.displayName }} ({{ d.pluginId }}@{{ d.version }})
             </option>
           </select>
