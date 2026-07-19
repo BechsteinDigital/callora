@@ -4408,6 +4408,8 @@ override Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.ToStri
 override Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.GetHashCode() -> int
 override Callora.Core.Application.Plugins.Signing.PluginSignatureManifest.ToString() -> string!
+const Callora.Core.Application.Plugins.Signing.PluginContentHasher.SignatureFileName = "plugin.signature.json" -> string!
+static Callora.Core.Application.Plugins.Signing.PluginContentHasher.EnumeratePackageFiles(string! pluginRoot) -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Plugins.Signing.PluginContentHasher.HashFile(string! absolutePath) -> string!
 static Callora.Core.Application.Plugins.Signing.PluginContentHasher.ResolveContained(string! pluginRoot, string! relativePath) -> string!
 static Callora.Core.Application.Plugins.Signing.PluginSignatureCryptography.ComputeFingerprint(System.Security.Cryptography.ECDsa! key) -> string!

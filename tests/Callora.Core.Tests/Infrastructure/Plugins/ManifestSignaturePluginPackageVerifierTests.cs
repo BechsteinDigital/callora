@@ -121,6 +121,29 @@ public sealed class ManifestSignaturePluginPackageVerifierTests
     }
 
     [Fact]
+    public async Task Verify_Rejects_AFilePresentButNotCoveredByTheManifest()
+    {
+        var dir = CreatePluginDir();
+        try
+        {
+            using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            WriteSignature(dir, key);
+            // Inject a file the signed manifest does not cover — e.g. a smuggled DLL that
+            // would load alongside the vetted assembly. No content may live outside the set.
+            await File.WriteAllBytesAsync(Path.Combine(dir, "smuggled.dll"), [7, 7, 7, 7]);
+
+            var result = await Verifier(key).VerifyAsync(Assembly(dir));
+
+            Assert.False(result.IsValid);
+            Assert.Equal(PluginPackageSignatureErrorCodes.ContentHashMismatch, result.ErrorCode);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Verify_Rejects_AnUntrustedSigner()
     {
         var dir = CreatePluginDir();

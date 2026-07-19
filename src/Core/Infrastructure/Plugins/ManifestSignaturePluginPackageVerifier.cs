@@ -8,16 +8,17 @@ namespace Callora.Core.Infrastructure.Plugins;
 
 /// <summary>
 /// Verifies a plugin against its <c>plugin.signature.json</c> (next to the assembly):
-/// recomputes the covered file hashes, checks the ECDSA-P256 signature against the
-/// trusted signer's public key, and requires the signer fingerprint to be trusted.
-/// Cross-platform — replaces the Windows-only Authenticode path. An unsigned plugin
-/// is rejected unless <see cref="BackendHostOptions.AllowUnsignedPlugins"/> is set.
+/// recomputes the covered file hashes, rejects any on-disk file the manifest does not
+/// cover, checks the ECDSA-P256 signature against the trusted signer's public key, and
+/// requires the signer fingerprint to be trusted. Cross-platform — replaces the
+/// Windows-only Authenticode path. An unsigned plugin is rejected unless
+/// <see cref="BackendHostOptions.AllowUnsignedPlugins"/> is set.
 /// </summary>
 public sealed class ManifestSignaturePluginPackageVerifier(
     IPluginSignatureTrustStore trustStore,
     BackendHostOptions options) : IPluginPackageSignatureVerifier
 {
-    private const string SignatureFileName = "plugin.signature.json";
+    private const string SignatureFileName = PluginContentHasher.SignatureFileName;
 
     private readonly HashSet<string> _revokedFingerprints = NormalizeSet(options.RevokedSignerFingerprints);
     private readonly HashSet<string> _revokedContentHashes = NormalizeSet(options.RevokedContentHashes);
@@ -102,6 +103,24 @@ public sealed class ManifestSignaturePluginPackageVerifier(
             {
                 return Invalid(
                     $"Content hash mismatch for '{file.Path}'.",
+                    PluginPackageSignatureErrorCodes.ContentHashMismatch,
+                    manifest.SignerFingerprint);
+            }
+        }
+
+        // The reverse direction: no on-disk file may live outside the signed set. A file
+        // present but unlisted is injected content (e.g. a smuggled DLL) — reject it.
+        // DECISION: reuse ContentHashMismatch — same "package differs from what was
+        // signed" class, no new error-code surface.
+        var coveredPaths = manifest.Files
+            .Select(static f => f.Path.Replace('\\', '/'))
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var actualPath in PluginContentHasher.EnumeratePackageFiles(pluginRoot))
+        {
+            if (!coveredPaths.Contains(actualPath))
+            {
+                return Invalid(
+                    $"File '{actualPath}' is present but not covered by the signature manifest.",
                     PluginPackageSignatureErrorCodes.ContentHashMismatch,
                     manifest.SignerFingerprint);
             }

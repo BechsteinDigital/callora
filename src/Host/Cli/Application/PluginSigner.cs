@@ -5,10 +5,12 @@ using Callora.Core.Application.Plugins.Signing;
 namespace Callora.Host.Cli.Application;
 
 /// <summary>
-/// Signs a plugin directory: hashes the covered files (assembly + registry.json),
-/// builds a signature manifest, signs it with an ECDSA P-256 private key (PEM), and
-/// writes <c>plugin.signature.json</c>. Signing registry.json makes the plugin's
-/// declared capabilities and entry type tamper-evident, not just the assembly.
+/// Signs a plugin directory: hashes every file in it (except the signature file
+/// itself), builds a signature manifest, signs it with an ECDSA P-256 private key
+/// (PEM), and writes <c>plugin.signature.json</c>. Covering the whole directory —
+/// dependent assemblies, UI bundles, templates, migrations, registry.json — makes
+/// the entire package tamper-evident, so no content lives outside the signed set.
+/// The signing key must not reside inside the plugin directory.
 /// </summary>
 internal sealed class PluginSigner
 {
@@ -54,28 +56,24 @@ internal sealed class PluginSigner
             return PluginSignResult.Fail("registry.json is missing pluginId or assemblyFileName.");
         }
 
-        // Covered files: the loaded assembly and registry.json itself. AssemblyFileName
+        // Covered files: every file in the plugin directory (except the signature file
+        // itself). EnumeratePackageFiles is the shared definition of "package content"
+        // the verifier also enforces, so the two never drift.
+        var relativePaths = PluginContentHasher.EnumeratePackageFiles(request.PluginDirectory);
+
+        // The declared entry assembly must actually be part of the package. AssemblyFileName
         // is guaranteed non-null by the guard above.
-        var relativePaths = new[] { registry.AssemblyFileName, "registry.json" };
-        var fileHashes = new List<PluginSignatureFileHash>();
+        var assemblyRelativePath = registry.AssemblyFileName!.Replace('\\', '/');
+        if (!relativePaths.Contains(assemblyRelativePath, StringComparer.Ordinal))
+        {
+            return PluginSignResult.Fail($"Declared assembly '{registry.AssemblyFileName}' was not found in the plugin directory.");
+        }
+
+        var fileHashes = new List<PluginSignatureFileHash>(relativePaths.Count);
         foreach (var relativePath in relativePaths)
         {
-            string absolutePath;
-            try
-            {
-                absolutePath = PluginContentHasher.ResolveContained(request.PluginDirectory, relativePath);
-            }
-            catch (ArgumentException exception)
-            {
-                return PluginSignResult.Fail(exception.Message);
-            }
-
-            if (!File.Exists(absolutePath))
-            {
-                return PluginSignResult.Fail($"Covered file not found: {relativePath}");
-            }
-
-            fileHashes.Add(new PluginSignatureFileHash(ToManifestPath(relativePath), PluginContentHasher.HashFile(absolutePath)));
+            var absolutePath = PluginContentHasher.ResolveContained(request.PluginDirectory, relativePath);
+            fileHashes.Add(new PluginSignatureFileHash(relativePath, PluginContentHasher.HashFile(absolutePath)));
         }
 
         using var key = ECDsa.Create();
@@ -111,6 +109,4 @@ internal sealed class PluginSigner
 
         return PluginSignResult.Success(outputPath);
     }
-
-    private static string ToManifestPath(string value) => value.Replace('\\', '/');
 }
