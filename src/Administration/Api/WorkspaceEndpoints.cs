@@ -1,9 +1,12 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Security;
 using Callora.Core.Application.Workspaces;
+using Callora.Core.Application.Workspaces.Events;
 using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Infrastructure.Security;
+using Microsoft.Extensions.Logging;
 
 namespace Callora.Administration.Api;
 
@@ -57,6 +60,8 @@ public static class WorkspaceEndpoints
             UpsertWorkspaceApiRequest request,
             BackendHostOptions hostOptions,
             IWorkspaceManagementStore workspaceStore,
+            IBusinessEventBus businessEventBus,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
             var tenantKey = hostOptions.DefaultTenantKey;
@@ -77,9 +82,18 @@ public static class WorkspaceEndpoints
                     cancellationToken)
                 .ConfigureAwait(false);
 
+            if (workspace.Status == WorkspaceUpsertStatus.Ok && workspace.Workspace is not null)
+            {
+                await PublishAsync(
+                    businessEventBus,
+                    WorkspaceBusinessEvent.ForUpsert(workspace.Workspace),
+                    loggerFactory,
+                    cancellationToken).ConfigureAwait(false);
+                return Results.Ok(ToResponse(workspace.Workspace));
+            }
+
             return workspace.Status switch
             {
-                WorkspaceUpsertStatus.Ok when workspace.Workspace is not null => Results.Ok(ToResponse(workspace.Workspace)),
                 WorkspaceUpsertStatus.TenantNotFound => ApiProblems.NotFound($"Tenant '{tenantKey}' not found."),
                 WorkspaceUpsertStatus.InvalidPublicUrl => ApiProblems.BadRequest("Workspace public URL is invalid."),
                 _ => Results.BadRequest()
@@ -92,6 +106,8 @@ public static class WorkspaceEndpoints
             BackendHostOptions hostOptions,
             IWorkspaceManagementStore workspaceStore,
             IWorkspaceDataPurgeService purgeService,
+            IBusinessEventBus businessEventBus,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
@@ -109,7 +125,17 @@ public static class WorkspaceEndpoints
             // Kaskadierende Löschung: Workspace + alle workspace-gebundenen
             // Daten in einer Transaktion (DSGVO, PLAT-242).
             var removed = await purgeService.PurgeAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
-            return removed ? Results.NoContent() : Results.NotFound();
+            if (!removed)
+            {
+                return Results.NotFound();
+            }
+
+            await PublishAsync(
+                businessEventBus,
+                WorkspaceBusinessEvent.ForDeletion(workspace),
+                loggerFactory,
+                cancellationToken).ConfigureAwait(false);
+            return Results.NoContent();
         }).WithName("Workspaces_Delete")
             .RequirePermission(BackendPermissionKeys.WorkspaceDelete);
 
@@ -208,6 +234,25 @@ public static class WorkspaceEndpoints
             };
         }).WithName("Workspaces_Members_Delete")
             .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
+    }
+
+    private static async Task PublishAsync(
+        IBusinessEventBus businessEventBus,
+        IBusinessEvent businessEvent,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await businessEventBus.PublishAsync(businessEvent, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            // The mutation already committed; a failed post-hoc event must not turn a
+            // successful operation into an error. Best-effort, logged.
+            loggerFactory.CreateLogger(typeof(WorkspaceEndpoints)).LogWarning(
+                exception, "Publishing business event {EventName} failed.", businessEvent.EventName);
+        }
     }
 
     private static WorkspaceApiResponse ToResponse(WorkspaceSnapshot workspace)

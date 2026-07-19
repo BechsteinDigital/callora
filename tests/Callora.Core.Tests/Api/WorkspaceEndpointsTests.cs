@@ -1,7 +1,9 @@
 using Callora.Administration.Api;
 using Callora.Core.Api;
+using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Workspaces;
+using Callora.Core.Application.Workspaces.Events;
 using Callora.Core.Tests.Support;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -159,6 +161,39 @@ public sealed class WorkspaceEndpointsTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task UpsertAndDeleteWorkspace_PublishLifecycleBusinessEvents()
+    {
+        await using var app = await CreateAppAsync();
+        var bus = (RecordingBusinessEventBus)app.Services.GetRequiredService<IBusinessEventBus>();
+
+        var upsertClient = app.GetTestClient();
+        upsertClient.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        _ = await upsertClient.PutAsJsonAsync(
+            "/api/workspaces/workspace-ev",
+            new UpsertWorkspaceApiRequest(null, "Workspace Ev", "team", true));
+
+        var deleteClient = app.GetTestClient();
+        deleteClient.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.delete");
+        _ = await deleteClient.DeleteAsync("/api/workspaces/workspace-ev");
+
+        var names = bus.Published.Select(static x => x.EventName).ToArray();
+        // First upsert of a new workspace → created; the purge → deleted.
+        Assert.Contains(WorkspaceEventTypes.Created, names);
+        Assert.Contains(WorkspaceEventTypes.Deleted, names);
+    }
+
+    private sealed class RecordingBusinessEventBus : IBusinessEventBus
+    {
+        public List<IBusinessEvent> Published { get; } = [];
+
+        public Task PublishAsync(IBusinessEvent businessEvent, CancellationToken cancellationToken = default)
+        {
+            Published.Add(businessEvent);
+            return Task.CompletedTask;
+        }
+    }
+
     private static async Task<WebApplication> CreateAppAsync()
     {
         var workspaceStore = new InMemoryWorkspaceManagementStore();
@@ -176,6 +211,7 @@ public sealed class WorkspaceEndpointsTests
         builder.Services.AddSingleton<IWorkspaceManagementStore>(workspaceStore);
         builder.Services.AddSingleton<IWorkspaceDataPurgeService>(
             new InMemoryWorkspaceDataPurgeService(workspaceStore));
+        builder.Services.AddSingleton<IBusinessEventBus>(new RecordingBusinessEventBus());
         builder.Services.AddSingleton(new BackendHostOptions
         {
             DefaultTenantKey = "tenant-a"
