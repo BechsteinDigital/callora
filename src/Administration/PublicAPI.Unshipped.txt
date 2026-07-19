@@ -924,3 +924,83 @@ override Callora.Administration.Api.PluginSignatureStatusApiResponse.GetHashCode
 override Callora.Administration.Api.PluginSignatureStatusApiResponse.ToString() -> string!
 static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator !=(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool
 static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator ==(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool
+Callora.Administration.Api.SurfaceApiResponse
+Callora.Administration.Api.SurfaceApiResponse.AccessMode.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.AccessMode.init -> void
+Callora.Administration.Api.SurfaceApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceApiResponse!
+Callora.Administration.Api.SurfaceApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.SurfaceApiResponse.CreatedAtUtc.init -> void
+Callora.Administration.Api.SurfaceApiResponse.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string! AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.SurfaceApiResponse.DisplayName.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.DisplayName.init -> void
+Callora.Administration.Api.SurfaceApiResponse.Equals(Callora.Administration.Api.SurfaceApiResponse? other) -> bool
+Callora.Administration.Api.SurfaceApiResponse.Id.get -> System.Guid
+Callora.Administration.Api.SurfaceApiResponse.Id.init -> void
+Callora.Administration.Api.SurfaceApiResponse.IsActive.get -> bool
+Callora.Administration.Api.SurfaceApiResponse.IsActive.init -> void
+Callora.Administration.Api.SurfaceApiResponse.Locale.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.Locale.init -> void
+Callora.Administration.Api.SurfaceApiResponse.PublicBaseUrl.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.PublicBaseUrl.init -> void
+Callora.Administration.Api.SurfaceApiResponse.PublicHost.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.PublicHost.init -> void
+Callora.Administration.Api.SurfaceApiResponse.PublicPathPrefix.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.PublicPathPrefix.init -> void
+Callora.Administration.Api.SurfaceApiResponse.SurfaceApiResponse(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string! AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.SurfaceApiResponse.SurfaceKey.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.SurfaceKey.init -> void
+Callora.Administration.Api.SurfaceApiResponse.SurfaceType.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.SurfaceType.init -> void
+Callora.Administration.Api.SurfaceApiResponse.TemplatePluginId.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.TemplatePluginId.init -> void
+Callora.Administration.Api.SurfaceApiResponse.TemplateVersion.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.TemplateVersion.init -> void
+Callora.Administration.Api.SurfaceApiResponse.ThemePluginId.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.ThemePluginId.init -> void
+Callora.Administration.Api.SurfaceApiResponse.ThemeVersion.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.ThemeVersion.init -> void
+Callora.Administration.Api.SurfaceApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.SurfaceApiResponse.UpdatedAtUtc.init -> void
+Callora.Administration.Api.SurfaceApiResponse.WorkspaceKey.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.WorkspaceKey.init -> void
+Callora.Administration.Api.SurfaceEndpoints
+Callora.Administration.Api.UpsertSurfaceApiRequest
+Callora.Administration.Api.UpsertSurfaceApiRequest.AccessMode.get -> string!
+Callora.Administration.Api.UpsertSurfaceApiRequest.AccessMode.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.<Clone>$() -> Callora.Administration.Api.UpsertSurfaceApiRequest!
+Callora.Administration.Api.UpsertSurfaceApiRequest.Deconstruct(out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string! AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive) -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.DisplayName.get -> string!
+Callora.Administration.Api.UpsertSurfaceApiRequest.DisplayName.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.Equals(Callora.Administration.Api.UpsertSurfaceApiRequest? other) -> bool
+Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.get -> bool
+Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.Locale.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.Locale.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicBaseUrl.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicBaseUrl.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicHost.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicHost.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicPathPrefix.get -> string!
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicPathPrefix.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.SurfaceType.get -> string!
+Callora.Administration.Api.UpsertSurfaceApiRequest.SurfaceType.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.TemplatePluginId.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.TemplatePluginId.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.TemplateVersion.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.TemplateVersion.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.ThemePluginId.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.ThemePluginId.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.ThemeVersion.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.ThemeVersion.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.UpsertSurfaceApiRequest(string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string! AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive) -> void
+override Callora.Administration.Api.SurfaceApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.SurfaceApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.SurfaceApiResponse.ToString() -> string!
+override Callora.Administration.Api.UpsertSurfaceApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.UpsertSurfaceApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.UpsertSurfaceApiRequest.ToString() -> string!
+static Callora.Administration.Api.SurfaceApiResponse.operator !=(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceApiResponse.operator ==(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceEndpoints.MapSurfaceEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.UpsertSurfaceApiRequest.operator !=(Callora.Administration.Api.UpsertSurfaceApiRequest? left, Callora.Administration.Api.UpsertSurfaceApiRequest? right) -> bool
+static Callora.Administration.Api.UpsertSurfaceApiRequest.operator ==(Callora.Administration.Api.UpsertSurfaceApiRequest? left, Callora.Administration.Api.UpsertSurfaceApiRequest? right) -> bool

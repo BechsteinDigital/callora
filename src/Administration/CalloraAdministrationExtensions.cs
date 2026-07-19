@@ -44,6 +44,7 @@ public static class CalloraAdministrationExtensions
         // workspace-scoped as a tenant filter) — the operator backend, not the
         // storefront, so they live here rather than in Callora.Workspace (REV2 §4).
         app.MapWorkspaceEndpoints();
+        app.MapSurfaceEndpoints();
         app.MapCustomFieldEndpoints();
         app.MapFlowEndpoints();
         app.MapMediaEndpoints();
