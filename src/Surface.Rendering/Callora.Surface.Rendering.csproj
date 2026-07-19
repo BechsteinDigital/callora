@@ -34,6 +34,38 @@
     <EmbeddedResource Include="Resources\nunjucks.js" />
   </ItemGroup>
 
+  <!-- The colocated surface runtime (Resources/app/surface) is the neutral client
+       grundgerüst (ADR-014 §8/§11). It builds into wwwroot/surface-app and rides
+       along as a Static Web Asset, served at /surface-app; the SSR SurfaceShell
+       (SpaRoot) loads /surface-app/surface.js|css. Mirrors the admin shell wiring.
+       Skip with -p:SkipSurfaceFrontend=true (node not required for a .NET-only build). -->
+  <PropertyGroup>
+    <SurfaceFrontendDir>$(MSBuildProjectDirectory)/Resources/app/surface</SurfaceFrontendDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SurfaceFrontendInputs Include="$(SurfaceFrontendDir)/package.json;$(SurfaceFrontendDir)/package-lock.json;$(SurfaceFrontendDir)/vite.config.ts;$(SurfaceFrontendDir)/tsconfig.json" />
+    <SurfaceFrontendInputs Include="$(SurfaceFrontendDir)/src/**/*" />
+  </ItemGroup>
+
+  <Target Name="BuildSurfaceFrontend"
+          Condition="'$(SkipSurfaceFrontend)' != 'true'"
+          BeforeTargets="ResolveStaticWebAssetsInputs;BeforeBuild"
+          Inputs="@(SurfaceFrontendInputs)"
+          Outputs="$(MSBuildProjectDirectory)/wwwroot/surface-app/surface.js">
+    <Message Importance="high" Text="Building surface runtime frontend (npm ci + build)…" />
+    <Exec Command="npm ci" WorkingDirectory="$(SurfaceFrontendDir)" />
+    <Exec Command="npm run build" WorkingDirectory="$(SurfaceFrontendDir)" />
+  </Target>
+
+  <!-- The frontend SOURCE (TS/Vite/npm, incl. node_modules) must not ride into the
+       NuGet package or the static-web-asset set — only the built wwwroot/surface-app
+       does. Without this the Web SDK pulls Resources/app/** in as content. -->
+  <ItemGroup>
+    <Content Remove="Resources/app/**" />
+    <None Remove="Resources/app/**" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- REV2 §7.3 (WP-G2): public-surface baseline tracking. -->
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all">

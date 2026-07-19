@@ -1,0 +1,23 @@
+// Neutral surface design tokens. The grundgerüst provides only the baseline custom
+// properties plugins inherit — no opinionated look, no branding. The theme/token
+// axis (WorkspacePublicThemeResolver) overrides these per workspace/surface.
+:root {
+  --cal-space-4: 1rem;
+  --cal-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --cal-color-fg: #1a1a1a;
+  --cal-color-bg: #ffffff;
+  --cal-color-muted: #6b7280;
+}
+
+.callora-surface {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--cal-color-fg);
+  background: var(--cal-color-bg);
+  font-family: var(--cal-font-sans);
+}
+
+.callora-surface__empty {
+  padding: var(--cal-space-4);
+  color: var(--cal-color-muted);
+}

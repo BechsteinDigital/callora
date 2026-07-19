@@ -25,7 +25,7 @@ Callora.Surface.Rendering.SurfaceTemplateException
 Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message, System.Exception! innerException) -> void
 Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message) -> void
 Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException() -> void
-const Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot = "<!doctype html>\n<html lang=\"{{ locale }}\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <title>{{ surface.key }}</title>\n</head>\n<body>\n  <div id=\"callora-app\" data-workspace=\"{{ workspace.key }}\" data-surface=\"{{ surface.key }}\"></div>\n</body>\n</html>" -> string!
+const Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot = "<!doctype html>\n<html lang=\"{{ locale }}\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <title>{{ surface.key }}</title>\n  <link rel=\"stylesheet\" href=\"/surface-app/surface.css\" />\n</head>\n<body>\n  <div id=\"callora-app\" data-workspace=\"{{ workspace.key }}\" data-surface=\"{{ surface.key }}\"></div>\n  <script src=\"/surface-app/surface.js\" defer></script>\n</body>\n</html>" -> string!
 override Callora.Surface.Rendering.SurfaceRenderContext.Equals(object? obj) -> bool
 override Callora.Surface.Rendering.SurfaceRenderContext.GetHashCode() -> int
 override Callora.Surface.Rendering.SurfaceRenderContext.ToString() -> string!
