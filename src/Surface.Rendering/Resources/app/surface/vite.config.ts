@@ -28,5 +28,13 @@ export default defineConfig({
       },
     },
   },
-  test: { environment: 'happy-dom', globals: true },
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+    // Unit tests assert that plugin <script>/<link> tags get injected; they must never
+    // actually fetch/execute them (there is no server), so disable resource loading.
+    environmentOptions: {
+      happyDOM: { settings: { disableJavaScriptFileLoading: true, disableCSSFileLoading: true } },
+    },
+  },
 })
