@@ -10,11 +10,15 @@ public interface IPluginEntitlementStore
         string? tenantKey = null,
         CancellationToken cancellationToken = default);
 
+    /// <param name="source">Provenance of the decision, recorded on the row —
+    /// e.g. "manual" for a direct operator grant/revoke (the default) or
+    /// "marketplace" for the inbound sync. The last writer wins.</param>
     ValueTask SetEntitledAsync(
         string pluginId,
         bool isEntitled,
         string? workspaceKey = null,
         string? tenantKey = null,
+        string source = "manual",
         CancellationToken cancellationToken = default);
 
     ValueTask ClearForPluginAsync(

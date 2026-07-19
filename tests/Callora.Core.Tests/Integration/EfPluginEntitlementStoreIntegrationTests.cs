@@ -48,18 +48,35 @@ public sealed class EfPluginEntitlementStoreIntegrationTests : IAsyncLifetime
         await context.Database.EnsureCreatedAsync();
         var store = new EfPluginEntitlementStore(context, new BackendHostOptions());
 
-        await store.SetEntitledAsync("acme.plugin", isEntitled: true);                                   // platform
-        await store.SetEntitledAsync("acme.plugin", isEntitled: true, tenantKey: "tenant-a");            // tenant
+        await store.SetEntitledAsync("acme.plugin", isEntitled: true);                                   // platform (manual default)
+        await store.SetEntitledAsync("acme.plugin", isEntitled: true, tenantKey: "tenant-a", source: "marketplace");
         await store.SetEntitledAsync("acme.plugin", isEntitled: false, workspaceKey: "workspace-a");     // workspace revoke
 
         var list = await store.ListAsync();
 
         Assert.Equal(3, list.Count);
-        Assert.Contains(list, x => x.WorkspaceKey is null && x.TenantKey is null && x.IsEntitled);
-        Assert.Contains(list, x => x.TenantKey == "tenant-a" && x.WorkspaceKey is null && x.IsEntitled);
+        Assert.Contains(list, x => x.WorkspaceKey is null && x.TenantKey is null && x.IsEntitled && x.Source == "manual");
+        Assert.Contains(list, x => x.TenantKey == "tenant-a" && x.WorkspaceKey is null && x.IsEntitled && x.Source == "marketplace");
         // The persistent store keeps an explicit "not entitled" override row.
-        Assert.Contains(list, x => x.WorkspaceKey == "workspace-a" && !x.IsEntitled);
-        Assert.All(list, x => Assert.Equal("marketplace", x.Source));
+        Assert.Contains(list, x => x.WorkspaceKey == "workspace-a" && !x.IsEntitled && x.Source == "manual");
+    }
+
+    [SkippableFact]
+    public async Task SetEntitled_UpdatesProvenance_LastWriterWins()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+
+        await using var context = new HostPersistenceDbContext(Options());
+        await context.Database.EnsureCreatedAsync();
+        var store = new EfPluginEntitlementStore(context, new BackendHostOptions());
+
+        // A marketplace grant, then a direct operator revoke of the same scope.
+        await store.SetEntitledAsync("acme.plugin", isEntitled: true, workspaceKey: "workspace-a", source: "marketplace");
+        await store.SetEntitledAsync("acme.plugin", isEntitled: false, workspaceKey: "workspace-a", source: "manual");
+
+        var row = Assert.Single(await store.ListAsync());
+        Assert.False(row.IsEntitled);
+        Assert.Equal("manual", row.Source); // last writer recorded
     }
 
     [SkippableFact]

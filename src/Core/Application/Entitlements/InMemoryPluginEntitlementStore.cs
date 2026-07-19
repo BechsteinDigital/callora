@@ -86,6 +86,7 @@ public sealed class InMemoryPluginEntitlementStore : IPluginEntitlementStore
         bool isEntitled,
         string? workspaceKey = null,
         string? tenantKey = null,
+        string source = "manual",
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -103,7 +104,7 @@ public sealed class InMemoryPluginEntitlementStore : IPluginEntitlementStore
             var normalizedWorkspaceKey = string.IsNullOrWhiteSpace(workspaceKey) ? null : workspaceKey.Trim();
             var normalizedTenantKey = string.IsNullOrWhiteSpace(tenantKey) ? null : tenantKey.Trim();
             _entitledPluginKeys[key] = new PluginEntitlementSnapshot(
-                pluginId.Trim(), normalizedWorkspaceKey, normalizedTenantKey, true, "marketplace", nowUtc, nowUtc);
+                pluginId.Trim(), normalizedWorkspaceKey, normalizedTenantKey, true, source, nowUtc, nowUtc);
         }
         else
         {

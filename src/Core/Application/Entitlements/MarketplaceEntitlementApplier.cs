@@ -42,7 +42,7 @@ public sealed class MarketplaceEntitlementApplier(
 
         var isGrant = string.Equals(payload.Action, MarketplaceEntitlementActions.Grant, StringComparison.OrdinalIgnoreCase);
         await entitlementStore
-            .SetEntitledAsync(payload.PluginId, isGrant, payload.WorkspaceKey, payload.TenantKey, cancellationToken)
+            .SetEntitledAsync(payload.PluginId, isGrant, payload.WorkspaceKey, payload.TenantKey, "marketplace", cancellationToken)
             .ConfigureAwait(false);
 
         await auditStore.WritePluginAuditAsync(

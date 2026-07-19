@@ -45,6 +45,19 @@ public sealed class InMemoryPluginEntitlementStoreTests
     }
 
     [Fact]
+    public async Task GrantRecordsProvenance_DefaultManual_OrExplicitSource()
+    {
+        var store = new InMemoryPluginEntitlementStore(new BackendHostOptions());
+
+        await store.SetEntitledAsync("acme.plugin", isEntitled: true, workspaceKey: "workspace-a"); // default
+        await store.SetEntitledAsync("acme.plugin", isEntitled: true, tenantKey: "tenant-a", source: "marketplace");
+
+        var list = await store.ListAsync();
+        Assert.Contains(list, x => x.WorkspaceKey == "workspace-a" && x.Source == "manual");
+        Assert.Contains(list, x => x.TenantKey == "tenant-a" && x.Source == "marketplace");
+    }
+
+    [Fact]
     public async Task Revoke_RemovesTheEntitlementFromTheList()
     {
         var store = new InMemoryPluginEntitlementStore(new BackendHostOptions());

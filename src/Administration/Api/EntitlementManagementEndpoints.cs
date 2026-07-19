@@ -39,11 +39,14 @@ public static class EntitlementManagementEndpoints
                 return ApiProblems.BadRequest("pluginId is required.");
             }
 
+            // A direct operator grant/revoke — recorded as "manual" provenance,
+            // distinct from the inbound marketplace sync.
             await store.SetEntitledAsync(
                 request.PluginId,
                 request.IsEntitled,
                 request.WorkspaceKey,
                 request.TenantKey,
+                source: "manual",
                 cancellationToken).ConfigureAwait(false);
 
             return Results.NoContent();
