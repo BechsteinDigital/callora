@@ -42,3 +42,6 @@ Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRende
 Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer(Callora.Surface.Rendering.ISurfaceTemplateBundleProvider! bundleProvider) -> void
 Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context) -> string!
 Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
+Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider
+Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider.DirectorySurfaceTemplateBundleProvider(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! bundleRoots) -> void
+Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
