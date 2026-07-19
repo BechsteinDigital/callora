@@ -3,16 +3,7 @@
     <aside class="sidebar">
       <div class="brand">Callora</div>
       <nav>
-        <RouterLink to="/">Übersicht</RouterLink>
-        <RouterLink to="/users">Benutzer</RouterLink>
-        <RouterLink to="/roles">Rollen</RouterLink>
-        <RouterLink to="/workspaces">Workspaces</RouterLink>
-        <RouterLink v-if="canManageTenants" to="/tenants">Mandanten</RouterLink>
-        <RouterLink to="/plugins">Plugins</RouterLink>
-        <RouterLink to="/media">Medien</RouterLink>
-        <RouterLink v-if="canViewJobs" to="/jobs">Jobs</RouterLink>
-        <RouterLink v-if="canViewWebhooks" to="/webhooks">Webhooks</RouterLink>
-        <RouterLink to="/config">Konfiguration</RouterLink>
+        <RouterLink v-for="item in nav" :key="item.to" :to="item.to">{{ item.label }}</RouterLink>
       </nav>
     </aside>
     <div class="main">
@@ -30,25 +21,16 @@
 import { computed } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { useAuthStore } from '@/core/auth/authStore'
-import { hasPermission } from '@/core/auth/permissions'
+import { visibleNavItems } from './navigation'
 import UserMenu from '@/core/ui/UserMenu.vue'
 
 // Context rehydration on a hard reload is handled by the route guard
 // (authGuard), which runs and awaits /api/admin/context before this mounts.
 const ctx = useAuthStore().context
 
-// Tenant management is a feature-gated operator concern (BackendHostOptions
-// .EnableTenantManagementApi); surface the nav entry only to callers who can
-// actually read tenants. Hiding it is convenience, not a security boundary —
-// the API stays permission-gated server-side (ADR-014 §3.4).
-const canManageTenants = computed(() => hasPermission(ctx.value, 'tenant.read'))
-
-// Job monitoring is read-only and gated on job.read server-side; mirror that for
-// the nav affordance (hiding is convenience, not a security boundary).
-const canViewJobs = computed(() => hasPermission(ctx.value, 'job.read'))
-
-// Webhook management is gated on webhook.read server-side; mirror it for the nav.
-const canViewWebhooks = computed(() => hasPermission(ctx.value, 'webhook.read'))
+// The sidebar mirrors each target's server-side read gate; a scoped admin only
+// sees what they may open. Hiding is convenience, not a security boundary.
+const nav = computed(() => visibleNavItems(ctx.value))
 </script>
 
 <style scoped lang="scss">
