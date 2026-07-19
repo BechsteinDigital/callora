@@ -50,6 +50,49 @@ export interface WorkspaceMembersPage {
 
 export const MEMBERS_PAGE_SIZE = 50
 
+// Mirrors SurfaceApiResponse (Administration). A surface is a workspace's access/
+// output plane (ADR-014 §5). Id, timestamps are server-derived; template/theme are
+// carried here so an edit round-trips them (the PUT upsert is a full replace).
+export interface WorkspaceSurface {
+  id: string
+  workspaceKey: string
+  surfaceKey: string
+  displayName: string
+  surfaceType: string
+  publicBaseUrl: string | null
+  publicHost: string | null
+  publicPathPrefix: string
+  accessMode: string
+  locale: string | null
+  templatePluginId: string | null
+  templateVersion: string | null
+  themePluginId: string | null
+  themeVersion: string | null
+  isActive: boolean
+  createdAtUtc: string
+  updatedAtUtc: string
+}
+
+// The mutable slice sent on upsert (the surface key comes from the route). Mirrors
+// UpsertSurfaceApiRequest — the full field set, since PUT replaces the surface.
+export interface WorkspaceSurfaceUpsert {
+  displayName: string
+  surfaceType: string
+  publicBaseUrl: string | null
+  publicHost: string | null
+  publicPathPrefix: string
+  accessMode: string
+  locale: string | null
+  templatePluginId: string | null
+  templateVersion: string | null
+  themePluginId: string | null
+  themeVersion: string | null
+  isActive: boolean
+}
+
+// The backend SurfaceAccessMode enum (ADR-014 §5.2).
+export const SURFACE_ACCESS_MODES = ['Public', 'Authenticated', 'Mixed'] as const
+
 const basePath = '/api/workspaces'
 
 export const workspacesApi = {
@@ -98,6 +141,36 @@ export const workspacesApi = {
   async removeMember(workspaceKey: string, userId: string): Promise<void> {
     await unwrap(
       await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}/members/${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+      }),
+    )
+  },
+
+  // Surfaces are a workspace sub-resource (ADR-014 §5). The list returns full
+  // snapshots, so no separate GET-by-key is needed for the admin UI.
+  async listSurfaces(workspaceKey: string): Promise<WorkspaceSurface[]> {
+    return (await unwrap(await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}/surfaces`))).json()
+  },
+
+  // Create and edit share the PUT upsert route (keyed by surfaceKey).
+  async upsertSurface(
+    workspaceKey: string,
+    surfaceKey: string,
+    data: WorkspaceSurfaceUpsert,
+  ): Promise<WorkspaceSurface> {
+    return (
+      await unwrap(
+        await apiFetch(
+          `${basePath}/${encodeURIComponent(workspaceKey)}/surfaces/${encodeURIComponent(surfaceKey)}`,
+          jsonInit('PUT', data),
+        ),
+      )
+    ).json()
+  },
+
+  async removeSurface(workspaceKey: string, surfaceKey: string): Promise<void> {
+    await unwrap(
+      await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}/surfaces/${encodeURIComponent(surfaceKey)}`, {
         method: 'DELETE',
       }),
     )

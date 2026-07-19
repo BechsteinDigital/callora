@@ -38,6 +38,7 @@
     </form>
 
     <WorkspaceMembers v-if="isEdit && loaded" :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
+    <WorkspaceSurfaces v-if="isEdit && loaded" :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
   </section>
 </template>
 
@@ -50,6 +51,7 @@ import { hasPermission } from '@/core/auth/permissions'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import WorkspaceMembers from './WorkspaceMembers.vue'
+import WorkspaceSurfaces from './WorkspaceSurfaces.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'

@@ -13,9 +13,10 @@ const { getMock, upsertMock, pushMock, routeParams } = vi.hoisted(() => ({
 }))
 
 vi.mock('./workspacesApi', () => ({ workspacesApi: { get: getMock, upsert: upsertMock } }))
-// The members sub-resource is covered by WorkspaceMembers.test.ts; stub it here so
+// The members and surfaces sub-resources have their own tests; stub them here so
 // the detail-view tests stay focused on the workspace fields.
-vi.mock('./WorkspaceMembers', () => ({ default: { name: 'WorkspaceMembers', template: '<div />' } }))
+vi.mock('./WorkspaceMembers.vue', () => ({ default: { name: 'WorkspaceMembers', template: '<div />' } }))
+vi.mock('./WorkspaceSurfaces.vue', () => ({ default: { name: 'WorkspaceSurfaces', template: '<div />' } }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: { value: null } }) }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: routeParams.value }),

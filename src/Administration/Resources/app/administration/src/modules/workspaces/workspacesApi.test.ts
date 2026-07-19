@@ -89,4 +89,44 @@ describe('workspacesApi', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/members/a%20b')
     expect(fetchMock.mock.calls[0][1].method).toBe('DELETE')
   })
+
+  it('lists surfaces from the workspace sub-resource', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(respond([{ surfaceKey: 'default', displayName: 'Default' }]))
+    globalThis.fetch = fetchMock
+    const list = await workspacesApi.listSurfaces('acme')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/surfaces')
+    expect(list[0].surfaceKey).toBe('default')
+  })
+
+  it('upserts a surface via PUT with the full field set and an encoded key', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(respond({ surfaceKey: 'portal' }))
+    globalThis.fetch = fetchMock
+    await workspacesApi.upsertSurface('acme', 'a b', {
+      displayName: 'Portal',
+      surfaceType: 'spa',
+      publicBaseUrl: null,
+      publicHost: 'portal.example.de',
+      publicPathPrefix: '/',
+      accessMode: 'Authenticated',
+      locale: 'de',
+      templatePluginId: null,
+      templateVersion: null,
+      themePluginId: 'customer.theme',
+      themeVersion: '1.0.0',
+      isActive: true,
+    })
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/surfaces/a%20b')
+    expect(fetchMock.mock.calls[0][1].method).toBe('PUT')
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string)
+    expect(body.accessMode).toBe('Authenticated')
+    expect(body.themePluginId).toBe('customer.theme') // carried theme survives the round-trip
+  })
+
+  it('removes a surface via DELETE with an encoded key', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(respond(null, 204))
+    globalThis.fetch = fetchMock
+    await workspacesApi.removeSurface('acme', 'a b')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/surfaces/a%20b')
+    expect(fetchMock.mock.calls[0][1].method).toBe('DELETE')
+  })
 })
