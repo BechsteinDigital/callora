@@ -82,4 +82,16 @@ describe('workspaceContext', () => {
 
     expect(listMock).toHaveBeenCalledTimes(1)
   })
+
+  it('does not cache a failed load, allowing a later retry', async () => {
+    contextRef.value = ctx(null)
+    listMock.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce([{ workspaceKey: 'wsA', displayName: 'A' }])
+    const { activeWorkspace, ensure } = useWorkspaceContext()
+
+    await expect(ensure()).rejects.toThrow('offline')
+    await ensure() // retries because the rejected promise was not cached
+
+    expect(listMock).toHaveBeenCalledTimes(2)
+    expect(activeWorkspace.value).toBe('wsA')
+  })
 })
