@@ -34,12 +34,22 @@ public sealed class ManifestSignaturePluginPackageVerifierTests
             PluginSignatureManifestSerializer.SerializeToFileJson(unsigned with { Signature = signature }));
     }
 
-    private static ManifestSignaturePluginPackageVerifier Verifier(ECDsa? trustedKey, bool allowUnsigned = false)
+    private static ManifestSignaturePluginPackageVerifier Verifier(
+        ECDsa? trustedKey,
+        bool allowUnsigned = false,
+        string[]? revokedFingerprints = null,
+        string[]? revokedContentHashes = null)
     {
         var signers = trustedKey is null
             ? Array.Empty<BackendTrustedSignerOptions>()
             : [new BackendTrustedSignerOptions { PublisherId = "callora", DisplayName = "Callora", PublicKey = trustedKey.ExportSubjectPublicKeyInfoPem() }];
-        var options = new BackendHostOptions { AllowUnsignedPlugins = allowUnsigned, TrustedSigners = signers };
+        var options = new BackendHostOptions
+        {
+            AllowUnsignedPlugins = allowUnsigned,
+            TrustedSigners = signers,
+            RevokedSignerFingerprints = revokedFingerprints ?? [],
+            RevokedContentHashes = revokedContentHashes ?? [],
+        };
         return new ManifestSignaturePluginPackageVerifier(new ConfiguredPluginSignatureTrustStore(options), options);
     }
 
@@ -196,6 +206,72 @@ public sealed class ManifestSignaturePluginPackageVerifierTests
 
             Assert.False(result.IsValid);
             Assert.Equal(PluginPackageSignatureErrorCodes.InvalidSignature, result.ErrorCode);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Verify_Rejects_ARevokedSigner_EvenWhenTrusted()
+    {
+        var dir = CreatePluginDir();
+        try
+        {
+            using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            WriteSignature(dir, key);
+            var fingerprint = PluginSignatureCryptography.ComputeFingerprint(key);
+
+            // Signer is trusted AND revoked — revocation wins.
+            var result = await Verifier(key, revokedFingerprints: [fingerprint]).VerifyAsync(Assembly(dir));
+
+            Assert.False(result.IsValid);
+            Assert.Equal(PluginPackageSignatureErrorCodes.Revoked, result.ErrorCode);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Verify_Rejects_ARevokedContentHash_EvenForASignedTrustedPlugin()
+    {
+        var dir = CreatePluginDir();
+        try
+        {
+            using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            WriteSignature(dir, key);
+            var assemblyHash = PluginContentHasher.HashFile(Assembly(dir));
+
+            // Signed by a trusted signer, but this exact build is revoked — revocation wins.
+            var result = await Verifier(key, revokedContentHashes: [assemblyHash]).VerifyAsync(Assembly(dir));
+
+            Assert.False(result.IsValid);
+            Assert.Equal(PluginPackageSignatureErrorCodes.Revoked, result.ErrorCode);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Verify_Rejects_ARevokedContentHash_EvenWhenUnsignedIsAllowed()
+    {
+        var dir = CreatePluginDir();
+        try
+        {
+            var assemblyHash = PluginContentHasher.HashFile(Assembly(dir));
+
+            // Unsigned + AllowUnsignedPlugins would normally pass, but this exact build
+            // is revoked by its content hash.
+            var result = await Verifier(trustedKey: null, allowUnsigned: true, revokedContentHashes: [assemblyHash])
+                .VerifyAsync(Assembly(dir));
+
+            Assert.False(result.IsValid);
+            Assert.Equal(PluginPackageSignatureErrorCodes.Revoked, result.ErrorCode);
         }
         finally
         {

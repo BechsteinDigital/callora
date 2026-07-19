@@ -19,6 +19,9 @@ public sealed class ManifestSignaturePluginPackageVerifier(
 {
     private const string SignatureFileName = "plugin.signature.json";
 
+    private readonly HashSet<string> _revokedFingerprints = NormalizeSet(options.RevokedSignerFingerprints);
+    private readonly HashSet<string> _revokedContentHashes = NormalizeSet(options.RevokedContentHashes);
+
     public async ValueTask<PluginPackageSignatureVerificationResult> VerifyAsync(
         string assemblyPath,
         CancellationToken cancellationToken = default)
@@ -34,6 +37,14 @@ public sealed class ManifestSignaturePluginPackageVerifier(
         if (string.IsNullOrWhiteSpace(pluginRoot))
         {
             return Invalid("Plugin root could not be resolved.", PluginPackageSignatureErrorCodes.InvalidSignature);
+        }
+
+        // Content-hash revocation applies regardless of signature — the way to kill a
+        // specific compromised build, including an otherwise-allowed unsigned one.
+        if (_revokedContentHashes.Count > 0 &&
+            _revokedContentHashes.Contains(Normalize(PluginContentHasher.HashFile(assemblyPath))))
+        {
+            return Invalid("Plugin package content hash is revoked.", PluginPackageSignatureErrorCodes.Revoked);
         }
 
         var signaturePath = Path.Combine(pluginRoot, SignatureFileName);
@@ -62,6 +73,12 @@ public sealed class ManifestSignaturePluginPackageVerifier(
             string.IsNullOrWhiteSpace(manifest.SignerFingerprint))
         {
             return Invalid("Plugin signature manifest is malformed.", PluginPackageSignatureErrorCodes.InvalidSignature);
+        }
+
+        // A revoked signer is rejected even if still in the trust store (compromised key).
+        if (_revokedFingerprints.Contains(Normalize(manifest.SignerFingerprint)))
+        {
+            return Invalid("Plugin package signer is revoked.", PluginPackageSignatureErrorCodes.Revoked, manifest.SignerFingerprint);
         }
 
         // The listed files must exist and hash to exactly what the manifest signed.
@@ -126,4 +143,10 @@ public sealed class ManifestSignaturePluginPackageVerifier(
 
     private static PluginPackageSignatureVerificationResult Invalid(string message, string errorCode, string? signerThumbprint = null) =>
         new(IsValid: false, ErrorMessage: message, ErrorCode: errorCode, SignerThumbprint: signerThumbprint);
+
+    private static HashSet<string> NormalizeSet(IEnumerable<string> values) =>
+        values.Select(Normalize).Where(x => !string.IsNullOrWhiteSpace(x)).ToHashSet(StringComparer.Ordinal);
+
+    private static string Normalize(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? string.Empty : value.Replace(" ", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
 }

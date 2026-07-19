@@ -22,6 +22,7 @@ public static class PluginLifecycleErrorCodes
     public const string PluginPackageSignatureInvalid = "PLUGIN_PACKAGE_SIGNATURE_INVALID";
     public const string PluginPackageSignerUntrusted = "PLUGIN_PACKAGE_SIGNER_UNTRUSTED";
     public const string PluginPackageContentHashMismatch = "PLUGIN_PACKAGE_CONTENT_HASH_MISMATCH";
+    public const string PluginPackageRevoked = "PLUGIN_PACKAGE_REVOKED";
     public const string PluginUpdateTargetNotFound = "PLUGIN_UPDATE_TARGET_NOT_FOUND";
     public const string PluginRollbackFailed = "PLUGIN_ROLLBACK_FAILED";
     public const string PluginRequiredCapabilityMissing = "PLUGIN_REQUIRED_CAPABILITY_MISSING";
