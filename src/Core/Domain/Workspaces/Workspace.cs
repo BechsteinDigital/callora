@@ -35,4 +35,6 @@ public sealed class Workspace
     public Domain.Tenants.Tenant Tenant { get; set; } = null!;
 
     public ICollection<WorkspaceMembership> Memberships { get; set; } = new List<WorkspaceMembership>();
+
+    public ICollection<WorkspaceSurface> Surfaces { get; set; } = new List<WorkspaceSurface>();
 }
