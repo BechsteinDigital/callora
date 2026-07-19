@@ -58,6 +58,35 @@ public sealed class BundleTemplateLoaderTests : IDisposable
     }
 
     [Fact]
+    public void Render_NestedSubfolder_LoadsLegitimately()
+    {
+        var layouts = Path.Combine(_bundleRoot, "layouts");
+        Directory.CreateDirectory(layouts);
+        File.WriteAllText(Path.Combine(layouts, "base.html"), "BASE {{ surface.key }}");
+        var renderer = RendererWith(("acme", _bundleRoot));
+
+        var html = renderer.Render("{{ include '@acme/layouts/base.html' }}", Context(), ["acme"]);
+
+        Assert.Equal("BASE default", html);
+    }
+
+    [Fact]
+    public void Render_PrefixCollisionSiblingRoot_IsRejected()
+    {
+        // A sibling directory whose name shares the bundle-root prefix must NOT be
+        // reachable — the containment check appends a separator to reject this.
+        var evil = _bundleRoot + "-evil";
+        Directory.CreateDirectory(evil);
+        File.WriteAllText(Path.Combine(evil, "x.html"), "EVIL");
+        var renderer = RendererWith(("acme", _bundleRoot));
+
+        var ex = Assert.Throws<SurfaceTemplateException>(
+            () => renderer.Render("{{ include '@acme/../bundle-evil/x.html' }}", Context(), ["acme"]));
+
+        Assert.DoesNotContain("EVIL", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Render_AbsolutePathEscape_IsRejected()
     {
         var renderer = RendererWith(("acme", _bundleRoot));

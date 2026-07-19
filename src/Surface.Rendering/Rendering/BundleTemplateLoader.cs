@@ -81,6 +81,11 @@ internal sealed class BundleTemplateLoader : ITemplateLoader
         return await File.ReadAllTextAsync(templatePath).ConfigureAwait(false);
     }
 
+    // DECISION: containment is textual (GetFullPath normalises '..' but does not
+    // resolve symlinks). A symlink INSIDE a bundle root that points outside would
+    // pass this check — an accepted residual boundary under the curated/self-hosted
+    // trust model (ADR-013: bundle content is not an untrusted third-party upload).
+    // Harden with real-path resolution before accepting bundles from untrusted sources.
     private static bool IsUnderRoot(string rootFullPath, string candidateFullPath)
     {
         var normalizedRoot = rootFullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
