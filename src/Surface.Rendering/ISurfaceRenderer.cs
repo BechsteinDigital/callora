@@ -1,8 +1,8 @@
 namespace Callora.Surface.Rendering;
 
 /// <summary>
-/// Renders one surface template to HTML inside the hardened Scriban sandbox
-/// (ADR-015 §7/§8). The template sees only the allowlisted
+/// Renders one surface template to HTML inside the hardened Nunjucks-on-Jint
+/// sandbox (ADR-015 §7/§8 rev.). The template sees only the allowlisted
 /// <see cref="SurfaceRenderContext"/>; failures surface as
 /// <see cref="SurfaceTemplateException"/>.
 /// </summary>

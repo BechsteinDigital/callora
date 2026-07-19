@@ -13,7 +13,7 @@
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
-    <Description>Callora surface rendering: the server-side SSR template layer (Scriban, hardened sandbox) that renders surface bundles to HTML (ADR-015).</Description>
+    <Description>Callora surface rendering: the server-side SSR template layer (Nunjucks on a hardened Jint sandbox) that renders surface bundles to HTML (ADR-015).</Description>
   </PropertyGroup>
 
   <ItemGroup>
