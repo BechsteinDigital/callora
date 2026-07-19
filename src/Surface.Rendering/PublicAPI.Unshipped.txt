@@ -37,3 +37,8 @@ static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.AddCalloraSur
 static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.MapCalloraSurfaceRendering(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
 static Callora.Surface.Rendering.SurfaceRenderContext.operator !=(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
 static Callora.Surface.Rendering.SurfaceRenderContext.operator ==(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
+Callora.Surface.Rendering.ISurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
+Callora.Surface.Rendering.ISurfaceTemplateBundleProvider
+Callora.Surface.Rendering.ISurfaceTemplateBundleProvider.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
+Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
+Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer.ScribanSurfaceRenderer(Callora.Surface.Rendering.ISurfaceTemplateBundleProvider! bundleProvider) -> void

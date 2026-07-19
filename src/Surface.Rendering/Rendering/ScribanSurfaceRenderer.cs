@@ -16,7 +16,34 @@ public sealed class ScribanSurfaceRenderer : ISurfaceRenderer
     private const int TemplateRecursiveLimit = 50;
     private const int MaxOutputChars = 512 * 1024;
 
-    public string Render(string templateText, SurfaceRenderContext context)
+    private readonly ISurfaceTemplateBundleProvider? _bundleProvider;
+
+    public ScribanSurfaceRenderer()
+    {
+    }
+
+    /// <summary>Enables <c>@bundle/path</c> includes against the given provider.</summary>
+    public ScribanSurfaceRenderer(ISurfaceTemplateBundleProvider bundleProvider)
+    {
+        ArgumentNullException.ThrowIfNull(bundleProvider);
+        _bundleProvider = bundleProvider;
+    }
+
+    public string Render(string templateText, SurfaceRenderContext context) =>
+        RenderCore(templateText, context, templateLoader: null);
+
+    public string Render(string templateText, SurfaceRenderContext context, IReadOnlyList<string> bundleChain)
+    {
+        ArgumentNullException.ThrowIfNull(bundleChain);
+        // Includes stay off unless a provider is configured AND the surface resolved
+        // to a bundle chain — otherwise there is no in-scope bundle to load from.
+        var loader = _bundleProvider is not null && bundleChain.Count > 0
+            ? new BundleTemplateLoader(_bundleProvider, bundleChain)
+            : null;
+        return RenderCore(templateText, context, loader);
+    }
+
+    private static string RenderCore(string templateText, SurfaceRenderContext context, ITemplateLoader? templateLoader)
     {
         ArgumentNullException.ThrowIfNull(templateText);
         ArgumentNullException.ThrowIfNull(context);
@@ -38,6 +65,8 @@ public sealed class ScribanSurfaceRenderer : ISurfaceRenderer
             // Deny every CLR member: the model below is strings + ScriptObjects, so
             // nothing legitimate needs reflection and nothing can reach a .NET type.
             MemberFilter = static _ => false,
+            // Absent a loader, include/import have no source at all (E1 default).
+            TemplateLoader = templateLoader,
         };
         templateContext.PushGlobal(BuildAllowlistedModel(context));
 
