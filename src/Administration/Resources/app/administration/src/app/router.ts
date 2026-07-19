@@ -27,6 +27,7 @@ export const router = createRouter({
         { path: 'workspaces/new', component: () => import('@/modules/workspaces/WorkspaceDetailView.vue') },
         { path: 'workspaces/:workspaceKey', component: () => import('@/modules/workspaces/WorkspaceDetailView.vue') },
         { path: 'tenants', component: () => import('@/modules/tenants/TenantsListView.vue') },
+        { path: 'flows', component: () => import('@/modules/flows/FlowsListView.vue') },
         { path: 'jobs', component: () => import('@/modules/jobs/JobsListView.vue') },
         { path: 'webhooks', component: () => import('@/modules/webhooks/WebhooksListView.vue') },
         { path: 'config', component: () => import('@/modules/config/SystemConfigView.vue') },
