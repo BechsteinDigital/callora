@@ -12,11 +12,11 @@ namespace Callora.Surface.Rendering;
 /// </summary>
 public static class CalloraSurfaceRenderingExtensions
 {
-    /// <summary>Registers the hardened Scriban renderer.</summary>
+    /// <summary>Registers the hardened Nunjucks-on-Jint renderer.</summary>
     public static IServiceCollection AddCalloraSurfaceRendering(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
-        services.AddSingleton<ISurfaceRenderer, ScribanSurfaceRenderer>();
+        services.AddSingleton<ISurfaceRenderer, NunjucksSurfaceRenderer>();
         return services;
     }
 
