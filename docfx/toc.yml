@@ -1,5 +1,13 @@
 - name: Home
   href: index.md
+- name: User Guide
+  href: user-guide/toc.yml
+- name: Developer Guide
+  href: developer-guide/toc.yml
 - name: API Reference
+  href: api-reference/toc.yml
+- name: .NET API
   href: api/
   homepage: api/index.md
+- name: Maintainer Guide
+  href: maintainer-guide/toc.yml

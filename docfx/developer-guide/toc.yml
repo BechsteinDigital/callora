@@ -1,0 +1,16 @@
+- name: Overview
+  href: index.md
+- name: Architecture
+  href: architecture.md
+- name: Plugin Development
+  href: plugin-development.md
+- name: Backend Extensions
+  href: backend-extensions.md
+- name: Admin & Surface Extensions
+  href: admin-extensions.md
+- name: Capabilities & Entitlements
+  href: capabilities.md
+- name: Events & Jobs
+  href: events-and-jobs.md
+- name: Testing & Publishing
+  href: testing-and-publishing.md

@@ -27,7 +27,14 @@
         "files": [ "api/**.yml", "api/index.md" ]
       },
       {
-        "files": [ "*.md", "toc.yml" ]
+        "files": [
+          "*.md",
+          "toc.yml",
+          "user-guide/**/*.md", "user-guide/**/*.yml",
+          "developer-guide/**/*.md", "developer-guide/**/*.yml",
+          "api-reference/**/*.md", "api-reference/**/*.yml",
+          "maintainer-guide/**/*.md", "maintainer-guide/**/*.yml"
+        ]
       }
     ],
     "resource": [
