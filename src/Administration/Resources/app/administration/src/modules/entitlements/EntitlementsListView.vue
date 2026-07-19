@@ -125,7 +125,7 @@ async function setEntitlement(verb: string, input: SetEntitlementInput): Promise
 
 async function grant(): Promise<void> {
   const pluginId = form.pluginId.trim()
-  if (!pluginId) {
+  if (!pluginId || granting.value) {
     return
   }
   error.value = null
