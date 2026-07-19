@@ -22,6 +22,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Berechtigungen', to: '/entitlements', permission: 'plugin.read' },
   { label: 'Medien', to: '/media', permission: 'media.read' },
   { label: 'Flows', to: '/flows', permission: 'flow.read' },
+  { label: 'Themes', to: '/themes', permission: 'extension.read' },
   { label: 'Jobs', to: '/jobs', permission: 'job.read' },
   { label: 'Webhooks', to: '/webhooks', permission: 'webhook.read' },
   { label: 'Konfiguration', to: '/config', permission: 'config.read' },
