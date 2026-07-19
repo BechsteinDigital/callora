@@ -1134,6 +1134,18 @@ Callora.Core.Application.Mail.MailSendJobHandler.MailSendJobHandler(Callora.Core
 Callora.Core.Application.Mail.MailTemplateRenderer
 Callora.Core.Application.Media.Contracts.IMediaLibrary
 Callora.Core.Application.Media.Contracts.IMediaLibrary.ListAsync(string! workspaceKey, string? folder = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Media.Contracts.MediaAssetInfo!>!>!
+Callora.Core.Application.Media.Events.MediaBusinessEvent
+Callora.Core.Application.Media.Events.MediaBusinessEvent.EventName.get -> string!
+Callora.Core.Application.Media.Events.MediaBusinessEvent.ToEventData() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Core.Application.Media.Events.MediaBusinessEvent.WorkspaceKey.get -> string?
+Callora.Core.Application.Media.Events.MediaBusinessEventProvider
+Callora.Core.Application.Media.Events.MediaBusinessEventProvider.GetDescriptors() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Events.Contracts.BusinessEventDescriptor!>!
+Callora.Core.Application.Media.Events.MediaBusinessEventProvider.MediaBusinessEventProvider() -> void
+Callora.Core.Application.Media.Events.MediaEventTypes
+const Callora.Core.Application.Media.Events.MediaEventTypes.Deleted = "media.deleted" -> string!
+const Callora.Core.Application.Media.Events.MediaEventTypes.Uploaded = "media.uploaded" -> string!
+static Callora.Core.Application.Media.Events.MediaBusinessEvent.Deleted(Callora.Core.Application.Media.MediaItemSnapshot! item) -> Callora.Core.Application.Media.Events.MediaBusinessEvent!
+static Callora.Core.Application.Media.Events.MediaBusinessEvent.Uploaded(Callora.Core.Application.Media.MediaItemSnapshot! item) -> Callora.Core.Application.Media.Events.MediaBusinessEvent!
 Callora.Core.Application.Media.Contracts.IMediaLibrary.OpenReadAsync(System.Guid mediaId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.IO.Stream?>!
 Callora.Core.Application.Media.Contracts.MediaAssetInfo
 Callora.Core.Application.Media.Contracts.MediaAssetInfo.<Clone>$() -> Callora.Core.Application.Media.Contracts.MediaAssetInfo!
