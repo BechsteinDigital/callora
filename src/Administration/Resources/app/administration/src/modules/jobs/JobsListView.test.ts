@@ -43,13 +43,16 @@ describe('JobsListView', () => {
     expect(text).toContain('acme')
   })
 
-  it('renders an em dash for a platform job without a workspace and no error', async () => {
+  it('renders an em dash in the workspace, completed and error cells when those are null', async () => {
     listMock.mockResolvedValueOnce([job({ workspaceKey: null, completedAtUtc: null, lastError: null })])
     const wrapper = mount(JobsListView)
     await flushPromises()
 
-    // workspace column and error column both fall back to the em dash.
-    expect(wrapper.text()).toContain('—')
+    // Columns: Typ | Status | Workspace | Versuche | Erstellt | Abgeschlossen | Fehler
+    const cells = wrapper.findAll('tbody td')
+    expect(cells[2].text()).toBe('—') // workspace
+    expect(cells[5].text()).toBe('—') // completed
+    expect(cells[6].text()).toBe('—') // last error
   })
 
   it('reloads on the refresh action', async () => {

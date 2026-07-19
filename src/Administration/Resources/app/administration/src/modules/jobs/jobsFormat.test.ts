@@ -16,21 +16,21 @@ describe('formatTimestamp', () => {
   })
 })
 
+// Anchored to the real BackgroundJobStatus enum: Pending / Running / Succeeded / Failed.
 describe('statusTone', () => {
-  it('maps failure-like statuses to danger', () => {
+  it('maps the real Failed status (and related wordings) to danger', () => {
     expect(statusTone('Failed')).toBe('danger')
-    expect(statusTone('Dead')).toBe('danger')
     expect(statusTone('Errored')).toBe('danger')
   })
 
-  it('maps completion-like statuses to success', () => {
+  it('maps the real Succeeded status (and related wordings) to success', () => {
+    expect(statusTone('Succeeded')).toBe('success') // the actual terminal success value
     expect(statusTone('Completed')).toBe('success')
     expect(statusTone('done')).toBe('success')
   })
 
-  it('maps everything else to neutral', () => {
+  it('maps the real in-flight statuses to neutral', () => {
     expect(statusTone('Pending')).toBe('neutral')
     expect(statusTone('Running')).toBe('neutral')
-    expect(statusTone('Scheduled')).toBe('neutral')
   })
 })
