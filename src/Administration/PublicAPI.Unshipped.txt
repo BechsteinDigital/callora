@@ -1004,3 +1004,47 @@ static Callora.Administration.Api.SurfaceApiResponse.operator ==(Callora.Adminis
 static Callora.Administration.Api.SurfaceEndpoints.MapSurfaceEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.UpsertSurfaceApiRequest.operator !=(Callora.Administration.Api.UpsertSurfaceApiRequest? left, Callora.Administration.Api.UpsertSurfaceApiRequest? right) -> bool
 static Callora.Administration.Api.UpsertSurfaceApiRequest.operator ==(Callora.Administration.Api.UpsertSurfaceApiRequest? left, Callora.Administration.Api.UpsertSurfaceApiRequest? right) -> bool
+Callora.Administration.Api.EntitlementApiResponse
+Callora.Administration.Api.EntitlementApiResponse.<Clone>$() -> Callora.Administration.Api.EntitlementApiResponse!
+Callora.Administration.Api.EntitlementApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.EntitlementApiResponse.CreatedAtUtc.init -> void
+Callora.Administration.Api.EntitlementApiResponse.Deconstruct(out string! PluginId, out string? WorkspaceKey, out string? TenantKey, out bool IsEntitled, out string! Source, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.EntitlementApiResponse.EntitlementApiResponse(string! PluginId, string? WorkspaceKey, string? TenantKey, bool IsEntitled, string! Source, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.EntitlementApiResponse.Equals(Callora.Administration.Api.EntitlementApiResponse? other) -> bool
+Callora.Administration.Api.EntitlementApiResponse.IsEntitled.get -> bool
+Callora.Administration.Api.EntitlementApiResponse.IsEntitled.init -> void
+Callora.Administration.Api.EntitlementApiResponse.PluginId.get -> string!
+Callora.Administration.Api.EntitlementApiResponse.PluginId.init -> void
+Callora.Administration.Api.EntitlementApiResponse.Source.get -> string!
+Callora.Administration.Api.EntitlementApiResponse.Source.init -> void
+Callora.Administration.Api.EntitlementApiResponse.TenantKey.get -> string?
+Callora.Administration.Api.EntitlementApiResponse.TenantKey.init -> void
+Callora.Administration.Api.EntitlementApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.EntitlementApiResponse.UpdatedAtUtc.init -> void
+Callora.Administration.Api.EntitlementApiResponse.WorkspaceKey.get -> string?
+Callora.Administration.Api.EntitlementApiResponse.WorkspaceKey.init -> void
+Callora.Administration.Api.EntitlementManagementEndpoints
+Callora.Administration.Api.SetEntitlementApiRequest
+Callora.Administration.Api.SetEntitlementApiRequest.<Clone>$() -> Callora.Administration.Api.SetEntitlementApiRequest!
+Callora.Administration.Api.SetEntitlementApiRequest.Deconstruct(out string! PluginId, out string? WorkspaceKey, out string? TenantKey, out bool IsEntitled) -> void
+Callora.Administration.Api.SetEntitlementApiRequest.Equals(Callora.Administration.Api.SetEntitlementApiRequest? other) -> bool
+Callora.Administration.Api.SetEntitlementApiRequest.IsEntitled.get -> bool
+Callora.Administration.Api.SetEntitlementApiRequest.IsEntitled.init -> void
+Callora.Administration.Api.SetEntitlementApiRequest.PluginId.get -> string!
+Callora.Administration.Api.SetEntitlementApiRequest.PluginId.init -> void
+Callora.Administration.Api.SetEntitlementApiRequest.SetEntitlementApiRequest(string! PluginId, string? WorkspaceKey, string? TenantKey, bool IsEntitled) -> void
+Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.get -> string?
+Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.init -> void
+Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.get -> string?
+Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.init -> void
+override Callora.Administration.Api.EntitlementApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.EntitlementApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.EntitlementApiResponse.ToString() -> string!
+override Callora.Administration.Api.SetEntitlementApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.SetEntitlementApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.SetEntitlementApiRequest.ToString() -> string!
+static Callora.Administration.Api.EntitlementApiResponse.operator !=(Callora.Administration.Api.EntitlementApiResponse? left, Callora.Administration.Api.EntitlementApiResponse? right) -> bool
+static Callora.Administration.Api.EntitlementApiResponse.operator ==(Callora.Administration.Api.EntitlementApiResponse? left, Callora.Administration.Api.EntitlementApiResponse? right) -> bool
+static Callora.Administration.Api.EntitlementManagementEndpoints.MapEntitlementManagementEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.SetEntitlementApiRequest.operator !=(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
+static Callora.Administration.Api.SetEntitlementApiRequest.operator ==(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool

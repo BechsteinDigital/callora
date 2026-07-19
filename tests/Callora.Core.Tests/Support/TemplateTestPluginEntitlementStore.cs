@@ -81,6 +81,17 @@ internal sealed class TemplateTestPluginEntitlementStore : IPluginEntitlementSto
         return ValueTask.CompletedTask;
     }
 
+    public ValueTask<IReadOnlyList<PluginEntitlementSnapshot>> ListAsync(
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        IReadOnlyList<PluginEntitlementSnapshot> snapshot = _entitlements
+            .Select(kv => new PluginEntitlementSnapshot(
+                kv.Key, null, null, kv.Value, "test", default, default))
+            .ToList();
+        return ValueTask.FromResult(snapshot);
+    }
+
     private static string BuildKey(
         string pluginId,
         string? workspaceKey,

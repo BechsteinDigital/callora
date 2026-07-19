@@ -24,4 +24,9 @@ internal sealed class FailingPluginEntitlementStore : IPluginEntitlementStore
         string pluginId,
         CancellationToken cancellationToken = default) =>
         ValueTask.CompletedTask;
+
+    public ValueTask<IReadOnlyList<PluginEntitlementSnapshot>> ListAsync(
+        CancellationToken cancellationToken = default) =>
+        ValueTask.FromException<IReadOnlyList<PluginEntitlementSnapshot>>(
+            new InvalidOperationException("entitlement store down"));
 }

@@ -4645,3 +4645,30 @@ static Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.operator !=(Cal
 static Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.operator ==(Callora.Core.Application.Workspaces.WorkspaceSurfaceInput? left, Callora.Core.Application.Workspaces.WorkspaceSurfaceInput? right) -> bool
 static Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.operator !=(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot? left, Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot? right) -> bool
 static Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.operator ==(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot? left, Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot? right) -> bool
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.PluginEntitlementSnapshot(string! PluginId, string? WorkspaceKey, string? TenantKey, bool IsEntitled, string! Source, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.PluginId.get -> string!
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.PluginId.init -> void
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.WorkspaceKey.get -> string?
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.WorkspaceKey.init -> void
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.TenantKey.get -> string?
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.TenantKey.init -> void
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.IsEntitled.get -> bool
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.IsEntitled.init -> void
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.Source.get -> string!
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.Source.init -> void
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.CreatedAtUtc.get -> System.DateTimeOffset
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.CreatedAtUtc.init -> void
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.UpdatedAtUtc.get -> System.DateTimeOffset
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.UpdatedAtUtc.init -> void
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.Deconstruct(out string! PluginId, out string? WorkspaceKey, out string? TenantKey, out bool IsEntitled, out string! Source, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.Equals(Callora.Core.Application.Entitlements.PluginEntitlementSnapshot? other) -> bool
+Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.<Clone>$() -> Callora.Core.Application.Entitlements.PluginEntitlementSnapshot!
+override Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.ToString() -> string!
+override Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.GetHashCode() -> int
+override Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.Equals(object? obj) -> bool
+static Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.operator ==(Callora.Core.Application.Entitlements.PluginEntitlementSnapshot? left, Callora.Core.Application.Entitlements.PluginEntitlementSnapshot? right) -> bool
+static Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.operator !=(Callora.Core.Application.Entitlements.PluginEntitlementSnapshot? left, Callora.Core.Application.Entitlements.PluginEntitlementSnapshot? right) -> bool
+Callora.Core.Application.Entitlements.IPluginEntitlementStore.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Entitlements.PluginEntitlementSnapshot!>!>
+Callora.Core.Infrastructure.Persistence.EfPluginEntitlementStore.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Entitlements.PluginEntitlementSnapshot!>!>
+Callora.Core.Application.Entitlements.InMemoryPluginEntitlementStore.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Entitlements.PluginEntitlementSnapshot!>!>
