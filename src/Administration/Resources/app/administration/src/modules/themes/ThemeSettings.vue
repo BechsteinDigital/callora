@@ -53,7 +53,7 @@ const notice = ref<string | null>(null)
 const saving = ref(false)
 
 const activeFields = computed(() =>
-  fields.value.filter((f) => f.isActive).slice().sort((a, b) => a.sortOrder - b.sortOrder),
+  fields.value.filter((f) => f.isActive).sort((a, b) => a.sortOrder - b.sortOrder),
 )
 
 function hydrate(defs: ThemeSettingDefinition[], valuesByKey: Record<string, string>): void {
