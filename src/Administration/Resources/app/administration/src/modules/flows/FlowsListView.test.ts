@@ -5,6 +5,7 @@ import type { AdminContext } from '@/core/auth/adminContext'
 import type { Flow, FlowsPage } from './flowsApi'
 import { registerHook, resetHooks } from '@/core/extensions/hooks'
 import { resetServices } from '@/core/extensions/services'
+import { resetWorkspaceContext } from '@/core/workspace/workspaceContext'
 
 const { listMock, createMock, updateMock, removeMock, contextRef } = vi.hoisted(() => ({
   listMock: vi.fn(),
@@ -61,6 +62,7 @@ beforeEach(() => {
   removeMock.mockReset().mockResolvedValue(undefined)
   resetHooks()
   resetServices()
+  resetWorkspaceContext()
 })
 
 describe('FlowsListView', () => {

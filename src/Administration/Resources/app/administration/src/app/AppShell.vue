@@ -8,6 +8,7 @@
     </aside>
     <div class="main">
       <header class="topbar">
+        <WorkspaceSwitcher />
         <UserMenu :label="ctx?.displayName ?? ctx?.userId ?? 'Konto'" />
       </header>
       <main class="content">
@@ -23,6 +24,7 @@ import { RouterLink, RouterView } from 'vue-router'
 import { useAuthStore } from '@/core/auth/authStore'
 import { visibleNavItems } from './navigation'
 import UserMenu from '@/core/ui/UserMenu.vue'
+import WorkspaceSwitcher from '@/core/workspace/WorkspaceSwitcher.vue'
 
 // Context rehydration on a hard reload is handled by the route guard
 // (authGuard), which runs and awaits /api/admin/context before this mounts.
@@ -59,7 +61,9 @@ const nav = computed(() => visibleNavItems(ctx.value))
 
 .topbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--cal-space);
   padding: var(--cal-space) calc(var(--cal-space) * 2);
   border-bottom: 1px solid var(--cal-color-surface);
 }

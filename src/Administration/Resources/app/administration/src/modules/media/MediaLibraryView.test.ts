@@ -5,6 +5,7 @@ import type { AdminContext } from '@/core/auth/adminContext'
 import type { MediaItem } from './mediaApi'
 import { registerHook, resetHooks } from '@/core/extensions/hooks'
 import { resetServices } from '@/core/extensions/services'
+import { resetWorkspaceContext, useWorkspaceContext } from '@/core/workspace/workspaceContext'
 
 const { listMock, uploadMock, removeMock, listWorkspacesMock, contextRef } = vi.hoisted(() => ({
   listMock: vi.fn(),
@@ -67,6 +68,7 @@ beforeEach(() => {
   listWorkspacesMock.mockReset().mockResolvedValue([{ workspaceKey: 'wsA', displayName: 'A' }])
   resetHooks()
   resetServices()
+  resetWorkspaceContext()
 })
 
 describe('MediaLibraryView', () => {
@@ -81,13 +83,15 @@ describe('MediaLibraryView', () => {
     expect(wrapper.find('img').attributes('src')).toBe('/api/media/m1/content?workspaceKey=ws1')
   })
 
-  it('shows a workspace picker and lists its media for an operator', async () => {
+  it('lists media for the operator’s active workspace from the global context', async () => {
     contextRef.value = ctx(['*'], null)
     const wrapper = mount(MediaLibraryView)
     await flushPromises()
 
+    // The global context (not an in-view picker) loads the operator's workspaces
+    // and the view scopes to the active one.
     expect(listWorkspacesMock).toHaveBeenCalled()
-    expect(wrapper.find('select[name="workspace"]').exists()).toBe(true)
+    expect(wrapper.find('select[name="workspace"]').exists()).toBe(false)
     expect(listMock).toHaveBeenCalledWith('wsA')
   })
 
@@ -166,16 +170,17 @@ describe('MediaLibraryView', () => {
     expect(removeMock).not.toHaveBeenCalled()
   })
 
-  it('reloads media under the newly selected workspace', async () => {
+  it('reloads media when the global workspace switches', async () => {
     contextRef.value = ctx(['*'], null)
     listWorkspacesMock.mockResolvedValue([
       { workspaceKey: 'wsA', displayName: 'A' },
       { workspaceKey: 'wsB', displayName: 'B' },
     ])
-    const wrapper = mount(MediaLibraryView)
+    mount(MediaLibraryView)
     await flushPromises()
 
-    await wrapper.find('select[name="workspace"]').setValue('wsB')
+    // The topbar switcher writes the shared context; the view reacts.
+    useWorkspaceContext().setActive('wsB')
     await flushPromises()
 
     expect(listMock).toHaveBeenLastCalledWith('wsB')

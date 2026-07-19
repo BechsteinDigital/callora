@@ -7,18 +7,10 @@
       </div>
     </header>
 
-    <label v-if="showPicker && workspaces.length" class="ws-select">Workspace
-      <select v-model="selectedWorkspace" name="workspace" class="select" @change="onWorkspaceChange">
-        <option v-for="w in workspaces" :key="w.workspaceKey" :value="w.workspaceKey">
-          {{ w.displayName }} ({{ w.workspaceKey }})
-        </option>
-      </select>
-    </label>
-
     <p v-if="error" class="error">{{ error }}</p>
 
     <p v-if="loading">Lädt…</p>
-    <p v-else-if="!selectedWorkspace" class="empty">Kein Workspace ausgewählt.</p>
+    <p v-else-if="!activeWorkspace" class="empty">Kein Workspace ausgewählt.</p>
 
     <div v-else class="body">
       <table class="grid">
@@ -110,10 +102,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { flowsApi, type Flow, type UpsertFlowInput } from './flowsApi'
 import { parseJsonField, prettyJson } from './flowsFormat'
-import { workspacesApi, type Workspace } from '@/modules/workspaces/workspacesApi'
+import { useWorkspaceContext } from '@/core/workspace/workspaceContext'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import BaseButton from '@/core/ui/BaseButton.vue'
@@ -124,15 +116,14 @@ import { runHook } from '@/core/extensions/hooks'
 
 const ctx = useAuthStore().context
 const canManage = computed(() => hasPermission(ctx.value, 'flow.manage'))
-// A workspace-scoped admin manages their own workspace; an operator picks one.
-const fixedWorkspace = computed(() => ctx.value?.workspaceKey ?? null)
-const showPicker = computed(() => !fixedWorkspace.value)
+
+// The workspace comes from the global context (topbar switcher or the bound
+// admin's fixed workspace) — no per-view picker.
+const { activeWorkspace, ensure: ensureWorkspace } = useWorkspaceContext()
 
 // Resolve the flows service through the override registry: a plugin may replace it.
 const api = useService('flowsApi', flowsApi)
 
-const workspaces = ref<Workspace[]>([])
-const selectedWorkspace = ref('')
 const flows = ref<Flow[]>([])
 const loading = ref(true)
 const loadingMore = ref(false)
@@ -153,11 +144,11 @@ const form = reactive({
 })
 
 const canSubmit = computed(
-  () => selectedWorkspace.value !== '' && form.name.trim() !== '' && form.triggerEvent.trim() !== '',
+  () => activeWorkspace.value !== '' && form.name.trim() !== '' && form.triggerEvent.trim() !== '',
 )
 
 async function loadFlows(): Promise<void> {
-  if (!selectedWorkspace.value) {
+  if (!activeWorkspace.value) {
     flows.value = []
     loading.value = false
     return
@@ -165,7 +156,7 @@ async function loadFlows(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    const page = await api.list(selectedWorkspace.value)
+    const page = await api.list(activeWorkspace.value)
     flows.value = page.items
     total.value = page.total
     nextCursor.value = page.nextCursor
@@ -183,7 +174,7 @@ async function loadMore(): Promise<void> {
   loadingMore.value = true
   error.value = null
   try {
-    const page = await api.list(selectedWorkspace.value, nextCursor.value)
+    const page = await api.list(activeWorkspace.value, nextCursor.value)
     flows.value = [...flows.value, ...page.items]
     total.value = page.total
     nextCursor.value = page.nextCursor
@@ -192,11 +183,6 @@ async function loadMore(): Promise<void> {
   } finally {
     loadingMore.value = false
   }
-}
-
-async function onWorkspaceChange(): Promise<void> {
-  resetForm()
-  await loadFlows()
 }
 
 function resetForm(): void {
@@ -240,7 +226,7 @@ async function save(): Promise<void> {
     return
   }
 
-  const before = await runHook('flows.before-save', { workspaceKey: selectedWorkspace.value, isEdit: editingId.value !== null })
+  const before = await runHook('flows.before-save', { workspaceKey: activeWorkspace.value, isEdit: editingId.value !== null })
   if (before.canceled) {
     error.value = before.cancelReason ?? 'Speichern abgebrochen.'
     return
@@ -249,11 +235,11 @@ async function save(): Promise<void> {
   saving.value = true
   try {
     if (editingId.value) {
-      await api.update(selectedWorkspace.value, editingId.value, input)
+      await api.update(activeWorkspace.value, editingId.value, input)
     } else {
-      await api.create(selectedWorkspace.value, input)
+      await api.create(activeWorkspace.value, input)
     }
-    await runHook('flows.after-save', { workspaceKey: selectedWorkspace.value, name: input.name })
+    await runHook('flows.after-save', { workspaceKey: activeWorkspace.value, name: input.name })
     resetForm()
     await loadFlows()
   } catch (e) {
@@ -271,15 +257,15 @@ async function remove(flow: Flow): Promise<void> {
     return
   }
   error.value = null
-  const before = await runHook('flows.before-delete', { workspaceKey: selectedWorkspace.value, id: flow.id })
+  const before = await runHook('flows.before-delete', { workspaceKey: activeWorkspace.value, id: flow.id })
   if (before.canceled) {
     error.value = before.cancelReason ?? 'Löschen abgebrochen.'
     return
   }
   busyId.value = flow.id
   try {
-    await api.remove(selectedWorkspace.value, flow.id)
-    await runHook('flows.after-delete', { workspaceKey: selectedWorkspace.value, id: flow.id })
+    await api.remove(activeWorkspace.value, flow.id)
+    await runHook('flows.after-delete', { workspaceKey: activeWorkspace.value, id: flow.id })
     if (editingId.value === flow.id) {
       resetForm()
     }
@@ -291,20 +277,23 @@ async function remove(flow: Flow): Promise<void> {
   }
 }
 
-onMounted(async () => {
-  try {
-    if (fixedWorkspace.value) {
-      selectedWorkspace.value = fixedWorkspace.value
-    } else {
-      workspaces.value = await workspacesApi.list()
-      selectedWorkspace.value = workspaces.value[0]?.workspaceKey ?? ''
-    }
-  } catch (e) {
+// Reload whenever the active workspace resolves or the operator switches it (the
+// immediate run covers a fixed admin's initial load; the operator's first real
+// load comes when ensure() populates the selection below).
+watch(
+  activeWorkspace,
+  () => {
+    resetForm()
+    void loadFlows()
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
+  void ensureWorkspace().catch((e) => {
     error.value = (e as Error).message
     loading.value = false
-    return
-  }
-  await loadFlows()
+  })
 })
 </script>
 
@@ -326,16 +315,6 @@ onMounted(async () => {
   gap: var(--cal-space);
 }
 
-.ws-select {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--cal-color-muted);
-  margin-bottom: calc(var(--cal-space) * 1.5);
-  max-width: 360px;
-}
-
-.select,
 .num {
   padding: calc(var(--cal-space) * 1.25);
   border: 1px solid var(--cal-color-muted);
