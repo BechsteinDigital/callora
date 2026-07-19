@@ -34,6 +34,8 @@ public sealed class EntitlementManagementEndpointsTests
         Assert.Equal("acme.plugin", granted.PluginId);
         Assert.Equal("workspace-a", granted.WorkspaceKey);
         Assert.True(granted.IsEntitled);
+        // A direct operator grant is recorded as "manual" provenance.
+        Assert.Equal("manual", granted.Source);
     }
 
     [Fact]

@@ -45,6 +45,7 @@ internal sealed class TemplateTestPluginEntitlementStore : IPluginEntitlementSto
         bool isEntitled,
         string? workspaceKey = null,
         string? tenantKey = null,
+        string source = "manual",
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

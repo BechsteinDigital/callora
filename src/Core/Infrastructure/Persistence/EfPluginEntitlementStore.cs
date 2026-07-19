@@ -67,6 +67,7 @@ public sealed class EfPluginEntitlementStore(
         bool isEntitled,
         string? workspaceKey = null,
         string? tenantKey = null,
+        string source = "manual",
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(pluginId))
@@ -96,14 +97,17 @@ public sealed class EfPluginEntitlementStore(
                 TenantKey = normalizedTenantKey,
                 WorkspaceKey = normalizedWorkspaceKey,
                 IsEntitled = isEntitled,
-                Source = "marketplace",
+                Source = source,
                 CreatedAtUtc = nowUtc,
                 UpdatedAtUtc = nowUtc
             });
         }
         else
         {
+            // Last writer wins on provenance: an operator override of a marketplace
+            // grant (or vice-versa) records who set it last.
             row.IsEntitled = isEntitled;
+            row.Source = source;
             row.UpdatedAtUtc = nowUtc;
         }
 

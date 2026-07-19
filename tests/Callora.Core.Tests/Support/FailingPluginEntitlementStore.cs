@@ -17,6 +17,7 @@ internal sealed class FailingPluginEntitlementStore : IPluginEntitlementStore
         bool isEntitled,
         string? workspaceKey = null,
         string? tenantKey = null,
+        string source = "manual",
         CancellationToken cancellationToken = default) =>
         ValueTask.CompletedTask;
 
