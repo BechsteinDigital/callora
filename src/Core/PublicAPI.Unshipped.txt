@@ -2156,6 +2156,15 @@ const Callora.Core.Application.Workspaces.Events.WorkspaceEventTypes.Deleted = "
 const Callora.Core.Application.Workspaces.Events.WorkspaceEventTypes.Updated = "workspace.updated" -> string!
 static Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ForDeletion(Callora.Core.Application.Workspaces.WorkspaceSnapshot! workspace) -> Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent!
 static Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ForUpsert(Callora.Core.Application.Workspaces.WorkspaceSnapshot! workspace) -> Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent!
+Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent
+Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.EventName.get -> string!
+Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.ToEventData() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.WorkspaceKey.get -> string?
+Callora.Core.Application.Workspaces.Events.WorkspaceMemberEventTypes
+const Callora.Core.Application.Workspaces.Events.WorkspaceMemberEventTypes.Assigned = "workspace.member-assigned" -> string!
+const Callora.Core.Application.Workspaces.Events.WorkspaceMemberEventTypes.Removed = "workspace.member-removed" -> string!
+static Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.Assigned(Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot! member) -> Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent!
+static Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.Removed(string! workspaceKey, string! userId) -> Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent!
 Callora.Core.Application.Workspaces.IWorkspaceDataPurgeService
 Callora.Core.Application.Workspaces.IWorkspaceDataPurgeService.PurgeAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore

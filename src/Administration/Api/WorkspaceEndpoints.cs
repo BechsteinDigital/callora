@@ -176,6 +176,8 @@ public static class WorkspaceEndpoints
             UpsertWorkspaceMemberApiRequest request,
             BackendHostOptions hostOptions,
             IWorkspaceManagementStore workspaceStore,
+            IBusinessEventBus businessEventBus,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
@@ -194,9 +196,18 @@ public static class WorkspaceEndpoints
                 .UpsertMemberAsync(workspaceKey, userId, request.Role, cancellationToken)
                 .ConfigureAwait(false);
 
+            if (result.Status == WorkspaceMemberUpsertStatus.Ok && result.Member is not null)
+            {
+                await PublishAsync(
+                    businessEventBus,
+                    WorkspaceMemberBusinessEvent.Assigned(result.Member),
+                    loggerFactory,
+                    cancellationToken).ConfigureAwait(false);
+                return Results.Ok(ToResponse(result.Member));
+            }
+
             return result.Status switch
             {
-                WorkspaceMemberUpsertStatus.Ok when result.Member is not null => Results.Ok(ToResponse(result.Member)),
                 WorkspaceMemberUpsertStatus.WorkspaceNotFound => ApiProblems.NotFound($"Workspace '{workspaceKey}' not found."),
                 WorkspaceMemberUpsertStatus.UserNotFound => ApiProblems.NotFound($"User '{userId}' not found."),
                 _ => Results.BadRequest()
@@ -209,6 +220,8 @@ public static class WorkspaceEndpoints
             string userId,
             BackendHostOptions hostOptions,
             IWorkspaceManagementStore workspaceStore,
+            IBusinessEventBus businessEventBus,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
@@ -224,9 +237,18 @@ public static class WorkspaceEndpoints
             }
 
             var result = await workspaceStore.RemoveMemberAsync(workspaceKey, userId, cancellationToken).ConfigureAwait(false);
+            if (result.Status == WorkspaceMemberDeleteStatus.Deleted)
+            {
+                await PublishAsync(
+                    businessEventBus,
+                    WorkspaceMemberBusinessEvent.Removed(workspaceKey, userId),
+                    loggerFactory,
+                    cancellationToken).ConfigureAwait(false);
+                return Results.NoContent();
+            }
+
             return result.Status switch
             {
-                WorkspaceMemberDeleteStatus.Deleted => Results.NoContent(),
                 WorkspaceMemberDeleteStatus.WorkspaceNotFound => ApiProblems.NotFound($"Workspace '{workspaceKey}' not found."),
                 WorkspaceMemberDeleteStatus.UserNotFound => ApiProblems.NotFound($"User '{userId}' not found."),
                 WorkspaceMemberDeleteStatus.MembershipNotFound => ApiProblems.NotFound($"Membership '{workspaceKey}/{userId}' not found."),
