@@ -2862,6 +2862,7 @@ Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService.ClearPlu
 Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService.RegistryCustomFieldSyncService(Callora.Core.Application.CustomFields.ICustomFieldStore! store) -> void
 Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService.SyncFromAssemblyAsync(string! pluginId, string! version, string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.DependencyInjection.CalloraHostCompositionExtensions
+Callora.Core.Infrastructure.DependencyInjection.DecoratableServiceCollectionExtensions
 Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry
 Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleton(System.Type! serviceType, object! instance) -> void
 Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleton(System.Type! serviceType, System.Func<System.IServiceProvider!, object!>! implementationFactory) -> void
@@ -4136,6 +4137,7 @@ static Callora.Core.Infrastructure.Configuration.RegistryConfigSchemaSyncService
 static Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService.ParseCustomFields(string! pluginId, string! version, string! registryJson) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.CustomFields.CustomFieldDefinitionSnapshot!>!
 static Callora.Core.Infrastructure.DependencyInjection.CalloraHostCompositionExtensions.AddCalloraHost(this Microsoft.AspNetCore.Builder.WebApplicationBuilder! builder) -> Microsoft.AspNetCore.Builder.WebApplicationBuilder!
 static Callora.Core.Infrastructure.DependencyInjection.CalloraHostCompositionExtensions.MapCalloraHost(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
+static Callora.Core.Infrastructure.DependencyInjection.DecoratableServiceCollectionExtensions.AddDecoratableSingleton<TService, TImplementation>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.DependencyInjection.ServiceCollectionExtensions.AddCalloraHosting(Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry! services, System.Action<Callora.Core.Application.Options.CalloraHostingOptions!>? configure = null) -> void
 static Callora.Core.Infrastructure.Extensions.BackendExtensionPointCatalog.Build() -> System.Collections.Generic.IReadOnlyCollection<Callora.Core.Domain.Extensions.ExtensionPointDefinition!>!
 static Callora.Core.Infrastructure.Extensions.BackendExtensionPointCatalog.Version.get -> string!

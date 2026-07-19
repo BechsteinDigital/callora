@@ -201,14 +201,13 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton<Callora.Core.Application.Notifications.Contracts.INotificationPublisher, Callora.Core.Application.Notifications.ScopedNotificationPublisher>();
         // Dekorierbarer Host-Service (PLAT-266): Plugins können den Mailversand
         // umhüllen (z. B. Suppression-Listen, Provider-Wechsel), indem sie einen
-        // IServiceDecorator<IMailSender> exportieren. Der stabile Proxy komponiert
-        // die Kette pro Aufruf aus dem Live-Katalog (REV2 §9.2) statt sie beim
-        // ersten Resolve einzufrieren (statisches §9.1-Antipattern).
-        builder.Services.AddSingleton<Callora.Core.Infrastructure.Mail.SmtpMailSender>();
-        builder.Services.AddSingleton<Callora.Core.Application.Mail.Contracts.IMailSender>(sp =>
-            new Callora.Core.Infrastructure.Mail.DynamicallyDecoratedMailSender(
-                sp.GetRequiredService<Callora.Core.Infrastructure.Mail.SmtpMailSender>(),
-                sp.GetRequiredService<Callora.Core.Application.Plugins.ICalloraPluginCatalog>()));
+        // IServiceDecorator<IMailSender> exportieren. AddDecoratableSingleton registriert
+        // die Basis plus einen generischen Per-Call-Proxy, der die Kette pro Aufruf aus
+        // dem Live-Katalog komponiert (REV2 §9.2) statt sie beim ersten Resolve
+        // einzufrieren (statisches §9.1-Antipattern).
+        builder.Services.AddDecoratableSingleton<
+            Callora.Core.Application.Mail.Contracts.IMailSender,
+            Callora.Core.Infrastructure.Mail.SmtpMailSender>();
         builder.Services.AddScoped<Callora.Core.Application.Media.IMediaStore, EfMediaStore>();
         builder.Services.AddScoped<Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger>();
         builder.Services.AddScoped<Callora.Core.Application.Workspaces.IWorkspaceDataPurgeService, WorkspaceDataPurgeService>();
