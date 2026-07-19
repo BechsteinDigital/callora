@@ -136,6 +136,35 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             workspace.UpdatedAtUtc = nowUtc;
         }
 
+        // Keep the workspace's "default" surface in sync with its public route so
+        // surface-based resolution matches (anti-drift until the columns move onto
+        // surfaces entirely, ADR-014 §14).
+        var defaultSurface = await dbContext.WorkspaceSurfaces
+            .SingleOrDefaultAsync(
+                x => x.WorkspaceId == workspace.Id && x.SurfaceKey == "default",
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (defaultSurface is null)
+        {
+            defaultSurface = new WorkspaceSurface
+            {
+                Id = Guid.NewGuid(),
+                WorkspaceId = workspace.Id,
+                SurfaceKey = "default",
+                DisplayName = normalizedDisplayName,
+                SurfaceType = "spa",
+                AccessMode = SurfaceAccessMode.Mixed,
+                CreatedAtUtc = nowUtc,
+            };
+            dbContext.WorkspaceSurfaces.Add(defaultSurface);
+        }
+
+        defaultSurface.PublicBaseUrl = publicUrl.PublicBaseUrl;
+        defaultSurface.PublicHost = publicUrl.PublicHost;
+        defaultSurface.PublicPathPrefix = publicUrl.PublicPathPrefix;
+        defaultSurface.IsActive = isActive;
+        defaultSurface.UpdatedAtUtc = nowUtc;
+
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return new WorkspaceUpsertResult(WorkspaceUpsertStatus.Ok, ToSnapshot(workspace, tenant));
     }
@@ -146,23 +175,52 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         string? tenantKey = null,
         CancellationToken cancellationToken = default)
     {
-        var query = dbContext.Workspaces
+        // Public routing resolves through surfaces (ADR-014 §5/§14): a workspace's
+        // "default" surface mirrors its public route, so today's behaviour is preserved
+        // while additional surfaces route to the same workspace.
+        var query = dbContext.WorkspaceSurfaces
             .AsNoTracking()
-            .Include(x => x.Tenant)
+            .Include(x => x.Workspace)
+            .ThenInclude(w => w.Tenant)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(tenantKey))
         {
             var normalizedTenantKey = tenantKey.Trim();
-            query = query.Where(x => x.Tenant.TenantKey == normalizedTenantKey);
+            query = query.Where(x => x.Workspace.Tenant.TenantKey == normalizedTenantKey);
         }
 
-        var candidates = await query
-            .Select(ToSnapshotExpressionWithTenant())
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
+        var surfaces = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        return WorkspacePublicRouteMatcher.ResolveBest(candidates, requestHost, requestPath);
+        var normalizedHost = (requestHost ?? string.Empty).Trim().ToLowerInvariant();
+        var normalizedPath = PublicRouteMatching.NormalizePath(requestPath);
+
+        WorkspaceSurface? best = null;
+        var bestScore = int.MinValue;
+        foreach (var surface in surfaces)
+        {
+            if (!surface.IsActive || !surface.Workspace.IsActive || !surface.Workspace.Tenant.IsActive)
+            {
+                continue;
+            }
+
+            if (!PublicRouteMatching.HostMatches(surface.PublicHost, normalizedHost) ||
+                !PublicRouteMatching.PathMatches(surface.PublicPathPrefix, normalizedPath))
+            {
+                continue;
+            }
+
+            var score = PublicRouteMatching.Score(surface.PublicHost, surface.PublicPathPrefix);
+            if (score <= bestScore)
+            {
+                continue;
+            }
+
+            best = surface;
+            bestScore = score;
+        }
+
+        return best is null ? null : ToSnapshot(best.Workspace, best.Workspace.Tenant);
     }
 
     public async Task<bool> RemoveAsync(
