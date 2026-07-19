@@ -52,4 +52,23 @@ describe('themesApi', () => {
     globalThis.fetch = vi.fn().mockResolvedValueOnce(respond({ detail: 'No active workspace theme definitions.' }, 400))
     await expect(themesApi.assign('acme', 'x', '1')).rejects.toThrow('No active workspace theme definitions.')
   })
+
+  it('gets the theme settings for a workspace', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(respond({ workspaceKey: 'acme', hasAssignedTheme: true, fields: [], valuesByKey: {} }))
+    globalThis.fetch = fetchMock
+    const settings = await themesApi.getSettings('a b')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/themes/workspaces/a%20b/settings')
+    expect(settings.hasAssignedTheme).toBe(true)
+  })
+
+  it('saves the theme settings via PUT wrapping valuesByKey', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(respond({ workspaceKey: 'acme', hasAssignedTheme: true, fields: [], valuesByKey: {} }))
+    globalThis.fetch = fetchMock
+    await themesApi.saveSettings('acme', { primaryColor: '#fff', maxItems: 5 })
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/themes/workspaces/acme/settings')
+    expect(fetchMock.mock.calls[0][1].method).toBe('PUT')
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual({
+      valuesByKey: { primaryColor: '#fff', maxItems: 5 },
+    })
+  })
 })
