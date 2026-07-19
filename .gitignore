@@ -100,6 +100,9 @@ docfx/api/.manifest
 !.github/**/*.md
 # DocFX-Quellen (konzeptuelle Docs) gehören ins Repo.
 !docfx/**/*.md
+# VitePress-Doku-Site (konzeptuelle Docs) gehört ins Repo.
+!docs-site/**/*.md
+!docs-site/*.md
 # Verbindliche Entwicklungsregeln — Standard für Host und Plugins.
 !ENGINEERING_RULES.md
 !CODE_STRUCTURE_RULES.md

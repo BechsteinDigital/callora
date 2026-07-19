@@ -1,8 +1,0 @@
-- name: Overview
-  href: index.md
-- name: REST API
-  href: rest-api.md
-- name: .NET contracts
-  href: dotnet-contracts.md
-- name: Extension manifests
-  href: extension-manifests.md

@@ -1,30 +1,16 @@
-# Callora Documentation
+# Callora .NET API Reference
 
-Callora is an extensible voice, AI, and communication platform. The host is a
-pure platform — authentication and RBAC, user and plugin management, and a
-business-event bus — while everything domain-specific lives in plugins.
+This site hosts the generated **.NET API reference** for the Callora host platform and
+its first-party plugins — every public type, member, and XML-doc summary, produced by
+[DocFX](https://dotnet.github.io/docfx/) from the compiled assemblies.
 
-## Sections
+- **[Browse the .NET API](api/index.md)**
 
-- **[API Reference](api/index.md)** — generated from the XML documentation of
-  the host platform and the first-party plugins (VoIP, Dialer).
+## Looking for the guides?
 
-## Architecture at a glance
+The conceptual documentation — user, developer, reference, and maintainer guides — lives
+in the main **Callora documentation site** (built with VitePress, under `docs-site/`).
+Its Developer Guide links back into this reference for type-level detail.
 
-- **Host platform** (`src/Host`) — RBAC (SuperAdmin global, Admin per
-  workspace), plugin runtime on collectible assembly load contexts, the
-  business-event bus, and the dynamic plugin routing surface.
-- **Contracts** (`src/Contracts`, `src/Host/PluginContracts`) — the ASP.NET-free
-  boundary plugins build against.
-- **First-party plugins** (`custom/plugins`) — VoIP (the full call stack) and
-  Dialer, each with its own EF Core schema.
-
-## Extension points
-
-Plugins extend Callora through several mechanisms: business-event listeners,
-service decoration, plugin controllers with dynamic routing, and their own EF
-Core entities in an isolated `plugin_<id>` schema.
-
-> This documentation is generated with [DocFX](https://dotnet.github.io/docfx/).
-> Build it locally with `dotnet tool restore` followed by
-> `dotnet docfx docfx/docfx.json --serve`.
+> This reference is generated with [DocFX](https://dotnet.github.io/docfx/). Build it
+> locally with `dotnet tool restore` followed by `dotnet docfx docfx/docfx.json --serve`.

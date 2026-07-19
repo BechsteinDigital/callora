@@ -68,10 +68,10 @@ Fast tests run without external services (in-memory stores). Slow tests are tagg
 
 ## `docfx/`
 
-The DocFX site. `docfx/docfx.json` generates the [API Reference](../api/index.md)
-from the XML docs of `src/**/*.csproj` and `custom/plugins/**/*.csproj`
-(excluding tests and `bin`/`obj`). This maintainer guide lives in
-`docfx/maintainer-guide/`.
+The conceptual documentation site (this guide included) is built with **VitePress**
+under `docs-site/`. The **.NET API reference** is generated separately by DocFX
+(`docfx/docfx.json`, from the XML docs of `src/**/*.csproj` and
+`custom/plugins/**/*.csproj`, excluding tests and `bin`/`obj`) and served at `/api/`.
 
 ## Module boundaries and dependency direction
 

@@ -155,7 +155,7 @@ GET    /api/plugins/signature-report    # PluginRead — re-verifies all install
 
 Activate and deactivate happen **live, without a host restart**. Because each plugin owns a
 collectible ALC, activation loads its assembly on demand and deactivation unloads it (with
-the GC-verified check described in [Architecture](architecture.md#the-alc-based-plugin-runtime)).
+the GC-verified check described in [Architecture](../concepts/architecture.md#the-alc-based-plugin-runtime)).
 Newly exported event listeners and service decorators take effect on the **next** publish
 or the **next** call; plugin routes are added to and removed from the routing table on
 activation and deactivation. There is nothing to pin and nothing to restart.

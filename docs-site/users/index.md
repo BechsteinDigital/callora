@@ -6,7 +6,7 @@ and workspaces, install and activate plugins, enable communication features, and
 keep the platform healthy day to day.
 
 If you are building plugins, see the
-[API Reference](../api/index.md) instead; this guide does not cover plugin
+[API Reference](/api/) instead; this guide does not cover plugin
 development.
 
 ## What Callora is

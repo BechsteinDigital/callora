@@ -1,14 +1,14 @@
 # .NET contracts
 
 A plugin is a .NET assembly that builds against Callora's compiled boundary. The
-[.NET API reference](../api/index.md), generated from the platform's XML
+[.NET API reference](/api/), generated from the platform's XML
 documentation, is the authoritative catalogue of the public types and members. This
 page explains the *boundary* around that catalogue: what a plugin may and may not
 consume, and how the boundary is enforced at compile time.
 
 ## The generated reference
 
-Start at the [.NET API reference](../api/index.md). It lists every public type and
+Start at the [.NET API reference](/api/). It lists every public type and
 member with its documentation. The types a plugin author most needs live in the
 plugin-contract and communication namespaces — for example:
 
@@ -86,7 +86,7 @@ the rest of the public surface is open to plugins.
 
 1. Implement `ICalloraRuntimePlugin` and follow the lifecycle in
    `PLUGIN_CONTRACT_V1.md`.
-2. Look up the types you need in the [.NET API reference](../api/index.md).
+2. Look up the types you need in the [.NET API reference](/api/).
 3. Build against public types **not** marked `[CalloraInternal]`. If you
    accidentally reach for an internal one, `CAL0001`/`CAL0002` will stop the
    build.

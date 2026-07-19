@@ -21,7 +21,7 @@ plugins) or `custom/static-plugins` (bundled system plugins such as Communicatio
 
 This split is ADR-007. The
 practical consequence for you: you never edit the core to add a feature. You write a
-plugin and attach it through one of the [documented mechanisms](backend-extensions.md).
+plugin and attach it through one of the [documented mechanisms](../guides/backend-extensions.md).
 
 ## The three axes
 
@@ -134,7 +134,7 @@ present in `src/Core`, `src/Administration`, `src/Workspace`, and `src/Surface.R
 Adding or changing a public signature that is not recorded fails the build (`RS0016` /
 `RS0017`). This is the mechanism that makes "public core signatures are de-facto contracts"
 enforceable rather than aspirational. The workflow is in
-[Testing & Publishing](testing-and-publishing.md#the-publicapi-baseline-workflow).
+[Testing & Publishing](../guides/testing-and-publishing.md#the-publicapi-baseline-workflow).
 
 ## How this mirrors Shopware / Symfony
 
