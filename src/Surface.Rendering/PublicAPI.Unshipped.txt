@@ -45,3 +45,7 @@ Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.Render(string! templ
 Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider
 Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider.DirectorySurfaceTemplateBundleProvider(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! bundleRoots) -> void
 Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
+Callora.Surface.Rendering.PublishedSurfaceTemplateBundles
+Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.PublishedSurfaceTemplateBundles(Microsoft.AspNetCore.Hosting.IWebHostEnvironment! environment) -> void
+Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
+Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryReadEntryTemplate(string! bundleId) -> string?

@@ -12,10 +12,17 @@ namespace Callora.Surface.Rendering;
 /// </summary>
 public static class CalloraSurfaceRenderingExtensions
 {
-    /// <summary>Registers the hardened Nunjucks-on-Jint renderer.</summary>
+    /// <summary>
+    /// Registers the hardened Nunjucks-on-Jint renderer and the published-plugin bundle
+    /// source. Binding <see cref="ISurfaceTemplateBundleProvider"/> here enables the
+    /// renderer's include/extends resolution against installed template plugins' views.
+    /// </summary>
     public static IServiceCollection AddCalloraSurfaceRendering(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.AddSingleton<PublishedSurfaceTemplateBundles>();
+        services.AddSingleton<ISurfaceTemplateBundleProvider>(
+            sp => sp.GetRequiredService<PublishedSurfaceTemplateBundles>());
         services.AddSingleton<ISurfaceRenderer, NunjucksSurfaceRenderer>();
         return services;
     }
