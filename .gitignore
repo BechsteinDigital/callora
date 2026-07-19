@@ -118,5 +118,8 @@ src/Core/wwwroot/plugin-assets/
 # mit und bricht das NuGet-pack (NU5119). Baustein 1.
 src/Administration/wwwroot/admin/
 
+# Vom Surface-Runtime-Build (Vite) generiert (Resources/app/surface → wwwroot/surface-app).
+src/Surface.Rendering/wwwroot/surface-app/
+
 custom/plugins/*/node_modules/
 custom/static-plugins/*/node_modules/
