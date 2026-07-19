@@ -242,6 +242,8 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton<Callora.Core.Application.Events.Contracts.IBusinessEventBus>(
             sp => sp.GetRequiredService<Callora.Core.Application.Events.Business.BusinessEventBus>());
         builder.Services.AddSingleton<Callora.Core.Application.Events.Business.BusinessEventRegistry>();
+        builder.Services.AddSingleton<Callora.Core.Application.Events.Contracts.IBusinessEventProvider,
+            Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEventProvider>();
         builder.Services.AddSingleton<CachedWorkspaceTemplateResolutionService>();
         builder.Services.AddSingleton<IWorkspaceTemplateResolutionService>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());
         builder.Services.AddSingleton<IWorkspaceTemplateResolutionCache>(sp => sp.GetRequiredService<CachedWorkspaceTemplateResolutionService>());

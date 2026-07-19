@@ -2143,6 +2143,19 @@ Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.WebhookSubscriptio
 Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.WorkspaceKey.get -> string?
 Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.WorkspaceKey.init -> void
 Callora.Core.Application.Webhooks.WebhookTelemetry
+Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent
+Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.EventName.get -> string!
+Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ToEventData() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.WorkspaceKey.get -> string?
+Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEventProvider
+Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEventProvider.GetDescriptors() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Events.Contracts.BusinessEventDescriptor!>!
+Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEventProvider.WorkspaceBusinessEventProvider() -> void
+Callora.Core.Application.Workspaces.Events.WorkspaceEventTypes
+const Callora.Core.Application.Workspaces.Events.WorkspaceEventTypes.Created = "workspace.created" -> string!
+const Callora.Core.Application.Workspaces.Events.WorkspaceEventTypes.Deleted = "workspace.deleted" -> string!
+const Callora.Core.Application.Workspaces.Events.WorkspaceEventTypes.Updated = "workspace.updated" -> string!
+static Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ForDeletion(Callora.Core.Application.Workspaces.WorkspaceSnapshot! workspace) -> Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent!
+static Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ForUpsert(Callora.Core.Application.Workspaces.WorkspaceSnapshot! workspace) -> Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent!
 Callora.Core.Application.Workspaces.IWorkspaceDataPurgeService
 Callora.Core.Application.Workspaces.IWorkspaceDataPurgeService.PurgeAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore
