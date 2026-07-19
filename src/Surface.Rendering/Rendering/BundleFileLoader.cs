@@ -2,9 +2,9 @@ namespace Callora.Surface.Rendering.Rendering;
 
 /// <summary>
 /// Resolves and reads a <c>@bundle/path</c> template file for the JS engine's
-/// Nunjucks loader (ADR-015 §8). Confined exactly like the former Scriban loader:
-/// only bundles in scope resolve, and every path is canonicalised and verified to
-/// stay UNDER its bundle root — <c>../</c> and absolute paths are rejected.
+/// Nunjucks loader (ADR-015 §8). Confined access: only bundles in scope resolve,
+/// and every path is canonicalised and verified to stay UNDER its bundle root —
+/// <c>../</c> and absolute paths are rejected.
 /// Returns null when a name is malformed / out of scope / escapes / missing, so
 /// the JS loader turns it into a template error.
 /// </summary>
