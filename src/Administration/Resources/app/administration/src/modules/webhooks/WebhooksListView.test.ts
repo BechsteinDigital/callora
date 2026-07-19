@@ -104,6 +104,28 @@ describe('WebhooksListView', () => {
     expect(listMock).toHaveBeenCalledTimes(2) // initial + reload
   })
 
+  it('keeps the secret out of the before-create hook payload', async () => {
+    contextRef.value = ctx(['*'])
+    let seenPayload: Record<string, unknown> | null = null
+    registerHook('webhooks.before-create', (h) => {
+      seenPayload = h.payload as Record<string, unknown>
+    })
+    const wrapper = mount(WebhooksListView)
+    await flushPromises()
+
+    await wrapper.find('input[name="eventName"]').setValue('user.created')
+    await wrapper.find('input[name="targetUrl"]').setValue('https://x.example.de')
+    await wrapper.find('input[name="secret"]').setValue('topsecret')
+    await wrapper.find('form.create').trigger('submit')
+    await flushPromises()
+
+    // The hook sees the draft but never the raw signing secret…
+    expect(seenPayload).not.toBeNull()
+    expect(seenPayload!).not.toHaveProperty('secret')
+    // …while the API call still carries it.
+    expect(createMock.mock.calls[0][0].secret).toBe('topsecret')
+  })
+
   it('does not submit without event, url and secret', async () => {
     contextRef.value = ctx(['*'])
     const wrapper = mount(WebhooksListView)

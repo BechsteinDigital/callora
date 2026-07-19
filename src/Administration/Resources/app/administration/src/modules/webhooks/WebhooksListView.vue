@@ -168,10 +168,12 @@ async function create(): Promise<void> {
     return
   }
   error.value = null
+  // The secret is deliberately kept OUT of the hook payload — a plugin handler may
+  // enrich/veto the subscription, but must never see the raw signing secret. It is
+  // merged back in only for the API call.
   const draft = {
     eventName: form.eventName.trim(),
     targetUrl: form.targetUrl.trim(),
-    secret: form.secret,
     workspaceKey: form.workspaceKey.trim() || null,
     includeSensitiveData: form.includeSensitiveData,
   }
@@ -182,7 +184,7 @@ async function create(): Promise<void> {
   }
   creating.value = true
   try {
-    await api.create(draft)
+    await api.create({ ...draft, secret: form.secret })
     await runHook('webhooks.after-create', { eventName: draft.eventName })
     form.eventName = ''
     form.targetUrl = ''
