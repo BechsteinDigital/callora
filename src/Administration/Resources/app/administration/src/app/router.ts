@@ -25,6 +25,7 @@ export const router = createRouter({
         { path: 'workspaces', component: () => import('@/modules/workspaces/WorkspacesListView.vue') },
         { path: 'workspaces/new', component: () => import('@/modules/workspaces/WorkspaceDetailView.vue') },
         { path: 'workspaces/:workspaceKey', component: () => import('@/modules/workspaces/WorkspaceDetailView.vue') },
+        { path: 'tenants', component: () => import('@/modules/tenants/TenantsListView.vue') },
         { path: 'config', component: () => import('@/modules/config/SystemConfigView.vue') },
         { path: 'media', component: () => import('@/modules/media/MediaLibraryView.vue') },
       ],
