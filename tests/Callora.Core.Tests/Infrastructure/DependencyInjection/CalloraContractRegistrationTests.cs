@@ -27,7 +27,7 @@ public sealed class CalloraContractRegistrationTests
     [InlineData(typeof(IRuleConditionEvaluator), 4, ServiceLifetime.Singleton)]
     [InlineData(typeof(IFlowActionHandler), 3, ServiceLifetime.Singleton)]
     [InlineData(typeof(IBusinessEventListener), 2, ServiceLifetime.Singleton)]
-    [InlineData(typeof(IBusinessEventProvider), 2, ServiceLifetime.Singleton)]
+    [InlineData(typeof(IBusinessEventProvider), 3, ServiceLifetime.Singleton)]
     public void Registers_ExpectedCount_AndLifetime(Type contract, int expectedCount, ServiceLifetime lifetime)
     {
         var descriptors = Register().Where(descriptor => descriptor.ServiceType == contract).ToList();

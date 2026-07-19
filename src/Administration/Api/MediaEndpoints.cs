@@ -1,7 +1,10 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Media;
+using Callora.Core.Application.Media.Events;
 using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
+using Microsoft.Extensions.Logging;
 
 namespace Callora.Administration.Api;
 
@@ -39,6 +42,8 @@ public static class MediaEndpoints
         group.MapPost("/", async (
                 IMediaStore store,
                 IMediaStorage storage,
+                IBusinessEventBus businessEventBus,
+                ILoggerFactory loggerFactory,
                 HttpContext httpContext,
                 string workspaceKey,
                 string? folder,
@@ -66,6 +71,10 @@ public static class MediaEndpoints
 
                 await using var content = file.OpenReadStream();
                 await storage.WriteAsync(item.Id, content, cancellationToken);
+                await businessEventBus.PublishSafelyAsync(
+                    MediaBusinessEvent.Uploaded(item),
+                    loggerFactory,
+                    cancellationToken).ConfigureAwait(false);
                 return Results.Created($"/api/media/{item.Id}", item);
             })
             .RequirePermission(BackendPermissionKeys.MediaManage)
@@ -97,6 +106,8 @@ public static class MediaEndpoints
         group.MapDelete("/{id:guid}", async (
                 IMediaStore store,
                 IMediaStorage storage,
+                IBusinessEventBus businessEventBus,
+                ILoggerFactory loggerFactory,
                 Guid id,
                 string workspaceKey,
                 CancellationToken cancellationToken) =>
@@ -110,6 +121,10 @@ public static class MediaEndpoints
 
                 await store.DeleteAsync(id, cancellationToken);
                 await storage.DeleteAsync(id, cancellationToken);
+                await businessEventBus.PublishSafelyAsync(
+                    MediaBusinessEvent.Deleted(item),
+                    loggerFactory,
+                    cancellationToken).ConfigureAwait(false);
                 return Results.NoContent();
             })
             .RequirePermission(BackendPermissionKeys.MediaManage)
