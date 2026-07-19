@@ -46,6 +46,33 @@ public static class PluginEndpoints
         }).WithName("Plugins_InstalledList")
             .RequirePermission(BackendPermissionKeys.PluginRead);
 
+        group.MapGet("/signature-report", async (
+            [FromServices] IPluginLifecycleService lifecycleService,
+            [FromServices] IPluginPackageSignatureVerifier signatureVerifier,
+            CancellationToken cancellationToken) =>
+        {
+            // Re-verify each installed plugin so the admin sees its CURRENT signature
+            // standing (signed-trusted / unsigned / untrusted / revoked / hash-mismatch),
+            // not a value cached at install time.
+            var installations = await lifecycleService.GetInstallationsAsync(cancellationToken).ConfigureAwait(false);
+            var report = new List<PluginSignatureStatusApiResponse>(installations.Count);
+            foreach (var installation in installations)
+            {
+                var verification = await signatureVerifier
+                    .VerifyAsync(installation.AssemblyPath, cancellationToken)
+                    .ConfigureAwait(false);
+                report.Add(new PluginSignatureStatusApiResponse(
+                    installation.PluginId,
+                    PluginSignatureStateMapper.Map(verification),
+                    verification.SignerThumbprint));
+            }
+
+            return Results.Ok(report);
+        })
+            .WithName("Plugins_SignatureReport")
+            .WithSummary("Reports each installed plugin's current signature state")
+            .RequirePermission(BackendPermissionKeys.PluginRead);
+
         group.MapGet("/audit", async (
             int? take,
             IHostAuditStore auditStore,

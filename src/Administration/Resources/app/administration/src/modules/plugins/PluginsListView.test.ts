@@ -6,18 +6,27 @@ import type { PluginInstallation } from './pluginsApi'
 import { registerHook, resetHooks } from '@/core/extensions/hooks'
 import { registerService, resetServices } from '@/core/extensions/services'
 
-const { listMock, activateMock, deactivateMock, installLocalMock, uninstallMock, contextRef, uiLoadResultsRef } =
-  vi.hoisted(() => ({
-    listMock: vi.fn(),
-    activateMock: vi.fn(),
-    deactivateMock: vi.fn(),
-    installLocalMock: vi.fn(),
-    uninstallMock: vi.fn(),
-    contextRef: { value: null as AdminContext | null },
-    uiLoadResultsRef: {
-      value: [] as Array<{ pluginId: string; url: string; status: string; detail?: string }>,
-    },
-  }))
+const {
+  listMock,
+  activateMock,
+  deactivateMock,
+  installLocalMock,
+  uninstallMock,
+  signatureReportMock,
+  contextRef,
+  uiLoadResultsRef,
+} = vi.hoisted(() => ({
+  listMock: vi.fn(),
+  activateMock: vi.fn(),
+  deactivateMock: vi.fn(),
+  installLocalMock: vi.fn(),
+  uninstallMock: vi.fn(),
+  signatureReportMock: vi.fn(),
+  contextRef: { value: null as AdminContext | null },
+  uiLoadResultsRef: {
+    value: [] as Array<{ pluginId: string; url: string; status: string; detail?: string }>,
+  },
+}))
 
 vi.mock('@/core/extensions/loader', () => ({ getPluginUiLoadResults: () => uiLoadResultsRef.value }))
 
@@ -29,6 +38,7 @@ vi.mock('./pluginsApi', () => ({
     deactivate: deactivateMock,
     installLocal: installLocalMock,
     uninstall: uninstallMock,
+    signatureReport: signatureReportMock,
   },
 }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: contextRef }) }))
@@ -58,7 +68,7 @@ function buttonByText(wrapper: VueWrapper, text: string) {
 const okResult = { isSuccess: true, pluginId: null, message: null, errorCode: null, warningMessage: null, warningCode: null }
 
 beforeEach(() => {
-  for (const m of [listMock, activateMock, deactivateMock, installLocalMock, uninstallMock]) {
+  for (const m of [listMock, activateMock, deactivateMock, installLocalMock, uninstallMock, signatureReportMock]) {
     m.mockReset()
   }
   listMock.mockResolvedValue(sample)
@@ -66,6 +76,7 @@ beforeEach(() => {
   deactivateMock.mockResolvedValue(okResult)
   installLocalMock.mockResolvedValue(okResult)
   uninstallMock.mockResolvedValue(okResult)
+  signatureReportMock.mockResolvedValue([])
   uiLoadResultsRef.value = []
   resetHooks()
   resetServices()
@@ -83,6 +94,29 @@ describe('PluginsListView', () => {
     // Active plugin offers Deactivate, inactive one offers Activate.
     expect(text).toContain('Deaktivieren')
     expect(text).toContain('Aktivieren')
+  })
+
+  it('renders a signature badge per plugin from the report', async () => {
+    contextRef.value = ctx(['plugin.read'])
+    signatureReportMock.mockResolvedValue([
+      { pluginId: 'acme', state: 'signed-trusted', signerFingerprint: 'FP' },
+      { pluginId: 'beta', state: 'unsigned', signerFingerprint: null },
+    ])
+    const wrapper = mount(PluginsListView)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('Signiert') // acme → signed-trusted
+    expect(text).toContain('Unsigniert') // beta → unsigned
+  })
+
+  it('tolerates a failing signature report without breaking the list', async () => {
+    contextRef.value = ctx(['plugin.read'])
+    signatureReportMock.mockRejectedValue(new Error('nope'))
+    const wrapper = mount(PluginsListView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Acme') // list still renders
   })
 
   it('hides all mutating actions without permissions', async () => {

@@ -44,11 +44,24 @@ async function lifecycle(res: Response): Promise<PluginLifecycleResult> {
   return body
 }
 
+// Mirrors PluginSignatureStatusApiResponse. State ∈ signed-trusted | unsigned |
+// untrusted | revoked | content-hash-mismatch | invalid.
+export interface PluginSignatureStatus {
+  pluginId: string
+  state: string
+  signerFingerprint: string | null
+}
+
 export const pluginsApi = {
   // Reconciles the registry against the plugin directories first (server-side, for
   // callers with plugin.create), then returns the current installations.
   async list(): Promise<PluginInstallation[]> {
     return (await unwrap(await apiFetch(`${basePath}/installed`))).json()
+  },
+
+  // Re-verifies each installed plugin and returns its current signature state.
+  async signatureReport(): Promise<PluginSignatureStatus[]> {
+    return (await unwrap(await apiFetch(`${basePath}/signature-report`))).json()
   },
 
   async activate(pluginId: string): Promise<PluginLifecycleResult> {

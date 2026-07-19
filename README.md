@@ -46,6 +46,44 @@ Skip the frontend build (no Node required): `dotnet build -p:SkipAdminFrontend=t
   manifest → `/plugin-assets`), so install + activate + browser refresh surfaces
   a plugin's UI without a restart.
 
+## Plugin signing
+Installing a plugin is a fully privileged act — a plugin runs as host code and its
+admin bundle as privileged admin-frontend code. The install gate verifies a detached
+signature manifest (`plugin.signature.json`, ECDSA-P256) against a **trusted signer's
+public key** and checks the covered file hashes (assembly + `registry.json`), so
+capabilities and entry type are tamper-evident. Unsigned plugins are rejected unless
+`BackendHost__AllowUnsignedPlugins=true`. Signature standing is shown per plugin in
+Admin → Plugins.
+
+- **Development**: the dev stack sets `BackendHost__AllowUnsignedPlugins=true`
+  (`docker-compose.yml`), so locally built plugins load without signing.
+- **Production**: `AllowUnsignedPlugins` is `false` — every deployed plugin (including
+  bundled system-tier plugins under `custom/static-plugins/`) must be signed and its
+  signer trusted, or it will not load.
+
+Signing a plugin for production:
+```bash
+# 1) Generate an ECDSA P-256 keypair (keep the private key secret; publish the public key)
+openssl ecparam -name prime256v1 -genkey -noout -out callora-signing.key.pem
+openssl ec -in callora-signing.key.pem -pubout -out callora-signing.pub.pem
+
+# 2) Build the plugin, then sign its directory (writes plugin.signature.json next to registry.json)
+dotnet build custom/static-plugins/Communication/Callora.Plugin.Communication.csproj
+callora plugin sign --plugin <plugin-directory> --key callora-signing.key.pem
+```
+Then trust the signer in the host config (the fingerprint is derived from the key):
+```jsonc
+"BackendHost": {
+  "TrustedSigners": [
+    { "publisherId": "callora", "displayName": "Callora", "publicKey": "-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----" }
+  ]
+}
+```
+Revoke a compromised signer or a specific bad build via `BackendHost__RevokedSignerFingerprints`
+/ `BackendHost__RevokedContentHashes` (enforced at install and, through runtime
+rehydration, at load). Signing Callora's own system plugins in the release pipeline is
+tracked as an operations task.
+
 ## Environment
 - Template: `.env.example`
 - Local file: `.env` (is ignored by git)
