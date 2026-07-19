@@ -27,8 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- ADR-015: the bought base engine (A), used only inside this isolated package. -->
-    <PackageReference Include="Scriban" />
+    <!-- ADR-015 (rev.): the base engine (A) is Nunjucks (native Twig block
+         inheritance) executed on the Jint JS interpreter in a hardened sandbox.
+         Both are isolated to this package. -->
+    <PackageReference Include="Jint" />
+    <EmbeddedResource Include="Resources\nunjucks.js" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,9 +3,6 @@ Callora.Surface.Rendering.Api.SurfaceRenderEndpoints
 Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions
 Callora.Surface.Rendering.ISurfaceRenderer
 Callora.Surface.Rendering.ISurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context) -> string!
-Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer
-Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context) -> string!
-Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer.ScribanSurfaceRenderer() -> void
 Callora.Surface.Rendering.SurfaceRenderContext
 Callora.Surface.Rendering.SurfaceRenderContext.<Clone>$() -> Callora.Surface.Rendering.SurfaceRenderContext!
 Callora.Surface.Rendering.SurfaceRenderContext.Deconstruct(out string! TenantKey, out string! WorkspaceKey, out string! SurfaceKey, out string! SurfaceType, out string! Locale, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Tokens) -> void
@@ -40,5 +37,8 @@ static Callora.Surface.Rendering.SurfaceRenderContext.operator ==(Callora.Surfac
 Callora.Surface.Rendering.ISurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
 Callora.Surface.Rendering.ISurfaceTemplateBundleProvider
 Callora.Surface.Rendering.ISurfaceTemplateBundleProvider.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
-Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
-Callora.Surface.Rendering.Rendering.ScribanSurfaceRenderer.ScribanSurfaceRenderer(Callora.Surface.Rendering.ISurfaceTemplateBundleProvider! bundleProvider) -> void
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer() -> void
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer(Callora.Surface.Rendering.ISurfaceTemplateBundleProvider! bundleProvider) -> void
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context) -> string!
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
