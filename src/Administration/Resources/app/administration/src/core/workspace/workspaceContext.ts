@@ -42,7 +42,11 @@ function ensureLoaded(fixed: string | null): Promise<void> {
         stored && workspaces.value.some((w) => w.workspaceKey === stored)
           ? stored
           : (workspaces.value[0]?.workspaceKey ?? '')
-    })()
+    })().catch((error: unknown) => {
+      // Never cache a failed load — a later ensure() (e.g. a remount) may retry.
+      loadPromise = null
+      throw error
+    })
   }
   return loadPromise
 }
