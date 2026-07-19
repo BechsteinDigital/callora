@@ -10,6 +10,7 @@
         <RouterLink v-if="canManageTenants" to="/tenants">Mandanten</RouterLink>
         <RouterLink to="/plugins">Plugins</RouterLink>
         <RouterLink to="/media">Medien</RouterLink>
+        <RouterLink v-if="canViewJobs" to="/jobs">Jobs</RouterLink>
         <RouterLink to="/config">Konfiguration</RouterLink>
       </nav>
     </aside>
@@ -40,6 +41,10 @@ const ctx = useAuthStore().context
 // actually read tenants. Hiding it is convenience, not a security boundary —
 // the API stays permission-gated server-side (ADR-014 §3.4).
 const canManageTenants = computed(() => hasPermission(ctx.value, 'tenant.read'))
+
+// Job monitoring is read-only and gated on job.read server-side; mirror that for
+// the nav affordance (hiding is convenience, not a security boundary).
+const canViewJobs = computed(() => hasPermission(ctx.value, 'job.read'))
 </script>
 
 <style scoped lang="scss">
