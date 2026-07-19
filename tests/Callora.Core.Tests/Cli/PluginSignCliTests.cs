@@ -8,19 +8,26 @@ namespace Callora.Core.Tests.Cli;
 public sealed class PluginSignCliTests
 {
     [Fact]
-    public async Task PluginSign_ProducesAVerifiableSignatureCoveringAssemblyAndRegistry()
+    public async Task PluginSign_ProducesAVerifiableSignatureCoveringEveryFileIncludingSubdirectories()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "callora-sign-" + Guid.NewGuid().ToString("N"));
+        // The signing key lives outside the plugin directory — it must never become part
+        // of the signed package.
+        var keyDir = Path.Combine(Path.GetTempPath(), "callora-key-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
+        Directory.CreateDirectory(keyDir);
         try
         {
             await File.WriteAllTextAsync(
                 Path.Combine(tempDir, "registry.json"),
                 """{ "pluginId": "acme", "version": "1.0.0", "assemblyFileName": "Acme.dll" }""");
             await File.WriteAllBytesAsync(Path.Combine(tempDir, "Acme.dll"), [1, 2, 3, 4]);
+            // A dependent file in a subdirectory must be covered too.
+            Directory.CreateDirectory(Path.Combine(tempDir, "lib"));
+            await File.WriteAllBytesAsync(Path.Combine(tempDir, "lib", "Dep.dll"), [5, 6, 7, 8]);
 
             using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-            var keyPath = Path.Combine(tempDir, "signing.pem");
+            var keyPath = Path.Combine(keyDir, "signing.pem");
             await File.WriteAllTextAsync(keyPath, key.ExportPkcs8PrivateKeyPem());
 
             using var stdout = new StringWriter();
@@ -43,6 +50,9 @@ public sealed class PluginSignCliTests
             Assert.Equal(PluginSignatureCryptography.ComputeFingerprint(key), manifest.SignerFingerprint);
             Assert.Contains(manifest.Files, x => x.Path == "Acme.dll");
             Assert.Contains(manifest.Files, x => x.Path == "registry.json");
+            Assert.Contains(manifest.Files, x => x.Path == "lib/Dep.dll");
+            // The out-of-tree signing key is not part of the package.
+            Assert.DoesNotContain(manifest.Files, x => x.Path.Contains("signing.pem", StringComparison.Ordinal));
 
             var canonical = PluginSignatureManifestSerializer.SerializeCanonical(manifest);
             Assert.True(PluginSignatureCryptography.Verify(canonical, manifest.Signature!, key));
@@ -52,6 +62,11 @@ public sealed class PluginSignCliTests
             if (Directory.Exists(tempDir))
             {
                 Directory.Delete(tempDir, recursive: true);
+            }
+
+            if (Directory.Exists(keyDir))
+            {
+                Directory.Delete(keyDir, recursive: true);
             }
         }
     }
