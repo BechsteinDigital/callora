@@ -25,6 +25,8 @@ vi.mock('./themesApi', () => ({
 }))
 vi.mock('@/modules/workspaces/workspacesApi', () => ({ workspacesApi: { list: vi.fn().mockResolvedValue([]) } }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: contextRef }) }))
+// The settings editor has its own test; stub it so the assignment tests stay focused.
+vi.mock('./ThemeSettings.vue', () => ({ default: { name: 'ThemeSettings', template: '<div />' } }))
 
 function ctx(permissions: string[]): AdminContext {
   return {

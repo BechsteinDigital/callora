@@ -27,6 +27,32 @@ export interface ThemeAssignment {
   assignedAtUtc: string | null
 }
 
+// Mirrors WorkspaceThemeSettingDefinitionApiResponse — one token/setting field of
+// the assigned theme (label, type, default, options), schema-driven like config.
+export interface ThemeSettingDefinition {
+  settingKey: string
+  label: string
+  fieldType: string
+  description: string | null
+  defaultValueJson: string | null
+  isRequired: boolean
+  sortOrder: number
+  groupName: string | null
+  optionsJson: string | null
+  isActive: boolean
+}
+
+// Mirrors WorkspaceThemeSettingsApiResponse. valuesByKey holds the raw JSON string
+// per setting key; fields is empty when no theme is assigned.
+export interface ThemeSettings {
+  workspaceKey: string
+  hasAssignedTheme: boolean
+  themePluginId: string | null
+  themeVersion: string | null
+  fields: ThemeSettingDefinition[]
+  valuesByKey: Record<string, string>
+}
+
 const basePath = '/api/themes'
 
 export const themesApi = {
@@ -60,5 +86,24 @@ export const themesApi = {
     await unwrap(
       await apiFetch(`${basePath}/workspaces/${encodeURIComponent(workspaceKey)}`, { method: 'DELETE' }),
     )
+  },
+
+  async getSettings(workspaceKey: string): Promise<ThemeSettings> {
+    return (
+      await unwrap(await apiFetch(`${basePath}/workspaces/${encodeURIComponent(workspaceKey)}/settings`))
+    ).json()
+  },
+
+  // Replaces the workspace's theme setting values; the backend keeps only keys of
+  // active definitions. Values are parsed JSON (a JSON null clears a setting).
+  async saveSettings(workspaceKey: string, valuesByKey: Record<string, unknown>): Promise<ThemeSettings> {
+    return (
+      await unwrap(
+        await apiFetch(
+          `${basePath}/workspaces/${encodeURIComponent(workspaceKey)}/settings`,
+          jsonInit('PUT', { valuesByKey }),
+        ),
+      )
+    ).json()
   },
 }

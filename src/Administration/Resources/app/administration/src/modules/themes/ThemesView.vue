@@ -54,6 +54,13 @@
         (surface „workspace") beitragen.
       </p>
 
+      <ThemeSettings
+        v-if="assignment && assignment.themePluginId"
+        :key="`${activeWorkspace}:${assignment.themePluginId}:${assignment.themeVersion}`"
+        :workspace-key="activeWorkspace"
+        :can-manage="canManage"
+      />
+
       <ExtensionSlot name="themes.after-assignment" :ctx="{ workspaceKey: activeWorkspace, assignment }" />
     </div>
   </section>
@@ -62,6 +69,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { themesApi, type ThemeAssignment, type ThemeDefinition } from './themesApi'
+import ThemeSettings from './ThemeSettings.vue'
 import { useWorkspaceContext } from '@/core/workspace/workspaceContext'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
