@@ -1960,6 +1960,20 @@ Callora.Core.Application.Secrets.Contracts.IPluginDataProtector.Protect(string! 
 Callora.Core.Application.Secrets.Contracts.IPluginDataProtector.TryUnprotect(string! pluginId, string! protectedValue, out string! plaintext) -> bool
 Callora.Core.Application.Secrets.Contracts.ISecretStore
 Callora.Core.Application.Secrets.Contracts.ISecretStore.GetSecretAsync(string! name, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string?>!
+Callora.Core.Application.Security.Events.UserBusinessEvent
+Callora.Core.Application.Security.Events.UserBusinessEvent.EventName.get -> string!
+Callora.Core.Application.Security.Events.UserBusinessEvent.ToEventData() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Core.Application.Security.Events.UserBusinessEvent.WorkspaceKey.get -> string?
+Callora.Core.Application.Security.Events.UserBusinessEventProvider
+Callora.Core.Application.Security.Events.UserBusinessEventProvider.GetDescriptors() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Events.Contracts.BusinessEventDescriptor!>!
+Callora.Core.Application.Security.Events.UserBusinessEventProvider.UserBusinessEventProvider() -> void
+Callora.Core.Application.Security.Events.UserEventTypes
+const Callora.Core.Application.Security.Events.UserEventTypes.Created = "user.created" -> string!
+const Callora.Core.Application.Security.Events.UserEventTypes.Deleted = "user.deleted" -> string!
+const Callora.Core.Application.Security.Events.UserEventTypes.Updated = "user.updated" -> string!
+static Callora.Core.Application.Security.Events.UserBusinessEvent.Created(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
+static Callora.Core.Application.Security.Events.UserBusinessEvent.Deleted(string! externalId) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
+static Callora.Core.Application.Security.Events.UserBusinessEvent.Updated(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 Callora.Core.Application.Security.IBackendRbacStore
 Callora.Core.Application.Security.IBackendRbacStore.GetRolePermissionsAsync(string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<string!>?>!
 Callora.Core.Application.Security.IBackendRbacStore.GetRolePermissionsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyCollection<string!>!>!>!

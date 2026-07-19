@@ -210,17 +210,6 @@ public sealed class WorkspaceEndpointsTests
         Assert.Contains(WorkspaceMemberEventTypes.Removed, names);
     }
 
-    private sealed class RecordingBusinessEventBus : IBusinessEventBus
-    {
-        public List<IBusinessEvent> Published { get; } = [];
-
-        public Task PublishAsync(IBusinessEvent businessEvent, CancellationToken cancellationToken = default)
-        {
-            Published.Add(businessEvent);
-            return Task.CompletedTask;
-        }
-    }
-
     private static async Task<WebApplication> CreateAppAsync()
     {
         var workspaceStore = new InMemoryWorkspaceManagementStore();
