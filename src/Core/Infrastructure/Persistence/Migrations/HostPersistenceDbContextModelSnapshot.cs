@@ -1276,6 +1276,112 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("workspace_memberships", (string)null);
                 });
 
+            modelBuilder.Entity("Callora.Core.Domain.Workspaces.WorkspaceSurface", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AccessMode")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("access_mode");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("display_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Locale")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("locale");
+
+                    b.Property<string>("PublicBaseUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("public_base_url");
+
+                    b.Property<string>("PublicHost")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("public_host");
+
+                    b.Property<string>("PublicPathPrefix")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("public_path_prefix");
+
+                    b.Property<string>("SurfaceKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("surface_key");
+
+                    b.Property<string>("SurfaceType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("surface_type");
+
+                    b.Property<string>("TemplatePluginId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("template_plugin_id");
+
+                    b.Property<string>("TemplateVersion")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("template_version");
+
+                    b.Property<DateTimeOffset?>("ThemeAssignedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("theme_assigned_at_utc");
+
+                    b.Property<string>("ThemeAssignedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("theme_assigned_by");
+
+                    b.Property<string>("ThemePluginId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("theme_plugin_id");
+
+                    b.Property<string>("ThemeVersion")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("theme_version");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workspace_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PublicHost");
+
+                    b.HasIndex("WorkspaceId", "SurfaceKey")
+                        .IsUnique();
+
+                    b.ToTable("workspace_surfaces", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
                 {
                     b.Property<int>("Id")
@@ -1355,6 +1461,17 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.Navigation("Workspace");
                 });
 
+            modelBuilder.Entity("Callora.Core.Domain.Workspaces.WorkspaceSurface", b =>
+                {
+                    b.HasOne("Callora.Core.Domain.Workspaces.Workspace", "Workspace")
+                        .WithMany("Surfaces")
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workspace");
+                });
+
             modelBuilder.Entity("Callora.Core.Domain.Security.BackendRbacRole", b =>
                 {
                     b.Navigation("Permissions");
@@ -1377,6 +1494,8 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Callora.Core.Domain.Workspaces.Workspace", b =>
                 {
                     b.Navigation("Memberships");
+
+                    b.Navigation("Surfaces");
                 });
 #pragma warning restore 612, 618
         }

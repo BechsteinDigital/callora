@@ -43,6 +43,8 @@ public sealed class HostPersistenceDbContext(
 
     public DbSet<WorkspaceEntity> Workspaces => Set<WorkspaceEntity>();
 
+    public DbSet<WorkspaceSurface> WorkspaceSurfaces => Set<WorkspaceSurface>();
+
     public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
 
     public DbSet<Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition> WorkspaceTemplateDefinitions =>
