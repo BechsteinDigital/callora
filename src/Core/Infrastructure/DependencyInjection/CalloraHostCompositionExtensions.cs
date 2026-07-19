@@ -75,7 +75,7 @@ public static class CalloraHostCompositionExtensions
             });
 
         // Zentrale Feature-Flags (PLAT-263), aus BackendHost:FeatureFlags.
-        builder.Services.AddSingleton<Callora.Core.Application.Features.IFeatureFlagService,
+        builder.Services.AddDecoratableSingleton<Callora.Core.Application.Features.IFeatureFlagService,
             Callora.Core.Infrastructure.Features.ConfiguredFeatureFlagService>();
         builder.Services.AddScoped<EfPluginDataStore>();
         builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
@@ -178,7 +178,7 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton<Callora.Core.Application.Configuration.Contracts.IPluginConfigReader, Callora.Core.Application.Configuration.ScopedPluginConfigReader>();
         builder.Services.AddScoped<Callora.Core.Application.Webhooks.IWebhookSubscriptionStore, EfWebhookSubscriptionStore>();
         builder.Services.AddSingleton<Callora.Core.Application.Webhooks.WebhookDispatcher>();
-        builder.Services.AddSingleton<Callora.Core.Application.Webhooks.Contracts.IWebhookEventPublisher,
+        builder.Services.AddDecoratableSingleton<Callora.Core.Application.Webhooks.Contracts.IWebhookEventPublisher,
             Callora.Core.Application.Webhooks.ScopedWebhookEventPublisher>();
         builder.Services.AddSingleton<Callora.Core.Application.Webhooks.WebhookEgressGuard>();
         builder.Services.AddHttpClient(Callora.Core.Application.Webhooks.WebhookDeliveryJobHandler.HttpClientName, client =>
@@ -198,7 +198,7 @@ public static class CalloraHostCompositionExtensions
                 };
             });
         builder.Services.AddScoped<Callora.Core.Application.Notifications.INotificationStore, EfNotificationStore>();
-        builder.Services.AddSingleton<Callora.Core.Application.Notifications.Contracts.INotificationPublisher, Callora.Core.Application.Notifications.ScopedNotificationPublisher>();
+        builder.Services.AddDecoratableSingleton<Callora.Core.Application.Notifications.Contracts.INotificationPublisher, Callora.Core.Application.Notifications.ScopedNotificationPublisher>();
         // Dekorierbarer Host-Service (PLAT-266): Plugins können den Mailversand
         // umhüllen (z. B. Suppression-Listen, Provider-Wechsel), indem sie einen
         // IServiceDecorator<IMailSender> exportieren. AddDecoratableSingleton registriert

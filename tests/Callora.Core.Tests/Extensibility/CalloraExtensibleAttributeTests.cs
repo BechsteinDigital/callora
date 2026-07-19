@@ -1,4 +1,7 @@
+using Callora.Core.Application.Features;
 using Callora.Core.Application.Mail.Contracts;
+using Callora.Core.Application.Notifications.Contracts;
+using Callora.Core.Application.Webhooks.Contracts;
 using Callora.Core.Extensibility;
 using Xunit;
 
@@ -42,13 +45,17 @@ public sealed class CalloraExtensibleAttributeTests
         Assert.Equal("wrap it", attribute.Note);
     }
 
-    [Fact]
-    public void MailSender_IsClassifiedAsADecoratableExtensionPoint()
+    [Theory]
+    [InlineData(typeof(IMailSender))]
+    [InlineData(typeof(IFeatureFlagService))]
+    [InlineData(typeof(INotificationPublisher))]
+    [InlineData(typeof(IWebhookEventPublisher))]
+    public void DecoratableHostServices_AreClassifiedAsDecoratable(Type serviceType)
     {
-        // The one host service already run through the decoration pipeline must be
-        // classified so the extension surface is discoverable, not implicit.
+        // Every host service registered decoratable must also declare it, so the
+        // extension surface stays discoverable rather than implicit.
         var attribute = (CalloraExtensibleAttribute?)Attribute.GetCustomAttribute(
-            typeof(IMailSender), typeof(CalloraExtensibleAttribute));
+            serviceType, typeof(CalloraExtensibleAttribute));
 
         Assert.NotNull(attribute);
         Assert.Equal(ExtensionPointMode.Decoratable, attribute!.Mode);

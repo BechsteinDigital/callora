@@ -1,7 +1,9 @@
 using Callora.Core.Application.Extensibility.Contracts;
 using Callora.Core.Application.Mail.Contracts;
 using Callora.Core.Application.Plugins;
+using Callora.Core.Infrastructure.DependencyInjection;
 using Callora.Core.Tests.Support;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Callora.Core.Tests.Application.Plugins;
@@ -82,6 +84,23 @@ public sealed class DecoratingServiceProxyTests
         // proxy forwards the Task, so the real exception surfaces on await, not a wrapper.
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => greeter.BoomAsync());
         Assert.Equal("async boom", exception.Message);
+    }
+
+    [Fact]
+    public void AddDecoratableSingleton_resolves_a_live_decorating_proxy_over_the_base()
+    {
+        var exports = new Dictionary<Type, IReadOnlyList<object>>();
+        var services = new ServiceCollection();
+        services.AddSingleton<ICalloraPluginCatalog>(new StaticPluginCatalog(exports));
+        services.AddDecoratableSingleton<IGreeter, BaseGreeter>();
+        using var provider = services.BuildServiceProvider();
+
+        var greeter = provider.GetRequiredService<IGreeter>();
+        Assert.Equal("Hi, Ada", greeter.Greet("Ada")); // no decorator exported yet → base
+
+        // A plugin exports a decorator; the already-resolved instance composes it live.
+        exports[typeof(IServiceDecorator<IGreeter>)] = new object[] { new ShoutingGreeterDecorator() };
+        Assert.Equal("HI, ADA", greeter.Greet("Ada"));
     }
 
     public interface IGreeter

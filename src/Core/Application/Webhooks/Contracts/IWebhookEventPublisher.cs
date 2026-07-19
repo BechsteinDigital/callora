@@ -1,3 +1,5 @@
+using Callora.Core.Extensibility;
+
 namespace Callora.Core.Application.Webhooks.Contracts;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Callora.Core.Application.Webhooks.Contracts;
 /// the workspace's webhook subscriptions and enqueues durable deliveries.
 /// Payload minimization and signing happen host-side.
 /// </summary>
+[CalloraExtensible(ExtensionPointMode.Decoratable, "Decorate via IServiceDecorator<IWebhookEventPublisher> to customize webhook delivery (REV2 §4.1)")]
 public interface IWebhookEventPublisher
 {
     /// <summary>Publishes one business event to all matching subscriptions.</summary>
