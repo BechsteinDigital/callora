@@ -12,14 +12,17 @@ export function formatTimestamp(iso: string | null): string {
   return date.toLocaleString('de-DE')
 }
 
-// Classifies a job status into a badge tone without hard-coding the exact enum
-// names — failed/dead → danger, completed → success, everything else → neutral.
+// Classifies a job status into a badge tone. The backend enum is Pending/Running/
+// Succeeded/Failed (BackgroundJobStatus); the substring set stays a bit broader so
+// related wordings map too — failed/error → danger, succeeded/complete/done →
+// success, everything else (pending, running) → neutral. Note "succe" (not
+// "success") is what actually matches "Succeeded".
 export function statusTone(status: string): 'danger' | 'success' | 'neutral' {
   const s = status.trim().toLowerCase()
   if (s.includes('fail') || s.includes('dead') || s.includes('error')) {
     return 'danger'
   }
-  if (s.includes('complet') || s.includes('success') || s.includes('done')) {
+  if (s.includes('succe') || s.includes('complet') || s.includes('done')) {
     return 'success'
   }
   return 'neutral'
