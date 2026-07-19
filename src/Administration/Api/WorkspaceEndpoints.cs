@@ -84,8 +84,7 @@ public static class WorkspaceEndpoints
 
             if (workspace.Status == WorkspaceUpsertStatus.Ok && workspace.Workspace is not null)
             {
-                await PublishAsync(
-                    businessEventBus,
+                await businessEventBus.PublishSafelyAsync(
                     WorkspaceBusinessEvent.ForUpsert(workspace.Workspace),
                     loggerFactory,
                     cancellationToken).ConfigureAwait(false);
@@ -130,8 +129,7 @@ public static class WorkspaceEndpoints
                 return Results.NotFound();
             }
 
-            await PublishAsync(
-                businessEventBus,
+            await businessEventBus.PublishSafelyAsync(
                 WorkspaceBusinessEvent.ForDeletion(workspace),
                 loggerFactory,
                 cancellationToken).ConfigureAwait(false);
@@ -198,8 +196,7 @@ public static class WorkspaceEndpoints
 
             if (result.Status == WorkspaceMemberUpsertStatus.Ok && result.Member is not null)
             {
-                await PublishAsync(
-                    businessEventBus,
+                await businessEventBus.PublishSafelyAsync(
                     WorkspaceMemberBusinessEvent.Assigned(result.Member),
                     loggerFactory,
                     cancellationToken).ConfigureAwait(false);
@@ -239,8 +236,7 @@ public static class WorkspaceEndpoints
             var result = await workspaceStore.RemoveMemberAsync(workspaceKey, userId, cancellationToken).ConfigureAwait(false);
             if (result.Status == WorkspaceMemberDeleteStatus.Deleted)
             {
-                await PublishAsync(
-                    businessEventBus,
+                await businessEventBus.PublishSafelyAsync(
                     WorkspaceMemberBusinessEvent.Removed(workspaceKey, userId),
                     loggerFactory,
                     cancellationToken).ConfigureAwait(false);
@@ -256,25 +252,6 @@ public static class WorkspaceEndpoints
             };
         }).WithName("Workspaces_Members_Delete")
             .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
-    }
-
-    private static async Task PublishAsync(
-        IBusinessEventBus businessEventBus,
-        IBusinessEvent businessEvent,
-        ILoggerFactory loggerFactory,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await businessEventBus.PublishAsync(businessEvent, cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception exception)
-        {
-            // The mutation already committed; a failed post-hoc event must not turn a
-            // successful operation into an error. Best-effort, logged.
-            loggerFactory.CreateLogger(typeof(WorkspaceEndpoints)).LogWarning(
-                exception, "Publishing business event {EventName} failed.", businessEvent.EventName);
-        }
     }
 
     private static WorkspaceApiResponse ToResponse(WorkspaceSnapshot workspace)

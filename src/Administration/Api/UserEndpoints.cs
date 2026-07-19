@@ -1,7 +1,10 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Security;
+using Callora.Core.Application.Security.Events;
 using Callora.Core.Domain.Security;
 using Callora.Core.Infrastructure.Security;
+using Microsoft.Extensions.Logging;
 
 namespace Callora.Administration.Api;
 
@@ -52,6 +55,8 @@ public static class UserEndpoints
             CreateBackendUserApiRequest request,
             HttpContext httpContext,
             IBackendUserStore userStore,
+            IBusinessEventBus businessEventBus,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
             // Creating a global user record is a platform operation; workspace
@@ -70,6 +75,10 @@ public static class UserEndpoints
                         request.Password,
                         cancellationToken)
                     .ConfigureAwait(false);
+                await businessEventBus.PublishSafelyAsync(
+                    UserBusinessEvent.Created(user.ExternalId, user.Email, user.DisplayName),
+                    loggerFactory,
+                    cancellationToken).ConfigureAwait(false);
                 return Results.Created($"/api/users/{user.ExternalId}", ToResponse(user));
             }
             catch (InvalidOperationException ex)
@@ -84,6 +93,8 @@ public static class UserEndpoints
             UpdateBackendUserApiRequest request,
             HttpContext httpContext,
             IBackendUserStore userStore,
+            IBusinessEventBus businessEventBus,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
             if (!await CallerMayAccessAsync(httpContext, userStore, userId, cancellationToken).ConfigureAwait(false))
@@ -100,6 +111,10 @@ public static class UserEndpoints
                         request.Password,
                         cancellationToken)
                     .ConfigureAwait(false);
+                await businessEventBus.PublishSafelyAsync(
+                    UserBusinessEvent.Updated(user.ExternalId, user.Email, user.DisplayName),
+                    loggerFactory,
+                    cancellationToken).ConfigureAwait(false);
                 return Results.Ok(ToResponse(user));
             }
             catch (InvalidOperationException ex)
@@ -114,6 +129,8 @@ public static class UserEndpoints
             HttpContext httpContext,
             IBackendUserStore userStore,
             IUserDataSubjectService dataSubjectService,
+            IBusinessEventBus businessEventBus,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
             if (!await CallerMayAccessAsync(httpContext, userStore, userId, cancellationToken).ConfigureAwait(false))
@@ -124,7 +141,16 @@ public static class UserEndpoints
             // Art. 17: Löschung inklusive Anonymisierung des Audit-Trails
             // (PLAT-243).
             var removed = await dataSubjectService.EraseAsync(userId, cancellationToken).ConfigureAwait(false);
-            return removed ? Results.NoContent() : Results.NotFound();
+            if (!removed)
+            {
+                return Results.NotFound();
+            }
+
+            await businessEventBus.PublishSafelyAsync(
+                UserBusinessEvent.Deleted(userId),
+                loggerFactory,
+                cancellationToken).ConfigureAwait(false);
+            return Results.NoContent();
         }).WithName("Users_Delete")
             .RequirePermission(BackendPermissionKeys.UserDelete);
 

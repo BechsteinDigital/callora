@@ -1,7 +1,9 @@
 using Callora.Administration.Api;
 using Callora.Core.Api;
+using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Security;
+using Callora.Core.Application.Security.Events;
 using Callora.Core.Infrastructure.Security;
 using Callora.Core.Tests.Support;
 using Microsoft.AspNetCore.Authentication;
@@ -264,6 +266,7 @@ public sealed class AuthAndUserEndpointsTests
     public async Task UserCrud_WithPermissions_WorksEndToEnd()
     {
         await using var app = await CreateAppAsync();
+        var bus = (RecordingBusinessEventBus)app.Services.GetRequiredService<IBusinessEventBus>();
 
         var createClient = app.GetTestClient();
         createClient.DefaultRequestHeaders.Add("X-Test-Permissions", "user.create");
@@ -289,6 +292,12 @@ public sealed class AuthAndUserEndpointsTests
         deleteClient.DefaultRequestHeaders.Add("X-Test-Permissions", "user.delete");
         var deleteResponse = await deleteClient.DeleteAsync("/api/users/bob");
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        // Each lifecycle step publishes its business event.
+        var names = bus.Published.Select(static x => x.EventName).ToArray();
+        Assert.Contains(UserEventTypes.Created, names);
+        Assert.Contains(UserEventTypes.Updated, names);
+        Assert.Contains(UserEventTypes.Deleted, names);
     }
 
     private static async Task<WebApplication> CreateAppAsync()
@@ -323,6 +332,7 @@ public sealed class AuthAndUserEndpointsTests
         builder.Services.AddSingleton<IBackendUserStore>(userStore);
         builder.Services.AddSingleton<IUserDataSubjectService>(new InMemoryUserDataSubjectService(userStore));
         builder.Services.AddSingleton<IBackendRbacStore>(new InMemoryBackendRbacStore(options));
+        builder.Services.AddSingleton<IBusinessEventBus>(new RecordingBusinessEventBus());
 
         var app = builder.Build();
         app.UseAuthentication();
