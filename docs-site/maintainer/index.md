@@ -3,7 +3,7 @@
 This guide is for the people who **run, build, and release Callora** — platform
 maintainers and deployment operators. If you are writing a plugin or using the
 admin shell as an end user, this is not your section; see the
-[API Reference](../api/index.md) and the plugin SDK instead.
+[API Reference](/api/) and the plugin SDK instead.
 
 Callora is a domain-neutral .NET 10 plugin platform. The host is a pure platform
 — authentication and RBAC, user and plugin management, a business-event bus, and

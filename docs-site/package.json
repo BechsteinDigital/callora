@@ -1,0 +1,14 @@
+{
+  "name": "@callora/docs-site",
+  "private": true,
+  "type": "module",
+  "description": "The Callora documentation site (VitePress). The .NET API reference is generated separately by DocFX and linked under /api.",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.3"
+  }
+}

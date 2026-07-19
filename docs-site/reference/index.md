@@ -23,7 +23,7 @@ all three and links the generated .NET reference.
 
 ## The generated .NET reference
 
-The [.NET API reference](../api/index.md) is generated from the XML
+The [.NET API reference](/api/) is generated from the XML
 documentation of the host platform and the first-party plugins. It is the
 authoritative catalogue of types, interfaces, and members. The pages in this
 section describe *how to use* those surfaces — the REST endpoints that expose

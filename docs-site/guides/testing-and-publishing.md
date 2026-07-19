@@ -74,7 +74,7 @@ this is the pattern to copy.
 
 Every framework assembly runs `Microsoft.CodeAnalysis.PublicApiAnalyzers` against a tracked
 baseline, so the public surface cannot drift silently
-([Architecture](architecture.md#the-publicapi-baseline)). Two files sit next to each
+([Architecture](../concepts/architecture.md#the-publicapi-baseline)). Two files sit next to each
 project:
 
 - **`PublicAPI.Shipped.txt`** — the surface released in a shipped version. Pre-1.0 this is
