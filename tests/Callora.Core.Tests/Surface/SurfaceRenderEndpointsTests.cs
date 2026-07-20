@@ -1,3 +1,4 @@
+using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Tests.Support;
 using Callora.Surface.Rendering;
@@ -40,20 +41,113 @@ public sealed class SurfaceRenderEndpointsTests
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    private static async Task<WebApplication> CreateAppAsync()
+    [Fact]
+    public async Task Render_WithAssignedTheme_FlowsEffectiveTokensIntoContext()
     {
         var store = new InMemoryWorkspaceManagementStore();
         store.AddTenant("tenant-a");
         _ = await store.UpsertAsync("tenant-a", "acme", "Acme", "spa", isActive: true, publicBaseUrl: "https://acme.example.de");
+        _ = await store.UpsertThemeAssignmentAsync("acme", "acme.brand-theme", "1.0.0", assignedBy: "op");
+
+        var settings = new InMemoryWorkspaceThemeSettingsStore();
+        _ = await settings.ReplaceDefinitionsForPluginAsync(
+            "acme.brand-theme",
+            "1.0.0",
+            [
+                new WorkspaceThemeSettingDefinitionInput(
+                    SettingKey: "primaryColor",
+                    Label: "Primary Color",
+                    FieldType: "color",
+                    Description: null,
+                    DefaultValueJson: "\"#007bff\"",
+                    IsRequired: false,
+                    SortOrder: 10,
+                    GroupName: null,
+                    OptionsJson: null,
+                    IsActive: true),
+                // A secret-typed setting must never reach the anonymous surface context.
+                new WorkspaceThemeSettingDefinitionInput(
+                    SettingKey: "apiSecret",
+                    Label: "API Secret",
+                    FieldType: "secret",
+                    Description: null,
+                    DefaultValueJson: "\"do-not-leak\"",
+                    IsRequired: false,
+                    SortOrder: 20,
+                    GroupName: null,
+                    OptionsJson: null,
+                    IsActive: true),
+            ]);
+        _ = await settings.ReplaceWorkspaceValuesAsync(
+            "acme",
+            "acme.brand-theme",
+            new Dictionary<string, string?> { ["primaryColor"] = "#e4002b" });
+
+        var capturingRenderer = new CapturingSurfaceRenderer();
+
+        await using var app = await CreateAppAsync(
+            store,
+            configure: services =>
+            {
+                services.AddSingleton<IWorkspaceThemeSettingsStore>(settings);
+                services.AddScoped<WorkspacePublicThemeResolver>();
+                services.AddSingleton<ISurfaceRenderer>(capturingRenderer);
+            });
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/surface/render");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var tokens = capturingRenderer.LastContext!.Tokens;
+        // The workspace override wins over the definition default.
+        Assert.Equal("#e4002b", tokens["primaryColor"]);
+        Assert.Equal("acme.brand-theme", tokens[SurfaceThemeTokens.ThemePluginIdKey]);
+        Assert.Equal("1.0.0", tokens[SurfaceThemeTokens.ThemeVersionKey]);
+        Assert.False(tokens.ContainsKey("apiSecret"));
+    }
+
+    private static Task<WebApplication> CreateAppAsync() => CreateAppAsync(null, null);
+
+    private static async Task<WebApplication> CreateAppAsync(
+        InMemoryWorkspaceManagementStore? store,
+        Action<IServiceCollection>? configure)
+    {
+        if (store is null)
+        {
+            store = new InMemoryWorkspaceManagementStore();
+            store.AddTenant("tenant-a");
+            _ = await store.UpsertAsync("tenant-a", "acme", "Acme", "spa", isActive: true, publicBaseUrl: "https://acme.example.de");
+        }
 
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddSingleton<IWorkspaceManagementStore>(store);
         builder.Services.AddCalloraSurfaceRendering();
+        // A capturing/overriding renderer, the theme resolver etc. are layered on last so
+        // the caller's registrations win over the defaults.
+        configure?.Invoke(builder.Services);
 
         var app = builder.Build();
         app.MapSurfaceRenderEndpoints();
         await app.StartAsync();
         return app;
+    }
+
+    private sealed class CapturingSurfaceRenderer : ISurfaceRenderer
+    {
+        public SurfaceRenderContext? LastContext { get; private set; }
+
+        public string Render(string templateText, SurfaceRenderContext context)
+        {
+            LastContext = context;
+            return "<html><!-- captured --></html>";
+        }
+
+        public string Render(string templateText, SurfaceRenderContext context, IReadOnlyList<string> bundleChain)
+        {
+            LastContext = context;
+            return "<html><!-- captured --></html>";
+        }
     }
 }
