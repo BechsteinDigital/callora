@@ -14,7 +14,7 @@ public static class PluginAssetEndpoints
             manifestRoute = "/" + manifestRoute;
         }
 
-        endpoints.MapGet(manifestRoute, (IWebHostEnvironment environment) =>
+        endpoints.MapGet(manifestRoute, (HttpContext httpContext, IWebHostEnvironment environment) =>
             {
                 var webRoot = string.IsNullOrWhiteSpace(environment.WebRootPath)
                     ? Path.Combine(AppContext.BaseDirectory, "wwwroot")
@@ -25,6 +25,10 @@ public static class PluginAssetEndpoints
                     return Results.NotFound();
                 }
 
+                // The manifest is the version index that cache-busts the assets it points
+                // to; it must itself always be revalidated, else a stale manifest would
+                // keep pinning old ?v= hashes and defeat the busting.
+                httpContext.Response.Headers.CacheControl = "no-cache";
                 return Results.File(manifestPath, "application/json; charset=utf-8");
             })
             .AllowAnonymous()

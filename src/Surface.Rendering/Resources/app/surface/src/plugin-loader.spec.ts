@@ -56,6 +56,27 @@ describe('resolveSurfaceAssets', () => {
     expect(assets).toEqual({ scripts: [], styles: [] })
   })
 
+  it('appends the content hash as a ?v= cache-busting query when present', () => {
+    const withHash: PluginManifest = {
+      entries: [
+        { pluginId: 'voip', surface: 'workspace', entryPath: 'voip/app/workspace/main.js', contentHash: 'abc123' },
+        // No contentHash → bare URL (legacy manifest / unhashable file).
+        { pluginId: 'theme', surface: 'workspace', entryPath: 'theme/app/workspace/main.js' },
+      ],
+      styleEntries: [
+        { pluginId: 'voip', surface: 'workspace', stylePath: 'voip/app/workspace/main.css', contentHash: 'def456' },
+      ],
+    }
+
+    const assets = resolveSurfaceAssets(withHash, ['voip', 'theme'], 'workspace', '/plugin-assets')
+
+    expect(assets.scripts).toEqual([
+      { pluginId: 'voip', url: '/plugin-assets/voip/app/workspace/main.js?v=abc123' },
+      { pluginId: 'theme', url: '/plugin-assets/theme/app/workspace/main.js' },
+    ])
+    expect(assets.styles).toEqual(['/plugin-assets/voip/app/workspace/main.css?v=def456'])
+  })
+
   it('drops entries whose path escapes the base (scheme, absolute, protocol-relative, traversal)', () => {
     const evil: PluginManifest = {
       entries: [

@@ -288,7 +288,13 @@ public static class CalloraHostCompositionExtensions
             context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
             await next();
         });
-        app.UseStaticFiles();
+        app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions
+        {
+            // Published plugin bundles are cache-busted via a ?v=<contentHash> query, so a
+            // versioned request is immutable; everything else under /plugin-assets must
+            // revalidate. Other static roots keep the framework default.
+            OnPrepareResponse = PluginAssetCaching.Apply
+        });
         app.UseRateLimiter();
         app.UseAuthentication();
         // CSRF guard: cookie-authenticated state changes must originate same-origin

@@ -372,10 +372,14 @@ public sealed class PluginUiAssetPublisher(
 
         foreach (var styleCandidate in StyleEntryCandidates)
         {
-            if (File.Exists(Path.Combine(targetDirectory, styleCandidate)))
+            var styleFile = Path.Combine(targetDirectory, styleCandidate);
+            if (File.Exists(styleFile))
             {
                 var stylePath = ToManifestPath(Path.Combine(pluginId, "app", surface, styleCandidate));
-                styleManifestEntries.Add(new PluginUiStyleManifestEntry(pluginId, surface, stylePath));
+                styleManifestEntries.Add(new PluginUiStyleManifestEntry(pluginId, surface, stylePath)
+                {
+                    ContentHash = TryComputeContentHash(styleFile)
+                });
             }
         }
 
@@ -395,7 +399,30 @@ public sealed class PluginUiAssetPublisher(
         }
 
         var entryPath = ToManifestPath(Path.Combine(pluginId, "app", surface, entryRelativePath));
-        manifestEntries.Add(new PluginUiAssetManifestEntry(pluginId, surface, entryPath));
+        manifestEntries.Add(new PluginUiAssetManifestEntry(pluginId, surface, entryPath)
+        {
+            ContentHash = TryComputeContentHash(Path.Combine(targetDirectory, entryRelativePath))
+        });
+    }
+
+    /// <summary>
+    /// A short content hash (first 8 bytes of SHA-256, lowercase hex) of a published
+    /// asset, used purely for cache-busting — not a security digest. Null on read
+    /// failure so publishing never breaks over an unreadable file; the client then
+    /// falls back to a bare URL + revalidation.
+    /// </summary>
+    private static string? TryComputeContentHash(string filePath)
+    {
+        try
+        {
+            using var stream = File.OpenRead(filePath);
+            var hash = System.Security.Cryptography.SHA256.HashData(stream);
+            return Convert.ToHexString(hash.AsSpan(0, 8)).ToLowerInvariant();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     private static bool HasTypeScriptEntry(string sourceDirectory) =>

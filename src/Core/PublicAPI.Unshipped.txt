@@ -3363,6 +3363,8 @@ Callora.Core.Infrastructure.Plugins.PluginRegistryMatch.RegistryPath.get -> stri
 Callora.Core.Infrastructure.Plugins.PluginRegistryMatch.RegistryPath.init -> void
 Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry
 Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry.<Clone>$() -> Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry!
+Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry.ContentHash.get -> string?
+Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry.ContentHash.init -> void
 Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry.Deconstruct(out string! PluginId, out string! Surface, out string! EntryPath) -> void
 Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry.EntryPath.get -> string!
 Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry.EntryPath.init -> void
@@ -3377,6 +3379,8 @@ Callora.Core.Infrastructure.Plugins.PluginUiAssetPublisher.PluginUiAssetPublishe
 Callora.Core.Infrastructure.Plugins.PluginUiAssetPublisher.PublishAllAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry
 Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry.<Clone>$() -> Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry!
+Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry.ContentHash.get -> string?
+Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry.ContentHash.init -> void
 Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry.Deconstruct(out string! PluginId, out string! Surface, out string! StylePath) -> void
 Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry.Equals(Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry? other) -> bool
 Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry.PluginId.get -> string!

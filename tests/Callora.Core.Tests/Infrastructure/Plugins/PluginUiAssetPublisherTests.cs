@@ -446,6 +446,69 @@ public sealed class PluginUiAssetPublisherTests
         }
     }
 
+    [Fact]
+    public async Task PublishAllAsync_EntryCarriesContentDerivedHash_ForCacheBusting()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"callora-plugin-assets-{Guid.NewGuid():N}");
+        var pluginDirectory = Path.Combine(tempRoot, "custom", "plugins");
+        var webRoot = Path.Combine(tempRoot, "wwwroot");
+        Directory.CreateDirectory(pluginDirectory);
+        Directory.CreateDirectory(webRoot);
+
+        try
+        {
+            var pluginRoot = CreatePlugin(
+                pluginDirectory,
+                pluginFolderName: "TemplateAlpha",
+                pluginId: "template-alpha",
+                createAdmin: false,
+                createWorkspace: true,
+                createWorkspaceTemplate: false);
+            var workspaceEntry = Path.Combine(pluginRoot, "src", "Resources", "app", "workspace", "src", "main.js");
+
+            var environment = new TestWebHostEnvironment { WebRootPath = webRoot, ContentRootPath = tempRoot };
+            var hostingOptions = new CalloraHostingOptions { PluginDirectory = pluginDirectory };
+            var manifestPath = Path.Combine(webRoot, "plugin-assets", ".build", "ui-assets.manifest.json");
+
+            PluginUiAssetPublisher NewPublisher() => new(
+                new InMemoryPluginInstallationRepository(),
+                environment,
+                hostingOptions,
+                NullLogger<PluginUiAssetPublisher>.Instance);
+
+            await NewPublisher().PublishAllAsync();
+            var firstHash = ReadWorkspaceEntryHash(await File.ReadAllTextAsync(manifestPath));
+
+            // A well-formed short hash (8 bytes → 16 lowercase-hex chars), not null/empty.
+            Assert.NotNull(firstHash);
+            Assert.Equal(16, firstHash!.Length);
+            Assert.Matches("^[0-9a-f]{16}$", firstHash);
+
+            // Change the bundle content and republish: the hash must change, so the URL
+            // (main.js?v=<hash>) changes and a cached copy is never served stale.
+            await File.WriteAllTextAsync(workspaceEntry, "console.log('workspace v2 changed');");
+            await NewPublisher().PublishAllAsync();
+            var secondHash = ReadWorkspaceEntryHash(await File.ReadAllTextAsync(manifestPath));
+
+            Assert.NotEqual(firstHash, secondHash);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    private static string? ReadWorkspaceEntryHash(string manifestJson)
+    {
+        using var document = JsonDocument.Parse(manifestJson);
+        var entry = document.RootElement.GetProperty("entries").EnumerateArray()
+            .Single(x => x.GetProperty("surface").GetString() == "workspace");
+        return entry.TryGetProperty("contentHash", out var hash) ? hash.GetString() : null;
+    }
+
     private static string CreatePlugin(
         string pluginDirectory,
         string pluginFolderName,
