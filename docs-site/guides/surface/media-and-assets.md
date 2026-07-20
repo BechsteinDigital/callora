@@ -118,15 +118,23 @@ turns the manifest and the workspace's UI chain into injected tags:
 1. Fetch the ordered UI chain: `GET /workspace/public/ui-chain?workspaceKey=<key>`.
 2. Fetch the manifest: `GET /manifests/plugin-ui-assets.manifest.json`.
 3. `resolveSurfaceAssets` filters entries to the requested `surface` **and** to plugins in
-   the chain, orders them by chain position, and builds absolute URLs under `/plugin-assets`.
-4. `injectSurfaceAssets` appends `<link>`/`<script>` tags to `<head>` — idempotent (a URL
-   already present is skipped) and order-preserving (`script.async = false`, so bundles run
-   in chain order).
+   the chain, orders them by chain position, and builds absolute URLs under `/plugin-assets`
+   (each script kept paired with its `pluginId`).
+4. Styles are injected as `<link>` tags (`injectSurfaceStyles`, non-blocking); each script
+   is injected as a `<script>` (`injectPluginScript`, `async = false` so bundles run in
+   chain order) and the loader **awaits its load**, timing each one.
 
 Defence in depth on the client, too: an asset path is rejected if it carries a scheme, is
 absolute/protocol-relative, or contains a `..` segment — a bundle src can never point off
-the `plugin-assets` root. Every failure (missing chain/manifest, offline server, malformed
-response) is tolerated: the surface renders whatever registered, never crashing.
+the `plugin-assets` root.
+
+Loading is **fail-soft but not fail-silent**. Every failure — a missing chain/manifest, an
+offline server, or a single broken bundle — is tolerated: the surface renders whatever
+registered, never crashing. But each outcome is recorded as a `PluginLoadResult`
+(`pluginId`, `status`, `durationMs`, `error?`), a failed bundle is logged (naming the
+plugin), and the full result set is published on `window.__calloraSurfaceLoad` plus a
+`callora:surface-load` event — so an operator can see *which* bundle failed instead of
+facing a silently blank surface.
 
 ## The media library
 
