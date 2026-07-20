@@ -43,7 +43,7 @@ their values on top.
 
 Tokens resolve along four axes, each overriding the one before it:
 
-```
+```text
 distribution  →  tenant  →  workspace  →  surface
   (baseline)     (brand)    (per-site)    (per-channel)
    weakest  ─────────────────────────────▶  strongest

@@ -24,6 +24,7 @@ The worked references are the webhook subsystem
 - A worked subscription and the resulting signed payload
 
 ::: tip Prerequisites
+
 - A plugin that can resolve host services from `context.Services` — see
   [Exporting extensions](/guides/fundamentals/exporting-extensions).
 - Familiarity with the [job queue](./background-jobs): every delivery is a `webhook.deliver` job.

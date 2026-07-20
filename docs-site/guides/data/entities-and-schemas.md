@@ -18,6 +18,7 @@ example is the Communication plugin's `VoipDbContext`
 - How to read and write rows with plain LINQ
 
 ::: tip Prerequisites
+
 - A working plugin with a `StartAsync(IHostPluginContext context, …)` entry point — see
   [Your first plugin](/guides/getting-started/your-first-plugin) and
   [Plugin entry](/guides/fundamentals/plugin-entry).

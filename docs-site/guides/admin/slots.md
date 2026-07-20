@@ -18,6 +18,7 @@ per-row action to an existing admin view.
 - How to discover the slot names available to you
 
 ::: tip Prerequisites
+
 - You have an admin bundle that runs against `window.CalloraAdmin` — see
   [Building an admin module](./building-an-admin-module) for the full build/publish setup.
 - You know the **slot name** you want to target (see [Discovering slot names](#discovering-slot-names)).

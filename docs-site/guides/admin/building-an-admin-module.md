@@ -20,6 +20,7 @@ tenant-facing side. The two share the publish/load plumbing but target different
   at `/admin`
 
 ::: tip Prerequisites
+
 - **Node 20+** and a package manager — the admin bundle is a Vite build, independent of the
   .NET backend build.
 - **A Callora plugin** to host the bundle. Any plugin works; if you don't have one, scaffold
@@ -47,7 +48,7 @@ manifest and injects it before the app mounts.
 
 Inside your plugin, create the admin source tree:
 
-```
+```text
 my-plugin/
 └── src/
     └── Resources/
@@ -273,7 +274,7 @@ is independent, so the break is usually in exactly one of them.
 
 ## The complete picture
 
-```
+```text
 src/main.ts  ──build──▶  Resources/public/admin/main.js
                                     │
                           PluginUiAssetPublisher (on activate)

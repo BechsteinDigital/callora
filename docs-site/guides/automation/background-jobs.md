@@ -25,6 +25,7 @@ The worked reference throughout is the Dialer plugin's dial run
 - How to monitor jobs via `GET /api/jobs`
 
 ::: tip Prerequisites
+
 - A working plugin with a `StartAsync(IHostPluginContext context, …)` entry point — see
   [Plugin entry](/guides/fundamentals/plugin-entry).
 - You can resolve host services from `context.Services` and `context.Export<T>(...)` your own —
@@ -175,7 +176,7 @@ now the job runs twice concurrently. This is exactly why the next two sections m
 was already reclaimed by another worker tries to save its result, the concurrency check matches
 no row and the write is **rejected**:
 
-```
+```text
 Job {JobId} ({JobType}) lost its lease before saving; another worker owns it now.
 ```
 
@@ -280,7 +281,7 @@ handler guarantees the *effect* happens once.
 
 Recent jobs are readable (read-only) at:
 
-```
+```text
 GET /api/jobs?limit=100
 ```
 

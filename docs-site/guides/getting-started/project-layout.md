@@ -14,6 +14,7 @@ the one the shipped `Dialer` and `Communication` plugins use.
   `CalloraFrameworkAssembly`
 
 ::: tip Prerequisites
+
 - The [`callora` CLI](/guides/getting-started/plugin-cli), which scaffolds this layout for
   you with `plugin new`.
 - Familiarity with the [plugin entry contract](/guides/fundamentals/plugin-entry).
@@ -24,7 +25,7 @@ the one the shipped `Dialer` and `Communication` plugins use.
 Callora's engineering rules favour small, single-responsibility classes — **one public type
 per file** — organized by DDD layer. A fuller plugin looks like this:
 
-```
+```text
 custom/plugins/MyPlugin/
 ├─ Callora.Plugins.MyPlugin.csproj   # project file
 ├─ registry.json                     # manifest (required)

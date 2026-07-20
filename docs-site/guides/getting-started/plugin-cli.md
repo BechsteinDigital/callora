@@ -12,6 +12,7 @@ one section per command, with the exact flags and what each command does.
 - How to invoke the CLI from within this repo
 
 ::: tip Prerequisites
+
 - The **.NET 10 SDK**.
 - In this repository the CLI runs via `dotnet run`; there is no separate install step:
 
@@ -47,7 +48,7 @@ The plugin id must contain only `a-z`, `A-Z`, `0-9`, `.`, `-`, `_`.
 
 For a project named `MyPlugin`, the scaffold writes three files:
 
-```
+```text
 <output>/
 ├─ Callora.Plugins.MyPlugin.csproj
 ├─ registry.json
@@ -69,7 +70,7 @@ For a project named `MyPlugin`, the scaffold writes three files:
 
 Expected output:
 
-```
+```text
 Plugin scaffold created: /abs/path/to/custom/plugins/MyPlugin
 ```
 
@@ -112,13 +113,13 @@ non-empty `PluginId` and `DisplayName` values when instantiated. If `--entry-typ
 
 Each failure is reported with a code, a message, and a remediation hint. On success:
 
-```
+```text
 All contract checks passed.
 ```
 
 On failure the process exits non-zero and prints one line per issue, e.g.:
 
-```
+```text
 [manifest.contractVersion.missing] registry.json field 'contractVersion' is required. Fix: Set 'contractVersion' to 'v1'.
 ```
 
@@ -148,7 +149,7 @@ The manifest also records the signer's key fingerprint, which is the basis of tr
 
 Expected output:
 
-```
+```text
 Plugin signature written: /abs/path/to/plugin/plugin.signature.json
 ```
 

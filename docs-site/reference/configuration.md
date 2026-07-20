@@ -125,7 +125,7 @@ after binding, so a relative path is resolved against the application base direc
 Beyond host options, a plugin declares and reads **its own** configuration through the
 SystemConfig subsystem. Values resolve across a scope chain, most-specific wins:
 
-```
+```text
 workspace  >  tenant  >  global  >  definition default
 ```
 

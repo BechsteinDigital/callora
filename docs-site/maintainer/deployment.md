@@ -61,7 +61,7 @@ With the frontdoor, the app is reachable at `http://localhost:8080`.
 Connection string (config key `BackendHost:DatabaseConnectionString`, env
 `BackendHost__DatabaseConnectionString`):
 
-```
+```text
 Host=postgres;Port=5432;Database=callora_host;Username=callora;Password=<secret>
 ```
 

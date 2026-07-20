@@ -18,6 +18,7 @@ endpoints.
 - Why workspace-bound values get cleaned up automatically on GDPR purge
 
 ::: tip Prerequisites
+
 - A running plugin with `context.Services` access — see [Plugin entry](/guides/fundamentals/plugin-entry).
 - You know the target entity name (for example `workspace`) and the id of the concrete
   instance (for a workspace, that's the **workspace key**).

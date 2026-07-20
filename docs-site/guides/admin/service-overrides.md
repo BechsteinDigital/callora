@@ -19,6 +19,7 @@ Reach for a service override when you need to change *how the shell talks to a b
 - A worked override of the users API
 
 ::: tip Prerequisites
+
 - An admin bundle running against `window.CalloraAdmin` — see
   [Building an admin module](./building-an-admin-module).
 - The **service key** you want to override and the **interface** the shell expects of it

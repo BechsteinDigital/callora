@@ -16,6 +16,7 @@ This page distinguishes the two: `ISecretStore` for reading operator-provided se
 - A worked example: an SMTP password / VoIP provider token
 
 ::: tip Prerequisites
+
 - A running plugin with `context.Services` access — see [Plugin entry](/guides/fundamentals/plugin-entry).
 - Deployment access to set an environment variable or host configuration value for the secret.
 :::
@@ -150,6 +151,7 @@ value) — keep it readable and re-encrypt on the next write. See
    plugin owns it, so you `Protect` it and store the ciphertext in your schema, as above.
 
 ::: warning Never do these
+
 - Never commit a secret to the repository or bake it into `registry.json` / `appsettings.json`.
 - Never log a secret value, even at debug level.
 - Never store a user-entered secret as a plain column — protect it first.

@@ -71,9 +71,11 @@ Returns a small JavaScript snippet that injects the workspace context onto the
 page, for surfaces embedded on a foreign host.
 
 - **Query params.**
+
   | Name | Required | Meaning |
   | --- | --- | --- |
   | `path` | No | The logical page path to resolve against. If omitted, the path is taken from the `Referer` header, else `/`. |
+
 - **Host.** From `X-Forwarded-Host` or the request host.
 - **Auth.** Anonymous.
 - **Response.** `Content-Type: application/javascript; charset=utf-8`, sent with
@@ -97,9 +99,11 @@ URL, `publicPathPrefix` = the request path).
 The resolved workspace and its public routing metadata, as JSON.
 
 - **Query params.**
+
   | Name | Required | Meaning |
   | --- | --- | --- |
   | `path` | No | Page path to resolve against (default `/`, normalized). |
+
 - **Host.** From `X-Forwarded-Host` or the request host.
 - **Auth.** Anonymous.
 - **Response.** `404 Not Found` when no visible workspace resolves; otherwise
@@ -125,9 +129,11 @@ The ordered list of UI-chain plugin ids for a workspace — resolved by
 plugin bundles. The primary plugin is `chain[0]`.
 
 - **Query params.**
+
   | Name | Required | Default | Meaning |
   | --- | --- | --- | --- |
   | `workspaceKey` | No | `default` | Workspace whose chain to resolve. |
+
 - **Auth.** Anonymous. Only workspaces visible in the configured default tenant
   expose their chain.
 - **Response.** `404 Not Found` when the workspace is not visible; otherwise
@@ -147,9 +153,11 @@ The workspace's effective theme: the resolved theme plugin, its version, and the
 flattened token map — served by `WorkspacePublicThemeResolver`.
 
 - **Query params.**
+
   | Name | Required | Default | Meaning |
   | --- | --- | --- | --- |
   | `workspaceKey` | No | `default` | Workspace whose theme to resolve. |
+
 - **Auth.** Anonymous.
 - **Response.** Always `200 OK`. When no theme is resolved, `themePluginId` and
   `themeVersion` are `null` and `valuesByKey` is an empty object:

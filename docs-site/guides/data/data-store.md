@@ -18,6 +18,7 @@ sensitive values at rest. The worked example is the Communication plugin's
 - When to prefer the data store over EF entities
 
 ::: tip Prerequisites
+
 - A running plugin with `context.Services` access — see [Plugin entry](/guides/fundamentals/plugin-entry).
 - Your `pluginId` (from [`registry.json`](/guides/fundamentals/registry-manifest)) — every key
   starts with it.

@@ -74,7 +74,7 @@ entitlement is set for the target workspace(s); the operator has the
 Roll back via the scoped rollback endpoints (POST), re-checking the effective
 response after each step:
 
-```
+```text
 POST /api/workspace-templates/workspaces/{workspaceKey}/{templateKey}/rollback
 POST /api/workspace-templates/tenants/{tenantKey}/{templateKey}/rollback
 POST /api/workspace-templates/system/{templateKey}/rollback

@@ -118,7 +118,7 @@ client runtime mounts the matching registered Vue view into each — see
 
 An SSR template bundle lives under the plugin's `Resources/views/workspace/`:
 
-```
+```text
 my-plugin/
 └── src/
     └── Resources/

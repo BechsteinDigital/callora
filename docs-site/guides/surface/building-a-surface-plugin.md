@@ -50,7 +50,7 @@ and injects it in chain order. (Sources under `app/` stay with the vendor; only 
 
 Inside your plugin, create the surface source tree:
 
-```
+```text
 my-plugin/
 └── src/
     └── Resources/
@@ -251,7 +251,7 @@ the break is usually in exactly one of them.
 
 ## The complete picture
 
-```
+```text
 src/main.ts  ──build──▶  Resources/public/workspace/main.js
                                     │
                           PluginUiAssetPublisher (on activate)
