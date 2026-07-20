@@ -1,8 +1,10 @@
 using Callora.Administration.Api;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Workspaces;
+using Callora.Core.Domain.Workspaces;
 using Callora.Core.Tests.Support;
 using Callora.Workspace.Api;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -204,7 +206,36 @@ public sealed class WorkspacePublicEndpointsTests
         Assert.Contains("\"valuesByKey\":{}", content, StringComparison.Ordinal);
     }
 
-    private static async Task<WebApplication> CreateAppAsync()
+    [Fact]
+    public async Task UiChain_AuthenticatedWorkspace_AnonymousCaller_ReturnsNotFound()
+    {
+        await using var app = await CreateAppAsync();
+        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
+        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync("/workspace/public/ui-chain?workspaceKey=workspace-public");
+
+        // Indistinguishable from a non-existent workspace — no inventory leak.
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UiChain_AuthenticatedWorkspace_AuthenticatedCaller_ReturnsChain()
+    {
+        await using var app = await CreateAppAsync(authenticate: true);
+        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
+        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync("/workspace/public/ui-chain?workspaceKey=workspace-public");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"chain\":[\"dialer\",\"voip\"]", content, StringComparison.Ordinal);
+    }
+
+    private static async Task<WebApplication> CreateAppAsync(bool authenticate = false)
     {
         var workspaceStore = new InMemoryWorkspaceManagementStore();
         workspaceStore.AddTenant("tenant-a");
@@ -235,8 +266,19 @@ public sealed class WorkspacePublicEndpointsTests
             new InMemoryWorkspaceThemeSettingsStore());
         builder.Services.AddScoped<Callora.Core.Application.Extensions.WorkspaceUiChainResolver>();
         builder.Services.AddScoped<Callora.Core.Application.Extensions.WorkspacePublicThemeResolver>();
+        if (authenticate)
+        {
+            builder.Services
+                .AddAuthentication("Test")
+                .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>("Test", _ => { });
+            builder.Services.AddAuthorization();
+        }
 
         var app = builder.Build();
+        if (authenticate)
+        {
+            app.UseAuthentication();
+        }
         app.MapWorkspacePublicEndpoints();
         await app.StartAsync();
         return app;

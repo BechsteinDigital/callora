@@ -1,6 +1,7 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Workspaces;
+using Callora.Core.Domain.Workspaces;
 using System.Text.Json;
 
 namespace Callora.Workspace.Api;
@@ -125,6 +126,7 @@ public static class WorkspacePublicEndpoints
                 "/workspace/public/ui-chain",
                 async (
                     string? workspaceKey,
+                    HttpContext httpContext,
                     WorkspaceUiChainResolver uiChainResolver,
                     BackendHostOptions hostOptions,
                     IWorkspaceManagementStore workspaceStore,
@@ -139,6 +141,16 @@ public static class WorkspacePublicEndpoints
                         .GetAsync(normalizedKey, cancellationToken)
                         .ConfigureAwait(false);
                     if (!IsWorkspaceVisibleInTenant(workspace, hostOptions.DefaultTenantKey))
+                    {
+                        return Results.NotFound();
+                    }
+
+                    // An Authenticated workspace does not expose its plugin inventory to an
+                    // anonymous caller: it 404s exactly like a non-existent one, so the chain
+                    // cannot be enumerated for fingerprinting. An authenticated caller gets the
+                    // chain; a browser was already sent to log in by /surface/render (P4).
+                    if (workspace!.SurfaceAccessPolicy == SurfaceAccessPolicy.Authenticated &&
+                        httpContext.User.Identity?.IsAuthenticated != true)
                     {
                         return Results.NotFound();
                     }
