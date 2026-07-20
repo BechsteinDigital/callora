@@ -32,6 +32,9 @@ public static class SurfaceRenderEndpoints
                 // workspace composition (the chain resolver). A headless/minimal host that
                 // omits it still serves the SPA shell (E1 behaviour) — hence optional.
                 [FromServices] WorkspaceUiChainResolver? chainResolver,
+                // The effective theme values are wired in when the theme subsystem is
+                // composed; a minimal host without it still renders (unthemed) — optional.
+                [FromServices] WorkspacePublicThemeResolver? themeResolver,
                 CancellationToken cancellationToken) =>
             {
                 var host = httpContext.Request.Host.Host;
@@ -45,19 +48,29 @@ public static class SurfaceRenderEndpoints
                     return Results.NotFound();
                 }
 
-                var tokens = new Dictionary<string, string>(StringComparer.Ordinal);
-                if (!string.IsNullOrWhiteSpace(workspace.ThemePluginId))
+                // The effective, secret-filtered theme values (defaults + workspace
+                // overrides) become allowlisted tokens so a plugin's SSR template can bind
+                // {{ tokens.<key> }} onto its --cal-* properties (ADR-015 §8).
+                IReadOnlyDictionary<string, string>? effectiveTheme = null;
+                if (themeResolver is not null)
                 {
-                    tokens["themePluginId"] = workspace.ThemePluginId;
+                    var theme = await themeResolver
+                        .ResolveAsync(workspace.WorkspaceKey, cancellationToken)
+                        .ConfigureAwait(false);
+                    effectiveTheme = theme?.ValuesByKey;
                 }
 
                 var context = new SurfaceRenderContext(
                     TenantKey: workspace.TenantKey,
                     WorkspaceKey: workspace.WorkspaceKey,
+                    // Per-surface identity (key/type/locale) is not yet resolved from the
+                    // public route — a workspace resolves to its default surface. Distinct
+                    // per-surface resolution is a later phase; these stay the defaults.
                     SurfaceKey: "default",
                     SurfaceType: "spa",
                     Locale: "de",
-                    Tokens: tokens);
+                    Tokens: SurfaceThemeTokens.Compose(
+                        workspace.ThemePluginId, workspace.ThemeVersion, effectiveTheme));
 
                 var html = await RenderSurfaceAsync(
                     renderer, chainResolver, bundles, loggerFactory, workspace.WorkspaceKey, context, cancellationToken)

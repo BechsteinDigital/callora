@@ -49,3 +49,7 @@ Callora.Surface.Rendering.PublishedSurfaceTemplateBundles
 Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.PublishedSurfaceTemplateBundles(Microsoft.AspNetCore.Hosting.IWebHostEnvironment! environment) -> void
 Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
 Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryReadEntryTemplate(string! bundleId) -> string?
+Callora.Surface.Rendering.SurfaceThemeTokens
+const Callora.Surface.Rendering.SurfaceThemeTokens.ThemePluginIdKey = "themePluginId" -> string!
+const Callora.Surface.Rendering.SurfaceThemeTokens.ThemeVersionKey = "themeVersion" -> string!
+static Callora.Surface.Rendering.SurfaceThemeTokens.Compose(string? themePluginId, string? themeVersion, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? effectiveValues) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
