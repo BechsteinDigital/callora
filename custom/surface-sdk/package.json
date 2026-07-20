@@ -1,19 +1,39 @@
 {
   "name": "@callora/surface-sdk",
-  "private": true,
   "version": "0.1.0",
   "type": "module",
   "description": "Typed contract + blessed Vite preset for building Callora surface plugins (Vue islands/apps that dock into the surface runtime).",
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./vite-preset": "./src/vite-preset.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vite-preset": {
+      "types": "./dist/vite-preset.d.ts",
+      "import": "./dist/vite-preset.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm run test"
   },
   "peerDependencies": {
+    "vite": "^6.0.0",
     "vue": "^3.5.0"
   },
   "dependencies": {
