@@ -1,0 +1,21 @@
+﻿{
+  "contractVersion": "v1",
+  "schemaVersion": "1.0",
+  "name": "Surface Demo",
+  "pluginId": "surface-demo",
+  "version": "0.1.0",
+  "assemblyFileName": "Callora.Plugins.SurfaceDemo.dll",
+  "entryTypeName": "Callora.Plugins.SurfaceDemo.Application.SurfaceDemoPlugin",
+  "capabilities": [
+    "workspace.navigation"
+  ],
+  "extensions": [
+    {
+      "extensionPointId": "workspace.navigation.main",
+      "surface": "workspace"
+    }
+  ],
+  "dependencies": {
+    "Callora.Core": "\u003E=0.1.0"
+  }
+}
