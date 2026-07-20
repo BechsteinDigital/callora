@@ -225,6 +225,7 @@ Group `/api/workspaces`.
 | GET | `/api/workspaces/{workspaceKey}` | Get a workspace. | `workspace.read` |
 | PUT | `/api/workspaces/{workspaceKey}` | Create or update a workspace. | `workspace.update` |
 | DELETE | `/api/workspaces/{workspaceKey}` | Delete a workspace. | `workspace.delete` |
+| PUT | `/api/workspaces/{workspaceKey}/surface-access-policy` | Set the surface access policy (`{ "policy": "Public" \| "Authenticated" }`; unknown value → `400`). | `workspace.update` |
 | GET | `/api/workspaces/{workspaceKey}/members` | List workspace members (cursor-paginated). | `workspace.read` |
 | PUT | `/api/workspaces/{workspaceKey}/members/{userId}` | Add or update a member. | `workspace.update` |
 | DELETE | `/api/workspaces/{workspaceKey}/members/{userId}` | Remove a member. | `workspace.update` |
@@ -266,18 +267,21 @@ Group `/workspace/themes`.
 
 ## Public workspace surface
 
-These routes are anonymous and serve the public storefront-style surface. They
-are excluded from the OpenAPI description.
+These routes serve the public storefront-style surface and are excluded from the
+OpenAPI description. Most are unconditionally anonymous; `/surface/render` and
+`/workspace/public/ui-chain` additionally enforce the workspace's **surface access
+policy** — `Public` (default) is anonymous, `Authenticated` turns anonymous callers
+away (see [Access policy](/guides/surface/ssr-templates#access-policy)).
 
 | Method | Path | Purpose | Auth |
 | --- | --- | --- | --- |
 | GET | `/workspace/public/resolve` | Resolve the request host/path to a workspace (returns `resolved`, `workspaceKey`). | Anonymous |
 | GET | `/workspace/public/bootstrap.js` | JavaScript that sets `window.__CALLORA_WORKSPACE_CONTEXT__`. | Anonymous |
 | GET | `/workspace/public/context` | Workspace + route context for a given `path`. | Anonymous |
-| GET | `/workspace/public/ui-chain` | The workspace's resolved UI-chain (plugin composition). | Anonymous |
+| GET | `/workspace/public/ui-chain` | The workspace's resolved UI-chain (plugin composition). | Anonymous (Public); `Authenticated` → `404` for anonymous |
 | GET | `/workspace/public/theme` | The workspace's public theme tokens (`valuesByKey`). | Anonymous |
 | GET | `/login` | Redirect to the workspace shell login for the resolved workspace. | Anonymous |
-| GET | `/surface/render` | Server-render the workspace's template chain (falls back to the SPA shell). | Anonymous |
+| GET | `/surface/render` | Server-render the workspace's template chain (falls back to the SPA shell). | Anonymous (Public); `Authenticated` → `302 /login` for anonymous |
 | GET | `/` and `/{**path:nonfile}` | Catch-all: redirect to the workspace shell, the admin shell (`/admin`), or 404 for reserved prefixes. | Anonymous |
 
 ## Plugin assets and manifests
