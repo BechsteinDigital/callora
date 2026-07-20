@@ -93,9 +93,15 @@ const developerSidebar = [
     text: 'Reference',
     items: [
       { text: 'Overview', link: '/reference/' },
-      { text: 'REST API', link: '/reference/rest-api' },
+      { text: 'Admin REST API', link: '/reference/rest-api' },
+      { text: 'Workspace API', link: '/reference/workspace-api' },
       { text: '.NET Contracts', link: '/reference/dotnet-contracts' },
       { text: 'Extension Manifests', link: '/reference/extension-manifests' },
+      { text: 'CLI', link: '/reference/cli' },
+      { text: 'Analyzer Rules', link: '/reference/analyzer-rules' },
+      { text: 'Permissions', link: '/reference/permissions' },
+      { text: 'Configuration', link: '/reference/configuration' },
+      { text: 'Business Events', link: '/reference/business-events' },
     ],
   },
 ]
