@@ -113,14 +113,14 @@ Build your plugin assembly and, if it has a surface UI, the IIFE bundles (via th
 [`calloraSurfacePlugin`](admin-extensions.md#a-minimal-surface-plugin) Vite preset — only
 `Resources/public/<surface>` is published). Ensure `registry.json` is complete: identity,
 `contractVersion`, capabilities, dependencies, and the
-[compliance metadata](plugin-development.md#compliance-metadata).
+[compliance metadata](/guides/fundamentals/compliance-metadata).
 
 ### 2. Sign — the content manifest
 
 Callora is **trusted-in-process by provenance**
 (ADR-013); a plugin is trusted
 because of **who signed it**. Produce a signed content manifest with the CLI
-([details](plugin-development.md#signing--the-content-manifest)):
+([the `plugin sign` command](/guides/getting-started/plugin-cli)):
 
 ```bash
 callora plugin sign \
@@ -164,7 +164,7 @@ fingerprint, and verifies the ECDSA signature. An unsigned plugin is rejected un
 
 Place the plugin under a discovered root (`custom/plugins` or `custom/static-plugins`) — or
 install it live through the operator API — and activate it. Both happen **without a host
-restart** ([Plugin Development](plugin-development.md#hot-loading)):
+restart** ([Install & Activate](/guides/getting-started/install-activate)):
 
 ```http
 POST /api/plugins/install            # PluginCreate

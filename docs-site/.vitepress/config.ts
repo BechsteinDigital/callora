@@ -10,15 +10,44 @@ const developerSidebar = [
     items: [{ text: 'Architecture', link: '/concepts/architecture' }],
   },
   {
-    text: 'Guides',
+    text: 'Getting Started',
     items: [
-      { text: 'Plugin Development', link: '/guides/plugin-development' },
-      { text: 'Backend Extensions', link: '/guides/backend-extensions' },
-      { text: 'Admin & Surface Extensions', link: '/guides/admin-extensions' },
-      { text: 'Capabilities & Entitlements', link: '/guides/capabilities' },
-      { text: 'Events & Jobs', link: '/guides/events-and-jobs' },
-      { text: 'Testing & Publishing', link: '/guides/testing-and-publishing' },
+      { text: 'Overview', link: '/guides/getting-started/' },
+      { text: 'Build your first plugin', link: '/guides/getting-started/your-first-plugin' },
+      { text: 'Install & Activate', link: '/guides/getting-started/install-activate' },
+      { text: 'Project Layout', link: '/guides/getting-started/project-layout' },
+      { text: 'The Plugin CLI', link: '/guides/getting-started/plugin-cli' },
     ],
+  },
+  {
+    text: 'Plugin Fundamentals',
+    items: [
+      { text: 'Overview', link: '/guides/fundamentals/' },
+      { text: 'The Plugin Entry', link: '/guides/fundamentals/plugin-entry' },
+      { text: 'The registry.json Manifest', link: '/guides/fundamentals/registry-manifest' },
+      { text: 'Dependency Injection', link: '/guides/fundamentals/dependency-injection' },
+      { text: 'Exporting Extensions', link: '/guides/fundamentals/exporting-extensions' },
+      { text: 'Plugin Configuration', link: '/guides/fundamentals/plugin-configuration' },
+      { text: 'Plugin Dependencies', link: '/guides/fundamentals/plugin-dependencies' },
+      { text: 'Compliance Metadata', link: '/guides/fundamentals/compliance-metadata' },
+      { text: 'Best Practices', link: '/guides/fundamentals/best-practices' },
+    ],
+  },
+  {
+    text: 'Backend & Automation',
+    items: [
+      { text: 'Backend Extensions', link: '/guides/backend-extensions' },
+      { text: 'Events & Jobs', link: '/guides/events-and-jobs' },
+      { text: 'Capabilities & Entitlements', link: '/guides/capabilities' },
+    ],
+  },
+  {
+    text: 'Front-end Extensions',
+    items: [{ text: 'Admin & Surface Extensions', link: '/guides/admin-extensions' }],
+  },
+  {
+    text: 'Ship It',
+    items: [{ text: 'Testing & Publishing', link: '/guides/testing-and-publishing' }],
   },
   {
     text: 'Reference',
