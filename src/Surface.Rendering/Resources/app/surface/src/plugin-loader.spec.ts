@@ -1,14 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
-  injectSurfaceAssets,
+  injectPluginScript,
+  injectSurfaceStyles,
   loadSurfacePlugins,
   resolveSurfaceAssets,
+  SURFACE_LOAD_EVENT,
+  SURFACE_LOAD_GLOBAL,
+  type PluginLoadResult,
   type PluginManifest,
 } from './plugin-loader'
 
 // The environment (vite.config: disableCSSFileLoading/disableJavaScriptFileLoading)
 // keeps injected tags inert; clear the head so each injection test starts clean.
-beforeEach(() => document.head.replaceChildren())
+beforeEach(() => {
+  document.head.replaceChildren()
+  delete (window as unknown as Record<string, unknown>)[SURFACE_LOAD_GLOBAL]
+})
 
 const manifest: PluginManifest = {
   entries: [
@@ -24,13 +31,13 @@ const manifest: PluginManifest = {
 }
 
 describe('resolveSurfaceAssets', () => {
-  it('keeps only the surface + chain plugins, orders by chain, builds URLs', () => {
+  it('keeps only the surface + chain plugins, orders by chain, builds URLs with pluginId', () => {
     // chain order (theme before voip) must win over manifest order (voip before theme).
     const assets = resolveSurfaceAssets(manifest, ['theme', 'voip'], 'workspace', '/plugin-assets')
 
     expect(assets.scripts).toEqual([
-      '/plugin-assets/theme/app/workspace/main.js',
-      '/plugin-assets/voip/app/workspace/main.js',
+      { pluginId: 'theme', url: '/plugin-assets/theme/app/workspace/main.js' },
+      { pluginId: 'voip', url: '/plugin-assets/voip/app/workspace/main.js' },
     ])
     expect(assets.styles).toEqual(['/plugin-assets/voip/app/workspace/main.css'])
   })
@@ -38,9 +45,9 @@ describe('resolveSurfaceAssets', () => {
   it('drops entries of other surfaces and plugins not in the chain', () => {
     const assets = resolveSurfaceAssets(manifest, ['voip'], 'workspace', '/plugin-assets')
 
-    expect(assets.scripts).toEqual(['/plugin-assets/voip/app/workspace/main.js'])
-    expect(assets.scripts.some((u) => u.includes('/admin/'))).toBe(false)
-    expect(assets.scripts.some((u) => u.includes('notInChain'))).toBe(false)
+    expect(assets.scripts.map((s) => s.url)).toEqual(['/plugin-assets/voip/app/workspace/main.js'])
+    expect(assets.scripts.some((s) => s.url.includes('/admin/'))).toBe(false)
+    expect(assets.scripts.some((s) => s.pluginId === 'notInChain')).toBe(false)
   })
 
   it('trims a trailing slash off the asset base and tolerates a missing manifest section', () => {
@@ -67,51 +74,72 @@ describe('resolveSurfaceAssets', () => {
       '/plugin-assets',
     )
 
-    expect(assets.scripts).toEqual(['/plugin-assets/ok/app/workspace/main.js'])
+    expect(assets.scripts).toEqual([{ pluginId: 'ok', url: '/plugin-assets/ok/app/workspace/main.js' }])
   })
 })
 
-describe('injectSurfaceAssets', () => {
-  it('injects ordered scripts (async=false) and style links with tracking attributes', () => {
-    injectSurfaceAssets(document, {
-      scripts: ['/plugin-assets/a.js', '/plugin-assets/b.js'],
-      styles: ['/plugin-assets/a.css'],
-    })
+describe('injectSurfaceStyles', () => {
+  it('injects style links with a tracking attribute', () => {
+    injectSurfaceStyles(document, ['/plugin-assets/a.css', '/plugin-assets/b.css'])
 
-    const scripts = Array.from(document.querySelectorAll('script[data-callora-plugin-entry]'))
-    expect(scripts.map((s) => s.getAttribute('src'))).toEqual([
-      '/plugin-assets/a.js',
-      '/plugin-assets/b.js',
-    ])
-    expect((scripts[0] as HTMLScriptElement).async).toBe(false)
-    expect(document.querySelector('link[data-callora-plugin-style]')?.getAttribute('href')).toBe(
+    const links = Array.from(document.querySelectorAll('link[data-callora-plugin-style]'))
+    expect(links.map((l) => l.getAttribute('href'))).toEqual([
       '/plugin-assets/a.css',
-    )
+      '/plugin-assets/b.css',
+    ])
   })
 
-  it('is idempotent — re-injecting the same URLs does not duplicate tags', () => {
-    const assets = { scripts: ['/plugin-assets/a.js'], styles: ['/plugin-assets/a.css'] }
+  it('is idempotent — re-injecting the same URL does not duplicate the link', () => {
+    injectSurfaceStyles(document, ['/plugin-assets/a.css'])
+    injectSurfaceStyles(document, ['/plugin-assets/a.css'])
 
-    injectSurfaceAssets(document, assets)
-    injectSurfaceAssets(document, assets)
-
-    expect(document.querySelectorAll('script[data-callora-plugin-entry]')).toHaveLength(1)
     expect(document.querySelectorAll('link[data-callora-plugin-style]')).toHaveLength(1)
+  })
+})
+
+describe('injectPluginScript', () => {
+  it('appends a chain-ordered script (async=false) with a tracking attribute', () => {
+    const script = injectPluginScript(document, '/plugin-assets/a.js')
+
+    expect(script).not.toBeNull()
+    expect(script!.getAttribute('src')).toBe('/plugin-assets/a.js')
+    expect(script!.async).toBe(false)
+    expect(document.querySelectorAll('script[data-callora-plugin-entry]')).toHaveLength(1)
+  })
+
+  it('is idempotent — a second call for the same src returns null and adds no duplicate', () => {
+    injectPluginScript(document, '/plugin-assets/a.js')
+    const second = injectPluginScript(document, '/plugin-assets/a.js')
+
+    expect(second).toBeNull()
+    expect(document.querySelectorAll('script[data-callora-plugin-entry]')).toHaveLength(1)
   })
 })
 
 describe('loadSurfacePlugins', () => {
   const context = { workspaceKey: 'acme', surfaceKey: 'portal' }
-
-  it('fetches the chain + manifest and injects the surface bundles in order', async () => {
-    const fetchJson = vi.fn(async (url: string) => {
-      if (url.startsWith('/workspace/public/ui-chain')) {
-        return { workspaceKey: 'acme', chain: ['theme', 'voip'] }
+  // A loader that behaves like the browser's: it injects the script (so DOM order is
+  // observable) and resolves, unless the src is in `failing`, where it rejects.
+  const injectingLoader = (failing: string[] = []) =>
+    vi.fn(async (doc: Document, src: string) => {
+      injectPluginScript(doc, src)
+      if (failing.some((f) => src.includes(f))) {
+        throw new Error(`boom: ${src}`)
       }
-      return manifest
     })
 
-    await loadSurfacePlugins(context, {}, { fetchJson, doc: document })
+  it('loads the chain + manifest bundles in order and returns a loaded result per plugin', async () => {
+    const fetchJson = vi.fn(async (url: string) =>
+      url.startsWith('/workspace/public/ui-chain') ? { chain: ['theme', 'voip'] } : manifest,
+    )
+    let clock = 0
+    const now = () => (clock += 5)
+
+    const results = await loadSurfacePlugins(
+      context,
+      {},
+      { fetchJson, doc: document, loadScript: injectingLoader(), now },
+    )
 
     expect(fetchJson).toHaveBeenCalledWith('/workspace/public/ui-chain?workspaceKey=acme')
     const scripts = Array.from(document.querySelectorAll('script[data-callora-plugin-entry]'))
@@ -119,24 +147,91 @@ describe('loadSurfacePlugins', () => {
       '/plugin-assets/theme/app/workspace/main.js',
       '/plugin-assets/voip/app/workspace/main.js',
     ])
+    expect(results).toEqual([
+      {
+        pluginId: 'theme',
+        scriptUrl: '/plugin-assets/theme/app/workspace/main.js',
+        status: 'loaded',
+        durationMs: 5,
+      },
+      {
+        pluginId: 'voip',
+        scriptUrl: '/plugin-assets/voip/app/workspace/main.js',
+        status: 'loaded',
+        durationMs: 5,
+      },
+    ])
   })
 
-  it('injects nothing when the chain is empty', async () => {
+  it('isolates a failing bundle: it is recorded as error, logged, and the rest still load', async () => {
+    const fetchJson = vi.fn(async (url: string) =>
+      url.startsWith('/workspace/public/ui-chain') ? { chain: ['theme', 'voip'] } : manifest,
+    )
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const results = await loadSurfacePlugins(
+      context,
+      {},
+      { fetchJson, doc: document, loadScript: injectingLoader(['theme']) },
+    )
+
+    expect(results.map((r) => [r.pluginId, r.status])).toEqual([
+      ['theme', 'error'],
+      ['voip', 'loaded'],
+    ])
+    expect(results[0].error).toContain('boom')
+    // The failure is surfaced, not swallowed: one warn naming the failed plugin.
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0][0]).toContain('theme')
+
+    warn.mockRestore()
+  })
+
+  it('publishes the telemetry globally and dispatches a settle event', async () => {
+    const fetchJson = vi.fn(async (url: string) =>
+      url.startsWith('/workspace/public/ui-chain') ? { chain: ['voip'] } : manifest,
+    )
+    const events: PluginLoadResult[][] = []
+    // once: true so the listener does not leak into the sibling tests that also dispatch.
+    document.addEventListener(
+      SURFACE_LOAD_EVENT,
+      (e) => events.push((e as CustomEvent).detail.results),
+      { once: true },
+    )
+
+    const results = await loadSurfacePlugins(
+      context,
+      {},
+      { fetchJson, doc: document, loadScript: injectingLoader() },
+    )
+
+    expect((window as unknown as Record<string, PluginLoadResult[]>)[SURFACE_LOAD_GLOBAL]).toBe(
+      results,
+    )
+    expect(events).toHaveLength(1)
+    expect(events[0].map((r) => r.pluginId)).toEqual(['voip'])
+  })
+
+  it('injects nothing and returns an empty result set when the chain is empty', async () => {
     const fetchJson = vi.fn(async () => ({ chain: [] }))
 
-    await loadSurfacePlugins(context, {}, { fetchJson, doc: document })
+    const results = await loadSurfacePlugins(context, {}, { fetchJson, doc: document })
 
+    expect(results).toEqual([])
     expect(document.querySelectorAll('script[data-callora-plugin-entry]')).toHaveLength(0)
   })
 
-  it('tolerates a failing fetch — never throws, injects nothing', async () => {
+  it('tolerates a failing discovery fetch — never throws, warns, returns empty', async () => {
     const fetchJson = vi.fn(async () => {
       throw new Error('offline')
     })
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    await expect(loadSurfacePlugins(context, {}, { fetchJson, doc: document })).resolves.toBeUndefined()
+    await expect(
+      loadSurfacePlugins(context, {}, { fetchJson, doc: document }),
+    ).resolves.toEqual([])
     expect(document.querySelectorAll('script[data-callora-plugin-entry]')).toHaveLength(0)
+    expect(warn).toHaveBeenCalledTimes(1)
 
     warn.mockRestore()
   })

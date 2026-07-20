@@ -3,7 +3,7 @@ import * as Vue from 'vue'
 import { nextTick } from 'vue'
 import { createSurfaceRegistry } from './surface-registry'
 import { mountSurface } from './mount'
-import { loadSurfacePlugins } from './plugin-loader'
+import { injectPluginScript, loadSurfacePlugins } from './plugin-loader'
 // The real, committed bundle of the SurfaceDemo reference plugin, imported as raw text
 // (built by the @callora/surface-sdk preset: Vue external → CalloraVue, registerSurfaceView).
 import surfaceDemoBundle from '../../../../../../custom/plugins/SurfaceDemo/src/Resources/public/workspace/main.js?raw'
@@ -49,7 +49,25 @@ describe('surface golden path (real SurfaceDemo bundle)', () => {
             ],
           },
     )
-    await loadSurfacePlugins({ workspaceKey: 'acme', surfaceKey: 'portal' }, {}, { fetchJson })
+    // The unit environment never fires a real <script> load event, so drive the loader
+    // with a browser-faithful seam: it injects the tag (so the src below is observable)
+    // and resolves — the bundle itself is executed in step 4, as the browser would on load.
+    const loadScript = async (doc: Document, src: string) => {
+      injectPluginScript(doc, src)
+    }
+    const results = await loadSurfacePlugins(
+      { workspaceKey: 'acme', surfaceKey: 'portal' },
+      {},
+      { fetchJson, loadScript },
+    )
+    expect(results).toEqual([
+      {
+        pluginId: 'surface-demo',
+        scriptUrl: '/plugin-assets/surface-demo/app/workspace/main.js',
+        status: 'loaded',
+        durationMs: expect.any(Number),
+      },
+    ])
 
     // 3a. The loader resolved + injected exactly the chain plugin's bundle.
     const injected = document.querySelector('script[data-callora-plugin-entry]')
