@@ -1,7 +1,8 @@
 # Workspace (Public) API
 
 The tenant-facing public routes serve a workspace's runtime context, UI chain,
-theme tokens, and server-rendered surface to unauthenticated visitors. This is
+theme tokens, and server-rendered surface to visitors — anonymously for `Public`
+workspaces, and only to logged-in callers for `Authenticated` ones. This is
 the public counterpart to the operator/admin API catalogued in the
 [REST API](/reference/rest-api). This page catalogues every public workspace
 route plus the server-rendered surface route `GET /surface/render`.
@@ -11,9 +12,13 @@ Sources: `src/Workspace/Api/WorkspacePublicEndpoints.cs` and
 
 ## Conventions
 
-- **All routes here are anonymous.** Every endpoint is mapped with
-  `.AllowAnonymous()` — no session or bearer token is required. The
-  access-policy layer (Public / Authenticated / Mixed) is a later phase.
+- **Anonymous by framework, gated by workspace policy.** Every endpoint is mapped
+  with `.AllowAnonymous()` (no bearer token is *required* to reach the route), but
+  `/surface/render` and `/workspace/public/ui-chain` enforce the workspace's
+  **surface access policy**: a `Public` workspace (the default) is served
+  anonymously, while an `Authenticated` workspace turns an anonymous caller away —
+  render **redirects to `/login`**, ui-chain returns **`404`**. See
+  [Access policy](/guides/surface/ssr-templates#access-policy).
 - **Excluded from OpenAPI.** All routes are `.ExcludeFromDescription()`, so they
   do not appear in the Swagger document; they are consumed by the workspace shell
   and embedded surfaces, not by the operator console.
@@ -33,9 +38,9 @@ Sources: `src/Workspace/Api/WorkspacePublicEndpoints.cs` and
 | GET | `/workspace/public/resolve` | Report whether the request host/path resolves to a workspace. | Anonymous | JSON `{ resolved, workspaceKey }` |
 | GET | `/workspace/public/bootstrap.js` | JavaScript that sets `window.__CALLORA_WORKSPACE_CONTEXT__`. | Anonymous | `application/javascript` (no-store) |
 | GET | `/workspace/public/context` | The resolved workspace + public route metadata. | Anonymous | JSON `{ workspace, route }` or `404` |
-| GET | `/workspace/public/ui-chain` | The workspace's ordered UI-chain plugin ids. | Anonymous | JSON `{ workspaceKey, chain }` or `404` |
+| GET | `/workspace/public/ui-chain` | The workspace's ordered UI-chain plugin ids. | Anonymous (Public); `Authenticated` → `404` for anonymous callers | JSON `{ workspaceKey, chain }` or `404` |
 | GET | `/workspace/public/theme` | The workspace's effective theme tokens. | Anonymous | JSON `{ workspaceKey, themePluginId, themeVersion, valuesByKey }` |
-| GET | `/surface/render` | Server-render the workspace's own template chain (or the SPA shell). | Anonymous | `text/html` or `404` |
+| GET | `/surface/render` | Server-render the workspace's own template chain (or the SPA shell). | Anonymous (Public); `Authenticated` → `302 /login` for anonymous callers | `text/html`, `302`, or `404` |
 
 > The same file also maps a few public **redirect** routes on this host —
 > `/login`, `/` and the catch-all `/{**path:nonfile}` — which forward the visitor
@@ -134,10 +139,12 @@ plugin bundles. The primary plugin is `chain[0]`.
   | --- | --- | --- | --- |
   | `workspaceKey` | No | `default` | Workspace whose chain to resolve. |
 
-- **Auth.** Anonymous. Only workspaces visible in the configured default tenant
-  expose their chain.
-- **Response.** `404 Not Found` when the workspace is not visible; otherwise
-  `200 OK`:
+- **Auth.** Anonymous for `Public` workspaces. Only workspaces visible in the
+  configured default tenant expose their chain. When the workspace's access policy is
+  `Authenticated`, an anonymous caller gets `404` — the same response as a non-existent
+  workspace, so the plugin inventory cannot be enumerated for fingerprinting.
+- **Response.** `404 Not Found` when the workspace is not visible **or** is
+  `Authenticated` and the caller is anonymous; otherwise `200 OK`:
 
 ```json
 { "workspaceKey": "acme", "chain": ["acme-theme", "acme-storefront"] }
@@ -197,7 +204,10 @@ back to the built-in SPA shell.
 
 - **Query params.** None. Host and path come from the request (`Request.Host.Host`
   and `Request.Path`, default `/`).
-- **Auth.** Anonymous. The access-policy layer is a later phase.
+- **Auth.** Anonymous for `Public` workspaces (the default). When the workspace's
+  access policy is `Authenticated` and the caller is not logged in, the route
+  responds `302 Found` with `Location: /login?workspaceKey=…&returnUrl=…` instead of
+  rendering. See [Access policy](/guides/surface/ssr-templates#access-policy).
 - **Resolution & failure.** `404 Not Found` when no active workspace (with an
   active tenant) resolves.
 - **Render context.** Built as `SurfaceRenderContext` with `SurfaceKey: "default"`,

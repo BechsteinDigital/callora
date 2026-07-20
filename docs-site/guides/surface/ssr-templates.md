@@ -144,17 +144,20 @@ that published root for the renderer.
 ## How `GET /surface/render` renders your entry
 
 The public route lives in `SurfaceRenderEndpoints`
-(`src/Surface.Rendering/Api/SurfaceRenderEndpoints.cs`). Anonymous today; the
-Public/Authenticated/Mixed access-policy layer is a later phase. It:
+(`src/Surface.Rendering/Api/SurfaceRenderEndpoints.cs`). It:
 
 1. **Resolves the workspace** from the request host + path; a missing, inactive, or
    inactive-tenant workspace returns `404`.
-2. **Resolves the UI chain** for that workspace (`WorkspaceUiChainResolver`).
-3. **Reads the primary plugin's entry.** If `chain[0]` publishes an `index.njk`/`main.njk`
+2. **Enforces the access policy.** A `Public` workspace (the default) renders anonymously.
+   An `Authenticated` workspace served to a caller who is not logged in is **redirected**
+   (`302`) to `/login?workspaceKey=…&returnUrl=…` instead of being handed the shell — the
+   server is the authoritative boundary (see [Access policy](#access-policy) below).
+3. **Resolves the UI chain** for that workspace (`WorkspaceUiChainResolver`).
+4. **Reads the primary plugin's entry.** If `chain[0]` publishes an `index.njk`/`main.njk`
    (via `PublishedSurfaceTemplateBundles.TryReadEntryTemplate`), the renderer renders it
    with the **full chain** in scope — so relative `extends`/`include` resolve against the
    primary plugin, and `@id/…` against the rest of the chain.
-4. **Falls back to the SPA shell** when the chain is empty, publishes no entry, or the
+5. **Falls back to the SPA shell** when the chain is empty, publishes no entry, or the
    entry render throws — the failure is logged and the surface degrades to the built-in
    shell instead of erroring out.
 
@@ -174,6 +177,29 @@ referenced cross-bundle as `@your-plugin/…`). Order the chain so the page-owni
 leads.
 :::
 
+## Access policy
+
+A workspace carries a **surface access policy** — `Public` or `Authenticated`
+(`SurfaceAccessPolicy`, default `Public`). It is the server-side boundary for a surface;
+client-side UI hiding is never a substitute.
+
+- **`Public`** — the surface renders anonymously (the historical behaviour). Its UI chain
+  is also served anonymously at `/workspace/public/ui-chain`.
+- **`Authenticated`** — an anonymous caller is turned away: `GET /surface/render` redirects
+  to `/login`, and `GET /workspace/public/ui-chain` returns `404` (indistinguishable from a
+  non-existent workspace, so the plugin inventory can't be enumerated). A logged-in caller
+  is served normally.
+
+Operators set it with `PUT /api/workspaces/{workspaceKey}/surface-access-policy`
+(body `{ "policy": "Authenticated" }`, `workspace.update` permission). It is a
+workspace-level v1; distinct per-surface policies arrive with per-surface route resolution.
+
+::: info UI hiding is not a security boundary
+The access policy is enforced on the server for every request. A plugin that merely omits a
+control from its UI does not restrict access — anything sensitive must be gated by a real
+server-side permission check, not by what the surface chooses to render.
+:::
+
 ## The context a template can read
 
 Only the allowlisted values in `SurfaceRenderContext`
@@ -186,7 +212,7 @@ Only the allowlisted values in `SurfaceRenderContext`
 | `surface.key`, `surface.type` | `SurfaceKey`, `SurfaceType` |
 | `tenant.key` | `TenantKey` |
 | `locale` | `Locale` |
-| `tokens` | `Tokens` (string→string; e.g. `themePluginId`) |
+| `tokens` | `Tokens` (string→string): the effective, secret-filtered theme setting values plus the reserved `themePluginId`/`themeVersion` — bind them onto `--cal-*` yourself |
 
 No other host state is visible. Richer profile/identity context is a later phase.
 
