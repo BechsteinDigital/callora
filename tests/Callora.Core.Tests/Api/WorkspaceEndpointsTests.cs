@@ -55,6 +55,46 @@ public sealed class WorkspaceEndpointsTests
     }
 
     [Fact]
+    public async Task SetSurfaceAccessPolicy_ValidPersists_InvalidRejected()
+    {
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        _ = await client.PutAsJsonAsync(
+            "/api/workspaces/workspace-a",
+            new UpsertWorkspaceApiRequest("tenant-a", "Workspace A", "team", true));
+
+        // A valid policy is accepted and reflected in the workspace response.
+        var set = await client.PutAsJsonAsync(
+            "/api/workspaces/workspace-a/surface-access-policy",
+            new SetSurfaceAccessPolicyApiRequest("Authenticated"));
+        Assert.Equal(HttpStatusCode.OK, set.StatusCode);
+        var body = await set.Content.ReadFromJsonAsync<WorkspaceApiResponse>();
+        Assert.Equal("Authenticated", body!.SurfaceAccessPolicy);
+
+        // An unknown policy value is a 400, not a silent default.
+        var invalid = await client.PutAsJsonAsync(
+            "/api/workspaces/workspace-a/surface-access-policy",
+            new SetSurfaceAccessPolicyApiRequest("bogus"));
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetSurfaceAccessPolicy_UnknownWorkspace_ReturnsNotFound()
+    {
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        var response = await client.PutAsJsonAsync(
+            "/api/workspaces/ghost/surface-access-policy",
+            new SetSurfaceAccessPolicyApiRequest("Public"));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task UpsertMember_UnknownUser_ReturnsNotFound()
     {
         await using var app = await CreateAppAsync();

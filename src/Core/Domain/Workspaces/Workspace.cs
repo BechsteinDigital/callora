@@ -20,6 +20,8 @@ public sealed class Workspace
 
     public string PublicPathPrefix { get; set; } = "/";
 
+    public SurfaceAccessPolicy SurfaceAccessPolicy { get; set; } = SurfaceAccessPolicy.Public;
+
     public string? ThemePluginId { get; set; }
 
     public string? ThemeVersion { get; set; }

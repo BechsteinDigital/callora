@@ -1,4 +1,5 @@
 using Callora.Core.Application.Workspaces;
+using Callora.Core.Domain.Workspaces;
 using System.Collections.Concurrent;
 
 namespace Callora.Core.Tests.Support;
@@ -199,6 +200,22 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             UpdatedAtUtc = DateTimeOffset.UtcNow
         };
         return Task.FromResult(true);
+    }
+
+    public Task<WorkspaceSnapshot?> SetSurfaceAccessPolicyAsync(
+        string workspaceKey,
+        SurfaceAccessPolicy policy,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(workspaceKey) || !_workspaces.TryGetValue(workspaceKey.Trim(), out var workspace))
+        {
+            return Task.FromResult<WorkspaceSnapshot?>(null);
+        }
+
+        var updated = workspace with { SurfaceAccessPolicy = policy, UpdatedAtUtc = DateTimeOffset.UtcNow };
+        _workspaces[updated.WorkspaceKey] = updated;
+        return Task.FromResult<WorkspaceSnapshot?>(updated);
     }
 
     public Task<IReadOnlyList<WorkspaceMemberSnapshot>> ListMembersAsync(
