@@ -34,11 +34,34 @@ const developerSidebar = [
     ],
   },
   {
-    text: 'Backend & Automation',
+    text: 'Backend Extensions',
     items: [
       { text: 'Backend Extensions', link: '/guides/backend-extensions' },
       { text: 'Events & Jobs', link: '/guides/events-and-jobs' },
       { text: 'Capabilities & Entitlements', link: '/guides/capabilities' },
+    ],
+  },
+  {
+    text: 'Data Handling',
+    items: [
+      { text: 'Overview', link: '/guides/data/' },
+      { text: 'Entities & Schemas', link: '/guides/data/entities-and-schemas' },
+      { text: 'Migrations', link: '/guides/data/migrations' },
+      { text: 'Custom Fields', link: '/guides/data/custom-fields' },
+      { text: 'The Plugin Data Store', link: '/guides/data/data-store' },
+      { text: 'Retention & GDPR', link: '/guides/data/retention-and-gdpr' },
+      { text: 'Secrets', link: '/guides/data/secrets' },
+    ],
+  },
+  {
+    text: 'Automation',
+    items: [
+      { text: 'Overview', link: '/guides/automation/' },
+      { text: 'Background Jobs', link: '/guides/automation/background-jobs' },
+      { text: 'Recurring Jobs', link: '/guides/automation/recurring-jobs' },
+      { text: 'Rules', link: '/guides/automation/rules' },
+      { text: 'Flows', link: '/guides/automation/flows' },
+      { text: 'Webhooks', link: '/guides/automation/webhooks' },
     ],
   },
   {
