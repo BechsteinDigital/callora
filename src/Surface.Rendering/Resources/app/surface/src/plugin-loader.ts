@@ -18,12 +18,16 @@ export interface PluginAssetEntry {
   pluginId: string
   surface: string
   entryPath: string
+  /** Short content hash appended as a ?v= cache-busting query when present. */
+  contentHash?: string
 }
 
 export interface PluginStyleEntry {
   pluginId: string
   surface: string
   stylePath: string
+  /** Short content hash appended as a ?v= cache-busting query when present. */
+  contentHash?: string
 }
 
 export interface PluginManifest {
@@ -112,11 +116,23 @@ export function resolveSurfaceAssets(
   return {
     scripts: forSurface(manifest.entries)
       .filter((entry) => isSafeRelativePath(entry.entryPath))
-      .map((entry) => ({ pluginId: entry.pluginId, url: `${base}/${entry.entryPath}` })),
+      .map((entry) => ({
+        pluginId: entry.pluginId,
+        url: withVersion(`${base}/${entry.entryPath}`, entry.contentHash),
+      })),
     styles: forSurface(manifest.styleEntries)
       .filter((entry) => isSafeRelativePath(entry.stylePath))
-      .map((entry) => `${base}/${entry.stylePath}`),
+      .map((entry) => withVersion(`${base}/${entry.stylePath}`, entry.contentHash)),
   }
+}
+
+/**
+ * Appends the published content hash as a `?v=` cache-busting query. An upgraded bundle
+ * hashes differently, so its URL changes and a stale copy is never reused. A hash-less
+ * (legacy) manifest yields the bare URL, which then relies on revalidation.
+ */
+function withVersion(url: string, contentHash?: string): string {
+  return contentHash ? `${url}?v=${encodeURIComponent(contentHash)}` : url
 }
 
 /**

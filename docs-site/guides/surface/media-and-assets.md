@@ -128,6 +128,13 @@ Defence in depth on the client, too: an asset path is rejected if it carries a s
 absolute/protocol-relative, or contains a `..` segment — a bundle src can never point off
 the `plugin-assets` root.
 
+**Cache-busting.** Each manifest entry carries a short `contentHash` of the built file; the
+loader appends it as a `?v=<hash>` query. An upgraded bundle hashes differently, so its URL
+changes and a stale copy is never reused. Versioned requests to `/plugin-assets` are served
+`Cache-Control: immutable` (cache hard, never revalidate); the manifest itself is served
+`no-cache` so the version index is always fresh. A hash-less (legacy) manifest yields bare
+URLs that simply revalidate.
+
 Loading is **fail-soft but not fail-silent**. Every failure — a missing chain/manifest, an
 offline server, or a single broken bundle — is tolerated: the surface renders whatever
 registered, never crashing. But each outcome is recorded as a `PluginLoadResult`
