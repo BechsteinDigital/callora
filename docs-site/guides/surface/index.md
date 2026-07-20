@@ -132,7 +132,7 @@ and is the default the shell already emits.
 ## Learning path
 
 1. **[Building a surface plugin](./building-a-surface-plugin)** — the flagship tutorial:
-   scaffold a Vue bundle with `@callora/surface-sdk`, register a view, build, publish,
+   scaffold a Vue bundle with `@callora/surface-sdk`, register a view, build, ship the assets,
    and see it render.
 2. **[App vs Islands](./app-vs-islands)** — the two mount modes in depth, context
    inheritance, and reactive late registration.

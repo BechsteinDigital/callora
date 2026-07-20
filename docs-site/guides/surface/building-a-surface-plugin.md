@@ -29,8 +29,10 @@ You'll need:
   scaffold one first with **[Build your first Callora plugin](/guides/getting-started/your-first-plugin)**.
 - **A running Callora host** in development, so you can install/activate the plugin and
   open its surface.
-- **The `@callora/surface-sdk` package** (`custom/surface-sdk/`, published as
-  `@callora/surface-sdk`) — the typed contract plus the Vite preset you compile against.
+- **The `@callora/surface-sdk` package** (`custom/surface-sdk/`, Apache-2.0) — the typed
+  contract plus the Vite preset you compile against. It builds to `dist/` with
+  `npm run build`; today you consume it as a `file:` dependency from the Callora repo, and
+  as `@callora/surface-sdk` from your registry once it is published there.
 :::
 
 ## The mental model
@@ -77,7 +79,7 @@ my-plugin/
     "dev": "vite build --watch"
   },
   "dependencies": {
-    "@callora/surface-sdk": "*"
+    "@callora/surface-sdk": "file:../../../../../../surface-sdk"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.0",
@@ -91,6 +93,14 @@ my-plugin/
 You need Vue to *build and type-check*, but the preset marks it external, so it is never
 bundled. At runtime the component's `import ... from 'vue'` resolves to
 `window.CalloraVue`.
+:::
+
+::: warning Build the SDK first
+The `file:` path is relative to this `package.json` — six levels up from
+`src/Resources/app/workspace/` to reach `custom/surface-sdk/`. It resolves to the SDK's
+built `dist/`, so run `npm run build` in `custom/surface-sdk/` once before installing your
+plugin. A published `@callora/surface-sdk` (`"^0.1.0"`) ships `dist/` prebuilt and needs no
+path, so both the depth and this step disappear once it is on a registry.
 :::
 
 ## Step 2 — Configure the build

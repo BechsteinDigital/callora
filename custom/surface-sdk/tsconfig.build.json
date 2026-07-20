@@ -1,0 +1,15 @@
+{
+  // Emits the distributable artifact (JS + declarations) for the published package.
+  // The base tsconfig stays noEmit for editor/typecheck; this one produces dist/.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": []
+  },
+  "include": ["src/index.ts", "src/vite-preset.ts"]
+}
