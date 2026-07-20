@@ -65,8 +65,25 @@ const developerSidebar = [
     ],
   },
   {
-    text: 'Front-end Extensions',
-    items: [{ text: 'Admin & Surface Extensions', link: '/guides/admin-extensions' }],
+    text: 'Surface Extensions',
+    items: [
+      { text: 'Overview', link: '/guides/surface/' },
+      { text: 'Build a Surface Plugin', link: '/guides/surface/building-a-surface-plugin' },
+      { text: 'App vs. Islands', link: '/guides/surface/app-vs-islands' },
+      { text: 'SSR Templates', link: '/guides/surface/ssr-templates' },
+      { text: 'Themes & Tokens', link: '/guides/surface/themes-and-tokens' },
+      { text: 'Media & Assets', link: '/guides/surface/media-and-assets' },
+    ],
+  },
+  {
+    text: 'Admin Extensions',
+    items: [
+      { text: 'Overview', link: '/guides/admin/' },
+      { text: 'Slots', link: '/guides/admin/slots' },
+      { text: 'Hooks', link: '/guides/admin/hooks' },
+      { text: 'Service Overrides', link: '/guides/admin/service-overrides' },
+      { text: 'Build an Admin Module', link: '/guides/admin/building-an-admin-module' },
+    ],
   },
   {
     text: 'Ship It',
@@ -93,6 +110,13 @@ export default defineConfig({
   // /api/ is the DocFX-generated .NET reference, served alongside this site — a valid
   // runtime path but not a VitePress page, so it must not fail the dead-link check.
   ignoreDeadLinks: [/^\/api\//],
+
+  // The surface docs quote Nunjucks/Twig templates, which use `{{ }}`. Move Vue's own
+  // interpolation delimiters out of the way so those examples render literally instead
+  // of being parsed as Vue expressions (we never use `{{ }}` for real interpolation).
+  vue: {
+    template: { compilerOptions: { delimiters: ['{[', ']}'] } },
+  },
 
   themeConfig: {
     nav: [

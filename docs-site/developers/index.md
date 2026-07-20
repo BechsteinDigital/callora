@@ -25,8 +25,8 @@ small set of sanctioned mechanisms.
 | **Own data** | Custom EF Core entities in an isolated `plugin_<id>` schema | `IPluginDbContextFactory<TContext>` | [Backend Extensions](../guides/backend-extensions.md#custom-ef-entities-and-per-plugin-schemas) |
 | **Run background work** | Leased jobs with idempotency and fencing | `IBackgroundJobHandler` | [Events & Jobs](../guides/events-and-jobs.md#the-job-queue) |
 | **Gate features** | Capabilities and entitlements (provenance-sourced) | `registry.json` capabilities, `PluginEntitlement` | [Capabilities & Entitlements](../guides/capabilities.md) |
-| **Extend the admin shell** | Slots, hooks, service overrides | `window.CalloraAdmin` | [Admin & Surface Extensions](../guides/admin-extensions.md#admin-shell-extensions) |
-| **Extend tenant-facing surfaces** | Vue views into SSR output | `@callora/surface-sdk` | [Admin & Surface Extensions](../guides/admin-extensions.md#surface-plugins) |
+| **Extend the admin shell** | Slots, hooks, service overrides | `window.CalloraAdmin` | [Admin Extensions](../guides/admin/) |
+| **Extend tenant-facing surfaces** | Vue views into SSR output | `@callora/surface-sdk` | [Surface Extensions](../guides/surface/) |
 
 ## Trust and governance in one sentence
 
@@ -42,7 +42,7 @@ Read [Architecture](../concepts/architecture.md) before writing your first plugi
 2. [Architecture](../concepts/architecture.md) — the platform model, the ALC runtime, the governance boundary.
 3. [Plugin Fundamentals](../guides/fundamentals/) — the entry class, `registry.json`, the curated context, exporting extensions, configuration, dependencies.
 4. [Backend Extensions](../guides/backend-extensions.md) — events, decoration, controllers, data.
-5. [Admin & Surface Extensions](../guides/admin-extensions.md) — the two front-end runtimes.
+5. [Surface Extensions](../guides/surface/) and [Admin Extensions](../guides/admin/) — the two front-end runtimes.
 6. [Capabilities & Entitlements](../guides/capabilities.md) and [Events & Jobs](../guides/events-and-jobs.md).
 7. [Testing & Publishing](../guides/testing-and-publishing.md) — the test stack, the PublicAPI workflow, publishing a signed plugin.
 
