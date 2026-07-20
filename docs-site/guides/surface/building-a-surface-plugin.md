@@ -50,24 +50,24 @@ and injects it in chain order. (Sources under `app/` stay with the vendor; only 
 
 ## Step 1 — Lay out the bundle
 
-Inside your plugin, create the surface source tree:
+Inside your plugin, create the surface source tree. The build config
+(`package.json` + `vite.config.ts`) sits at the **plugin root**, next to your
+`registry.json` and (if you have one) the `.csproj` — the same layout the reference
+plugin `custom/plugins/SurfaceDemo/` uses:
 
 ```text
-my-plugin/
+my-plugin/                       # plugin root — also holds registry.json / .csproj
+├── package.json                 # the surface bundle's build config
+├── vite.config.ts
 └── src/
     └── Resources/
-        ├── app/
-        │   └── workspace/           # source (stays with the vendor)
-        │       ├── package.json
-        │       ├── vite.config.ts
-        │       └── src/
-        │           ├── main.ts
-        │           └── GreetingPage.vue
-        └── public/
-            └── workspace/           # build output — the only thing that ships
+        ├── app/workspace/src/   # source (stays with the vendor)
+        │   ├── main.ts
+        │   └── GreetingPage.vue
+        └── public/workspace/    # build output — the only thing that ships
 ```
 
-`package.json` for the bundle:
+`package.json` for the bundle (at the plugin root):
 
 ```json
 {
@@ -75,11 +75,10 @@ my-plugin/
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "dev": "vite build --watch"
+    "build": "vite build"
   },
   "dependencies": {
-    "@callora/surface-sdk": "file:../../../../../../surface-sdk"
+    "@callora/surface-sdk": "file:../../surface-sdk"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.0",
@@ -96,11 +95,11 @@ bundled. At runtime the component's `import ... from 'vue'` resolves to
 :::
 
 ::: warning Build the SDK first
-The `file:` path is relative to this `package.json` — six levels up from
-`src/Resources/app/workspace/` to reach `custom/surface-sdk/`. It resolves to the SDK's
-built `dist/`, so run `npm run build` in `custom/surface-sdk/` once before installing your
-plugin. A published `@callora/surface-sdk` (`"^0.1.0"`) ships `dist/` prebuilt and needs no
-path, so both the depth and this step disappear once it is on a registry.
+The `file:` path is relative to this `package.json` — from `custom/plugins/my-plugin/` it
+is two levels up to reach `custom/surface-sdk/`. It resolves to the SDK's built `dist/`,
+so run `npm run build` in `custom/surface-sdk/` once before installing your plugin. A
+published `@callora/surface-sdk` (`"^0.1.0"`) ships `dist/` prebuilt and needs no path, so
+this step disappears once it is on a registry.
 :::
 
 ## Step 2 — Configure the build
@@ -115,7 +114,8 @@ and output to `src/Resources/public/<surface>`.
 import { calloraSurfacePlugin } from '@callora/surface-sdk/vite-preset'
 
 export default calloraSurfacePlugin({
-  entry: 'src/main.ts',
+  // Paths are relative to the plugin root (where this vite.config.ts lives).
+  entry: 'src/Resources/app/workspace/src/main.ts',
   name: 'MyPluginWorkspaceSurface', // must be globally unique per plugin
 })
 ```
