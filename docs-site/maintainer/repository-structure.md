@@ -7,7 +7,7 @@ solution that ties everything together is `Callora.Host.sln`.
 
 ## Top-level layout
 
-```
+```text
 src/                 framework libraries (the platform)
 custom/              first-party plugins + the plugin SDK
 tests/               xUnit test projects (Core + analyzers) and test plugins

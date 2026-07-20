@@ -74,6 +74,7 @@ Callora through documented extension points, not by reaching into internal APIs
 whose shape can change without notice.
 
 **How to fix / avoid.**
+
 - Use the documented extension points and contract types instead of the internal
   symbol. See [Exporting extensions](/guides/fundamentals/exporting-extensions)
   and [Best practices](/guides/fundamentals/best-practices).

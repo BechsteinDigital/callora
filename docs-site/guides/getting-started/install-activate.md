@@ -14,6 +14,7 @@ requires a host restart.
 - The dev-only `AllowUnsignedPlugins` escape hatch
 
 ::: tip Prerequisites
+
 - A running Callora host with an operator account.
 - Operator credentials with the plugin permissions below. In development the bootstrap API
   key authenticates as a platform operator (see
@@ -37,7 +38,7 @@ defined by `PluginInstallationState`:
 
 The transitions map directly onto API calls:
 
-```
+```text
 install ──▶ Installed ──activate──▶ Active
                  ▲                     │
                  │                deactivate

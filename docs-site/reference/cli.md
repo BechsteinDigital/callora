@@ -28,7 +28,7 @@ examples below, the leading `callora` stands in for that invocation.
 Running with no arguments, or with `--help`, `-h`, or `help` (exactly one
 argument), prints usage and exits `0`.
 
-```
+```text
 Usage:
   callora plugin new [name] [--name <display-name>] [--id <plugin-id>] [--output <directory>] [--force]
   callora plugin test-contract --assembly <path-to-dll> [--registry <path-to-registry.json>] [--entry-type <full-type-name>]
@@ -132,7 +132,7 @@ Any unknown option, or a missing value for a known option, fails parsing.
 
 ### Validations performed
 
-**Manifest resolution and shape**
+#### Manifest resolution and shape
 
 | Failure code | Fires when |
 | --- | --- |

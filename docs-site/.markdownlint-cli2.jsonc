@@ -1,0 +1,16 @@
+{
+  // Structure-strict, style-permissive: catch broken markdown, not stylistic taste.
+  "config": {
+    "default": true,
+    "MD013": false, // line length — prose/tables run long by design
+    "MD033": false, // inline HTML — VitePress containers + <div>/<span> are intentional
+    "MD041": false, // first-line H1 — the home page is frontmatter-only (layout: home)
+    "MD024": { "siblings_only": true }, // repeated headings under different parents are fine
+    "MD034": false, // bare URLs — occasionally intentional
+    "MD046": false, // code block style — allow both fenced and indented
+    "MD049": false, // emphasis style — allow * and _
+    "MD004": false // unordered list marker style — allow - and *
+  },
+  "globs": ["**/*.md"],
+  "ignores": ["node_modules", ".vitepress/cache", ".vitepress/dist"]
+}

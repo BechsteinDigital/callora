@@ -20,6 +20,7 @@ The worked reference is the host's own retention cleanup
 - A worked nightly-cleanup example: provider + handler
 
 ::: tip Prerequisites
+
 - You've read [Background jobs](./background-jobs) — a recurring job enqueues one.
 - A plugin with a `StartAsync(IHostPluginContext context, …)` entry point that can
   `context.Export<T>(...)` — see [Exporting extensions](/guides/fundamentals/exporting-extensions).

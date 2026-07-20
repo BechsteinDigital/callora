@@ -31,7 +31,7 @@ publishes two kinds of tree per plugin.
 For each surface (`admin` and `workspace`), the publisher looks for the plugin's built
 deliverable and copies it to `plugin-assets/<pluginId>/app/<surface>/`:
 
-```
+```text
 src/Resources/public/workspace/   ──▶   /plugin-assets/<pluginId>/app/workspace/
 ```
 
@@ -53,7 +53,7 @@ and records no entry, so the UI never loads. Always build the bundle
 The plugin's `.njk` template tree is copied to
 `plugin-assets/<pluginId>/views/workspace/`:
 
-```
+```text
 src/Resources/views/workspace/   ──▶   /plugin-assets/<pluginId>/views/workspace/
 ```
 
@@ -80,7 +80,7 @@ and a crash mid-build leaves the previous publish intact.
 The publisher writes a manifest listing every entry, style, and workspace template. It's
 served at:
 
-```
+```text
 GET /manifests/plugin-ui-assets.manifest.json
 ```
 

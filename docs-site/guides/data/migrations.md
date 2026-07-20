@@ -18,6 +18,7 @@ documents the lower-level `IPluginMigration` runner for plugins that prefer raw 
 - The alternative `IPluginMigration` / `IPluginMigrationRunner` raw-SQL path
 
 ::: tip Prerequisites
+
 - A `DbContext` pinned to your `plugin_<id>` schema — see
   [Entities & schemas](./entities-and-schemas).
 - The EF Core tooling: `dotnet tool install --global dotnet-ef`.

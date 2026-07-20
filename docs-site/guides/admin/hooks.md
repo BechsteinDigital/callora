@@ -21,6 +21,7 @@ A hook comes in two flavours by convention:
 - A worked example that vetoes a user save under a business rule
 
 ::: tip Prerequisites
+
 - An admin bundle running against `window.CalloraAdmin` — see
   [Building an admin module](./building-an-admin-module).
 - The **hook name** you want to target (see [Discovering hook names](#discovering-hook-names)).

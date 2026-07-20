@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "docs-site/**"
       - "docfx/**"
       - "src/**"
       - "custom/plugins/**"
@@ -11,6 +12,7 @@ on:
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
+      - "docs-site/**"
       - "docfx/**"
       - ".config/dotnet-tools.json"
       - ".github/workflows/docs.yml"
@@ -24,8 +26,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: Lint docs (markdownlint + cspell)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      # ubuntu-latest ships a current Node LTS, sufficient for the doc tooling.
+      - name: Install doc tooling
+        working-directory: docs-site
+        run: npm ci
+
+      - name: Lint Markdown + spelling
+        working-directory: docs-site
+        run: npm run lint
+
   build:
-    name: Build documentation
+    name: Build documentation site
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -37,22 +56,35 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore .NET tools (docfx)
-        run: dotnet tool restore
+      # The conceptual site (VitePress). Its build fails on any internal dead link.
+      - name: Build VitePress site
+        working-directory: docs-site
+        run: |
+          npm ci
+          npm run build
 
-      - name: Build DocFX site
-        # No --warningsAsErrors: docfx 2.78 emits a harmless
-        # FailedToLoadAnalyzer (Razor) warning against the newer .NET 10 SDK.
-        run: dotnet docfx docfx/docfx.json
+      # The .NET API reference (DocFX). No --warningsAsErrors: docfx 2.78 emits a
+      # harmless FailedToLoadAnalyzer (Razor) warning against the newer .NET 10 SDK.
+      - name: Build DocFX .NET API reference
+        run: |
+          dotnet tool restore
+          dotnet docfx docfx/docfx.json
+
+      # Serve the VitePress site at the root and the DocFX reference under /api/
+      # (the VitePress nav links to /api/, excluded from its dead-link check).
+      - name: Assemble combined site
+        run: |
+          mkdir -p docs-site/.vitepress/dist/api
+          cp -r _site/. docs-site/.vitepress/dist/api/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
-          path: _site
+          path: docs-site/.vitepress/dist
 
   deploy:
     name: Deploy to GitHub Pages
-    needs: build
+    needs: [lint, build]
     # Deploy only from main and only once opted in via the DOCS_DEPLOY repo
     # variable. The repository is private today; enable Pages (Settings ->
     # Pages -> Source: GitHub Actions) and set DOCS_DEPLOY=true for the public

@@ -147,7 +147,7 @@ and verification agree regardless of on-disk formatting. The algorithm id is
 
 The CLI command signs a plugin directory:
 
-```
+```text
 callora plugin sign --plugin <plugin-directory> --key <private-key.pem> [--out <plugin.signature.json>]
 ```
 

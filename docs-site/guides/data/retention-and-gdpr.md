@@ -18,6 +18,7 @@ worked example is `CommunicationWorkspaceDataPurgeContributor`
 - How host-level retention (jobs, notifications) already handles PII it owns
 
 ::: tip Prerequisites
+
 - A plugin that stores **workspace-scoped** data — in [EF entities](./entities-and-schemas)
   or the [data store](./data-store) — with a `WorkspaceKey` on every relevant row/document.
 - You can `context.Export(...)` from `StartAsync` — see
