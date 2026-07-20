@@ -14,5 +14,6 @@ public sealed record WorkspaceApiResponse(
     string? ThemeVersion,
     string? ThemeAssignedBy,
     DateTimeOffset? ThemeAssignedAtUtc,
+    string SurfaceAccessPolicy,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc);

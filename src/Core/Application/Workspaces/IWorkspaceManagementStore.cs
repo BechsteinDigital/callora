@@ -1,3 +1,5 @@
+using Callora.Core.Domain.Workspaces;
+
 namespace Callora.Core.Application.Workspaces;
 
 public interface IWorkspaceManagementStore
@@ -42,6 +44,15 @@ public interface IWorkspaceManagementStore
 
     Task<bool> ClearThemeAssignmentAsync(
         string workspaceKey,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets the workspace's surface access policy. Returns the updated snapshot, or null
+    /// when the workspace does not exist.
+    /// </summary>
+    Task<WorkspaceSnapshot?> SetSurfaceAccessPolicyAsync(
+        string workspaceKey,
+        SurfaceAccessPolicy policy,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<WorkspaceMemberSnapshot>> ListMembersAsync(

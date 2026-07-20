@@ -4,6 +4,7 @@ using Callora.Core.Application.Policies;
 using Callora.Core.Application.Security;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Application.Workspaces.Events;
+using Callora.Core.Domain.Workspaces;
 using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Infrastructure.Security;
 using Microsoft.Extensions.Logging;
@@ -252,6 +253,41 @@ public static class WorkspaceEndpoints
             };
         }).WithName("Workspaces_Members_Delete")
             .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
+
+        group.MapPut("/{workspaceKey}/surface-access-policy", async (
+            string workspaceKey,
+            SetSurfaceAccessPolicyApiRequest request,
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            CancellationToken cancellationToken) =>
+        {
+            if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
+            {
+                return ApiProblems.BadRequest("Workspace host default tenant key is not configured.");
+            }
+
+            if (!Enum.TryParse<SurfaceAccessPolicy>(request.Policy, ignoreCase: true, out var policy) ||
+                !Enum.IsDefined(policy))
+            {
+                return ApiProblems.BadRequest(
+                    $"Unknown surface access policy '{request.Policy}'. Expected 'Public' or 'Authenticated'.");
+            }
+
+            var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+            if (workspace is null ||
+                !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
+            }
+
+            var updated = await workspaceStore
+                .SetSurfaceAccessPolicyAsync(workspaceKey, policy, cancellationToken)
+                .ConfigureAwait(false);
+            return updated is null
+                ? ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.")
+                : Results.Ok(ToResponse(updated));
+        }).WithName("Workspaces_SetSurfaceAccessPolicy")
+            .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
     }
 
     private static WorkspaceApiResponse ToResponse(WorkspaceSnapshot workspace)
@@ -270,6 +306,7 @@ public static class WorkspaceEndpoints
             workspace.ThemeVersion,
             workspace.ThemeAssignedBy,
             workspace.ThemeAssignedAtUtc,
+            workspace.SurfaceAccessPolicy.ToString(),
             workspace.CreatedAtUtc,
             workspace.UpdatedAtUtc);
     }

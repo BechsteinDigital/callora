@@ -1,8 +1,10 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Workspaces;
+using Callora.Core.Domain.Workspaces;
 using Callora.Core.Tests.Support;
 using Callora.Surface.Rendering;
 using Callora.Surface.Rendering.Api;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -107,28 +109,78 @@ public sealed class SurfaceRenderEndpointsTests
         Assert.False(tokens.ContainsKey("apiSecret"));
     }
 
+    [Fact]
+    public async Task Render_AuthenticatedPolicy_AnonymousCaller_RedirectsToLogin()
+    {
+        var store = await SeededStoreAsync();
+        _ = await store.SetSurfaceAccessPolicyAsync("acme", SurfaceAccessPolicy.Authenticated);
+
+        await using var app = await CreateAppAsync(store, configure: null);
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/surface/render");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        var location = response.Headers.Location!.ToString();
+        Assert.StartsWith("/login", location, StringComparison.Ordinal);
+        Assert.Contains("workspaceKey=acme", location, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Render_AuthenticatedPolicy_AuthenticatedCaller_Renders()
+    {
+        var store = await SeededStoreAsync();
+        _ = await store.SetSurfaceAccessPolicyAsync("acme", SurfaceAccessPolicy.Authenticated);
+
+        await using var app = await CreateAppAsync(store, configure: null, authenticate: true);
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/surface/render");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("data-workspace=\"acme\"", html, StringComparison.Ordinal);
+    }
+
+    private static async Task<InMemoryWorkspaceManagementStore> SeededStoreAsync()
+    {
+        var store = new InMemoryWorkspaceManagementStore();
+        store.AddTenant("tenant-a");
+        _ = await store.UpsertAsync("tenant-a", "acme", "Acme", "spa", isActive: true, publicBaseUrl: "https://acme.example.de");
+        return store;
+    }
+
     private static Task<WebApplication> CreateAppAsync() => CreateAppAsync(null, null);
 
     private static async Task<WebApplication> CreateAppAsync(
         InMemoryWorkspaceManagementStore? store,
-        Action<IServiceCollection>? configure)
+        Action<IServiceCollection>? configure,
+        bool authenticate = false)
     {
-        if (store is null)
-        {
-            store = new InMemoryWorkspaceManagementStore();
-            store.AddTenant("tenant-a");
-            _ = await store.UpsertAsync("tenant-a", "acme", "Acme", "spa", isActive: true, publicBaseUrl: "https://acme.example.de");
-        }
+        store ??= await SeededStoreAsync();
 
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddSingleton<IWorkspaceManagementStore>(store);
         builder.Services.AddCalloraSurfaceRendering();
+        if (authenticate)
+        {
+            builder.Services
+                .AddAuthentication("Test")
+                .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>("Test", _ => { });
+            builder.Services.AddAuthorization();
+        }
         // A capturing/overriding renderer, the theme resolver etc. are layered on last so
         // the caller's registrations win over the defaults.
         configure?.Invoke(builder.Services);
 
         var app = builder.Build();
+        if (authenticate)
+        {
+            app.UseAuthentication();
+        }
         app.MapSurfaceRenderEndpoints();
         await app.StartAsync();
         return app;

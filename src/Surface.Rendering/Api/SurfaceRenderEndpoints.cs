@@ -1,5 +1,6 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Workspaces;
+using Callora.Core.Domain.Workspaces;
 using Callora.Surface.Rendering.Rendering;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -46,6 +47,19 @@ public static class SurfaceRenderEndpoints
                 if (workspace is null || !workspace.IsActive || !workspace.TenantIsActive)
                 {
                     return Results.NotFound();
+                }
+
+                // Access policy (ADR-014 §3.4): an Authenticated surface is server-side
+                // gated — an anonymous caller is redirected to log in, not served the
+                // shell. Public surfaces (the default) stay open. This is the authoritative
+                // boundary; client-side UI hiding is never a substitute.
+                if (workspace.SurfaceAccessPolicy == SurfaceAccessPolicy.Authenticated &&
+                    httpContext.User.Identity?.IsAuthenticated != true)
+                {
+                    var returnUrl = httpContext.Request.Path + httpContext.Request.QueryString;
+                    return Results.Redirect(
+                        $"/login?workspaceKey={Uri.EscapeDataString(workspace.WorkspaceKey)}" +
+                        $"&returnUrl={Uri.EscapeDataString(returnUrl)}");
                 }
 
                 // The effective, secret-filtered theme values (defaults + workspace

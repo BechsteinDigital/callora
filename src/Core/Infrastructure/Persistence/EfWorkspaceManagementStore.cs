@@ -309,6 +309,30 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         return true;
     }
 
+    public async Task<WorkspaceSnapshot?> SetSurfaceAccessPolicyAsync(
+        string workspaceKey,
+        SurfaceAccessPolicy policy,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
+
+        var normalizedWorkspaceKey = workspaceKey.Trim();
+        var workspace = await dbContext.Workspaces
+            .Include(x => x.Tenant)
+            .SingleOrDefaultAsync(x => x.WorkspaceKey == normalizedWorkspaceKey, cancellationToken)
+            .ConfigureAwait(false);
+        if (workspace is null)
+        {
+            return null;
+        }
+
+        workspace.SurfaceAccessPolicy = policy;
+        workspace.UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return ToSnapshot(workspace, workspace.Tenant);
+    }
+
     public async Task<IReadOnlyList<WorkspaceMemberSnapshot>> ListMembersAsync(
         string workspaceKey,
         CancellationToken cancellationToken = default)
@@ -463,7 +487,10 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             workspace.ThemeAssignedBy,
             workspace.ThemeAssignedAtUtc,
             workspace.CreatedAtUtc,
-            workspace.UpdatedAtUtc);
+            workspace.UpdatedAtUtc)
+        {
+            SurfaceAccessPolicy = workspace.SurfaceAccessPolicy
+        };
     }
 
     private static Expression<Func<WorkspaceEntity, WorkspaceSnapshot>> ToSnapshotExpressionWithTenant()
@@ -483,6 +510,9 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             x.ThemeAssignedBy,
             x.ThemeAssignedAtUtc,
             x.CreatedAtUtc,
-            x.UpdatedAtUtc);
+            x.UpdatedAtUtc)
+        {
+            SurfaceAccessPolicy = x.SurfaceAccessPolicy
+        };
     }
 }

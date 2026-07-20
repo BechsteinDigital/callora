@@ -4676,3 +4676,12 @@ static Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.operator 
 Callora.Core.Application.Entitlements.IPluginEntitlementStore.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Entitlements.PluginEntitlementSnapshot!>!>
 Callora.Core.Infrastructure.Persistence.EfPluginEntitlementStore.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Entitlements.PluginEntitlementSnapshot!>!>
 Callora.Core.Application.Entitlements.InMemoryPluginEntitlementStore.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Entitlements.PluginEntitlementSnapshot!>!>
+Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
+Callora.Core.Domain.Workspaces.SurfaceAccessPolicy.Public = 0 -> Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
+Callora.Core.Domain.Workspaces.SurfaceAccessPolicy.Authenticated = 1 -> Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
+Callora.Core.Domain.Workspaces.Workspace.SurfaceAccessPolicy.get -> Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
+Callora.Core.Domain.Workspaces.Workspace.SurfaceAccessPolicy.set -> void
+Callora.Core.Application.Workspaces.WorkspaceSnapshot.SurfaceAccessPolicy.get -> Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
+Callora.Core.Application.Workspaces.WorkspaceSnapshot.SurfaceAccessPolicy.init -> void
+Callora.Core.Application.Workspaces.IWorkspaceManagementStore.SetSurfaceAccessPolicyAsync(string! workspaceKey, Callora.Core.Domain.Workspaces.SurfaceAccessPolicy policy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSnapshot?>!
+Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.SetSurfaceAccessPolicyAsync(string! workspaceKey, Callora.Core.Domain.Workspaces.SurfaceAccessPolicy policy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSnapshot?>!

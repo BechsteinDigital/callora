@@ -1,3 +1,5 @@
+using Callora.Core.Domain.Workspaces;
+
 namespace Callora.Core.Application.Workspaces;
 
 public sealed record WorkspaceSnapshot(
@@ -15,4 +17,8 @@ public sealed record WorkspaceSnapshot(
     string? ThemeAssignedBy,
     DateTimeOffset? ThemeAssignedAtUtc,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc)
+{
+    /// <summary>Who may reach this workspace's public surface. Defaults to Public.</summary>
+    public SurfaceAccessPolicy SurfaceAccessPolicy { get; init; } = SurfaceAccessPolicy.Public;
+}
