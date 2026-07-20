@@ -110,7 +110,7 @@ Publishing is: build, sign, place, and let the host trust and load it.
 ### 1. Build
 
 Build your plugin assembly and, if it has a surface UI, the IIFE bundles (via the
-[`calloraSurfacePlugin`](admin-extensions.md#a-minimal-surface-plugin) Vite preset — only
+[`calloraSurfacePlugin`](/guides/surface/building-a-surface-plugin) Vite preset — only
 `Resources/public/<surface>` is published). Ensure `registry.json` is complete: identity,
 `contractVersion`, capabilities, dependencies, and the
 [compliance metadata](/guides/fundamentals/compliance-metadata).
