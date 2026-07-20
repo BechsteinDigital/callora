@@ -125,7 +125,7 @@ public interface IBackgroundJobHandler
 }
 
 public sealed record BackgroundJobExecutionContext(
-    Guid JobId, string PayloadJson, string? WorkspaceKey, int Attempt);
+    Guid JobId, string JobType, string PayloadJson, string? WorkspaceKey, int Attempt);
 ```
 
 ### Leases, reaper, and recovery
