@@ -38,12 +38,13 @@ Read [Architecture](../concepts/architecture.md) before writing your first plugi
 
 ## Where to start
 
-1. [Architecture](../concepts/architecture.md) — the platform model, the ALC runtime, the governance boundary.
-2. [Plugin Development](../guides/plugin-development.md) — anatomy, the v1 contract, lifecycle, hot-loading, signing.
-3. [Backend Extensions](../guides/backend-extensions.md) — events, decoration, controllers, data.
-4. [Admin & Surface Extensions](../guides/admin-extensions.md) — the two front-end runtimes.
-5. [Capabilities & Entitlements](../guides/capabilities.md) and [Events & Jobs](../guides/events-and-jobs.md).
-6. [Testing & Publishing](../guides/testing-and-publishing.md) — the test stack, the PublicAPI workflow, publishing a signed plugin.
+1. [Build your first plugin](../guides/getting-started/your-first-plugin.md) — the end-to-end walkthrough: scaffold, add an endpoint, install, activate, call it.
+2. [Architecture](../concepts/architecture.md) — the platform model, the ALC runtime, the governance boundary.
+3. [Plugin Fundamentals](../guides/fundamentals/) — the entry class, `registry.json`, the curated context, exporting extensions, configuration, dependencies.
+4. [Backend Extensions](../guides/backend-extensions.md) — events, decoration, controllers, data.
+5. [Admin & Surface Extensions](../guides/admin-extensions.md) — the two front-end runtimes.
+6. [Capabilities & Entitlements](../guides/capabilities.md) and [Events & Jobs](../guides/events-and-jobs.md).
+7. [Testing & Publishing](../guides/testing-and-publishing.md) — the test stack, the PublicAPI workflow, publishing a signed plugin.
 
 The generated type reference for the host and first-party plugins lives under
 [API Reference](/api/).
