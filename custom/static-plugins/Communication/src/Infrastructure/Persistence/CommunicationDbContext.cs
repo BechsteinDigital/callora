@@ -1,6 +1,7 @@
 using Callora.Plugin.Communication.Domain.Accounts;
 using Callora.Plugin.Communication.Domain.Calls;
 using Callora.Plugin.Communication.Domain.Lines;
+using Callora.Plugin.Communication.Domain.Streaming;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Plugin.Communication.Infrastructure.Persistence;
@@ -25,6 +26,9 @@ public sealed class CommunicationDbContext(DbContextOptions<CommunicationDbConte
 
     /// <summary>Call history (metadata only).</summary>
     public DbSet<CallLog> CallLogs => Set<CallLog>();
+
+    /// <summary>WebSocket media-stream bindings (metadata only).</summary>
+    public DbSet<MediaStreamSession> MediaStreamSessions => Set<MediaStreamSession>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
