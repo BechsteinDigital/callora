@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>Callora.Plugin.Communication.Abstractions</RootNamespace>
+    <!-- Standalone contract package unter src/ (Plugin-Root: nur registry.json + csproj).
+         Eigenes Assembly für ALC-Typidentität + dünnen Compile-Vertrag (sekundäre,
+         in-process Fläche; primär ist die REST/WS/Webhook-API). -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Description>Callora Communication foundation — stable cross-plugin contracts (channels, calls, voice audio, capabilities, consent) shared via the host load context. Assembly name starts with "Callora." so it is unified across plugin load contexts.</Description>
+    <IsPackable>true</IsPackable>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src/**/*.cs" />
+  </ItemGroup>
+
+</Project>

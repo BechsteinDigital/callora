@@ -27,7 +27,7 @@
          to the default context — share one ICommunicationChannelRegistry type
          identity (REV2 §10.1A). callora-production carries the equivalent reference
          for production distributions. -->
-    <ProjectReference Include="..\..\..\custom\static-plugins\Communication\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\custom\static-plugins\Communication\src\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
