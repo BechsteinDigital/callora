@@ -52,7 +52,7 @@ For a project named `MyPlugin`, the scaffold writes three files:
 <output>/
 ├─ Callora.Plugins.MyPlugin.csproj
 ├─ registry.json
-└─ Application/
+└─ src/
    └─ MyPluginPlugin.cs
 ```
 
@@ -62,8 +62,9 @@ For a project named `MyPlugin`, the scaffold writes three files:
   `src/Core/Callora.Core.csproj`; outside the repo it uses a `PackageReference` to
   `Callora.Core`. It does **not** set `CalloraFrameworkAssembly` — so the contract analyzers
   apply. See [Plugin project layout](/guides/getting-started/project-layout).
-- **`Application/MyPluginPlugin.cs`** — a minimal `IHostManagedPlugin` implementation with
-  `PluginId`, `DisplayName`, and no-op `StartAsync`/`StopAsync`.
+- **`src/MyPluginPlugin.cs`** — a minimal `IHostManagedPlugin` implementation with
+  `PluginId`, `DisplayName`, and no-op `StartAsync`/`StopAsync`. All plugin source lives
+  under `src/`; only `registry.json` and the build files sit at the plugin root.
 - **`registry.json`** — a `v1` manifest pre-filled with `pluginId`, `assemblyFileName`,
   `entryTypeName`, a sample `workspace.navigation` capability, and a `Callora.Core >=0.1.0`
   dependency.

@@ -28,15 +28,15 @@ internal sealed class PluginScaffolder
 
         var projectName = $"Callora.Plugins.{PluginScaffoldNaming.ToPascalCase(request.Name)}";
         var pluginClassName = $"{PluginScaffoldNaming.ToPascalCase(request.Name)}Plugin";
-        var namespaceName = $"{projectName}.Application";
+        var namespaceName = projectName;
 
         Directory.CreateDirectory(outputDirectory);
-        Directory.CreateDirectory(Path.Combine(outputDirectory, "Application"));
+        Directory.CreateDirectory(Path.Combine(outputDirectory, "src"));
 
         var pluginContractsReference = BuildPluginContractsReference(outputDirectory, currentDirectory);
 
         var csprojPath = Path.Combine(outputDirectory, $"{projectName}.csproj");
-        var pluginClassPath = Path.Combine(outputDirectory, "Application", $"{pluginClassName}.cs");
+        var pluginClassPath = Path.Combine(outputDirectory, "src", $"{pluginClassName}.cs");
         var registryPath = Path.Combine(outputDirectory, "registry.json");
 
         await File.WriteAllTextAsync(csprojPath, BuildProjectFile(pluginContractsReference), Encoding.UTF8, cancellationToken)
@@ -106,7 +106,14 @@ internal sealed class PluginScaffolder
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <!-- Only src/**/*.cs is compiled. Any front-end bundle (package.json / node_modules
+         at the plugin root) stays out of the .NET compilation; source lives under src/. -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include=""src/**/*.cs"" />
+  </ItemGroup>
 
   <ItemGroup>
     {pluginContractsReference}
