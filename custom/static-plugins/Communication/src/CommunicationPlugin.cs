@@ -41,10 +41,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             await dbContextFactory.MigrateAsync(cancellationToken).ConfigureAwait(false);
 
             context.Export<IWorkspaceDataPurgeContributor>(new CommunicationDataPurgeContributor(
-                new EfSipAccountStore(dbContextFactory),
-                new EfSipLineStore(dbContextFactory),
-                new EfCallLogStore(dbContextFactory),
-                new EfMediaStreamSessionStore(dbContextFactory)));
+                new CommunicationWorkspaceDataPurger(dbContextFactory)));
 
             // Media WebSocket surface (/ws/communication/media/{connectToken}) — the connect-token
             // authorizer resolves sessions against the plugin DB, so it needs the factory. Audio

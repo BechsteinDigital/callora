@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Plugin.Communication.Abstractions;
-using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Domain.Accounts;
 using Callora.Plugin.Communication.Domain.Calls;
 using Callora.Plugin.Communication.Domain.Lines;
@@ -205,7 +204,7 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
     }
 
     [SkippableFact]
-    public async Task PurgeContributor_ErasesAllWorkspaceData()
+    public async Task WorkspaceDataPurger_AtomicallyErasesAllFourTables()
     {
         Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
 
@@ -227,8 +226,7 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
             "sess-p", "c-p", "ws-purge", "ai-agent", "tok-purge",
             AudioFormat.G711Ulaw8k20ms, MediaStreamDirection.Bidirectional, DateTimeOffset.UnixEpoch));
 
-        var contributor = new CommunicationDataPurgeContributor(accountStore, lineStore, callLogStore, sessionStore);
-        await contributor.PurgeWorkspaceAsync("ws-purge");
+        await new CommunicationWorkspaceDataPurger(_factory).PurgeAsync("ws-purge");
 
         Assert.Empty(await accountStore.ListAsync("ws-purge"));
         Assert.Equal(0, await lineStore.CountByWorkspaceAsync("ws-purge"));
