@@ -4685,3 +4685,69 @@ Callora.Core.Application.Workspaces.WorkspaceSnapshot.SurfaceAccessPolicy.get ->
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.SurfaceAccessPolicy.init -> void
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore.SetSurfaceAccessPolicyAsync(string! workspaceKey, Callora.Core.Domain.Workspaces.SurfaceAccessPolicy policy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.SetSurfaceAccessPolicyAsync(string! workspaceKey, Callora.Core.Domain.Workspaces.SurfaceAccessPolicy policy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSnapshot?>!
+Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor
+Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor.PluginId.get -> string!
+Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor.WebSocketRoutes.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration!>!
+Callora.Core.Application.Plugins.Contracts.IHostWebSocketHandler
+Callora.Core.Application.Plugins.Contracts.IHostWebSocketHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostWebSocketConnection! connection, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Plugins.Contracts.IWebSocketConnectAuthorizer
+Callora.Core.Application.Plugins.Contracts.IWebSocketConnectAuthorizer.AuthorizeAsync(Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization!>
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnection
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnection.HostWebSocketConnection(System.Net.WebSockets.WebSocket! socket, Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest! request, string? subject) -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnection.Request.get -> Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnection.Socket.get -> System.Net.WebSockets.WebSocket!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnection.Subject.get -> string?
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.Deconstruct(out string! PluginId, out string! RoutePath, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues, out System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>! Query, out System.Collections.Generic.IReadOnlyList<string!>! RequestedSubProtocols) -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.Equals(Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.HostWebSocketConnectRequest(string! PluginId, string! RoutePath, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues, System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>! Query, System.Collections.Generic.IReadOnlyList<string!>! RequestedSubProtocols) -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.PluginId.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.PluginId.init -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.Query.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.Query.init -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.RequestedSubProtocols.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.RequestedSubProtocols.init -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.RoutePath.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.RoutePath.init -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.RouteValues.init -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.Authorizer.get -> Callora.Core.Application.Plugins.Contracts.IWebSocketConnectAuthorizer!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.Authorizer.init -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.Deconstruct(out string! RouteTemplate, out Callora.Core.Application.Plugins.Contracts.IWebSocketConnectAuthorizer! Authorizer, out Callora.Core.Application.Plugins.Contracts.IHostWebSocketHandler! Handler) -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.Equals(Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.Handler.get -> Callora.Core.Application.Plugins.Contracts.IHostWebSocketHandler!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.Handler.init -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.HostWebSocketRouteRegistration(string! RouteTemplate, Callora.Core.Application.Plugins.Contracts.IWebSocketConnectAuthorizer! Authorizer, Callora.Core.Application.Plugins.Contracts.IHostWebSocketHandler! Handler) -> void
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.RouteTemplate.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.RouteTemplate.init -> void
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization!
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.Deconstruct(out bool IsAuthorized, out string? Subject, out string? FailureReason) -> void
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.Equals(Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization? other) -> bool
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.FailureReason.get -> string?
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.FailureReason.init -> void
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.IsAuthorized.get -> bool
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.IsAuthorized.init -> void
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.Subject.get -> string?
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.Subject.init -> void
+Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.WebSocketConnectAuthorization(bool IsAuthorized, string? Subject = null, string? FailureReason = null) -> void
+static Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.Allow(string? subject = null) -> Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization!
+static Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.Deny(string? reason = null) -> Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization!
+override Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.ToString() -> string!
+static Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.operator !=(Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest? left, Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest.operator ==(Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest? left, Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.operator !=(Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.operator ==(Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.operator !=(Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization? left, Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.operator ==(Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization? left, Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization? right) -> bool
