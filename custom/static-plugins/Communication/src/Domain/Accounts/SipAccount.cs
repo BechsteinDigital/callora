@@ -34,6 +34,12 @@ public sealed class SipAccount
         Status = enabled ? SipAccountStatus.Connecting : SipAccountStatus.Disabled;
     }
 
+#pragma warning disable CS8618 // Materialisierungs-Seam: EF setzt die Properties (inkl. des OwnsOne-VO) nach dem Aufruf.
+    private SipAccount()
+    {
+    }
+#pragma warning restore CS8618
+
     /// <summary>Stable account identifier.</summary>
     public string Id { get; }
 
