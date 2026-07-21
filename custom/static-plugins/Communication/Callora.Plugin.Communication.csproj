@@ -29,7 +29,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CalloraVoipSdk" />
+    <!-- TEMPORÄR: Diese Legacy-Impl wird durch das Clean-Slate-Communication-Plugin
+         ersetzt und dann archiviert. Sie kompiliert nicht gegen SDK 4.6.0-preview.1
+         (Breaking Changes: CalloraVoipSdk.Core.Security / SdkConfiguration entfallen).
+         Bis zur Archivierung auf 4.4.1 gepinnt (aus dem globalen NuGet-Cache); der
+         neue Default 4.6.0-preview.1 gilt für das neue Plugin. Pin + Kommentar fallen
+         mit der Archivierung weg. -->
+    <PackageReference Include="CalloraVoipSdk" VersionOverride="4.4.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
