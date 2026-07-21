@@ -1062,3 +1062,23 @@ static Callora.Administration.Api.EntitlementApiResponse.operator ==(Callora.Adm
 static Callora.Administration.Api.EntitlementManagementEndpoints.MapEntitlementManagementEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.SetEntitlementApiRequest.operator !=(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
 static Callora.Administration.Api.SetEntitlementApiRequest.operator ==(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
+Callora.Administration.Api.PluginWebSocketEndpoints
+static Callora.Administration.Api.PluginWebSocketEndpoints.MapPluginWebSocketEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+Callora.Administration.Api.PluginWebSocketRouteMatcher
+static Callora.Administration.Api.PluginWebSocketRouteMatcher.FindMatch(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor!>! contributors, string! pluginId, string! routePath) -> Callora.Administration.Api.PluginWebSocketRouteMatch?
+Callora.Administration.Api.PluginWebSocketRouteMatch
+Callora.Administration.Api.PluginWebSocketRouteMatch.<Clone>$() -> Callora.Administration.Api.PluginWebSocketRouteMatch!
+Callora.Administration.Api.PluginWebSocketRouteMatch.Contributor.get -> Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor!
+Callora.Administration.Api.PluginWebSocketRouteMatch.Contributor.init -> void
+Callora.Administration.Api.PluginWebSocketRouteMatch.Deconstruct(out Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor! Contributor, out Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration! Route, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginWebSocketRouteMatch.Equals(Callora.Administration.Api.PluginWebSocketRouteMatch? other) -> bool
+Callora.Administration.Api.PluginWebSocketRouteMatch.PluginWebSocketRouteMatch(Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor! Contributor, Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration! Route, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginWebSocketRouteMatch.Route.get -> Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration!
+Callora.Administration.Api.PluginWebSocketRouteMatch.Route.init -> void
+Callora.Administration.Api.PluginWebSocketRouteMatch.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Administration.Api.PluginWebSocketRouteMatch.RouteValues.init -> void
+override Callora.Administration.Api.PluginWebSocketRouteMatch.Equals(object? obj) -> bool
+override Callora.Administration.Api.PluginWebSocketRouteMatch.GetHashCode() -> int
+override Callora.Administration.Api.PluginWebSocketRouteMatch.ToString() -> string!
+static Callora.Administration.Api.PluginWebSocketRouteMatch.operator !=(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool
+static Callora.Administration.Api.PluginWebSocketRouteMatch.operator ==(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool

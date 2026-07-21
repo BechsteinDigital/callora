@@ -303,6 +303,12 @@ public static class CalloraHostCompositionExtensions
         app.UseBackendCsrfGuard(backendOptions);
         app.UseAuthorization();
 
+        // Real-time plugin surface: enables the WebSocket upgrade for endpoints mapped
+        // under the reserved /ws/{pluginId}/… prefix (Callora.Administration). The accept
+        // itself is gated per-route by an IWebSocketConnectAuthorizer, so this middleware
+        // only makes the upgrade available — it never authorizes.
+        app.UseWebSockets();
+
         // Liveness (/health, vom Frontdoor geprobt): Prozess antwortet, keine
         // Abhängigkeitsprüfung. Readiness (/ready) prüft die Datenbank.
         // Der JSON-Body ist Vertrag: die Workspace-Shell prüft status == "ok".

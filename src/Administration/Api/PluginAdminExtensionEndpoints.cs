@@ -2,7 +2,6 @@ using Callora.Core.Api;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Infrastructure.Security;
-using Microsoft.Extensions.Primitives;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -72,7 +71,7 @@ public static class PluginAdminExtensionEndpoints
             httpContext.Request.Method,
             routePath ?? string.Empty,
             match.RouteValues,
-            ReadQuery(httpContext.Request.Query),
+            HttpQueryValues.Read(httpContext.Request.Query),
             await ReadJsonBodyAsync(httpContext, cancellationToken).ConfigureAwait(false),
             ResolveUserId(httpContext.User));
 
@@ -85,33 +84,6 @@ public static class PluginAdminExtensionEndpoints
         }
 
         return Results.Json(response.Payload, statusCode: statusCode);
-    }
-
-    private static IReadOnlyDictionary<string, string[]> ReadQuery(IQueryCollection query)
-    {
-        var result = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
-        foreach (var pair in query)
-        {
-            result[pair.Key] = ToArray(pair.Value);
-        }
-
-        return result;
-    }
-
-    private static string[] ToArray(StringValues values)
-    {
-        if (values.Count == 0)
-        {
-            return Array.Empty<string>();
-        }
-
-        var result = new string[values.Count];
-        for (var i = 0; i < values.Count; i++)
-        {
-            result[i] = values[i] ?? string.Empty;
-        }
-
-        return result;
     }
 
     private static async Task<JsonElement?> ReadJsonBodyAsync(HttpContext context, CancellationToken cancellationToken)
