@@ -115,7 +115,10 @@ public sealed class ArchitectureRulesTests
             foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
                 if (path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) ||
-                    path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) ||
+                    // Archivierter Legacy-Code (verschoben, nicht gebaut/ausgeliefert) unterliegt
+                    // nicht den aktiven Produktions-Architekturregeln.
+                    path.Contains($"{Path.DirectorySeparatorChar}_archive{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }

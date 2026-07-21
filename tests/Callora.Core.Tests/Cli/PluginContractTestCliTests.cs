@@ -9,38 +9,6 @@ namespace Callora.Core.Tests.Cli;
 public sealed class PluginContractTestCliTests(ScaffoldedPluginFixture fixture)
 {
     [Fact]
-    public async Task PluginTestContract_ReferenceCommunicationPlugin_PassesMandatoryChecks()
-    {
-        var repositoryRoot = fixture.RepositoryRoot;
-        var communicationProjectPath = Path.Combine(repositoryRoot, "custom", "static-plugins", "Communication", "Callora.Plugin.Communication.csproj");
-        var buildResult = await ScaffoldedPluginFixture.BuildProjectAsync(communicationProjectPath, repositoryRoot);
-        Assert.True(buildResult.Success, buildResult.Output);
-
-        var assemblyPath = Path.Combine(
-            repositoryRoot,
-            "custom",
-            "static-plugins",
-            "Communication",
-            "bin",
-            "Debug",
-            "net10.0",
-            "Callora.Plugin.Communication.dll");
-        var registryPath = Path.Combine(repositoryRoot, "custom", "static-plugins", "Communication", "registry.json");
-
-        using var stdout = new StringWriter();
-        using var stderr = new StringWriter();
-        var exitCode = await CalloraCliApplication.RunAsync(
-            ["plugin", "test-contract", "--assembly", assemblyPath, "--registry", registryPath],
-            stdout,
-            stderr,
-            repositoryRoot,
-            CancellationToken.None);
-
-        Assert.Equal(0, exitCode);
-        Assert.Contains("All contract checks passed", stdout.ToString(), StringComparison.Ordinal);
-    }
-
-    [Fact]
     public async Task PluginTestContract_WithValidPlugin_ReturnsSuccess()
     {
         using var stdout = new StringWriter();
