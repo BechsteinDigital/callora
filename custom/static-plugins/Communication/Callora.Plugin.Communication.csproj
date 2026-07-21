@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <!-- Nur der Runtime-Code unter src/ wird kompiliert — OHNE das verschachtelte
+         Abstractions-Vertragsprojekt (eigenes Assembly, eigene csproj). -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src/**/*.cs" Exclude="src/Abstractions/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="src/Abstractions/Callora.Plugin.Communication.Abstractions.csproj" />
+    <!-- Compile gegen die Core-Contracts, aber Core nicht mitliefern (Host stellt es,
+         Plugin-ALC teilt die Typidentität). -->
+    <ProjectReference Include="..\..\..\src\Core\Callora.Core.csproj" Private="false" ExcludeAssets="runtime" />
+    <!-- Als Plugin vom Governance-Analyzer geprüft (CAL0001–0004). -->
+    <ProjectReference Include="..\..\..\src\Analyzers\Callora.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="registry.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
