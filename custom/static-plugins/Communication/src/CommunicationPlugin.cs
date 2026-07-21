@@ -41,7 +41,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             context.Export<IWorkspaceDataPurgeContributor>(new CommunicationDataPurgeContributor(
                 new EfSipAccountStore(dbContextFactory),
                 new EfSipLineStore(dbContextFactory),
-                new EfCallLogStore(dbContextFactory)));
+                new EfCallLogStore(dbContextFactory),
+                new EfMediaStreamSessionStore(dbContextFactory)));
         }
     }
 

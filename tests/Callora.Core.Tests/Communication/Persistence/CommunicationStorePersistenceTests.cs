@@ -7,6 +7,7 @@ using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Domain.Accounts;
 using Callora.Plugin.Communication.Domain.Calls;
 using Callora.Plugin.Communication.Domain.Lines;
+using Callora.Plugin.Communication.Domain.Streaming;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
 using Microsoft.EntityFrameworkCore;
@@ -17,10 +18,11 @@ namespace Callora.Core.Tests.Communication.Persistence;
 
 /// <summary>
 /// Persistence-Integrationstest der EF-Stores gegen ein echtes Postgres (Testcontainers): die
-/// tatsächliche Migration <c>InitialCommunicationSchema</c> wird angewandt und das
-/// Rich-Domain-Mapping (OwnsOne-Connection-VO, String-Enums, private-Ctor-Materialisierung) +
-/// die Store-CRUD-/Seam-Logik geprüft. Ohne Docker überspringen die Tests sich selbst. Holt die
-/// in B0 verschobene Host-Infra-Coverage (Plugin-DB-Factory/-Migration) zurück.
+/// tatsächlichen Migrationen (<c>InitialCommunicationSchema</c>, <c>AddMediaStreamSessions</c>)
+/// werden angewandt und das Rich-Domain-Mapping (OwnsOne-VOs SipConnection/AudioFormat,
+/// String-Enums, private-Ctor-Materialisierung) + die Store-CRUD-/Seam-Logik geprüft. Ohne
+/// Docker überspringen die Tests sich selbst. Holt die in B0 verschobene Host-Infra-Coverage
+/// (Plugin-DB-Factory/-Migration) zurück.
 /// </summary>
 [Trait("Category", "Slow")]
 public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
@@ -122,6 +124,35 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task MediaStreamSession_RoundTrips_ByToken_ThenActivateCloseArePersisted()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        var store = new EfMediaStreamSessionStore(_factory);
+        var session = new MediaStreamSession(
+            "sess-1", "call-1", "ws-s", "ai-agent", "tok-xyz",
+            AudioFormat.G711Ulaw8k20ms, MediaStreamDirection.Bidirectional, DateTimeOffset.UnixEpoch);
+        await store.AddAsync(session);
+
+        var byToken = await store.GetByConnectTokenAsync("tok-xyz");
+        Assert.NotNull(byToken);
+        Assert.Equal("sess-1", byToken!.Id);
+        Assert.Equal(MediaStreamSessionStatus.Pending, byToken.Status);
+        Assert.Equal(AudioCodec.G711Ulaw, byToken.Format.Codec);
+        Assert.Equal(8000, byToken.Format.SampleRateHz);
+
+        byToken.Activate(DateTimeOffset.UnixEpoch.AddSeconds(2));
+        byToken.Close(DateTimeOffset.UnixEpoch.AddSeconds(9));
+        await store.UpdateAsync(byToken);
+
+        var reloaded = await store.GetAsync("ws-s", "sess-1");
+        Assert.NotNull(reloaded);
+        Assert.Equal(MediaStreamSessionStatus.Closed, reloaded!.Status);
+        Assert.Equal(DateTimeOffset.UnixEpoch.AddSeconds(2), reloaded.StartedAt);
+        Assert.Equal(DateTimeOffset.UnixEpoch.AddSeconds(9), reloaded.EndedAt);
+    }
+
+    [SkippableFact]
     public async Task PurgeContributor_ErasesAllWorkspaceData()
     {
         Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
@@ -129,6 +160,7 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         var accountStore = new EfSipAccountStore(_factory);
         var lineStore = new EfSipLineStore(_factory);
         var callLogStore = new EfCallLogStore(_factory);
+        var sessionStore = new EfMediaStreamSessionStore(_factory);
 
         await accountStore.AddAsync(new SipAccount(
             "acc-p", "ws-purge", "Purge",
@@ -139,13 +171,17 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
             "+49301111111", "sip:p@x", null, null, DateTimeOffset.UnixEpoch);
         log.End(DateTimeOffset.UnixEpoch.AddSeconds(5), CallOutcome.Missed, null);
         await callLogStore.AddAsync(log);
+        await sessionStore.AddAsync(new MediaStreamSession(
+            "sess-p", "c-p", "ws-purge", "ai-agent", "tok-purge",
+            AudioFormat.G711Ulaw8k20ms, MediaStreamDirection.Bidirectional, DateTimeOffset.UnixEpoch));
 
-        var contributor = new CommunicationDataPurgeContributor(accountStore, lineStore, callLogStore);
+        var contributor = new CommunicationDataPurgeContributor(accountStore, lineStore, callLogStore, sessionStore);
         await contributor.PurgeWorkspaceAsync("ws-purge");
 
         Assert.Empty(await accountStore.ListAsync("ws-purge"));
         Assert.Equal(0, await lineStore.CountByWorkspaceAsync("ws-purge"));
         Assert.Empty(await callLogStore.ListRecentAsync("ws-purge", 10));
+        Assert.Null(await sessionStore.GetByConnectTokenAsync("tok-purge"));
     }
 }
 
