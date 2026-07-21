@@ -7,12 +7,12 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <!-- The front-end bundle (package.json / vite / node_modules at the plugin root and
-         src/Resources/app) is not part of the .NET compilation — only Application/*.cs is. -->
+         src/Resources/app) is not part of the .NET compilation — only src/*.cs is. -->
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Application/**/*.cs" />
+    <Compile Include="src/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>
