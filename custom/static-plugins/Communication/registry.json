@@ -7,7 +7,7 @@
   "assemblyFileName": "Callora.Plugin.Communication.dll",
   "entryTypeName": "Callora.Plugin.Communication.CommunicationPlugin",
   "capabilities": [
-    "communication.voice"
+    "communication.foundation"
   ],
   "dependencies": {
     "Callora.Core": ">=0.1.0",
