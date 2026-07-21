@@ -26,6 +26,7 @@ public sealed class CommunicationPluginWiringTests
 
         Assert.Contains(typeof(IHostAdminApiExtensionContributor), context.Exports.Keys);
         Assert.Contains(typeof(IWorkspaceDataPurgeContributor), context.Exports.Keys);
+        Assert.Contains(typeof(IHostWebSocketEndpointContributor), context.Exports.Keys);
     }
 
     [Fact]

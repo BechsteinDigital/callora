@@ -1,8 +1,10 @@
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
+using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Compliance;
+using Callora.Plugin.Communication.Infrastructure.Media;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
 
@@ -43,6 +45,13 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
                 new EfSipLineStore(dbContextFactory),
                 new EfCallLogStore(dbContextFactory),
                 new EfMediaStreamSessionStore(dbContextFactory)));
+
+            // Media WebSocket surface (/ws/communication/media/{connectToken}) — the connect-token
+            // authorizer resolves sessions against the plugin DB, so it needs the factory. Audio
+            // attaches once a call runtime exists (B5); until then the bridge closes cleanly.
+            context.Export<IHostWebSocketEndpointContributor>(new CommunicationMediaWebSocketContributor(
+                new EfMediaStreamSessionStore(dbContextFactory),
+                new NoCallAudioStreamProvider()));
         }
     }
 
