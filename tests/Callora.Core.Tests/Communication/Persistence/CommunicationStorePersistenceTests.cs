@@ -93,6 +93,7 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
     {
         Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
 
+        await AddAccountAsync("acc-1", "ws-b");
         var store = new EfSipLineStore(_factory);
         await store.AddAsync(new SipLine("l1", "acc-1", "ws-b", "Main", "sip:a@x", null, true, null));
         await store.AddAsync(new SipLine("l2", "acc-1", "ws-b", "Alt", "sip:b@x", null, true, null));
@@ -101,6 +102,33 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         Assert.True(await store.DeleteAsync("ws-b", "l1"));
         Assert.Equal(1, await store.CountByWorkspaceAsync("ws-b"));
         Assert.False(await store.DeleteAsync("ws-b", "missing"));
+    }
+
+    [SkippableFact]
+    public async Task ListByAccount_IsWorkspaceScoped_NoCrossTenantLeak()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        await AddAccountAsync("acc-scoped", "ws-owner");
+        var store = new EfSipLineStore(_factory);
+        await store.AddAsync(new SipLine("l-own", "acc-scoped", "ws-owner", "Main", "sip:o@x", null, true, null));
+
+        // The owning workspace sees its line; another workspace passing the same account id sees nothing.
+        Assert.Single(await store.ListByAccountAsync("ws-owner", "acc-scoped"));
+        Assert.Empty(await store.ListByAccountAsync("ws-intruder", "acc-scoped"));
+    }
+
+    [SkippableFact]
+    public async Task Line_CannotReferenceAccountInAnotherWorkspace()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        await AddAccountAsync("acc-a", "ws-a");
+        var store = new EfSipLineStore(_factory);
+
+        // A line in ws-b referencing an account that lives in ws-a is rejected by the composite FK.
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
+            store.AddAsync(new SipLine("l-cross", "acc-a", "ws-b", "Cross", "sip:x@x", null, true, null)));
     }
 
     [SkippableFact]
@@ -206,6 +234,15 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         Assert.Equal(0, await lineStore.CountByWorkspaceAsync("ws-purge"));
         Assert.Empty(await callLogStore.ListRecentAsync("ws-purge", 10));
         Assert.Null(await sessionStore.GetByConnectTokenAsync("tok-purge"));
+    }
+
+    private async Task AddAccountAsync(string accountId, string workspaceKey)
+    {
+        var accountStore = new EfSipAccountStore(_factory);
+        await accountStore.AddAsync(new SipAccount(
+            accountId, workspaceKey, "Trunk",
+            new SipConnection("h", 5060, SipTransport.Udp, SipAccountMode.Register, "u", null, "s://p", 3600),
+            maxConcurrentCalls: 2, enabled: true));
     }
 }
 

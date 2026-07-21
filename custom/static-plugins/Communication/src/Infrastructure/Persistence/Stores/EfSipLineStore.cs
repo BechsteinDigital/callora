@@ -10,11 +10,11 @@ public sealed class EfSipLineStore(IPluginDbContextFactory<CommunicationDbContex
     : ISipLineStore
 {
     /// <inheritdoc />
-    public async Task<IReadOnlyList<SipLine>> ListByAccountAsync(string accountId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SipLine>> ListByAccountAsync(string workspaceKey, string accountId, CancellationToken cancellationToken = default)
     {
         await using var db = dbContextFactory.CreateDbContext();
         return await db.SipLines.AsNoTracking()
-            .Where(x => x.AccountId == accountId)
+            .Where(x => x.WorkspaceKey == workspaceKey && x.AccountId == accountId)
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
