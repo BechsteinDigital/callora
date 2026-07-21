@@ -180,6 +180,26 @@ internal sealed class InMemoryMediaStreamSessionStore : IMediaStreamSessionStore
         return Task.FromResult<MediaStreamSession?>(null);
     }
 
+    public Task<MediaStreamSession?> TryActivateByConnectTokenAsync(
+        string connectToken, DateTimeOffset now, TimeSpan timeToLive, CancellationToken cancellationToken = default)
+    {
+        foreach (var session in _byId.Values)
+        {
+            if (session.ConnectToken == connectToken)
+            {
+                if (!session.CanActivate(now, timeToLive))
+                {
+                    return Task.FromResult<MediaStreamSession?>(null);
+                }
+
+                session.Activate(now);
+                return Task.FromResult<MediaStreamSession?>(session);
+            }
+        }
+
+        return Task.FromResult<MediaStreamSession?>(null);
+    }
+
     public Task<MediaStreamSession?> GetAsync(string workspaceKey, string sessionId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_byId.TryGetValue(sessionId, out var session) && session.WorkspaceKey == workspaceKey ? session : null);
 

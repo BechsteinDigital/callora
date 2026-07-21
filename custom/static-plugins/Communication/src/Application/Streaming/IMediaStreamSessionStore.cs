@@ -14,6 +14,14 @@ public interface IMediaStreamSessionStore
     /// <summary>Resolves a session by its single-use connect token (for WS-connect authorization).</summary>
     Task<MediaStreamSession?> GetByConnectTokenAsync(string connectToken, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Atomically consumes the connect token: if it belongs to a still-pending, non-expired session,
+    /// activates it and returns the now-active session; otherwise returns <see langword="null"/>.
+    /// Under a concurrent double-connect only one caller wins — the token stays strictly single-use.
+    /// </summary>
+    Task<MediaStreamSession?> TryActivateByConnectTokenAsync(
+        string connectToken, DateTimeOffset now, TimeSpan timeToLive, CancellationToken cancellationToken = default);
+
     /// <summary>Resolves a workspace-scoped session by id.</summary>
     Task<MediaStreamSession?> GetAsync(string workspaceKey, string sessionId, CancellationToken cancellationToken = default);
 
