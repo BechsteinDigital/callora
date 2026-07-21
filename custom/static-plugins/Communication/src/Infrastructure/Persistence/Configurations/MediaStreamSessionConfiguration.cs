@@ -29,7 +29,9 @@ public sealed class MediaStreamSessionConfiguration : IEntityTypeConfiguration<M
             format.Property(p => p.FrameMilliseconds).HasColumnName("audio_frame_ms").IsRequired();
         });
 
-        // Single-use connect token → unique lookup key for WS-connect authorization.
+        // Single-use connect token → unique lookup key for WS-connect authorization. Atomic
+        // single-use under a concurrent double-connect is enforced by a conditional UPDATE in the
+        // store (EfMediaStreamSessionStore.TryActivateByConnectTokenAsync), not a mapping concern.
         builder.HasIndex(x => x.ConnectToken).IsUnique();
         builder.HasIndex(x => x.WorkspaceKey);
     }

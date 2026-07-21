@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Callora.Core.Application.Persistence.Contracts;
@@ -150,6 +151,29 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         Assert.Equal(MediaStreamSessionStatus.Closed, reloaded!.Status);
         Assert.Equal(DateTimeOffset.UnixEpoch.AddSeconds(2), reloaded.StartedAt);
         Assert.Equal(DateTimeOffset.UnixEpoch.AddSeconds(9), reloaded.EndedAt);
+    }
+
+    [SkippableFact]
+    public async Task TryActivateByConnectToken_IsSingleUse_UnderConcurrentDoubleConnect()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        var store = new EfMediaStreamSessionStore(_factory);
+        await store.AddAsync(new MediaStreamSession(
+            "sess-race", "call-r", "ws-race", "ai-agent", "tok-race",
+            AudioFormat.G711Ulaw8k20ms, MediaStreamDirection.Bidirectional, DateTimeOffset.UtcNow));
+
+        var now = DateTimeOffset.UtcNow;
+        var ttl = TimeSpan.FromMinutes(2);
+
+        // Eight consumers race to redeem the same token; the atomic CAS must let exactly one win.
+        var outcomes = await Task.WhenAll(
+            Enumerable.Range(0, 8).Select(_ => store.TryActivateByConnectTokenAsync("tok-race", now, ttl)));
+
+        Assert.Equal(1, outcomes.Count(session => session is not null));
+
+        var reloaded = await store.GetByConnectTokenAsync("tok-race");
+        Assert.Equal(MediaStreamSessionStatus.Active, reloaded!.Status);
     }
 
     [SkippableFact]
