@@ -34,5 +34,10 @@ public sealed class SipAccountConfiguration : IEntityTypeConfiguration<SipAccoun
         });
 
         builder.HasIndex(x => x.WorkspaceKey);
+
+        // The composite workspace-FK from SipLine targets (WorkspaceKey, Id); EF materializes that
+        // principal key as a unique alternate key (AK_sip_accounts_WorkspaceKey_Id) — the composite
+        // unique constraint that lets a line only reference an account in its own workspace. No
+        // separate unique index is declared here; it would duplicate that alternate key.
     }
 }

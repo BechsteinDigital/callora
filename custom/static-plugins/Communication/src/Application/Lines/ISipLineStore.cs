@@ -5,8 +5,9 @@ namespace Callora.Plugin.Communication.Application.Lines;
 /// <summary>Workspace-scoped persistence port for <see cref="SipLine"/>.</summary>
 public interface ISipLineStore
 {
-    /// <summary>Lists the lines of one account.</summary>
-    Task<IReadOnlyList<SipLine>> ListByAccountAsync(string accountId, CancellationToken cancellationToken = default);
+    /// <summary>Lists the lines of one account within a workspace. Workspace-scoped so an account
+    /// id from one tenant can never surface another tenant's lines.</summary>
+    Task<IReadOnlyList<SipLine>> ListByAccountAsync(string workspaceKey, string accountId, CancellationToken cancellationToken = default);
 
     /// <summary>Gets one line, or null.</summary>
     Task<SipLine?> GetAsync(string workspaceKey, string lineId, CancellationToken cancellationToken = default);
