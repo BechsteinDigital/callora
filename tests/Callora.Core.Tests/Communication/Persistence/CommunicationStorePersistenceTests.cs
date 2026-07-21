@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Domain.Accounts;
 using Callora.Plugin.Communication.Domain.Calls;
 using Callora.Plugin.Communication.Domain.Lines;
@@ -118,6 +119,33 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
 
         Assert.Equal(1, await store.DeleteByWorkspaceAsync("ws-c"));
         Assert.Empty(await store.ListRecentAsync("ws-c", 10));
+    }
+
+    [SkippableFact]
+    public async Task PurgeContributor_ErasesAllWorkspaceData()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        var accountStore = new EfSipAccountStore(_factory);
+        var lineStore = new EfSipLineStore(_factory);
+        var callLogStore = new EfCallLogStore(_factory);
+
+        await accountStore.AddAsync(new SipAccount(
+            "acc-p", "ws-purge", "Purge",
+            new SipConnection("h", 5060, SipTransport.Udp, SipAccountMode.Register, "u", null, "s://p", 3600),
+            maxConcurrentCalls: 2, enabled: true));
+        await lineStore.AddAsync(new SipLine("l-p", "acc-p", "ws-purge", "L", "sip:p@x", null, true, null));
+        var log = CallLog.Start("c-p", "ws-purge", "acc-p", "l-p", CallDirection.Inbound,
+            "+49301111111", "sip:p@x", null, null, DateTimeOffset.UnixEpoch);
+        log.End(DateTimeOffset.UnixEpoch.AddSeconds(5), CallOutcome.Missed, null);
+        await callLogStore.AddAsync(log);
+
+        var contributor = new CommunicationDataPurgeContributor(accountStore, lineStore, callLogStore);
+        await contributor.PurgeWorkspaceAsync("ws-purge");
+
+        Assert.Empty(await accountStore.ListAsync("ws-purge"));
+        Assert.Equal(0, await lineStore.CountByWorkspaceAsync("ws-purge"));
+        Assert.Empty(await callLogStore.ListRecentAsync("ws-purge", 10));
     }
 }
 

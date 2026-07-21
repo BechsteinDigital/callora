@@ -1,6 +1,10 @@
+using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Communication.Application.Admin;
+using Callora.Plugin.Communication.Application.Compliance;
+using Callora.Plugin.Communication.Infrastructure.Persistence;
+using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
 
 namespace Callora.Plugin.Communication;
 
@@ -21,13 +25,24 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     public string DisplayName => "Communication";
 
     /// <inheritdoc />
-    public ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
+    public async ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         context.Export<IHostAdminApiExtensionContributor>(new CommunicationAdminApiExtensionContributor());
 
-        return ValueTask.CompletedTask;
+        // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
+        // Host die DB-Factory bereitstellt (ein minimaler Host ohne Persistenz degradiert sauber).
+        if (context.Services.GetService(typeof(IPluginDbContextFactory<CommunicationDbContext>))
+            is IPluginDbContextFactory<CommunicationDbContext> dbContextFactory)
+        {
+            await dbContextFactory.MigrateAsync(cancellationToken).ConfigureAwait(false);
+
+            context.Export<IWorkspaceDataPurgeContributor>(new CommunicationDataPurgeContributor(
+                new EfSipAccountStore(dbContextFactory),
+                new EfSipLineStore(dbContextFactory),
+                new EfCallLogStore(dbContextFactory)));
+        }
     }
 
     /// <inheritdoc />

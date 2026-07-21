@@ -20,6 +20,9 @@ public interface ISipLineStore
     /// <summary>Deletes a line; returns false when it did not exist.</summary>
     Task<bool> DeleteAsync(string workspaceKey, string lineId, CancellationToken cancellationToken = default);
 
+    /// <summary>Deletes all lines of a workspace (GDPR workspace purge). Returns the count.</summary>
+    Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Number of lines in a workspace — the seam a Cloud entitlement gate reads before
     /// creating a line (self-hosted stays unlimited; the limit source lives outside the plugin).

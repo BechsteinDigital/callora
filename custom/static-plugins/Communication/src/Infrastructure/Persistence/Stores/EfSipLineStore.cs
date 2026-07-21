@@ -72,4 +72,14 @@ public sealed class EfSipLineStore(IPluginDbContextFactory<CommunicationDbContex
             .CountAsync(x => x.WorkspaceKey == workspaceKey, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default)
+    {
+        await using var db = dbContextFactory.CreateDbContext();
+        return await db.SipLines
+            .Where(x => x.WorkspaceKey == workspaceKey)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
 }
