@@ -63,4 +63,14 @@ public sealed class EfSipAccountStore(IPluginDbContextFactory<CommunicationDbCon
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
+
+    /// <inheritdoc />
+    public async Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default)
+    {
+        await using var db = dbContextFactory.CreateDbContext();
+        return await db.SipAccounts
+            .Where(x => x.WorkspaceKey == workspaceKey)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
 }

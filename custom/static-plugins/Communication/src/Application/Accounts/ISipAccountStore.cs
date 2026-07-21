@@ -19,4 +19,7 @@ public interface ISipAccountStore
 
     /// <summary>Deletes an account; returns false when it did not exist.</summary>
     Task<bool> DeleteAsync(string workspaceKey, string accountId, CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes all accounts of a workspace (GDPR workspace purge). Returns the count.</summary>
+    Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default);
 }
