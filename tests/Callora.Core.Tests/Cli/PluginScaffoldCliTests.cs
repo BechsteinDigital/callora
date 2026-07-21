@@ -11,7 +11,7 @@ public sealed class PluginScaffoldCliTests(ScaffoldedPluginFixture fixture)
     {
         Assert.True(Directory.Exists(fixture.ScaffoldDirectory));
 
-        var pluginClassPath = Path.Combine(fixture.ScaffoldDirectory, "Application", "AcmeVoicePlugin.cs");
+        var pluginClassPath = Path.Combine(fixture.ScaffoldDirectory, "src", "AcmeVoicePlugin.cs");
         Assert.True(File.Exists(fixture.CsprojPath));
         Assert.True(File.Exists(pluginClassPath));
         Assert.True(File.Exists(fixture.RegistryPath));
@@ -20,6 +20,11 @@ public sealed class PluginScaffoldCliTests(ScaffoldedPluginFixture fixture)
         Assert.Contains("\"pluginId\": \"acme-voice\"", registry, StringComparison.Ordinal);
         Assert.Contains("\"extensions\"", registry, StringComparison.Ordinal);
         Assert.Contains("\"workspace.navigation.main\"", registry, StringComparison.Ordinal);
+        // Bootstrap lebt unter src/ im Wurzel-Namespace (kein .Application-Segment).
+        Assert.Contains(
+            "\"entryTypeName\": \"Callora.Plugins.AcmeVoice.AcmeVoicePlugin\"",
+            registry,
+            StringComparison.Ordinal);
 
         // Die Fixture wirft bei fehlgeschlagenem Build; hier bleibt der
         // Nachweis, dass das Scaffold tatsächlich kompiliert.

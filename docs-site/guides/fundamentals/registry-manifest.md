@@ -153,7 +153,7 @@ provides:
   "pluginId": "dialer",
   "version": "0.1.0",
   "assemblyFileName": "Callora.Plugins.Dialer.dll",
-  "entryTypeName": "Callora.Plugins.Dialer.Application.DialerPlugin",
+  "entryTypeName": "Callora.Plugins.Dialer.DialerPlugin",
   "capabilities": [],
   "requiresCapabilities": [
     "communication.voice"
