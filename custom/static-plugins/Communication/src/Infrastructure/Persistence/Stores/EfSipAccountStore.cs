@@ -21,6 +21,18 @@ public sealed class EfSipAccountStore(IPluginDbContextFactory<CommunicationDbCon
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<SipAccount>> ListEnabledAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = dbContextFactory.CreateDbContext();
+        return await db.SipAccounts.AsNoTracking()
+            .Where(x => x.Enabled)
+            .OrderBy(x => x.WorkspaceKey)
+            .ThenBy(x => x.Id)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<SipAccount?> GetAsync(string workspaceKey, string accountId, CancellationToken cancellationToken = default)
     {
         await using var db = dbContextFactory.CreateDbContext();
