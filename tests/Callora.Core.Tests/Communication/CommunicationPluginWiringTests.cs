@@ -5,38 +5,42 @@ using System.Threading.Tasks;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Plugin.Communication;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Xunit;
 
 namespace Callora.Core.Tests.Communication;
 
 /// <summary>
-/// Composition-Wiring des Plugins (B3c): StartAsync exportiert den Admin-Contributor immer und —
-/// wenn der Host die DB-Factory bereitstellt — zusätzlich den GDPR-Purge-Contributor (nach dem
-/// Migrate); ohne DB-Factory degradiert es sauber (kein Crash, nur Admin).
+/// Composition-Wiring des Plugins: StartAsync exportiert den Admin-Contributor und die
+/// Channel-Registry (persistenzfrei) immer und — wenn der Host die DB-Factory bereitstellt —
+/// zusätzlich Purge- und WebSocket-Contributor (nach dem Migrate); ohne DB-Factory degradiert es
+/// sauber (kein Crash, kein Purge/WS).
 /// </summary>
 public sealed class CommunicationPluginWiringTests
 {
     [Fact]
-    public async Task StartAsync_WithDbFactory_ExportsAdminAndPurgeContributors()
+    public async Task StartAsync_WithDbFactory_ExportsAllContributors()
     {
         var context = new CapturingHostPluginContext(hasDbFactory: true);
 
         await new CommunicationPlugin().StartAsync(context);
 
         Assert.Contains(typeof(IHostAdminApiExtensionContributor), context.Exports.Keys);
+        Assert.Contains(typeof(ICommunicationChannelRegistry), context.Exports.Keys);
         Assert.Contains(typeof(IWorkspaceDataPurgeContributor), context.Exports.Keys);
         Assert.Contains(typeof(IHostWebSocketEndpointContributor), context.Exports.Keys);
     }
 
     [Fact]
-    public async Task StartAsync_WithoutDbFactory_ExportsOnlyAdmin_AndDoesNotThrow()
+    public async Task StartAsync_WithoutDbFactory_ExportsAdminAndRegistry_AndDoesNotThrow()
     {
         var context = new CapturingHostPluginContext(hasDbFactory: false);
 
         await new CommunicationPlugin().StartAsync(context);
 
         Assert.Contains(typeof(IHostAdminApiExtensionContributor), context.Exports.Keys);
+        Assert.Contains(typeof(ICommunicationChannelRegistry), context.Exports.Keys);
         Assert.DoesNotContain(typeof(IWorkspaceDataPurgeContributor), context.Exports.Keys);
     }
 }
