@@ -1,21 +1,25 @@
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Application.Secrets.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Infrastructure.Channels;
-using Callora.Plugin.Communication.Infrastructure.Media;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
+using Callora.Plugin.Communication.Infrastructure.Sdk;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Callora.Plugin.Communication;
 
 /// <summary>
-/// First-party System-Tier communication foundation. Composition Root: v1 exports the
-/// operator control surface (Admin API). Domain/persistence, the SDK/media bridge and the
-/// public REST/WebSocket/Webhook consumer surface arrive in later bausteine.
+/// First-party System-Tier communication foundation. Composition Root: exports the operator control
+/// surface (Admin API) and the channel registry unconditionally; with a database it also runs GDPR
+/// purge and the media WebSocket surface, and — when the deployment supplies an
+/// <see cref="ISdkVoiceRuntime"/> — provisions a live voice channel per enabled SIP account.
 /// </summary>
 public sealed class CommunicationPlugin : IHostManagedPlugin
 {
@@ -32,6 +36,10 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     // plugin's lifetime and is cleared on stop/unload.
     private readonly CommunicationChannelRegistry _channelRegistry = new();
 
+    // Set during StartAsync when the media/voice surface is wired; torn down on stop.
+    private SdkCallAudioRegistrar? _audioRegistrar;
+    private VoiceChannelProvisioner? _voiceProvisioner;
+
     /// <inheritdoc />
     public async ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
     {
@@ -39,34 +47,76 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
 
         context.Export<IHostAdminApiExtensionContributor>(new CommunicationAdminApiExtensionContributor());
 
-        // The channel registry is where the SDK bridge (B4-deep) will register voice channels and
-        // consumers resolve them; exported unconditionally since it needs no database.
+        // The channel registry is where the voice bridge registers channels and consumers resolve
+        // them; exported unconditionally since it needs no database.
         context.Export<ICommunicationChannelRegistry>(_channelRegistry);
 
         // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
         // Host die DB-Factory bereitstellt (ein minimaler Host ohne Persistenz degradiert sauber).
         if (context.Services.GetService(typeof(IPluginDbContextFactory<CommunicationDbContext>))
-            is IPluginDbContextFactory<CommunicationDbContext> dbContextFactory)
+            is not IPluginDbContextFactory<CommunicationDbContext> dbContextFactory)
         {
-            await dbContextFactory.MigrateAsync(cancellationToken).ConfigureAwait(false);
-
-            context.Export<IWorkspaceDataPurgeContributor>(new CommunicationDataPurgeContributor(
-                new CommunicationWorkspaceDataPurger(dbContextFactory)));
-
-            // Media WebSocket surface (/ws/communication/media/{connectToken}) — the connect-token
-            // authorizer resolves sessions against the plugin DB, so it needs the factory. Audio
-            // attaches once a call runtime exists (B5); until then the bridge closes cleanly.
-            context.Export<IHostWebSocketEndpointContributor>(new CommunicationMediaWebSocketContributor(
-                new EfMediaStreamSessionStore(dbContextFactory),
-                new NoCallAudioStreamProvider()));
+            return;
         }
+
+        await dbContextFactory.MigrateAsync(cancellationToken).ConfigureAwait(false);
+
+        context.Export<IWorkspaceDataPurgeContributor>(new CommunicationDataPurgeContributor(
+            new CommunicationWorkspaceDataPurger(dbContextFactory)));
+
+        // Media WebSocket surface (/ws/communication/media/{connectToken}) backed by the live-call
+        // audio provider; the registrar populates it as tracked calls connect.
+        var audioStreamProvider = new SdkCallAudioStreamProvider();
+        _audioRegistrar = new SdkCallAudioRegistrar(
+            audioStreamProvider, ResolveLogger<SdkCallAudioRegistrar>(context.Services));
+        context.Export<IHostWebSocketEndpointContributor>(new CommunicationMediaWebSocketContributor(
+            new EfMediaStreamSessionStore(dbContextFactory), audioStreamProvider));
+
+        await ProvisionVoiceChannelsAsync(context, dbContextFactory, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public ValueTask StopAsync(CancellationToken cancellationToken = default)
+    public async ValueTask StopAsync(CancellationToken cancellationToken = default)
     {
-        // Drop all channel registrations so nothing dangles past unload.
+        // Deregister and dispose provisioned channels, release live audio streams, then drop all
+        // channel registrations so nothing dangles past unload.
+        _voiceProvisioner?.Teardown();
+        if (_audioRegistrar is not null)
+        {
+            await _audioRegistrar.ClearAsync().ConfigureAwait(false);
+        }
+
         _channelRegistry.Clear();
-        return ValueTask.CompletedTask;
     }
+
+    // Voice provisioning is opt-in: only when the deployment supplies an SDK voice runtime (a
+    // configured SIP client) and the plugin data protector for resolving credentials. Without them
+    // the plugin serves the foundation surface only — no voice channels.
+    private async Task ProvisionVoiceChannelsAsync(
+        IHostPluginContext context,
+        IPluginDbContextFactory<CommunicationDbContext> dbContextFactory,
+        CancellationToken cancellationToken)
+    {
+        if (context.Services.GetService(typeof(ISdkVoiceRuntime)) is not ISdkVoiceRuntime voiceRuntime
+            || context.Services.GetService(typeof(IPluginDataProtector)) is not IPluginDataProtector dataProtector)
+        {
+            return;
+        }
+
+        var connector = new SdkVoiceChannelConnector(
+            new SdkSipAccountFactory(dataProtector, Id),
+            voiceRuntime,
+            Id,
+            ResolveLogger<SdkVoiceChannelConnector>(context.Services));
+        _voiceProvisioner = new VoiceChannelProvisioner(
+            connector, _channelRegistry, _audioRegistrar!, ResolveLogger<VoiceChannelProvisioner>(context.Services));
+
+        var enabledAccounts = await new EfSipAccountStore(dbContextFactory)
+            .ListEnabledAsync(cancellationToken)
+            .ConfigureAwait(false);
+        await _voiceProvisioner.ProvisionAsync(enabledAccounts, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static ILogger<T> ResolveLogger<T>(IServiceProvider services) =>
+        services.GetService(typeof(ILogger<T>)) as ILogger<T> ?? NullLogger<T>.Instance;
 }
