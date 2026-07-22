@@ -8,7 +8,8 @@ namespace Callora.Core.Tests.Communication.Domain;
 public sealed class SipAccountTests
 {
     private static SipConnection ValidConnection() =>
-        new("sip.example.org", 5060, SipTransport.Udp, SipAccountMode.Register, "alice", null, "secret://acc/pw", 3600);
+        new("sip.example.org", 5060, SipTransport.Udp, SipAccountMode.Register,
+            new DigestAuthentication("alice", null, "secret://acc/pw"), 3600);
 
     private static SipAccount Account(bool enabled) =>
         new("acc-1", "ws-a", "Acme Trunk", ValidConnection(), maxConcurrentCalls: 4, enabled);
@@ -60,6 +61,6 @@ public sealed class SipAccountTests
     public void Connection_PortOutOfRange_Throws()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            new SipConnection("h", 70000, SipTransport.Tls, SipAccountMode.Trunk, "u", null, "s", 60));
+            new SipConnection("h", 70000, SipTransport.Tls, SipAccountMode.Trunk, IpAuthentication.Instance, null));
     }
 }
