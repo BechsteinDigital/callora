@@ -102,27 +102,82 @@ public sealed class CallLog
     /// <summary>Protocol disconnect cause, when reported.</summary>
     public string? DisconnectCause { get; private set; }
 
-    /// <summary>Records that the call was answered.</summary>
+    /// <summary>
+    /// Marks the call answered — the only transition out of the in-progress state. Rejected once
+    /// the call has ended or is already answered, and the answer time may not precede the start.
+    /// </summary>
     public void MarkAnswered(DateTimeOffset answeredAt)
     {
-        AnsweredAt ??= answeredAt;
+        if (EndedAt is not null)
+        {
+            throw new InvalidOperationException($"Call '{Id}' has ended and can no longer be answered.");
+        }
+
+        if (AnsweredAt is not null)
+        {
+            throw new InvalidOperationException($"Call '{Id}' is already answered.");
+        }
+
+        if (answeredAt < StartedAt)
+        {
+            throw new ArgumentOutOfRangeException(nameof(answeredAt), "The answer time cannot precede the start time.");
+        }
+
+        AnsweredAt = answeredAt;
     }
 
-    /// <summary>Ends the record with a terminal outcome and computes the talk time.</summary>
+    /// <summary>
+    /// Finalizes the call with a terminal outcome and computes the talk time. Rejects a second end,
+    /// a non-terminal <see cref="CallOutcome.InProgress"/>, an outcome that contradicts whether the
+    /// call was answered (a completed call must have been answered; missed/rejected/busy must not),
+    /// and end times that precede the start or the answer.
+    /// </summary>
     public void End(DateTimeOffset endedAt, CallOutcome outcome, string? disconnectCause)
     {
+        if (EndedAt is not null)
+        {
+            throw new InvalidOperationException($"Call '{Id}' has already ended.");
+        }
+
         if (outcome == CallOutcome.InProgress)
         {
             throw new ArgumentException("An ended call cannot be InProgress.", nameof(outcome));
         }
 
+        var wasAnswered = AnsweredAt is not null;
+        if (wasAnswered && !IsAnsweredOutcome(outcome))
+        {
+            throw new ArgumentException($"An answered call cannot end as {outcome}.", nameof(outcome));
+        }
+
+        if (!wasAnswered && !IsUnansweredOutcome(outcome))
+        {
+            throw new ArgumentException($"An unanswered call cannot end as {outcome}.", nameof(outcome));
+        }
+
+        if (endedAt < StartedAt)
+        {
+            throw new ArgumentOutOfRangeException(nameof(endedAt), "The end time cannot precede the start time.");
+        }
+
+        if (wasAnswered && endedAt < AnsweredAt!.Value)
+        {
+            throw new ArgumentOutOfRangeException(nameof(endedAt), "The end time cannot precede the answer time.");
+        }
+
         EndedAt = endedAt;
         Outcome = outcome;
         DisconnectCause = disconnectCause;
-        DurationSeconds = AnsweredAt is { } answered && endedAt > answered
-            ? (int)(endedAt - answered).TotalSeconds
-            : 0;
+        DurationSeconds = wasAnswered ? (int)(endedAt - AnsweredAt!.Value).TotalSeconds : 0;
     }
+
+    /// <summary>Outcomes valid only for a call that was answered.</summary>
+    private static bool IsAnsweredOutcome(CallOutcome outcome) =>
+        outcome is CallOutcome.Completed or CallOutcome.Failed;
+
+    /// <summary>Outcomes valid only for a call that was never answered.</summary>
+    private static bool IsUnansweredOutcome(CallOutcome outcome) =>
+        outcome is CallOutcome.Missed or CallOutcome.Rejected or CallOutcome.Busy or CallOutcome.Failed;
 
     /// <summary>Replaces the remote party with a pseudonym for GDPR erasure.</summary>
     public void Pseudonymize(string pseudonym)
