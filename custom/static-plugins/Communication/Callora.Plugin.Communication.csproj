@@ -35,6 +35,9 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <!-- Der reale Voice-Channel/Media-Bridge (B4-deep) läuft auf der CalloraVoipSdk; eine echte
+         Plugin-Runtime-Abhängigkeit (mit dem Plugin ausgeliefert, nicht Host-Contract). -->
+    <PackageReference Include="CalloraVoipSdk" />
   </ItemGroup>
 
   <ItemGroup>
