@@ -8,6 +8,12 @@ public interface ISipAccountStore
     /// <summary>Lists all accounts of a workspace.</summary>
     Task<IReadOnlyList<SipAccount>> ListAsync(string workspaceKey, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Lists every enabled account across all workspaces. Used for host-level voice provisioning at
+    /// plugin start, which connects each enabled account into a channel.
+    /// </summary>
+    Task<IReadOnlyList<SipAccount>> ListEnabledAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Gets one account, or null.</summary>
     Task<SipAccount?> GetAsync(string workspaceKey, string accountId, CancellationToken cancellationToken = default);
 
