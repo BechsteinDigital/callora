@@ -2,8 +2,10 @@ namespace Callora.Plugin.Communication.Domain.Accounts;
 
 /// <summary>
 /// The connection configuration of a <see cref="SipAccount"/> — grouped as one value object
-/// (Introduce Parameter Object) because host/port/transport/auth form one cohesive clump.
-/// The password is never held here; only a reference into the secret store.
+/// (Introduce Parameter Object) because host/port/transport/auth form one cohesive clump. The
+/// authentication is a <see cref="SipAuthentication"/> so only the fields the chosen method needs
+/// are present: an IP-authenticated trunk carries no credentials and no registration expiry, while
+/// a registering account does. Secrets are never held here, only references into the secret store.
 /// </summary>
 public sealed record SipConnection
 {
@@ -13,25 +15,44 @@ public sealed record SipConnection
         int port,
         SipTransport transport,
         SipAccountMode mode,
-        string authUsername,
-        string? authId,
-        string passwordSecretRef,
-        int registrationExpirySeconds)
+        SipAuthentication authentication,
+        int? registrationExpirySeconds)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(host);
         ArgumentOutOfRangeException.ThrowIfLessThan(port, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(port, 65535);
-        ArgumentException.ThrowIfNullOrWhiteSpace(authUsername);
-        ArgumentException.ThrowIfNullOrWhiteSpace(passwordSecretRef);
-        ArgumentOutOfRangeException.ThrowIfLessThan(registrationExpirySeconds, 1);
+        ArgumentNullException.ThrowIfNull(authentication);
+
+        if (mode == SipAccountMode.Register)
+        {
+            if (authentication.Method == SipAuthMethod.IpAuthenticated)
+            {
+                throw new ArgumentException(
+                    "A registering connection needs an identity and cannot use IP authentication.",
+                    nameof(authentication));
+            }
+
+            if (registrationExpirySeconds is not { } expiry)
+            {
+                throw new ArgumentException(
+                    "A registering connection requires a registration expiry.",
+                    nameof(registrationExpirySeconds));
+            }
+
+            ArgumentOutOfRangeException.ThrowIfLessThan(expiry, 1);
+        }
+        else if (registrationExpirySeconds is not null)
+        {
+            throw new ArgumentException(
+                "A trunk connection does not register and must not carry a registration expiry.",
+                nameof(registrationExpirySeconds));
+        }
 
         Host = host;
         Port = port;
         Transport = transport;
         Mode = mode;
-        AuthUsername = authUsername;
-        AuthId = authId;
-        PasswordSecretRef = passwordSecretRef;
+        Authentication = authentication;
         RegistrationExpirySeconds = registrationExpirySeconds;
     }
 
@@ -47,15 +68,9 @@ public sealed record SipConnection
     /// <summary>Register vs. trunk connection mode.</summary>
     public SipAccountMode Mode { get; }
 
-    /// <summary>Authentication user name.</summary>
-    public string AuthUsername { get; }
+    /// <summary>How the connection authenticates (digest / IP / mutual-TLS).</summary>
+    public SipAuthentication Authentication { get; }
 
-    /// <summary>Optional distinct authentication id (defaults to the user name when null).</summary>
-    public string? AuthId { get; }
-
-    /// <summary>Reference to the password in the secret store.</summary>
-    public string PasswordSecretRef { get; }
-
-    /// <summary>Requested registration expiry in seconds (≥ 1).</summary>
-    public int RegistrationExpirySeconds { get; }
+    /// <summary>Requested registration expiry in seconds (≥ 1); <see langword="null"/> for a trunk.</summary>
+    public int? RegistrationExpirySeconds { get; }
 }

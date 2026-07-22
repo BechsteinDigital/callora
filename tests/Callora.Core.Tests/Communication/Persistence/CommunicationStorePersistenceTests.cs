@@ -71,7 +71,8 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         var store = new EfSipAccountStore(_factory);
         var account = new SipAccount(
             "acc-1", "ws-a", "Acme Trunk",
-            new SipConnection("sip.example.org", 5060, SipTransport.Tls, SipAccountMode.Register, "alice", null, "secret://acc/pw", 3600),
+            new SipConnection("sip.example.org", 5060, SipTransport.Tls, SipAccountMode.Register,
+                new DigestAuthentication("alice", null, "secret://acc/pw"), 3600),
             maxConcurrentCalls: 4, enabled: true);
 
         await store.AddAsync(account);
@@ -84,7 +85,28 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         Assert.Equal("sip.example.org", loaded.Connection.Host);
         Assert.Equal(SipTransport.Tls, loaded.Connection.Transport);
         Assert.Equal(SipAccountMode.Register, loaded.Connection.Mode);
-        Assert.Equal("secret://acc/pw", loaded.Connection.PasswordSecretRef);
+        Assert.Equal("secret://acc/pw", ((DigestAuthentication)loaded.Connection.Authentication).PasswordSecretRef);
+    }
+
+    [SkippableFact]
+    public async Task SipAccount_IpAuthenticatedTrunk_RoundTrips_WithoutCredentials()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        var store = new EfSipAccountStore(_factory);
+        var account = new SipAccount(
+            "acc-trunk", "ws-t", "IP Trunk",
+            new SipConnection("trunk.example.org", 5060, SipTransport.Udp, SipAccountMode.Trunk,
+                IpAuthentication.Instance, registrationExpirySeconds: null),
+            maxConcurrentCalls: 8, enabled: true);
+        await store.AddAsync(account);
+
+        var loaded = await store.GetAsync("ws-t", "acc-trunk");
+
+        Assert.NotNull(loaded);
+        Assert.Equal(SipAccountMode.Trunk, loaded!.Connection.Mode);
+        Assert.IsType<IpAuthentication>(loaded.Connection.Authentication);
+        Assert.Null(loaded.Connection.RegistrationExpirySeconds);
     }
 
     [SkippableFact]
@@ -215,7 +237,8 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
 
         await accountStore.AddAsync(new SipAccount(
             "acc-p", "ws-purge", "Purge",
-            new SipConnection("h", 5060, SipTransport.Udp, SipAccountMode.Register, "u", null, "s://p", 3600),
+            new SipConnection("h", 5060, SipTransport.Udp, SipAccountMode.Register,
+                new DigestAuthentication("u", null, "s://p"), 3600),
             maxConcurrentCalls: 2, enabled: true));
         await lineStore.AddAsync(new SipLine("l-p", "acc-p", "ws-purge", "L", "sip:p@x", null, true, null));
         var log = CallLog.Start("c-p", "ws-purge", "acc-p", "l-p", CallDirection.Inbound,
@@ -239,7 +262,8 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         var accountStore = new EfSipAccountStore(_factory);
         await accountStore.AddAsync(new SipAccount(
             accountId, workspaceKey, "Trunk",
-            new SipConnection("h", 5060, SipTransport.Udp, SipAccountMode.Register, "u", null, "s://p", 3600),
+            new SipConnection("h", 5060, SipTransport.Udp, SipAccountMode.Register,
+                new DigestAuthentication("u", null, "s://p"), 3600),
             maxConcurrentCalls: 2, enabled: true));
     }
 }
