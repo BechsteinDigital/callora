@@ -1,9 +1,11 @@
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Compliance;
+using Callora.Plugin.Communication.Infrastructure.Channels;
 using Callora.Plugin.Communication.Infrastructure.Media;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
@@ -26,12 +28,20 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     /// <inheritdoc />
     public string DisplayName => "Communication";
 
+    // The channel registry is host-provided runtime state (no persistence), so it lives for the
+    // plugin's lifetime and is cleared on stop/unload.
+    private readonly CommunicationChannelRegistry _channelRegistry = new();
+
     /// <inheritdoc />
     public async ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         context.Export<IHostAdminApiExtensionContributor>(new CommunicationAdminApiExtensionContributor());
+
+        // The channel registry is where the SDK bridge (B4-deep) will register voice channels and
+        // consumers resolve them; exported unconditionally since it needs no database.
+        context.Export<ICommunicationChannelRegistry>(_channelRegistry);
 
         // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
         // Host die DB-Factory bereitstellt (ein minimaler Host ohne Persistenz degradiert sauber).
@@ -53,6 +63,10 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     }
 
     /// <inheritdoc />
-    public ValueTask StopAsync(CancellationToken cancellationToken = default) =>
-        ValueTask.CompletedTask;
+    public ValueTask StopAsync(CancellationToken cancellationToken = default)
+    {
+        // Drop all channel registrations so nothing dangles past unload.
+        _channelRegistry.Clear();
+        return ValueTask.CompletedTask;
+    }
 }
