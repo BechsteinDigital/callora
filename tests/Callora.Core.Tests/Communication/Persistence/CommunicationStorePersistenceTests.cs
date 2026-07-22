@@ -257,6 +257,29 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         Assert.Null(await sessionStore.GetByConnectTokenAsync("tok-purge"));
     }
 
+    [SkippableFact]
+    public async Task ListEnabled_ReturnsOnlyEnabledAccounts_AcrossWorkspaces()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        var store = new EfSipAccountStore(_factory);
+        await store.AddAsync(EnabledAccount("en-a", "ws-1", enabled: true));
+        await store.AddAsync(EnabledAccount("dis-a", "ws-1", enabled: false));
+        await store.AddAsync(EnabledAccount("en-b", "ws-2", enabled: true));
+
+        var enabled = await store.ListEnabledAsync();
+
+        // Only the two enabled accounts, spanning both workspaces; the disabled one is excluded.
+        Assert.Equal(["en-a", "en-b"], enabled.Where(a => a.Id is "en-a" or "dis-a" or "en-b").Select(a => a.Id));
+    }
+
+    private static SipAccount EnabledAccount(string accountId, string workspaceKey, bool enabled) =>
+        new(
+            accountId, workspaceKey, "Trunk",
+            new SipConnection("h", 5060, SipTransport.Udp, SipAccountMode.Register,
+                new DigestAuthentication("u", null, "s://p"), 3600),
+            maxConcurrentCalls: 2, enabled: enabled);
+
     private async Task AddAccountAsync(string accountId, string workspaceKey)
     {
         var accountStore = new EfSipAccountStore(_factory);
