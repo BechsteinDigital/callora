@@ -27,10 +27,15 @@ public sealed class SipAccountConfiguration : IEntityTypeConfiguration<SipAccoun
             connection.Property(p => p.Port).HasColumnName("port").IsRequired();
             connection.Property(p => p.Transport).HasColumnName("transport").HasConversion<string>().HasMaxLength(10).IsRequired();
             connection.Property(p => p.Mode).HasColumnName("mode").HasConversion<string>().HasMaxLength(10).IsRequired();
-            connection.Property(p => p.AuthUsername).HasColumnName("auth_username").HasMaxLength(200).IsRequired();
-            connection.Property(p => p.AuthId).HasColumnName("auth_id").HasMaxLength(200);
-            connection.Property(p => p.PasswordSecretRef).HasColumnName("password_secret_ref").HasMaxLength(500).IsRequired();
-            connection.Property(p => p.RegistrationExpirySeconds).HasColumnName("registration_expiry_seconds").IsRequired();
+            // Registration expiry only applies to a registering connection; a trunk leaves it null.
+            connection.Property(p => p.RegistrationExpirySeconds).HasColumnName("registration_expiry_seconds");
+            // Polymorphic authentication persisted as one JSON column with a method discriminator —
+            // an IP-authenticated trunk stores no credentials at all (see SipAuthenticationJsonConverter).
+            connection.Property(p => p.Authentication)
+                .HasColumnName("authentication")
+                .HasConversion(new SipAuthenticationJsonConverter())
+                .HasColumnType("text")
+                .IsRequired();
         });
 
         builder.HasIndex(x => x.WorkspaceKey);
