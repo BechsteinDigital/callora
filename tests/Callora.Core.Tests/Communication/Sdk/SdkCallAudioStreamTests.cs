@@ -97,11 +97,12 @@ internal sealed class FakeMediaReceiver : IMediaReceiver
 
     public bool Disposed => DisposeCount > 0;
 
+    /// <summary>The call this receiver was last attached to (null until <see cref="AttachToCall"/>).</summary>
+    public CalloraVoipSdk.Core.Domain.Calls.ICall? AttachedCall { get; private set; }
+
     public void RaiseFrame(MediaFrame frame) => FrameReceived?.Invoke(this, new MediaFrameReceivedEventArgs(frame));
 
-    public void AttachToCall(CalloraVoipSdk.Core.Domain.Calls.ICall call)
-    {
-    }
+    public void AttachToCall(CalloraVoipSdk.Core.Domain.Calls.ICall call) => AttachedCall = call;
 
     public void Detach() => Detached = true;
 
@@ -118,15 +119,16 @@ internal sealed class FakeMediaSender : IMediaSender
 
     public bool Disposed => DisposeCount > 0;
 
+    /// <summary>The call this sender was last attached to (null until <see cref="AttachToCall"/>).</summary>
+    public CalloraVoipSdk.Core.Domain.Calls.ICall? AttachedCall { get; private set; }
+
     public Task SendAsync(MediaFrame frame, CancellationToken ct = default)
     {
         Sent.Add(frame);
         return Task.CompletedTask;
     }
 
-    public void AttachToCall(CalloraVoipSdk.Core.Domain.Calls.ICall call)
-    {
-    }
+    public void AttachToCall(CalloraVoipSdk.Core.Domain.Calls.ICall call) => AttachedCall = call;
 
     public void Detach() => Detached = true;
 
