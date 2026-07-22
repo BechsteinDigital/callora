@@ -8,7 +8,7 @@ namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 /// The real <see cref="ICallAudioStreamProvider"/> backing the WebSocket media surface: a
 /// thread-safe map of <c>callId → live audio stream</c>. The SDK call tracker (B4-deep-2) registers
 /// a stream when a call reaches Connected and removes it when the call ends; the WS handler resolves
-/// it via <see cref="OpenAsync"/>. Replaces <c>NoCallAudioStreamProvider</c> once wired.
+/// it via <see cref="OpenAsync"/>.
 /// </summary>
 public sealed class SdkCallAudioStreamProvider : ICallAudioStreamProvider
 {
