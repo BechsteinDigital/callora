@@ -165,8 +165,10 @@ public static class CalloraHostCompositionExtensions
         // Runtime-capability registry: singleton state tracking health-derived conditional capabilities.
         // Grace period is a fixed default here; a host setting overrides it in a later slice.
         builder.Services.AddSingleton(
-            static _ => new Callora.Core.Application.Plugins.RuntimeCapabilityRegistry(
-                System.TimeSpan.FromSeconds(30), System.TimeProvider.System));
+            static sp => new Callora.Core.Application.Plugins.RuntimeCapabilityRegistry(
+                System.TimeSpan.FromSeconds(30),
+                System.TimeProvider.System,
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.RuntimeCapabilityRegistry>>()));
         builder.Services.AddScoped<Callora.Core.Application.Lifecycle.PluginCapabilityGuard>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.PluginAvailabilityEvaluator>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator>(
