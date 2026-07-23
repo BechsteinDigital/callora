@@ -1,4 +1,6 @@
 using Callora.Core.Application.Plugins.Contracts;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Callora.Core.Application.Plugins;
 
@@ -16,6 +18,7 @@ public sealed class RuntimeCapabilityRegistry : IDisposable
 {
     private readonly TimeSpan _gracePeriod;
     private readonly TimeProvider _timeProvider;
+    private readonly ILogger<RuntimeCapabilityRegistry> _logger;
     private readonly object _gate = new();
 
     private readonly Dictionary<RuntimeCapabilityKey, RuntimeCapabilityEntry> _effective = [];
@@ -31,13 +34,18 @@ public sealed class RuntimeCapabilityRegistry : IDisposable
     /// <see cref="TimeSpan.Zero"/> flips immediately.
     /// </param>
     /// <param name="timeProvider">Time source for the grace timer (inject a fake in tests).</param>
-    public RuntimeCapabilityRegistry(TimeSpan gracePeriod, TimeProvider timeProvider)
+    /// <param name="logger">Logs source and subscriber failures; defaults to a no-op logger.</param>
+    public RuntimeCapabilityRegistry(
+        TimeSpan gracePeriod,
+        TimeProvider timeProvider,
+        ILogger<RuntimeCapabilityRegistry>? logger = null)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(gracePeriod, TimeSpan.Zero);
         ArgumentNullException.ThrowIfNull(timeProvider);
 
         _gracePeriod = gracePeriod;
         _timeProvider = timeProvider;
+        _logger = logger ?? NullLogger<RuntimeCapabilityRegistry>.Instance;
     }
 
     /// <summary>Raised whenever a plugin's effective runtime-capability state flips (after any grace period).</summary>
@@ -65,9 +73,17 @@ public sealed class RuntimeCapabilityRegistry : IDisposable
             _registrations[pluginId] = (source, Handler);
             source.CapabilitiesChanged += Handler;
 
-            foreach (var grant in source.CurrentGrants)
+            try
             {
-                Apply(pluginId, grant.Capability, grant.WorkspaceKey, satisfied: true, flips);
+                foreach (var grant in source.CurrentGrants)
+                {
+                    Apply(pluginId, grant.Capability, grant.WorkspaceKey, satisfied: true, flips);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Fail-closed: a source that cannot report its grants provides nothing (spec §3.3).
+                _logger.LogError(ex, "Runtime capability source for plugin {PluginId} failed to report its grants.", pluginId);
             }
         }
 
@@ -223,9 +239,26 @@ public sealed class RuntimeCapabilityRegistry : IDisposable
             return;
         }
 
+        // Invoke each subscriber individually so one that throws does not abort delivery to the rest
+        // (a plain multicast invocation stops at the first exception).
+        var subscribers = handler.GetInvocationList();
         foreach (var flip in flips)
         {
-            handler(flip);
+            foreach (var subscriber in subscribers)
+            {
+                try
+                {
+                    ((Action<RuntimeCapabilityFlip>)subscriber)(flip);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "A runtime capability change subscriber threw for {PluginId}/{Capability}.",
+                        flip.PluginId,
+                        flip.Capability);
+                }
+            }
         }
     }
 
