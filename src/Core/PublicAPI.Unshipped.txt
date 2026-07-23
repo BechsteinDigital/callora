@@ -4757,3 +4757,61 @@ static Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration
 static Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration.operator ==(Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.operator !=(Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization? left, Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization.operator ==(Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization? left, Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization? right) -> bool
+Callora.Core.Application.Plugins.Contracts.IRuntimeCapabilitySource
+Callora.Core.Application.Plugins.Contracts.IRuntimeCapabilitySource.CapabilitiesChanged -> System.Action<Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged!>?
+Callora.Core.Application.Plugins.Contracts.IRuntimeCapabilitySource.CurrentGrants.get -> System.Collections.Generic.IReadOnlyCollection<Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant!>!
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.Capability.get -> string!
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.Capability.init -> void
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged!
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.Deconstruct(out string! Capability, out string? WorkspaceKey, out bool Satisfied) -> void
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.Equals(Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged? other) -> bool
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.RuntimeCapabilityChanged(string! Capability, string? WorkspaceKey, bool Satisfied) -> void
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.Satisfied.get -> bool
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.Satisfied.init -> void
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.WorkspaceKey.get -> string?
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.WorkspaceKey.init -> void
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.Capability.get -> string!
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.Capability.init -> void
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant!
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.Deconstruct(out string! Capability, out string? WorkspaceKey) -> void
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.Equals(Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant? other) -> bool
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.RuntimeCapabilityGrant(string! Capability, string? WorkspaceKey) -> void
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.WorkspaceKey.get -> string?
+Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.WorkspaceKey.init -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.Capability.get -> string!
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.Capability.init -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.<Clone>$() -> Callora.Core.Application.Plugins.RuntimeCapabilityFlip!
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.Deconstruct(out string! PluginId, out string! Capability, out string? WorkspaceKey, out bool Satisfied) -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.Equals(Callora.Core.Application.Plugins.RuntimeCapabilityFlip? other) -> bool
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.PluginId.get -> string!
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.PluginId.init -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.RuntimeCapabilityFlip(string! PluginId, string! Capability, string? WorkspaceKey, bool Satisfied) -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.Satisfied.get -> bool
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.Satisfied.init -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.WorkspaceKey.get -> string?
+Callora.Core.Application.Plugins.RuntimeCapabilityFlip.WorkspaceKey.init -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityRegistry
+Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.Dispose() -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.EffectiveChanged -> System.Action<Callora.Core.Application.Plugins.RuntimeCapabilityFlip!>?
+Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.IsSatisfied(string! pluginId, string! capability, string? workspaceKey) -> bool
+Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.Register(string! pluginId, Callora.Core.Application.Plugins.Contracts.IRuntimeCapabilitySource! source) -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.RuntimeCapabilityRegistry(System.TimeSpan gracePeriod, System.TimeProvider! timeProvider) -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.Unregister(string! pluginId) -> void
+override Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.ToString() -> string!
+override Callora.Core.Application.Plugins.RuntimeCapabilityFlip.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.RuntimeCapabilityFlip.GetHashCode() -> int
+override Callora.Core.Application.Plugins.RuntimeCapabilityFlip.ToString() -> string!
+static Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.operator !=(Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged? left, Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.operator ==(Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged? left, Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.operator !=(Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant? left, Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.operator ==(Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant? left, Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant? right) -> bool
+static Callora.Core.Application.Plugins.RuntimeCapabilityFlip.operator !=(Callora.Core.Application.Plugins.RuntimeCapabilityFlip? left, Callora.Core.Application.Plugins.RuntimeCapabilityFlip? right) -> bool
+static Callora.Core.Application.Plugins.RuntimeCapabilityFlip.operator ==(Callora.Core.Application.Plugins.RuntimeCapabilityFlip? left, Callora.Core.Application.Plugins.RuntimeCapabilityFlip? right) -> bool
