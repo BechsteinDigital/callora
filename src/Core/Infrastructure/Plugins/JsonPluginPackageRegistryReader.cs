@@ -146,6 +146,11 @@ public sealed class JsonPluginPackageRegistryReader : IPluginPackageRegistryRead
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => x.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray(),
+                (dto.ConditionalCapabilities ?? [])
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray());
 
             var warningMessage = contractPolicy.Status is PluginContractSupportStatus.Deprecated

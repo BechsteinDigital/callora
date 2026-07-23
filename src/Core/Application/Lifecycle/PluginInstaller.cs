@@ -252,7 +252,8 @@ public sealed class PluginInstaller(
                     entryTypeName: descriptor?.EntryTypeName ?? effectiveEntryTypeName,
                     cancellationToken: cancellationToken,
                     providedCapabilities: package?.Capabilities,
-                    requiredCapabilities: package?.RequiredCapabilities)
+                    requiredCapabilities: package?.RequiredCapabilities,
+                    conditionalCapabilities: package?.ConditionalCapabilities)
                 .ConfigureAwait(false);
         }
 
