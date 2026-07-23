@@ -21,6 +21,7 @@ public sealed class ExportingTestPlugin : IHostManagedPlugin
     {
         ArgumentNullException.ThrowIfNull(context);
         context.Export<IWorkspaceDataPurgeContributor>(new NoopPurgeContributor());
+        context.Export<IRuntimeCapabilitySource>(new StaticRuntimeCapabilitySource());
         return ValueTask.CompletedTask;
     }
 
@@ -30,5 +31,17 @@ public sealed class ExportingTestPlugin : IHostManagedPlugin
     {
         public Task PurgeWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+    }
+
+    // A fixed runtime-capability grant so the host activation test can prove the source-registration
+    // wiring (activation registers it into the RuntimeCapabilityRegistry; deactivation unregisters it).
+    private sealed class StaticRuntimeCapabilitySource : IRuntimeCapabilitySource
+    {
+        public IReadOnlyCollection<RuntimeCapabilityGrant> CurrentGrants { get; } =
+            [new RuntimeCapabilityGrant("exporting-test.capability", "ws-test")];
+
+#pragma warning disable CS0067 // The test source never raises changes.
+        public event Action<RuntimeCapabilityChanged>? CapabilitiesChanged;
+#pragma warning restore CS0067
     }
 }
