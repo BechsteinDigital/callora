@@ -31,6 +31,13 @@ public sealed class PluginInstallation
     /// <summary>Capability codes this plugin requires, encoded via <see cref="CapabilityListCodec"/>.</summary>
     public string? RequiredCapabilities { get; private set; }
 
+    /// <summary>
+    /// Capability codes this plugin provides only while a runtime condition holds (health-derived,
+    /// see the runtime-capability mechanism), encoded via <see cref="CapabilityListCodec"/>. Unlike
+    /// <see cref="ProvidedCapabilities"/> these are not unconditionally provided.
+    /// </summary>
+    public string? ConditionalCapabilities { get; private set; }
+
     public static PluginInstallation CreateInstalled(
         string pluginId,
         string displayName,
@@ -74,16 +81,20 @@ public sealed class PluginInstallation
     public void SetCapabilities(
         IReadOnlyList<string>? providedCapabilities,
         IReadOnlyList<string>? requiredCapabilities,
+        IReadOnlyList<string>? conditionalCapabilities,
         DateTimeOffset nowUtc)
     {
         ProvidedCapabilities = CapabilityListCodec.Join(providedCapabilities);
         RequiredCapabilities = CapabilityListCodec.Join(requiredCapabilities);
+        ConditionalCapabilities = CapabilityListCodec.Join(conditionalCapabilities);
         UpdatedAtUtc = nowUtc;
     }
 
     public IReadOnlyList<string> GetProvidedCapabilities() => CapabilityListCodec.Split(ProvidedCapabilities);
 
     public IReadOnlyList<string> GetRequiredCapabilities() => CapabilityListCodec.Split(RequiredCapabilities);
+
+    public IReadOnlyList<string> GetConditionalCapabilities() => CapabilityListCodec.Split(ConditionalCapabilities);
 
     public void MarkActivated(DateTimeOffset nowUtc)
     {

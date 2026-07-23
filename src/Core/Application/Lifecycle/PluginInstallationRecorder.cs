@@ -55,7 +55,8 @@ public sealed class PluginInstallationRecorder(
         string? entryTypeName,
         CancellationToken cancellationToken,
         IReadOnlyList<string>? providedCapabilities = null,
-        IReadOnlyList<string>? requiredCapabilities = null)
+        IReadOnlyList<string>? requiredCapabilities = null,
+        IReadOnlyList<string>? conditionalCapabilities = null)
     {
         var now = DateTimeOffset.UtcNow;
         var installation = await installationRepository.GetByPluginIdAsync(pluginId, cancellationToken).ConfigureAwait(false);
@@ -76,7 +77,7 @@ public sealed class PluginInstallationRecorder(
             installation.ApplyInstallMetadata(displayName, assemblyPath, entryTypeName, now);
         }
 
-        installation.SetCapabilities(providedCapabilities, requiredCapabilities, now);
+        installation.SetCapabilities(providedCapabilities, requiredCapabilities, conditionalCapabilities, now);
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
