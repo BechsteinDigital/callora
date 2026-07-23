@@ -21,6 +21,8 @@ public sealed class PluginRegistryJsonDto
 
     public string[]? Capabilities { get; set; }
 
+    public string[]? ConditionalCapabilities { get; set; }
+
     public string[]? RequiresCapabilities { get; set; }
 
     public Dictionary<string, string>? Dependencies { get; set; }

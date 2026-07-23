@@ -978,7 +978,7 @@ Callora.Core.Application.Lifecycle.PluginExtensionSynchronizer.SyncAsync(string!
 Callora.Core.Application.Lifecycle.PluginInstallationRecorder
 Callora.Core.Application.Lifecycle.PluginInstallationRecorder.MarkAsync(string! pluginId, string! displayName, string! assemblyPath, string? entryTypeName, System.Action<Callora.Core.Domain.Plugins.PluginInstallation!, System.DateTimeOffset>! mark, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Lifecycle.PluginInstallationRecorder.PluginInstallationRecorder(Callora.Core.Application.Persistence.IPluginInstallationRepository! installationRepository, Callora.Core.Application.Persistence.IHostUnitOfWork! unitOfWork) -> void
-Callora.Core.Application.Lifecycle.PluginInstallationRecorder.RecordInstalledAsync(string! pluginId, string! displayName, string! assemblyPath, string? entryTypeName, System.Threading.CancellationToken cancellationToken, System.Collections.Generic.IReadOnlyList<string!>? providedCapabilities = null, System.Collections.Generic.IReadOnlyList<string!>? requiredCapabilities = null) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Lifecycle.PluginInstallationRecorder.RecordInstalledAsync(string! pluginId, string! displayName, string! assemblyPath, string? entryTypeName, System.Threading.CancellationToken cancellationToken, System.Collections.Generic.IReadOnlyList<string!>? providedCapabilities = null, System.Collections.Generic.IReadOnlyList<string!>? requiredCapabilities = null, System.Collections.Generic.IReadOnlyList<string!>? conditionalCapabilities = null) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Lifecycle.PluginInstallationRecorder.RestoreAsync(string! pluginId, string! displayName, string! assemblyPath, string? entryTypeName, Callora.Core.Domain.Plugins.PluginInstallationState previousState, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.<Clone>$() -> Callora.Core.Application.Lifecycle.PluginInstallationSnapshot!
@@ -1626,9 +1626,11 @@ Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.AssemblyFileName.
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.AssemblyFileName.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Capabilities.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Capabilities.init -> void
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ConditionalCapabilities.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ConditionalCapabilities.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ContractVersion.get -> string!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ContractVersion.init -> void
-Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Deconstruct(out string! ContractVersion, out string! SchemaVersion, out string! Name, out string! PluginId, out string! Version, out string! AssemblyFileName, out string! EntryTypeName, out System.Collections.Generic.IReadOnlyList<string!>! Capabilities, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations, out System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities) -> void
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Deconstruct(out string! ContractVersion, out string! SchemaVersion, out string! Name, out string! PluginId, out string! Version, out string! AssemblyFileName, out string! EntryTypeName, out System.Collections.Generic.IReadOnlyList<string!>! Capabilities, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations, out System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities, out System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities) -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Dependencies.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Dependencies.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.EntryTypeName.get -> string!
@@ -1640,7 +1642,7 @@ Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Name.get -> strin
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Name.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginId.get -> string!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginId.init -> void
-Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginPackageRegistryMetadata(string! ContractVersion, string! SchemaVersion, string! Name, string! PluginId, string! Version, string! AssemblyFileName, string! EntryTypeName, System.Collections.Generic.IReadOnlyList<string!>! Capabilities, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations = null, System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities = null) -> void
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginPackageRegistryMetadata(string! ContractVersion, string! SchemaVersion, string! Name, string! PluginId, string! Version, string! AssemblyFileName, string! EntryTypeName, System.Collections.Generic.IReadOnlyList<string!>! Capabilities, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations = null, System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities = null, System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities = null) -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.RequiredCapabilities.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.RequiredCapabilities.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.SchemaVersion.get -> string!
@@ -2691,6 +2693,7 @@ Callora.Core.Domain.Plugins.PluginInstallation.ApplyInstallMetadata(string! disp
 Callora.Core.Domain.Plugins.PluginInstallation.AssemblyPath.get -> string!
 Callora.Core.Domain.Plugins.PluginInstallation.DisplayName.get -> string!
 Callora.Core.Domain.Plugins.PluginInstallation.EntryTypeName.get -> string?
+Callora.Core.Domain.Plugins.PluginInstallation.GetConditionalCapabilities() -> System.Collections.Generic.IReadOnlyList<string!>!
 Callora.Core.Domain.Plugins.PluginInstallation.GetProvidedCapabilities() -> System.Collections.Generic.IReadOnlyList<string!>!
 Callora.Core.Domain.Plugins.PluginInstallation.GetRequiredCapabilities() -> System.Collections.Generic.IReadOnlyList<string!>!
 Callora.Core.Domain.Plugins.PluginInstallation.Id.get -> System.Guid
@@ -2699,9 +2702,10 @@ Callora.Core.Domain.Plugins.PluginInstallation.MarkActivated(System.DateTimeOffs
 Callora.Core.Domain.Plugins.PluginInstallation.MarkDeactivated(System.DateTimeOffset nowUtc) -> void
 Callora.Core.Domain.Plugins.PluginInstallation.MarkUninstalled(System.DateTimeOffset nowUtc) -> void
 Callora.Core.Domain.Plugins.PluginInstallation.PluginId.get -> string!
+Callora.Core.Domain.Plugins.PluginInstallation.ConditionalCapabilities.get -> string?
 Callora.Core.Domain.Plugins.PluginInstallation.ProvidedCapabilities.get -> string?
 Callora.Core.Domain.Plugins.PluginInstallation.RequiredCapabilities.get -> string?
-Callora.Core.Domain.Plugins.PluginInstallation.SetCapabilities(System.Collections.Generic.IReadOnlyList<string!>? providedCapabilities, System.Collections.Generic.IReadOnlyList<string!>? requiredCapabilities, System.DateTimeOffset nowUtc) -> void
+Callora.Core.Domain.Plugins.PluginInstallation.SetCapabilities(System.Collections.Generic.IReadOnlyList<string!>? providedCapabilities, System.Collections.Generic.IReadOnlyList<string!>? requiredCapabilities, System.Collections.Generic.IReadOnlyList<string!>? conditionalCapabilities, System.DateTimeOffset nowUtc) -> void
 Callora.Core.Domain.Plugins.PluginInstallation.State.get -> Callora.Core.Domain.Plugins.PluginInstallationState
 Callora.Core.Domain.Plugins.PluginInstallation.UpdatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Domain.Plugins.PluginInstallationState
@@ -3331,6 +3335,8 @@ Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.AssemblyFileName.get -
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.AssemblyFileName.set -> void
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.Capabilities.get -> string![]?
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.Capabilities.set -> void
+Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.ConditionalCapabilities.get -> string![]?
+Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.ConditionalCapabilities.set -> void
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.ContractVersion.get -> string?
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.ContractVersion.set -> void
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.Dependencies.get -> System.Collections.Generic.Dictionary<string!, string!>?
