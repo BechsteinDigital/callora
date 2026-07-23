@@ -11,7 +11,8 @@ namespace Callora.Core.Application.Lifecycle;
 /// </summary>
 public sealed class PluginCapabilityGuard(
     IPluginInstallationRepository installationRepository,
-    IWorkspacePluginActivationReader activationReader)
+    IWorkspacePluginActivationReader activationReader,
+    RuntimeCapabilityRegistry? runtimeCapabilities = null)
 {
     /// <summary>
     /// Checks whether all required capabilities of one plugin are provided in the target scope.
@@ -77,7 +78,8 @@ public sealed class PluginCapabilityGuard(
         }
 
         var provided = installation.GetProvidedCapabilities();
-        if (provided.Count == 0)
+        var conditional = installation.GetConditionalCapabilities();
+        if (provided.Count == 0 && conditional.Count == 0)
         {
             return CapabilityCheckResult.Allowed;
         }
@@ -104,7 +106,7 @@ public sealed class PluginCapabilityGuard(
 
             foreach (var capability in requiredByDependent)
             {
-                if (!provided.Contains(capability, StringComparer.OrdinalIgnoreCase))
+                if (!Provides(installation, capability, workspaceKey))
                 {
                     continue;
                 }
@@ -153,7 +155,7 @@ public sealed class PluginCapabilityGuard(
         return active.ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
-    private static bool HasActiveProvider(
+    private bool HasActiveProvider(
         IReadOnlyList<PluginInstallation> installations,
         string excludedPluginId,
         string capability,
@@ -168,7 +170,7 @@ public sealed class PluginCapabilityGuard(
                 continue;
             }
 
-            if (!candidate.GetProvidedCapabilities().Contains(capability, StringComparer.OrdinalIgnoreCase))
+            if (!Provides(candidate, capability, workspaceKey))
             {
                 continue;
             }
@@ -181,6 +183,26 @@ public sealed class PluginCapabilityGuard(
 
         return false;
     }
+
+    // A plugin provides a capability if it declares it statically, or declares it conditionally and the
+    // runtime-capability registry currently reports it satisfied in the target scope (health-derived).
+    private bool Provides(PluginInstallation candidate, string capability, string? workspaceKey)
+    {
+        if (candidate.GetProvidedCapabilities().Contains(capability, StringComparer.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return runtimeCapabilities is not null
+            && candidate.GetConditionalCapabilities().Contains(capability, StringComparer.OrdinalIgnoreCase)
+            && IsConditionallySatisfied(candidate.PluginId, capability, workspaceKey);
+    }
+
+    // Scope matching (spec §8): a global grant covers every workspace; a workspace consumer is also
+    // satisfied by a grant in its own workspace. A global consumer requires a global grant.
+    private bool IsConditionallySatisfied(string pluginId, string capability, string? workspaceKey) =>
+        runtimeCapabilities!.IsSatisfied(pluginId, capability, workspaceKey: null)
+        || (workspaceKey is not null && runtimeCapabilities.IsSatisfied(pluginId, capability, workspaceKey));
 
     private static bool IsActiveInScope(
         PluginInstallation installation,
