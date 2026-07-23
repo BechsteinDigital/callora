@@ -57,6 +57,36 @@ public sealed class RuntimePluginHostActivationTests
         Assert.Empty(host.GetExports<IWorkspaceDataPurgeContributor>());
     }
 
+    [Fact]
+    public async Task ActivatePlugin_RegistersRuntimeCapabilitySource_AndUnregistersOnDeactivate()
+    {
+        var assemblyPath = ResolveExportingPluginAssemblyPath();
+        Assert.True(File.Exists(assemblyPath), $"Test plugin was not built at {assemblyPath}.");
+
+        var registry = new RuntimeCapabilityRegistry(TimeSpan.Zero, TimeProvider.System);
+        await using var host = new RuntimePluginHost(
+            new ServiceCollection().BuildServiceProvider(),
+            new CalloraHostingOptions(),
+            NullLogger<RuntimePluginHost>.Instance,
+            registry);
+
+        var install = await host.InstallAsync(
+            assemblyPath,
+            "Callora.TestPlugin.Exporting.ExportingTestPlugin");
+        Assert.True(install.IsSuccess, install.Message);
+        var pluginId = install.Plugin!.PluginId;
+
+        // The grant appears only through activation (which starts the plugin and collects its export).
+        Assert.False(registry.IsSatisfied(pluginId, "exporting-test.capability", "ws-test"));
+
+        var activate = await host.ActivateAsync(pluginId);
+        Assert.True(activate.IsSuccess, activate.Message);
+        Assert.True(registry.IsSatisfied(pluginId, "exporting-test.capability", "ws-test"));
+
+        await host.DeactivateAsync(pluginId);
+        Assert.False(registry.IsSatisfied(pluginId, "exporting-test.capability", "ws-test")); // unregistered
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void AssertExportResolvable(RuntimePluginHost host)
     {
