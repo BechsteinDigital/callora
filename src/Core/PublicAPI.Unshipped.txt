@@ -4798,7 +4798,7 @@ Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.Dispose() -> void
 Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.EffectiveChanged -> System.Action<Callora.Core.Application.Plugins.RuntimeCapabilityFlip!>?
 Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.IsSatisfied(string! pluginId, string! capability, string? workspaceKey) -> bool
 Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.Register(string! pluginId, Callora.Core.Application.Plugins.Contracts.IRuntimeCapabilitySource! source) -> void
-Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.RuntimeCapabilityRegistry(System.TimeSpan gracePeriod, System.TimeProvider! timeProvider) -> void
+Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.RuntimeCapabilityRegistry(System.TimeSpan gracePeriod, System.TimeProvider! timeProvider, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.RuntimeCapabilityRegistry!>? logger = null) -> void
 Callora.Core.Application.Plugins.RuntimeCapabilityRegistry.Unregister(string! pluginId) -> void
 override Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityChanged.GetHashCode() -> int
