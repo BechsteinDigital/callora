@@ -94,6 +94,90 @@ public sealed class JsonPluginPackageRegistryReaderTests
     }
 
     [Fact]
+    public async Task ReadForAssemblyAsync_ParsesConditionalCapabilities_TrimmedAndDeduped()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"callora-registry-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var assemblyPath = Path.Combine(tempDir, "plugin.dll");
+            await File.WriteAllBytesAsync(assemblyPath, []);
+
+            var registryPath = Path.Combine(tempDir, "registry.json");
+            var json = """
+                       {
+                         "contractVersion": "v2",
+                         "schemaVersion": "1.0",
+                         "name": "Test Plugin",
+                         "pluginId": "test",
+                         "version": "1.0.0",
+                         "assemblyFileName": "plugin.dll",
+                         "entryTypeName": "Test.Plugin.Entry",
+                         "capabilities": ["comm.foundation"],
+                         "conditionalCapabilities": [" comm.voice ", "comm.voice", ""],
+                         "dependencies": {}
+                       }
+                       """;
+            await File.WriteAllTextAsync(registryPath, json, Encoding.UTF8);
+
+            var result = await new JsonPluginPackageRegistryReader().ReadForAssemblyAsync(assemblyPath);
+
+            Assert.True(result.IsValid);
+            Assert.NotNull(result.Registry);
+            Assert.Equal(["comm.voice"], result.Registry!.ConditionalCapabilities); // trimmed, deduped, blanks dropped
+            Assert.Equal(["comm.foundation"], result.Registry.Capabilities); // static list untouched
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ReadForAssemblyAsync_MissingConditionalCapabilities_DefaultsToEmpty()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"callora-registry-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var assemblyPath = Path.Combine(tempDir, "plugin.dll");
+            await File.WriteAllBytesAsync(assemblyPath, []);
+
+            var registryPath = Path.Combine(tempDir, "registry.json");
+            var json = """
+                       {
+                         "contractVersion": "v2",
+                         "schemaVersion": "1.0",
+                         "name": "Test Plugin",
+                         "pluginId": "test",
+                         "version": "1.0.0",
+                         "assemblyFileName": "plugin.dll",
+                         "entryTypeName": "Test.Plugin.Entry",
+                         "capabilities": [],
+                         "dependencies": {}
+                       }
+                       """;
+            await File.WriteAllTextAsync(registryPath, json, Encoding.UTF8);
+
+            var result = await new JsonPluginPackageRegistryReader().ReadForAssemblyAsync(assemblyPath);
+
+            Assert.True(result.IsValid);
+            Assert.NotNull(result.Registry!.ConditionalCapabilities);
+            Assert.Empty(result.Registry.ConditionalCapabilities!); // absent field → empty, not null
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ReadForAssemblyAsync_DeprecatedContractVersion_ReturnsValidWithWarning()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"callora-registry-{Guid.NewGuid():N}");

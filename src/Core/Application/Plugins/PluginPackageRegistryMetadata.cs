@@ -11,4 +11,5 @@ public sealed record PluginPackageRegistryMetadata(
     IReadOnlyList<string> Capabilities,
     IReadOnlyDictionary<string, string> Dependencies,
     IReadOnlyList<PluginPackageExtensionRegistration>? ExtensionRegistrations = null,
-    IReadOnlyList<string>? RequiredCapabilities = null);
+    IReadOnlyList<string>? RequiredCapabilities = null,
+    IReadOnlyList<string>? ConditionalCapabilities = null);

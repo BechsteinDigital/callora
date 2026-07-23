@@ -21,5 +21,6 @@ public sealed class PluginInstallationEntityTypeConfiguration : IEntityTypeConfi
         builder.Property(x => x.UpdatedAtUtc).IsRequired();
         builder.Property(x => x.ProvidedCapabilities).HasMaxLength(2000);
         builder.Property(x => x.RequiredCapabilities).HasMaxLength(2000);
+        builder.Property(x => x.ConditionalCapabilities).HasMaxLength(2000);
     }
 }

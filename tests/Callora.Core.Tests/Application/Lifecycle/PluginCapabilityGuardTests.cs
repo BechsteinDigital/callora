@@ -149,7 +149,8 @@ public sealed class PluginCapabilityGuardTests
     private static PluginInstallation CreateInstallation(
         string pluginId,
         string[]? provides = null,
-        string[]? requires = null)
+        string[]? requires = null,
+        string[]? conditional = null)
     {
         var installation = PluginInstallation.CreateInstalled(
             pluginId,
@@ -157,7 +158,7 @@ public sealed class PluginCapabilityGuardTests
             $"/tmp/{pluginId}.dll",
             null,
             DateTimeOffset.UtcNow);
-        installation.SetCapabilities(provides, requires, DateTimeOffset.UtcNow);
+        installation.SetCapabilities(provides, requires, conditional, DateTimeOffset.UtcNow);
         return installation;
     }
 }
