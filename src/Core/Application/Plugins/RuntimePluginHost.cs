@@ -22,6 +22,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     private readonly ConcurrentDictionary<Type, ImmutableArray<PluginExportRegistration>> _exports = new();
     private readonly SemaphoreSlim _mutationLock = new(1, 1);
     private readonly SharedContractAssemblyRegistry _sharedContracts;
+    private readonly RuntimeCapabilityRegistry? _runtimeCapabilities;
     private long _exportSequence;
 
     /// <summary>
@@ -30,12 +31,14 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     public RuntimePluginHost(
         IServiceProvider services,
         CalloraHostingOptions options,
-        ILogger<RuntimePluginHost> logger)
+        ILogger<RuntimePluginHost> logger,
+        RuntimeCapabilityRegistry? runtimeCapabilities = null)
     {
         _services = services;
         _options = options;
         _logger = logger;
         _sharedContracts = new SharedContractAssemblyRegistry(logger);
+        _runtimeCapabilities = runtimeCapabilities;
     }
 
     /// <inheritdoc />
@@ -702,6 +705,21 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
                 return current.Add(registration);
             });
+
+        // A plugin's runtime capability source is tracked so its conditional capabilities can be
+        // derived from health. A failure here must not break the plugin's activation (fail-open for
+        // the plugin, fail-closed for its conditional capabilities).
+        if (contractType == typeof(IRuntimeCapabilitySource) && _runtimeCapabilities is not null)
+        {
+            try
+            {
+                _runtimeCapabilities.Register(pluginId, (IRuntimeCapabilitySource)service);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to register the runtime capability source of plugin {PluginId}.", pluginId);
+            }
+        }
     }
 
     private void RemoveExportsByPlugin(string pluginId)
@@ -730,6 +748,10 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
             _exports[contractType] = filtered;
         }
+
+        // Drop any runtime capability source the plugin registered (idempotent if it had none), so its
+        // conditional capabilities immediately stop counting when it is deactivated.
+        _runtimeCapabilities?.Unregister(pluginId);
     }
 
     private static RuntimePluginDescriptor ToDescriptor(InstalledPluginRecord record) =>
