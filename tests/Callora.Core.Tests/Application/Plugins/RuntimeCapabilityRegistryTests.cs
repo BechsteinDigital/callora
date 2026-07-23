@@ -160,6 +160,30 @@ public sealed class RuntimeCapabilityRegistryTests
         Assert.Empty(flips);
     }
 
+    [Fact]
+    public void ThrowingSubscriber_DoesNotBreakDeliveryToOtherSubscribers()
+    {
+        using var registry = new RuntimeCapabilityRegistry(Grace, new FakeTimeProvider());
+        registry.EffectiveChanged += _ => throw new InvalidOperationException("boom");
+        var received = new List<RuntimeCapabilityFlip>();
+        registry.EffectiveChanged += received.Add;
+
+        registry.Register("comm", new FakeRuntimeCapabilitySource(new RuntimeCapabilityGrant("comm.voice", "ws-1")));
+
+        Assert.Single(received); // the second subscriber still received the flip despite the first throwing
+    }
+
+    [Fact]
+    public void SourceThrowingOnCurrentGrants_RegisterFailsClosed_DoesNotThrow()
+    {
+        using var registry = new RuntimeCapabilityRegistry(Grace, new FakeTimeProvider());
+
+        registry.Register("comm", new ThrowingRuntimeCapabilitySource());
+
+        // No grants seeded, no exception surfaced: a source that cannot report its grants provides nothing.
+        Assert.False(registry.IsSatisfied("comm", "comm.voice", "ws-1"));
+    }
+
     private static (RuntimeCapabilityRegistry Registry, List<RuntimeCapabilityFlip> Flips) NewRegistry() =>
         NewRegistry(out _);
 
@@ -193,4 +217,15 @@ internal sealed class FakeRuntimeCapabilitySource : IRuntimeCapabilitySource
 
     public void Raise(string capability, string? workspaceKey, bool satisfied) =>
         CapabilitiesChanged?.Invoke(new RuntimeCapabilityChanged(capability, workspaceKey, satisfied));
+}
+
+/// <summary>A source whose grant snapshot throws — to exercise the registry's fail-closed handling.</summary>
+internal sealed class ThrowingRuntimeCapabilitySource : IRuntimeCapabilitySource
+{
+    public IReadOnlyCollection<RuntimeCapabilityGrant> CurrentGrants =>
+        throw new InvalidOperationException("source failure");
+
+#pragma warning disable CS0067 // Never raised in this stub.
+    public event Action<RuntimeCapabilityChanged>? CapabilitiesChanged;
+#pragma warning restore CS0067
 }
