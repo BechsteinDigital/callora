@@ -20,8 +20,10 @@ docker run -d --name callora-asterisk --network host \
 
 Konfiguration: ein UDP-Transport auf `0.0.0.0:5060`, ein registrierender Endpoint `callora`
 (Passwort `callora`, digest). Der AOR heißt bewusst `callora` — der pjsip-Registrar sucht den AOR
-über den User-Teil der REGISTER-To-URI, nicht über den Endpoint-Namen. Extension `600` im Dialplan
-beantwortet und echoed Audio zurück (für einen späteren RTP↔Media-Round-Trip-Test).
+über den User-Teil der REGISTER-To-URI, nicht über den Endpoint-Namen. Der Endpoint hat
+`media_encryption=sdes`, weil der CalloraVoipSdk-Client per Default **SRTP** anbietet
+(`m=audio … RTP/SAVP` + `a=crypto`); ohne das lehnt Asterisk das Angebot mit `488 Not Acceptable
+Here` ab. Extension `600` im Dialplan beantwortet und echoed Audio zurück (RTP↔Media-Round-Trip).
 
 ## Tests ausführen
 
@@ -34,6 +36,9 @@ CALLORA_ASTERISK_TESTS=1 dotnet test tests/Callora.Core.Tests/Callora.Core.Tests
 - `AsteriskRuntimeCapabilityIntegrationTests` — die volle Produktionskette (`VoipClientVoiceRuntime`
   → `SdkVoiceChannelConnector` → `SdkVoiceChannel` → Registry → `CommunicationRuntimeCapabilitySource`)
   grantet nach der echten Registrierung `communication.voice` für den Workspace.
+- `AsteriskAudioEchoIntegrationTests` — platziert einen Call zur Echo-Extension 600, öffnet die
+  Foundation-Audio-Bridge (`ICallAudioStream`), streamt ein markantes µ-law-Muster und prüft, dass
+  dieselben Bytes über SRTP zurückkommen (RTP↔Media-Bridge round-trippt echtes Medium).
 
 ## Aufräumen
 
