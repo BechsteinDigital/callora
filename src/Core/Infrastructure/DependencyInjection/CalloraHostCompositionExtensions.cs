@@ -163,10 +163,10 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<IWorkspacePluginActivationReader, EfWorkspacePluginActivationReader>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.IWorkspacePluginActivationStore, EfWorkspacePluginActivationStore>();
         // Runtime-capability registry: singleton state tracking health-derived conditional capabilities.
-        // Grace period is a fixed default here; a host setting overrides it in a later slice.
+        // The grace period is a host setting (CalloraHosting:RuntimeCapabilityGracePeriod), defaulting to 30s.
         builder.Services.AddSingleton(
             static sp => new Callora.Core.Application.Plugins.RuntimeCapabilityRegistry(
-                System.TimeSpan.FromSeconds(30),
+                sp.GetRequiredService<Callora.Core.Application.Options.CalloraHostingOptions>().RuntimeCapabilityGracePeriod,
                 System.TimeProvider.System,
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.RuntimeCapabilityRegistry>>()));
         builder.Services.AddScoped<Callora.Core.Application.Lifecycle.PluginCapabilityGuard>();
