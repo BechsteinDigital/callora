@@ -3,20 +3,35 @@ using Callora.Core.Application.Plugins.Contracts;
 namespace Callora.Plugin.Communication.Application.Admin;
 
 /// <summary>
-/// Operator Admin-API surface of the Communication plugin. v1 (walking skeleton) exposes a
-/// status route plus navigation and declares the permission keys; account/line/call routes
-/// are added onto this contributor with the domain/persistence baustein.
+/// Operator Admin-API surface of the Communication plugin: the always-on status route plus, when the
+/// deployment has persistence, the SIP-account management routes passed in at composition. Navigation
+/// and permission keys are declared here.
 /// </summary>
 public sealed class CommunicationAdminApiExtensionContributor : IHostAdminApiExtensionContributor
 {
-    private readonly IReadOnlyList<HostAdminApiRouteRegistration> _routes =
-    [
-        new HostAdminApiRouteRegistration(
-            "GET",
-            "status",
-            CommunicationPermissionKeys.AccountsRead,
-            new CommunicationStatusRouteHandler())
-    ];
+    private readonly IReadOnlyList<HostAdminApiRouteRegistration> _routes;
+
+    /// <summary>Creates the contributor with the status route only (no persistence).</summary>
+    public CommunicationAdminApiExtensionContributor()
+        : this([])
+    {
+    }
+
+    /// <summary>Creates the contributor with the status route plus the given account routes.</summary>
+    public CommunicationAdminApiExtensionContributor(IReadOnlyList<HostAdminApiRouteRegistration> accountRoutes)
+    {
+        ArgumentNullException.ThrowIfNull(accountRoutes);
+
+        _routes =
+        [
+            new HostAdminApiRouteRegistration(
+                "GET",
+                "status",
+                CommunicationPermissionKeys.AccountsRead,
+                new CommunicationStatusRouteHandler()),
+            .. accountRoutes,
+        ];
+    }
 
     private readonly IReadOnlyList<HostAdminNavigationItem> _navigationItems =
     [
