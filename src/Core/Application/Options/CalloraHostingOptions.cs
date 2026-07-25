@@ -26,4 +26,12 @@ public sealed class CalloraHostingOptions
     /// Automatically activates installed plugins marked as active in runtime state.
     /// </summary>
     public bool AutoActivateInstalledPlugins { get; set; } = true;
+
+    /// <summary>
+    /// Grace period the runtime-capability registry waits before a health-derived capability loss
+    /// takes effect, damping transient flaps (a channel that briefly reconnects should not deactivate
+    /// dependents). Return to satisfied is always immediate. <see cref="TimeSpan.Zero"/> flips a loss
+    /// immediately (no damping).
+    /// </summary>
+    public TimeSpan RuntimeCapabilityGracePeriod { get; set; } = TimeSpan.FromSeconds(30);
 }
