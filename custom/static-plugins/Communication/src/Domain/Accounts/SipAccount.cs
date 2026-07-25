@@ -74,4 +74,24 @@ public sealed class SipAccount
         LastError = status == SipAccountStatus.Failed ? error : null;
         LastStatusChangeAt = at;
     }
+
+    /// <summary>Enables the account so it is provisioned into a live channel. Idempotent; when it was
+    /// disabled the status re-enters <see cref="SipAccountStatus.Connecting"/> until the bridge reports.</summary>
+    public void Enable()
+    {
+        Enabled = true;
+        if (Status == SipAccountStatus.Disabled)
+        {
+            Status = SipAccountStatus.Connecting;
+        }
+    }
+
+    /// <summary>Disables the account so it is not provisioned. Idempotent; status becomes
+    /// <see cref="SipAccountStatus.Disabled"/> and any last error is cleared.</summary>
+    public void Disable()
+    {
+        Enabled = false;
+        Status = SipAccountStatus.Disabled;
+        LastError = null;
+    }
 }
