@@ -94,4 +94,20 @@ public sealed class SipAccount
         Status = SipAccountStatus.Disabled;
         LastError = null;
     }
+
+    /// <summary>
+    /// Replaces the account's editable configuration (operator update). Identity, workspace and the
+    /// enabled/status lifecycle are unaffected — enabling is done via <see cref="Enable"/>/<see cref="Disable"/>,
+    /// and connectivity status is reported by the bridge. Re-provisioning after a change is a runtime concern.
+    /// </summary>
+    public void Reconfigure(string displayName, SipConnection connection, int maxConcurrentCalls)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxConcurrentCalls, 1);
+
+        DisplayName = displayName;
+        Connection = connection;
+        MaxConcurrentCalls = maxConcurrentCalls;
+    }
 }
