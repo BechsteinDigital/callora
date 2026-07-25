@@ -34,6 +34,9 @@ public static class SipAccountAdminRoutes
                 "POST", "sip-accounts", CommunicationPermissionKeys.AccountsManage,
                 new CreateSipAccountRouteHandler(store, dataProtector, pluginId)),
             new HostAdminApiRouteRegistration(
+                "PUT", "sip-accounts/{accountId}", CommunicationPermissionKeys.AccountsManage,
+                new UpdateSipAccountRouteHandler(store, dataProtector, pluginId)),
+            new HostAdminApiRouteRegistration(
                 "POST", "sip-accounts/{accountId}/enable", CommunicationPermissionKeys.AccountsManage,
                 new SetSipAccountEnabledRouteHandler(store, enabled: true)),
             new HostAdminApiRouteRegistration(

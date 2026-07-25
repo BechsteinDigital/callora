@@ -3,28 +3,29 @@ using Callora.Plugin.Communication.Domain.Accounts;
 namespace Callora.Plugin.Communication.Application.Admin.SipAccounts;
 
 /// <summary>
-/// Body for creating a registering (digest) SIP account. The password is sent once in plaintext and
-/// immediately protected into the secret store by the handler — it is never persisted or echoed back.
-/// v1 supports digest/register accounts (the connectable kind); IP/mutual-TLS trunks are out of scope.
+/// Body for creating a SIP account. Supports all three authentication methods:
+/// <list type="bullet">
+/// <item>digest (default, register mode): <see cref="Username"/> + <see cref="Password"/> required;</item>
+/// <item>IP-authenticated trunk: no credentials, defaults to <see cref="SipAccountMode.Trunk"/>;</item>
+/// <item>mutual-TLS: <see cref="ClientCertificate"/> material (or an existing
+/// <see cref="ClientCertificateSecretRef"/>) required.</item>
+/// </list>
+/// Secret material (password, certificate) is sent once and immediately protected into the secret
+/// store — never persisted or echoed back. <see cref="Mode"/> defaults per method and is validated by
+/// <see cref="SipConnection"/> (e.g. a registering connection cannot use IP authentication).
 /// </summary>
-/// <param name="DisplayName">Operator-facing name (required).</param>
-/// <param name="Host">SIP registrar host (required).</param>
-/// <param name="Port">Signalling port (1–65535); defaults to 5060 when omitted.</param>
-/// <param name="Transport">Signalling transport; defaults to <see cref="SipTransport.Udp"/>.</param>
-/// <param name="Username">Digest username (required).</param>
-/// <param name="Password">Digest password in plaintext (required); protected on receipt.</param>
-/// <param name="AuthId">Optional distinct authentication id (defaults to the username).</param>
-/// <param name="RegistrationExpirySeconds">Requested registration expiry (≥ 1); defaults to 300.</param>
-/// <param name="MaxConcurrentCalls">Max simultaneous calls (≥ 1); defaults to 1.</param>
-/// <param name="Enabled">Whether the account is provisioned immediately; defaults to true.</param>
 public sealed record CreateSipAccountRequest(
     string? DisplayName,
     string? Host,
     int? Port,
     SipTransport? Transport,
+    SipAuthMethod? AuthMethod,
+    SipAccountMode? Mode,
     string? Username,
     string? Password,
     string? AuthId,
+    string? ClientCertificate,
+    string? ClientCertificateSecretRef,
     int? RegistrationExpirySeconds,
     int? MaxConcurrentCalls,
-    bool? Enabled);
+    bool? Enabled) : ISipConnectionInput;

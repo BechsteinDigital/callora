@@ -250,6 +250,181 @@ public sealed class SipAccountAdminRoutesTests
         Assert.Single(await store.ListAsync("ws-b")); // ws-b's account is untouched
     }
 
+    [Fact]
+    public async Task Create_IpAuthenticatedTrunk_PersistsWithoutCredentials()
+    {
+        var store = new InMemorySipAccountStore();
+        var handler = new CreateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        var response = await handler.HandleAsync(Request("POST", "sip-accounts", "ws-a", body: new
+        {
+            displayName = "Trunk",
+            host = "trunk.example.com",
+            authMethod = "IpAuthenticated", // defaults to Trunk mode, no credentials
+        }));
+
+        Assert.Equal(201, response.StatusCode);
+        var persisted = Assert.Single(await store.ListAsync("ws-a"));
+        Assert.IsType<IpAuthentication>(persisted.Connection.Authentication);
+        Assert.Equal(SipAccountMode.Trunk, persisted.Connection.Mode);
+        Assert.Null(persisted.Connection.RegistrationExpirySeconds);
+    }
+
+    [Fact]
+    public async Task Create_MutualTls_ProtectsCertificate_NeverEchoed()
+    {
+        var store = new InMemorySipAccountStore();
+        var protector = new CapturingDataProtector();
+        var handler = new CreateSipAccountRouteHandler(store, protector, PluginId);
+
+        var response = await handler.HandleAsync(Request("POST", "sip-accounts", "ws-a", body: new
+        {
+            displayName = "mTLS",
+            host = "tls.example.com",
+            transport = "Tls",
+            authMethod = "MutualTls",
+            clientCertificate = "-----BEGIN CERTIFICATE-----abc-----END CERTIFICATE-----",
+        }));
+
+        Assert.Equal(201, response.StatusCode);
+        var persisted = Assert.Single(await store.ListAsync("ws-a"));
+        var mtls = Assert.IsType<MutualTlsAuthentication>(persisted.Connection.Authentication);
+        Assert.True(protector.TryUnprotect(PluginId, mtls.ClientCertificateSecretRef, out var recovered));
+        Assert.Contains("BEGIN CERTIFICATE", recovered); // the cert was protected...
+        var json = JsonSerializer.Serialize(response.Payload);
+        Assert.DoesNotContain("BEGIN CERTIFICATE", json); // ...and never echoed in the response
+    }
+
+    [Fact]
+    public async Task Create_RegisterModeWithIpAuth_IsRejected()
+    {
+        var handler = new CreateSipAccountRouteHandler(new InMemorySipAccountStore(), new CapturingDataProtector(), PluginId);
+
+        // A registering connection cannot use IP authentication (domain invariant) → 400, not 500.
+        var response = await handler.HandleAsync(Request("POST", "sip-accounts", "ws-a", body: new
+        {
+            displayName = "Bad",
+            host = "h",
+            authMethod = "IpAuthenticated",
+            mode = "Register",
+        }));
+
+        Assert.Equal(400, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_RenamesAndChangesMaxCalls_KeepsPasswordWhenOmitted()
+    {
+        var store = new InMemorySipAccountStore();
+        store.Seed(Account("a1", "ws-a")); // digest account with passwordSecretRef "ref"
+        var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        var response = await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a",
+            routeValues: new() { ["accountId"] = "a1" },
+            body: new { displayName = "Renamed", host = "sip.example.com", username = "user", maxConcurrentCalls = 5 }));
+
+        Assert.Equal(200, response.StatusCode);
+        var updated = await store.GetAsync("ws-a", "a1");
+        Assert.Equal("Renamed", updated!.DisplayName);
+        Assert.Equal(5, updated.MaxConcurrentCalls);
+        var digest = Assert.IsType<DigestAuthentication>(updated.Connection.Authentication);
+        Assert.Equal("ref", digest.PasswordSecretRef); // password kept (none sent)
+    }
+
+    [Fact]
+    public async Task Update_WithNewPassword_RotatesTheReference()
+    {
+        var store = new InMemorySipAccountStore();
+        store.Seed(Account("a1", "ws-a"));
+        var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a",
+            routeValues: new() { ["accountId"] = "a1" },
+            body: new { displayName = "A", host = "sip.example.com", username = "user", password = "new-secret" }));
+
+        var digest = Assert.IsType<DigestAuthentication>((await store.GetAsync("ws-a", "a1"))!.Connection.Authentication);
+        Assert.NotEqual("ref", digest.PasswordSecretRef); // rotated to a fresh protected reference
+    }
+
+    [Fact]
+    public async Task Update_ForeignWorkspaceAccount_IsNotFound()
+    {
+        var store = new InMemorySipAccountStore();
+        store.Seed(Account("b1", "ws-b"));
+        var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        var response = await handler.HandleAsync(Request("PUT", "sip-accounts/b1", "ws-a",
+            routeValues: new() { ["accountId"] = "b1" },
+            body: new { displayName = "Hijack", host = "h", username = "user" }));
+
+        Assert.Equal(404, response.StatusCode);
+        Assert.Equal("Account b1", (await store.GetAsync("ws-b", "b1"))!.DisplayName); // untouched
+    }
+
+    [Fact]
+    public async Task Create_TrunkWithExpiry_IsRejected()
+    {
+        var handler = new CreateSipAccountRouteHandler(new InMemorySipAccountStore(), new CapturingDataProtector(), PluginId);
+
+        // A trunk does not register and must not carry a registration expiry (domain invariant) → 400.
+        var response = await handler.HandleAsync(Request("POST", "sip-accounts", "ws-a", body: new
+        {
+            displayName = "Trunk",
+            host = "trunk.example.com",
+            authMethod = "IpAuthenticated",
+            mode = "Trunk",
+            registrationExpirySeconds = 300,
+        }));
+
+        Assert.Equal(400, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_SwitchesDigestToMutualTlsAndBack()
+    {
+        var store = new InMemorySipAccountStore();
+        store.Seed(Account("a1", "ws-a"));
+        var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+        var route = new Dictionary<string, string> { ["accountId"] = "a1" };
+
+        await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a", routeValues: route, body: new
+        {
+            displayName = "mTLS",
+            host = "tls.example.com",
+            transport = "Tls",
+            authMethod = "MutualTls",
+            clientCertificate = "-----BEGIN CERTIFICATE-----abc-----END CERTIFICATE-----",
+        }));
+        Assert.IsType<MutualTlsAuthentication>((await store.GetAsync("ws-a", "a1"))!.Connection.Authentication);
+
+        // Switching back to digest requires fresh credentials (no digest secret to fall back to).
+        await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a", routeValues: route, body: new
+        {
+            displayName = "Back to digest",
+            host = "sip.example.com",
+            authMethod = "Digest",
+            username = "user",
+            password = "s3cret",
+        }));
+        Assert.IsType<DigestAuthentication>((await store.GetAsync("ws-a", "a1"))!.Connection.Authentication);
+    }
+
+    [Fact]
+    public async Task Update_CanSwitchDigestAccountToIpTrunk()
+    {
+        var store = new InMemorySipAccountStore();
+        store.Seed(Account("a1", "ws-a"));
+        var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        var response = await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a",
+            routeValues: new() { ["accountId"] = "a1" },
+            body: new { displayName = "Now a trunk", host = "trunk.example.com", authMethod = "IpAuthenticated", mode = "Trunk" }));
+
+        Assert.Equal(200, response.StatusCode);
+        var updated = await store.GetAsync("ws-a", "a1");
+        Assert.IsType<IpAuthentication>(updated!.Connection.Authentication);
+    }
+
     private static SipAccount Account(string id, string workspaceKey, bool enabled = true)
     {
         var auth = new DigestAuthentication("user", authId: null, passwordSecretRef: "ref");
