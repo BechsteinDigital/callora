@@ -42,6 +42,13 @@ public sealed class AudioRegisteringChannel : IVoiceChannel, IDisposable
     public ChannelHealth Health => _inner.Health;
 
     /// <inheritdoc />
+    public event EventHandler<ChannelHealthChangedEventArgs>? HealthChanged
+    {
+        add => _inner.HealthChanged += value;
+        remove => _inner.HealthChanged -= value;
+    }
+
+    /// <inheritdoc />
     public event EventHandler<IncomingCallEventArgs>? IncomingCall;
 
     /// <inheritdoc />

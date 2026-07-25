@@ -160,7 +160,8 @@ internal sealed class FakeChannel(string channelId, params string[] capabilities
 
     public ChannelHealth Health => ChannelHealth.Up;
 
-#pragma warning disable CS0067 // Test double: the registry never raises this event.
+#pragma warning disable CS0067 // Test double: the registry never raises these events.
+    public event EventHandler<ChannelHealthChangedEventArgs>? HealthChanged;
     public event EventHandler<IncomingCallEventArgs>? IncomingCall;
 #pragma warning restore CS0067
 

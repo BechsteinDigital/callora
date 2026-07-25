@@ -2,6 +2,7 @@ using Callora.Plugin.Communication.Abstractions;
 using CalloraVoipSdk.Core.Application.Media;
 using CalloraVoipSdk.Core.Domain.Lines;
 using SdkIncomingCallEventArgs = CalloraVoipSdk.Core.Domain.Events.IncomingCallEventArgs;
+using SdkLineStateChangedEventArgs = CalloraVoipSdk.Core.Domain.Events.LineStateChangedEventArgs;
 
 namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 
@@ -43,6 +44,7 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
         _line = line;
         _mediaTapFactory = mediaTapFactory;
         _line.IncomingCall += OnSdkIncomingCall;
+        _line.StateChanged += OnLineStateChanged;
     }
 
     /// <inheritdoc />
@@ -59,6 +61,9 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
 
     /// <inheritdoc />
     public ChannelHealth Health => MapHealth(_line.State);
+
+    /// <inheritdoc />
+    public event EventHandler<ChannelHealthChangedEventArgs>? HealthChanged;
 
     /// <inheritdoc />
     public event EventHandler<IncomingCallEventArgs>? IncomingCall;
@@ -84,6 +89,16 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
         handler(this, new IncomingCallEventArgs(new SdkCall(e.Call, _mediaTapFactory)));
     }
 
+    private void OnLineStateChanged(object? sender, SdkLineStateChangedEventArgs e)
+    {
+        var previous = MapHealth(e.OldState);
+        var current = MapHealth(e.NewState);
+        if (previous != current)
+        {
+            HealthChanged?.Invoke(this, new ChannelHealthChangedEventArgs(current));
+        }
+    }
+
     private static ChannelHealth MapHealth(LineState state) => state switch
     {
         LineState.Registered => ChannelHealth.Up,
@@ -102,5 +117,6 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
         }
 
         _line.IncomingCall -= OnSdkIncomingCall;
+        _line.StateChanged -= OnLineStateChanged;
     }
 }
