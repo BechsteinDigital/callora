@@ -31,6 +31,19 @@
          gezielt. Test-Projekte brauchen keine XML-Doku. -->
     <GenerateDocumentationFile Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">true</GenerateDocumentationFile>
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
+    <!-- SourceLink + eingebettete Quellen: Plugin-Entwickler können im IDE in den
+         Plattform-Quelltext reinsteppen (die "Code lesen"-Tiefe zusätzlich zur Doku),
+         OHNE den Monorepo zu klonen. EmbedAllSources legt die Quelle ins Symbol-Paket
+         (funktioniert auch gegen ein privates Repo); PublishRepositoryUrl +
+         EmbedUntrackedSources ergänzen den Git-URL-SourceLink-Weg (falls Repo öffentlich).
+         Die GitHub-SourceLink-Provider sind im .NET-SDK eingebaut — kein Extra-Paket nötig.
+         Wirkt nur bei IsPackable-Projekten (Symbol-Paket .snupkg), sonst inert. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <EmbedAllSources>true</EmbedAllSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
     <!-- PLAT-201: Warnungen sind Build-Fehler; Ausnahmen unten sind begründet. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);CS1573;CS1574;CS1734;CA1001;CA1068;CA1305;CA1510;CA1513;CA1716;CA1805;CA1806;CA1822;CA1832;CA1848;CA1859;CA1861;CA1865;CA2012;CA2016;CA2208;CA2249;CA5350;CA5351</NoWarn>
