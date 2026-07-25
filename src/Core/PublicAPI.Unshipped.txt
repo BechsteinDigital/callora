@@ -1496,7 +1496,7 @@ Callora.Core.Application.Plugins.IPluginActivationPolicy.EvaluateAsync(string! p
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator.EvaluateAsync(string! pluginId, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.PluginAvailability!>!
 Callora.Core.Application.Plugins.IPluginDbContextProvider
-Callora.Core.Application.Plugins.IPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, string! migrationsAssemblyName) -> void
+Callora.Core.Application.Plugins.IPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.Reflection.Assembly! migrationsAssembly) -> void
 Callora.Core.Application.Plugins.IPluginDbContextProvider.GetMigrationLockKey(string! pluginId) -> long
 Callora.Core.Application.Plugins.IPluginPackageRegistryReader
 Callora.Core.Application.Plugins.IPluginPackageRegistryReader.ReadForAssemblyAsync(string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.PluginPackageRegistryReadResult!>
@@ -3294,7 +3294,7 @@ Callora.Core.Infrastructure.Persistence.HostPersistenceDbContextDesignTimeFactor
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContextDesignTimeFactory.CreateDbContext(string![]! args) -> Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContextDesignTimeFactory.HostPersistenceDbContextDesignTimeFactory() -> void
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider
-Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, string! migrationsAssemblyName) -> void
+Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.Reflection.Assembly! migrationsAssembly) -> void
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.GetMigrationLockKey(string! pluginId) -> long
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.NpgsqlPluginDbContextProvider(Callora.Core.Application.Policies.BackendHostOptions! options) -> void
 Callora.Core.Infrastructure.Persistence.PluginManifestSchemaReader

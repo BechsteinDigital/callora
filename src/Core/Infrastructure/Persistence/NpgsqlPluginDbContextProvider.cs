@@ -1,3 +1,4 @@
+using System.Reflection;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Policies;
 using Microsoft.EntityFrameworkCore;
@@ -16,12 +17,16 @@ public sealed class NpgsqlPluginDbContextProvider(BackendHostOptions options) : 
     // never block each other on the same key.
     private const long PluginLockNamespace = 0x504C5547; // "PLUG"
 
-    public void ConfigureOptions(DbContextOptionsBuilder builder, string migrationsAssemblyName)
+    public void ConfigureOptions(DbContextOptionsBuilder builder, Assembly migrationsAssembly)
     {
         ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(migrationsAssembly);
         builder.UseNpgsql(
             options.DatabaseConnectionString,
-            npgsql => npgsql.MigrationsAssembly(migrationsAssemblyName));
+            // Pass the loaded assembly, not its name: EF Core's MigrationsAssembly
+            // otherwise does Assembly.Load(name) from the host load context, which
+            // cannot see the plugin assembly in its collectible ALC.
+            npgsql => npgsql.MigrationsAssembly(migrationsAssembly));
     }
 
     public long GetMigrationLockKey(string pluginId)
