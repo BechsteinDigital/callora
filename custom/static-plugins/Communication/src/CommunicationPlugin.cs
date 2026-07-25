@@ -171,7 +171,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             return null;
         }
 
-        _ownedVoipClient = HeadlessVoipClientFactory.Create();
+        var options = VoiceClientOptions.FromConfiguration(services.GetService(typeof(IConfiguration)) as IConfiguration);
+        _ownedVoipClient = HeadlessVoipClientFactory.Create(options);
         return new VoipClientVoiceRuntime(_ownedVoipClient);
     }
 
