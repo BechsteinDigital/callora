@@ -1293,6 +1293,8 @@ Callora.Core.Application.Options.CalloraHostingOptions.AutoLoadPlugins.set -> vo
 Callora.Core.Application.Options.CalloraHostingOptions.CalloraHostingOptions() -> void
 Callora.Core.Application.Options.CalloraHostingOptions.PluginDirectory.get -> string!
 Callora.Core.Application.Options.CalloraHostingOptions.PluginDirectory.set -> void
+Callora.Core.Application.Options.CalloraHostingOptions.RuntimeCapabilityGracePeriod.get -> System.TimeSpan
+Callora.Core.Application.Options.CalloraHostingOptions.RuntimeCapabilityGracePeriod.set -> void
 Callora.Core.Application.Options.CalloraHostingOptions.StaticPluginDirectory.get -> string!
 Callora.Core.Application.Options.CalloraHostingOptions.StaticPluginDirectory.set -> void
 Callora.Core.Application.Persistence.Contracts.IPluginDbContextFactory<TContext>
