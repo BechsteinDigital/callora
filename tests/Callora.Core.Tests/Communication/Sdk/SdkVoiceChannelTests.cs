@@ -218,6 +218,8 @@ internal sealed class FakePhoneLine : IPhoneLine
 #pragma warning disable CS0067 // Interface members the channel never observes.
     public event EventHandler<CalloraVoipSdk.Core.Domain.Events.LineReconnectingEventArgs>? LineReconnecting;
     public event EventHandler<CalloraVoipSdk.Core.Domain.Events.LineReconnectFailedEventArgs>? LineReconnectFailed;
+    public event EventHandler<CalloraVoipSdk.Core.Domain.Events.OutboundCallRingingEventArgs>? OutboundCallRinging;
+    public event EventHandler<CalloraVoipSdk.Core.Domain.Events.IncomingMessageEventArgs>? IncomingMessage;
 #pragma warning restore CS0067
 
     public void RaiseIncomingCall(NativeCall call)
@@ -248,4 +250,11 @@ internal sealed class FakePhoneLine : IPhoneLine
     public LineId LineId => throw new NotSupportedException();
 
     public SipAccount Account => throw new NotSupportedException();
+
+    public Task SendMessageAsync(string targetUri, string body, string contentType = "text/plain", CancellationToken ct = default) =>
+        throw new NotSupportedException();
+
+    public Task<CalloraVoipSdk.Core.Domain.Publications.PublishResult> PublishAsync(
+        string eventType, string body, string contentType = "text/plain", int expiresSeconds = 3600, CancellationToken ct = default) =>
+        throw new NotSupportedException();
 }
