@@ -133,6 +133,47 @@ public sealed class SdkVoiceChannelTests
         Assert.Equal(new byte[] { 9 }, inbound);
     }
 
+    [Fact]
+    public void HealthChanged_RaisedOnLineHealthTransition()
+    {
+        var line = new FakePhoneLine { State = LineState.Registered };
+        using var channel = NewChannel(line);
+        ChannelHealth? raised = null;
+        channel.HealthChanged += (_, e) => raised = e.Health;
+
+        line.RaiseStateChanged(LineState.Registered, LineState.Failed);
+
+        Assert.Equal(ChannelHealth.Down, raised); // Registered(Up) → Failed(Down)
+    }
+
+    [Fact]
+    public void HealthChanged_SuppressedWhenMappedHealthUnchanged()
+    {
+        var line = new FakePhoneLine { State = LineState.Reconnecting };
+        using var channel = NewChannel(line);
+        var count = 0;
+        channel.HealthChanged += (_, _) => count++;
+
+        // Reconnecting and RegistrationFailed both map to Degraded → no visible health transition.
+        line.RaiseStateChanged(LineState.Reconnecting, LineState.RegistrationFailed);
+
+        Assert.Equal(0, count);
+    }
+
+    [Fact]
+    public void Dispose_UnsubscribesFromLineStateChanges()
+    {
+        var line = new FakePhoneLine { State = LineState.Registered };
+        var channel = NewChannel(line);
+        var count = 0;
+        channel.HealthChanged += (_, _) => count++;
+
+        channel.Dispose();
+        line.RaiseStateChanged(LineState.Registered, LineState.Failed);
+
+        Assert.Equal(0, count); // no health event after dispose
+    }
+
     private static (IMediaReceiver Receiver, IMediaSender Sender) Tap() => (new FakeMediaReceiver(), new FakeMediaSender());
 
     private static SdkVoiceChannel NewChannel(FakePhoneLine line) =>
@@ -154,6 +195,14 @@ internal sealed class FakePhoneLine : IPhoneLine
             modifiers: null)
         ?? throw new InvalidOperationException("SDK IncomingCallEventArgs ctor signature changed.");
 
+    private static readonly ConstructorInfo StateArgsCtor =
+        typeof(CalloraVoipSdk.Core.Domain.Events.LineStateChangedEventArgs).GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null,
+            types: [typeof(LineState), typeof(LineState), typeof(IPhoneLine)],
+            modifiers: null)
+        ?? throw new InvalidOperationException("SDK LineStateChangedEventArgs ctor signature changed.");
+
     public LineState State { get; set; } = LineState.Registered;
 
     public NativeCall? DialResult { get; set; }
@@ -164,8 +213,9 @@ internal sealed class FakePhoneLine : IPhoneLine
 
     public event EventHandler<SdkIncomingCallEventArgs>? IncomingCall;
 
-#pragma warning disable CS0067 // Interface members the channel never observes.
     public event EventHandler<CalloraVoipSdk.Core.Domain.Events.LineStateChangedEventArgs>? StateChanged;
+
+#pragma warning disable CS0067 // Interface members the channel never observes.
     public event EventHandler<CalloraVoipSdk.Core.Domain.Events.LineReconnectingEventArgs>? LineReconnecting;
     public event EventHandler<CalloraVoipSdk.Core.Domain.Events.LineReconnectFailedEventArgs>? LineReconnectFailed;
 #pragma warning restore CS0067
@@ -174,6 +224,13 @@ internal sealed class FakePhoneLine : IPhoneLine
     {
         var args = (SdkIncomingCallEventArgs)IncomingArgsCtor.Invoke([call]);
         IncomingCall?.Invoke(this, args);
+    }
+
+    public void RaiseStateChanged(LineState oldState, LineState newState)
+    {
+        State = newState;
+        var args = (CalloraVoipSdk.Core.Domain.Events.LineStateChangedEventArgs)StateArgsCtor.Invoke([oldState, newState, this]);
+        StateChanged?.Invoke(this, args);
     }
 
     public Task<NativeCall> DialAsync(

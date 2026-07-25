@@ -30,6 +30,12 @@ public interface ICommunicationChannel
     ChannelHealth Health { get; }
 
     /// <summary>
+    /// Raised when <see cref="Health"/> changes, so consumers can react to availability transitions
+    /// (for example a lost or restored registration) without polling.
+    /// </summary>
+    event EventHandler<ChannelHealthChangedEventArgs>? HealthChanged;
+
+    /// <summary>
     /// Raised for each inbound call arriving on this channel. The call starts
     /// in <see cref="CallState.Ringing"/>; consumers answer it via
     /// <see cref="ICall.AcceptAsync"/> or <see cref="ICall.RejectAsync"/>.

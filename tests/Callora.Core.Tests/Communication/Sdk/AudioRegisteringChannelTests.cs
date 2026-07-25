@@ -111,6 +111,19 @@ public sealed class AudioRegisteringChannelTests
         Assert.True(inner.Disposed);
     }
 
+    [Fact]
+    public void HealthChanged_ForwardsFromInnerChannel()
+    {
+        var inner = new FakeVoiceChannel();
+        using var channel = new AudioRegisteringChannel(inner, NewRegistrar(out _));
+        ChannelHealth? raised = null;
+        channel.HealthChanged += (_, e) => raised = e.Health;
+
+        inner.RaiseHealthChanged(ChannelHealth.Down);
+
+        Assert.Equal(ChannelHealth.Down, raised); // decorator forwards the inner channel's health changes
+    }
+
     private static SdkCallAudioRegistrar NewRegistrar(out SdkCallAudioStreamProvider provider)
     {
         provider = new SdkCallAudioStreamProvider();
@@ -147,9 +160,14 @@ internal sealed class FakeVoiceChannel : IVoiceChannel, IDisposable
 
     public bool HasIncomingSubscribers => IncomingCall is not null;
 
+    public event EventHandler<ChannelHealthChangedEventArgs>? HealthChanged;
+
     public event EventHandler<IncomingCallEventArgs>? IncomingCall;
 
     public void RaiseIncoming(ICall call) => IncomingCall?.Invoke(this, new IncomingCallEventArgs(call));
+
+    public void RaiseHealthChanged(ChannelHealth health) =>
+        HealthChanged?.Invoke(this, new ChannelHealthChangedEventArgs(health));
 
     public Task<ICall> PlaceCallAsync(CallTarget target, CancellationToken cancellationToken = default)
     {

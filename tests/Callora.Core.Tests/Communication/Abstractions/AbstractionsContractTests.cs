@@ -71,7 +71,8 @@ public sealed class AbstractionsContractTests
         public IReadOnlyCollection<string> Capabilities { get; } = [CommunicationCapabilities.Voice];
         public ChannelHealth Health { get; } = health;
 
-#pragma warning disable CS0067 // Vertrags-Fake: Event gehört zur Schnittstelle, wird hier nicht ausgelöst.
+#pragma warning disable CS0067 // Vertrags-Fake: Events gehören zur Schnittstelle, werden hier nicht ausgelöst.
+        public event EventHandler<ChannelHealthChangedEventArgs>? HealthChanged;
         public event EventHandler<IncomingCallEventArgs>? IncomingCall;
 #pragma warning restore CS0067
 
