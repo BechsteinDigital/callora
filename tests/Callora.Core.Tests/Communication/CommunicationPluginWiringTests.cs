@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Tests.Communication.Sdk;
 using Callora.Plugin.Communication;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
@@ -42,6 +43,27 @@ public sealed class CommunicationPluginWiringTests
         Assert.Contains(typeof(IHostAdminApiExtensionContributor), context.Exports.Keys);
         Assert.Contains(typeof(ICommunicationChannelRegistry), context.Exports.Keys);
         Assert.DoesNotContain(typeof(IWorkspaceDataPurgeContributor), context.Exports.Keys);
+    }
+
+    [Fact]
+    public async Task StartAsync_ExportsRuntimeCapabilitySource_WiredToChannelRegistry()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: false);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // Exported unconditionally (no DB needed) so the host can register it into its runtime-capability registry.
+        Assert.Contains(typeof(IRuntimeCapabilitySource), context.Exports.Keys);
+        var source = (IRuntimeCapabilitySource)context.Exports[typeof(IRuntimeCapabilitySource)];
+        var registry = (ICommunicationChannelRegistry)context.Exports[typeof(ICommunicationChannelRegistry)];
+        Assert.Empty(source.CurrentGrants); // no channels registered yet
+
+        // The source observes the very registry the plugin exported: a healthy voice channel grants voice.
+        registry.Register("ws-1", new FakeVoiceChannel { ChannelId = "ch-1", Health = ChannelHealth.Up });
+
+        Assert.Equal(
+            [new RuntimeCapabilityGrant(CommunicationCapabilities.Voice, "ws-1")],
+            source.CurrentGrants);
     }
 }
 
