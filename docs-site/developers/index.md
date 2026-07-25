@@ -28,6 +28,10 @@ small set of sanctioned mechanisms.
 | **Extend the admin shell** | Slots, hooks, service overrides | `window.CalloraAdmin` | [Admin Extensions](../guides/admin/) |
 | **Extend tenant-facing surfaces** | Vue views into SSR output | `@callora/surface-sdk` | [Surface Extensions](../guides/surface/) |
 
+For the **complete, always-current catalog** of every sanctioned extension point — grouped by mode
+(contribute / decorate / replace) — see the [Extension Points Reference](./extension-points.md). It is
+verified against the platform source by a build test, so it never falls behind the code.
+
 ## Trust and governance in one sentence
 
 Plugins run **in-process and fully trusted** — .NET has no supported in-process sandbox
