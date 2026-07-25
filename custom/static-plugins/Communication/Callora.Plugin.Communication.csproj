@@ -16,6 +16,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The voice deployment-wiring (config gate + runtime resolution) is internal; the test project
+         verifies it directly. -->
+    <InternalsVisibleTo Include="Callora.Core.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="src/Abstractions/Callora.Plugin.Communication.Abstractions.csproj" />
     <!-- Compile gegen die Core-Contracts, aber Core nicht mitliefern (Host stellt es,
          Plugin-ALC teilt die Typidentität). -->
