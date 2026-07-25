@@ -1332,9 +1332,11 @@ Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest!
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.Body.get -> System.Text.Json.JsonElement?
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.Body.init -> void
-Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.Deconstruct(out string! PluginId, out string! HttpMethod, out string! RoutePath, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues, out System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>! Query, out System.Text.Json.JsonElement? Body, out string? UserId) -> void
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.Deconstruct(out string! PluginId, out string! HttpMethod, out string! RoutePath, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues, out System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>! Query, out System.Text.Json.JsonElement? Body, out string? UserId, out string? WorkspaceKey) -> void
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.Equals(Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest? other) -> bool
-Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.HostAdminApiRequest(string! PluginId, string! HttpMethod, string! RoutePath, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues, System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>! Query, System.Text.Json.JsonElement? Body, string? UserId) -> void
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.HostAdminApiRequest(string! PluginId, string! HttpMethod, string! RoutePath, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues, System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>! Query, System.Text.Json.JsonElement? Body, string? UserId, string? WorkspaceKey = null) -> void
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.WorkspaceKey.get -> string?
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.WorkspaceKey.init -> void
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.HttpMethod.get -> string!
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.HttpMethod.init -> void
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.PluginId.get -> string!
