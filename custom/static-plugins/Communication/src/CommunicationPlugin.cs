@@ -11,6 +11,7 @@ using Callora.Plugin.Communication.Infrastructure.Channels;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
 using Callora.Plugin.Communication.Infrastructure.Sdk;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -19,8 +20,10 @@ namespace Callora.Plugin.Communication;
 /// <summary>
 /// First-party System-Tier communication foundation. Composition Root: exports the operator control
 /// surface (Admin API) and the channel registry unconditionally; with a database it also runs GDPR
-/// purge and the media WebSocket surface, and — when the deployment supplies an
-/// <see cref="ISdkVoiceRuntime"/> — provisions a live voice channel per enabled SIP account.
+/// purge and the media WebSocket surface, and — when voice is enabled for the deployment — provisions a
+/// live voice channel per enabled SIP account. Voice turns on either when the host injects an
+/// <see cref="ISdkVoiceRuntime"/> (tests/custom hosts) or when configuration sets
+/// <c>Communication:Voice:Enabled=true</c>, in which case the plugin builds the real SDK voice client itself.
 /// </summary>
 public sealed class CommunicationPlugin : IHostManagedPlugin
 {
@@ -41,6 +44,13 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     private SdkCallAudioRegistrar? _audioRegistrar;
     private VoiceChannelProvisioner? _voiceProvisioner;
     private CommunicationRuntimeCapabilitySource? _capabilitySource;
+
+    // Only set when the plugin builds the voice client itself (config-enabled path). The plugin owns
+    // its lifecycle and disposes it on stop; an injected runtime is owned by the host, not disposed here.
+    private CalloraVoipSdk.IVoipClient? _ownedVoipClient;
+
+    /// <summary>Configuration key that enables the plugin's self-built SDK voice client.</summary>
+    internal const string VoiceEnabledConfigKey = "Communication:Voice:Enabled";
 
     /// <inheritdoc />
     public async ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
@@ -95,19 +105,29 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         }
 
         _capabilitySource?.Dispose();
+
+        // Dispose the voice client only if the plugin built it (config-enabled path); an injected
+        // runtime's client belongs to the host. Done after teardown so no channel outlives its line.
+        _ownedVoipClient?.Dispose();
+
         _channelRegistry.Clear();
     }
 
-    // Voice provisioning is opt-in: only when the deployment supplies an SDK voice runtime (a
-    // configured SIP client) and the plugin data protector for resolving credentials. Without them
-    // the plugin serves the foundation surface only — no voice channels.
+    // Voice provisioning is opt-in: it needs the plugin data protector (to resolve credentials) and a
+    // voice runtime — either injected by the host or built by the plugin when voice is configured.
+    // Without both the plugin serves the foundation surface only — no voice channels.
     private async Task ProvisionVoiceChannelsAsync(
         IHostPluginContext context,
         IPluginDbContextFactory<CommunicationDbContext> dbContextFactory,
         CancellationToken cancellationToken)
     {
-        if (context.Services.GetService(typeof(ISdkVoiceRuntime)) is not ISdkVoiceRuntime voiceRuntime
-            || context.Services.GetService(typeof(IPluginDataProtector)) is not IPluginDataProtector dataProtector)
+        if (context.Services.GetService(typeof(IPluginDataProtector)) is not IPluginDataProtector dataProtector)
+        {
+            return;
+        }
+
+        var voiceRuntime = ResolveVoiceRuntime(context.Services);
+        if (voiceRuntime is null)
         {
             return;
         }
@@ -125,6 +145,30 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             .ConfigureAwait(false);
         await _voiceProvisioner.ProvisionAsync(enabledAccounts, cancellationToken).ConfigureAwait(false);
     }
+
+    // An explicitly injected runtime (tests/custom hosts) always wins. Otherwise, when the deployment
+    // enables voice via configuration, the plugin builds and owns the real SDK voice client itself.
+    internal ISdkVoiceRuntime? ResolveVoiceRuntime(IServiceProvider services)
+    {
+        if (services.GetService(typeof(ISdkVoiceRuntime)) is ISdkVoiceRuntime injected)
+        {
+            return injected;
+        }
+
+        if (!IsVoiceEnabled(services))
+        {
+            return null;
+        }
+
+        _ownedVoipClient = HeadlessVoipClientFactory.Create();
+        return new VoipClientVoiceRuntime(_ownedVoipClient);
+    }
+
+    // Reads the deployment switch from host configuration; absent/unparseable means voice stays off.
+    internal static bool IsVoiceEnabled(IServiceProvider services) =>
+        services.GetService(typeof(IConfiguration)) is IConfiguration configuration
+        && bool.TryParse(configuration[VoiceEnabledConfigKey], out var enabled)
+        && enabled;
 
     private static ILogger<T> ResolveLogger<T>(IServiceProvider services) =>
         services.GetService(typeof(ILogger<T>)) as ILogger<T> ?? NullLogger<T>.Instance;
