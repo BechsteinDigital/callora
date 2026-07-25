@@ -1,6 +1,7 @@
 using Callora.Core.Api;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
 using System.Security.Claims;
 using System.Text.Json;
@@ -47,6 +48,7 @@ public static class PluginAdminExtensionEndpoints
         string? routePath,
         HttpContext httpContext,
         ICalloraPluginCatalog pluginCatalog,
+        IWorkspaceScopeContext workspaceScope,
         CancellationToken cancellationToken)
     {
         var contributors = pluginCatalog.GetExports<IHostAdminApiExtensionContributor>();
@@ -73,7 +75,10 @@ public static class PluginAdminExtensionEndpoints
             match.RouteValues,
             HttpQueryValues.Read(httpContext.Request.Query),
             await ReadJsonBodyAsync(httpContext, cancellationToken).ConfigureAwait(false),
-            ResolveUserId(httpContext.User));
+            ResolveUserId(httpContext.User),
+            // Authoritative workspace scope from the caller's token: the caller's own workspace for a
+            // workspace-scoped operator, null for a platform operator (super-admin/global).
+            workspaceScope.WorkspaceKey);
 
         var response = await match.Route.Handler.HandleAsync(request, cancellationToken).ConfigureAwait(false);
         var statusCode = response.StatusCode;

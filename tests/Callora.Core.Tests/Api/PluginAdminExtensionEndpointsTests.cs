@@ -2,6 +2,8 @@ using Callora.Administration.Api;
 using Callora.Core.Api;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Application.Security;
+using Callora.Core.Infrastructure.Security;
 using Callora.Core.Tests.Support;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -72,6 +74,36 @@ public sealed class PluginAdminExtensionEndpointsTests
     }
 
     [Fact]
+    public async Task ProxyRoute_WorkspaceScopedCaller_PassesBoundWorkspaceToHandler()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "ws-42");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/whoami");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.Equal("ws-42", payload!["workspaceKey"]); // the caller's bound workspace, from the token
+    }
+
+    [Fact]
+    public async Task ProxyRoute_PlatformOperator_HasNoBoundWorkspace()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        // No workspace key → platform operator; not bound to a single workspace.
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/whoami");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.Equal("(null)", payload!["workspaceKey"]);
+    }
+
+    [Fact]
     public async Task RbacPermissions_IncludePluginPermissions()
     {
         await using var app = await CreateAppAsync();
@@ -118,7 +150,17 @@ public sealed class PluginAdminExtensionEndpointsTests
                         {
                             ["sipAccountId"] = sipAccountId
                         });
-                    }))
+                    })),
+                // Echoes the workspace the dispatcher resolved for the caller, to assert scope flow.
+                new HostAdminApiRouteRegistration(
+                    "GET",
+                    "whoami",
+                    "sipaccount.read",
+                    new StaticHostAdminApiRouteHandler(request =>
+                        new HostAdminApiResponse(200, new Dictionary<string, string>
+                        {
+                            ["workspaceKey"] = request.WorkspaceKey ?? "(null)"
+                        })))
             ]
         };
 
@@ -128,6 +170,9 @@ public sealed class PluginAdminExtensionEndpointsTests
             .AddAuthentication("Header")
             .AddScheme<AuthenticationSchemeOptions, HeaderAuthenticationHandler>("Header", _ => { });
         builder.Services.AddAuthorization();
+        // The dispatcher resolves the caller's workspace scope from the principal.
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<IWorkspaceScopeContext, HttpWorkspaceScopeContext>();
         builder.Services.AddSingleton<ICalloraPluginCatalog>(new StaticPluginCatalog(new Dictionary<Type, IReadOnlyList<object>>
         {
             [typeof(IHostAdminApiExtensionContributor)] = [contributor]
