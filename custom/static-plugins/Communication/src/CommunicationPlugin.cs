@@ -5,6 +5,7 @@ using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
+using Callora.Plugin.Communication.Application.Admin.SipAccounts;
 using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Infrastructure.Capabilities;
 using Callora.Plugin.Communication.Infrastructure.Channels;
@@ -57,7 +58,18 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        context.Export<IHostAdminApiExtensionContributor>(new CommunicationAdminApiExtensionContributor());
+        var dbContextFactory = context.Services.GetService(typeof(IPluginDbContextFactory<CommunicationDbContext>))
+            as IPluginDbContextFactory<CommunicationDbContext>;
+        var dataProtector = context.Services.GetService(typeof(IPluginDataProtector)) as IPluginDataProtector;
+
+        // Operator Admin-API: the status route always; the SIP-account management routes only when
+        // persistence and a data protector are present (credentials must be protectable). The account
+        // routes read/write the DB that this same StartAsync migrates below.
+        IReadOnlyList<HostAdminApiRouteRegistration> accountRoutes =
+            dbContextFactory is not null && dataProtector is not null
+                ? SipAccountAdminRoutes.Build(new EfSipAccountStore(dbContextFactory), dataProtector, Id)
+                : [];
+        context.Export<IHostAdminApiExtensionContributor>(new CommunicationAdminApiExtensionContributor(accountRoutes));
 
         // The channel registry is where the voice bridge registers channels and consumers resolve
         // them; exported unconditionally since it needs no database.
@@ -71,8 +83,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
 
         // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
         // Host die DB-Factory bereitstellt (ein minimaler Host ohne Persistenz degradiert sauber).
-        if (context.Services.GetService(typeof(IPluginDbContextFactory<CommunicationDbContext>))
-            is not IPluginDbContextFactory<CommunicationDbContext> dbContextFactory)
+        if (dbContextFactory is null)
         {
             return;
         }
