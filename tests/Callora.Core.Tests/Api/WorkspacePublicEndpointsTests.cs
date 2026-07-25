@@ -32,6 +32,39 @@ public sealed class WorkspacePublicEndpointsTests
     }
 
     [Fact]
+    public async Task SameOriginShell_NotFoundSinkPath_ReturnsTerminal404_NoRedirectLoop()
+    {
+        // A same-origin shell base ("/") is the production default: the not-found
+        // redirect target ("/404") is served by this same app. Without a terminal
+        // guard, a request to /404 stays unresolved and redirects to /404 forever.
+        await using var app = await CreateAppAsync(workspaceShellBaseUrl: "/");
+
+        var client = app.GetTestClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/404");
+        request.Headers.Host = "localhost";
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SameOriginShell_UnknownRoute_RedirectsToNotFoundSinkOnce()
+    {
+        await using var app = await CreateAppAsync(workspaceShellBaseUrl: "/");
+
+        var client = app.GetTestClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/does-not-exist");
+        request.Headers.Host = "localhost";
+
+        var response = await client.SendAsync(request);
+
+        // One hop to the sink, which is now terminal (asserted above) — not a loop.
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("/404", response.Headers.Location?.ToString());
+    }
+
+    [Fact]
     public async Task WorkspaceBootstrapScript_UsesRefererPathForContextResolution()
     {
         await using var app = await CreateAppAsync();
@@ -235,7 +268,9 @@ public sealed class WorkspacePublicEndpointsTests
         Assert.Contains("\"chain\":[\"dialer\",\"voip\"]", content, StringComparison.Ordinal);
     }
 
-    private static async Task<WebApplication> CreateAppAsync(bool authenticate = false)
+    private static async Task<WebApplication> CreateAppAsync(
+        bool authenticate = false,
+        string workspaceShellBaseUrl = "https://workspace-shell.local/")
     {
         var workspaceStore = new InMemoryWorkspaceManagementStore();
         workspaceStore.AddTenant("tenant-a");
@@ -254,7 +289,7 @@ public sealed class WorkspacePublicEndpointsTests
         {
             DefaultTenantKey = "tenant-a",
             AdminShellBaseUrl = "https://admin-shell.local/admin/",
-            WorkspaceShellBaseUrl = "https://workspace-shell.local/"
+            WorkspaceShellBaseUrl = workspaceShellBaseUrl
         });
         builder.Services.AddSingleton<Callora.Core.Application.Extensions.IWorkspaceTemplateResolutionService>(
             new StaticWorkspaceTemplateResolutionService([]));
