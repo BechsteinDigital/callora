@@ -6,6 +6,7 @@ using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Compliance;
+using Callora.Plugin.Communication.Infrastructure.Capabilities;
 using Callora.Plugin.Communication.Infrastructure.Channels;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
@@ -39,6 +40,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     // Set during StartAsync when the media/voice surface is wired; torn down on stop.
     private SdkCallAudioRegistrar? _audioRegistrar;
     private VoiceChannelProvisioner? _voiceProvisioner;
+    private CommunicationRuntimeCapabilitySource? _capabilitySource;
 
     /// <inheritdoc />
     public async ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
@@ -50,6 +52,12 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         // The channel registry is where the voice bridge registers channels and consumers resolve
         // them; exported unconditionally since it needs no database.
         context.Export<ICommunicationChannelRegistry>(_channelRegistry);
+
+        // Runtime-capability source: derives communication.voice honestly from live channel health.
+        // Exported unconditionally (it just observes the registry — empty until channels register); the
+        // host registers it into its runtime-capability registry via the plugin's IRuntimeCapabilitySource export.
+        _capabilitySource = new CommunicationRuntimeCapabilitySource(_channelRegistry);
+        context.Export<IRuntimeCapabilitySource>(_capabilitySource);
 
         // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
         // Host die DB-Factory bereitstellt (ein minimaler Host ohne Persistenz degradiert sauber).
@@ -86,6 +94,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             await _audioRegistrar.ClearAsync().ConfigureAwait(false);
         }
 
+        _capabilitySource?.Dispose();
         _channelRegistry.Clear();
     }
 
