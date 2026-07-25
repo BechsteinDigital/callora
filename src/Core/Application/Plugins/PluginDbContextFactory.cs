@@ -1,6 +1,7 @@
 using Callora.Core.Application.Persistence.Contracts;
 using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
+using System.Reflection;
 
 namespace Callora.Core.Application.Plugins;
 
@@ -16,12 +17,15 @@ internal sealed class PluginDbContextFactory<TContext>(
     string pluginId) : IPluginDbContextFactory<TContext>
     where TContext : DbContext
 {
-    private static readonly string MigrationsAssemblyName = typeof(TContext).Assembly.GetName().Name!;
+    // The plugin's own assembly (loaded in the plugin ALC). Passed to the provider
+    // as an Assembly instance so EF Core never resolves it by name from the host
+    // load context, which cannot see a plugin's collectible ALC.
+    private static readonly Assembly MigrationsAssembly = typeof(TContext).Assembly;
 
     public TContext CreateDbContext()
     {
         var builder = new DbContextOptionsBuilder<TContext>();
-        provider.ConfigureOptions(builder, MigrationsAssemblyName);
+        provider.ConfigureOptions(builder, MigrationsAssembly);
         return (TContext)Activator.CreateInstance(typeof(TContext), builder.Options)!;
     }
 
