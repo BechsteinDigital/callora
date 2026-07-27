@@ -60,7 +60,10 @@ public sealed class McpToolRegistry
                     continue;
                 }
 
-                var tool = new ContributedMcpTool(registration, _httpContextAccessor);
+                // The registry tracks the contributing plugin's id as provenance and threads it into the
+                // wrapper so each call is gated through the plugin's per-workspace availability. The
+                // public McpToolRegistration contract stays free of plugin identity.
+                var tool = new ContributedMcpTool(registration, pluginId, _httpContextAccessor);
                 if (_tools.TryAdd(tool))
                 {
                     added.Add(tool);
