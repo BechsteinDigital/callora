@@ -21,4 +21,6 @@ internal interface ISipConnectionInput
     string? ClientCertificate { get; }
     string? ClientCertificateSecretRef { get; }
     int? RegistrationExpirySeconds { get; }
+    string? OutboundProxy { get; }
+    IReadOnlyList<string>? InboundNumbers { get; }
 }

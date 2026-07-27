@@ -49,14 +49,33 @@ public sealed class SdkSipAccountFactoryTests
     }
 
     [Fact]
-    public void Create_DigestTrunkWithoutExpiry_UsesDefault()
+    public void Create_DigestTrunk_SetsTrunkInboundFields()
     {
         var factory = new SdkSipAccountFactory(new FakePluginDataProtector(("pw-ref", "s3cret")), PluginId);
-        var account = DigestAccount(mode: SipAccountMode.Trunk, expiry: null);
+        var connection = new SipConnection(
+            "sip.example.com", 5060, SipTransport.Tls, SipAccountMode.Trunk,
+            new DigestAuthentication("alice", authId: null, passwordSecretRef: "pw-ref"), 600,
+            outboundProxy: "proxy.example.com", inboundNumbers: ["+4930111", "+4930222"]);
+        var account = new SipAccount("acc-trunk", "w1", "Credentialed Trunk", connection, maxConcurrentCalls: 4, enabled: true);
 
         var sdk = factory.Create(account);
 
-        Assert.Equal(300, sdk.RegistrationExpiry);
+        Assert.True(sdk.AcceptTrunkInbound);
+        Assert.Equal("proxy.example.com", sdk.OutboundProxy);
+        Assert.Equal(["+4930111", "+4930222"], sdk.InboundNumbers);
+        Assert.Equal(600, sdk.RegistrationExpiry);
+    }
+
+    [Fact]
+    public void Create_DigestRegister_DoesNotForceTrunkFields()
+    {
+        var factory = new SdkSipAccountFactory(new FakePluginDataProtector(("pw-ref", "s3cret")), PluginId);
+
+        var sdk = factory.Create(DigestAccount(mode: SipAccountMode.Register));
+
+        // A plain register account is left at the SDK defaults: no outbound proxy, no DID whitelist.
+        Assert.Null(sdk.OutboundProxy);
+        Assert.Null(sdk.InboundNumbers);
     }
 
     [Fact]
