@@ -1,0 +1,17 @@
+{
+  "name": "callora-plugin-communication-admin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Admin UI bundle for the Callora Communication plugin. Builds real Vue SFCs against the host's shared Vue (external), emitting an IIFE the host admin shell loads at runtime.",
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.7",
+    "vue": "^3.5.13",
+    "vue-tsc": "^2.2.0"
+  }
+}
