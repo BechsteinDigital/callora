@@ -67,6 +67,68 @@ public static class BackendCsrfValidator
         return true;
     }
 
+    /// <summary>
+    /// Returns <c>true</c> when a cookie-<em>issuing</em> request (the login endpoints)
+    /// must be rejected as a probable login-CSRF / session-fixation attempt. Unlike
+    /// <see cref="IsForbidden"/> this does not depend on an <em>existing</em> auth cookie:
+    /// a forged cross-site login plants a session the victim never chose. A browser always
+    /// attaches <c>Origin</c> on a cross-site POST, so a request whose source origin is
+    /// present but neither same-origin nor explicitly allowed is rejected; a request with
+    /// no verifiable source (a non-browser API client — no browser session to hijack) is
+    /// allowed, keeping programmatic logins working.
+    /// </summary>
+    /// <param name="method">The HTTP method of the request.</param>
+    /// <param name="originHeader">The request's <c>Origin</c> header, if any.</param>
+    /// <param name="refererHeader">The request's <c>Referer</c> header, if any.</param>
+    /// <param name="requestOrigin">The host's own origin (<c>scheme://host[:port]</c>).</param>
+    /// <param name="allowedOrigins">Extra origins accepted beyond same-origin.</param>
+    public static bool IsForbiddenLogin(
+        string method,
+        string? originHeader,
+        string? refererHeader,
+        string requestOrigin,
+        IReadOnlyCollection<string> allowedOrigins)
+    {
+        ArgumentNullException.ThrowIfNull(allowedOrigins);
+
+        if (string.IsNullOrEmpty(method) || SafeMethods.Contains(method))
+        {
+            return false;
+        }
+
+        // A present-but-opaque Origin ("null" — sandboxed iframe, file://) is a browser context
+        // we cannot verify. The browser stated its origin is opaque, so that is authoritative
+        // over any Referer: reject fail-closed BEFORE the Referer fallback, otherwise a
+        // same-origin Referer could "heal" the opaque origin and bypass the guard.
+        if (string.Equals(originHeader?.Trim(), "null", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var source = NormalizeOrigin(originHeader) ?? NormalizeOrigin(refererHeader);
+        if (source is null)
+        {
+            // No Origin and no usable Referer: a non-browser client (curl, mobile) with no
+            // browser session to hijack — allow, so programmatic logins keep working.
+            return false;
+        }
+
+        if (OriginEquals(source, requestOrigin))
+        {
+            return false;
+        }
+
+        foreach (var allowed in allowedOrigins)
+        {
+            if (OriginEquals(source, allowed))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static bool OriginEquals(string normalizedSource, string? candidate)
     {
         var normalizedCandidate = NormalizeOrigin(candidate);
