@@ -17,9 +17,8 @@ using Xunit;
 namespace Callora.Core.Tests.Communication.Persistence;
 
 /// <summary>
-/// Persistence-Integrationstest der EF-Stores gegen ein echtes Postgres (Testcontainers): die
-/// tatsächlichen Migrationen (<c>InitialCommunicationSchema</c>, <c>AddMediaStreamSessions</c>)
-/// werden angewandt und das Rich-Domain-Mapping (OwnsOne-VOs SipConnection/AudioFormat,
+/// Persistence-Integrationstest der EF-Stores gegen ein echtes Postgres (Testcontainers): alle
+/// tatsächlichen Plugin-Migrationen werden angewandt und das Rich-Domain-Mapping (OwnsOne-VOs SipConnection/AudioFormat,
 /// String-Enums, private-Ctor-Materialisierung) + die Store-CRUD-/Seam-Logik geprüft. Ohne
 /// Docker überspringen die Tests sich selbst. Holt die in B0 verschobene Host-Infra-Coverage
 /// (Plugin-DB-Factory/-Migration) zurück.
@@ -107,6 +106,29 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         Assert.Equal(SipAccountMode.Trunk, loaded!.Connection.Mode);
         Assert.IsType<IpAuthentication>(loaded.Connection.Authentication);
         Assert.Null(loaded.Connection.RegistrationExpirySeconds);
+    }
+
+    [SkippableFact]
+    public async Task SipAccount_CredentialedTrunk_RoundTrips_WithOutboundProxyAndInboundNumbers()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        var store = new EfSipAccountStore(_factory);
+        var account = new SipAccount(
+            "acc-cred-trunk", "ws-ct", "Credentialed Trunk",
+            new SipConnection("trunk.example.org", 5060, SipTransport.Tls, SipAccountMode.Trunk,
+                new DigestAuthentication("trunk-user", null, "secret://acc/pw"), 3600,
+                outboundProxy: "proxy.example.org", inboundNumbers: ["+4930111", "+4930222"]),
+            maxConcurrentCalls: 8, enabled: true);
+        await store.AddAsync(account);
+
+        var loaded = await store.GetAsync("ws-ct", "acc-cred-trunk");
+
+        Assert.NotNull(loaded);
+        Assert.Equal(SipAccountMode.Trunk, loaded!.Connection.Mode);
+        Assert.Equal(3600, loaded.Connection.RegistrationExpirySeconds);
+        Assert.Equal("proxy.example.org", loaded.Connection.OutboundProxy);
+        Assert.Equal(["+4930111", "+4930222"], loaded.Connection.InboundNumbers);
     }
 
     [SkippableFact]

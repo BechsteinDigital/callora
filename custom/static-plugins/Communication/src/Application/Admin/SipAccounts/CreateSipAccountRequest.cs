@@ -12,7 +12,9 @@ namespace Callora.Plugin.Communication.Application.Admin.SipAccounts;
 /// </list>
 /// Secret material (password, certificate) is sent once and immediately protected into the secret
 /// store — never persisted or echoed back. <see cref="Mode"/> defaults per method and is validated by
-/// <see cref="SipConnection"/> (e.g. a registering connection cannot use IP authentication).
+/// <see cref="SipConnection"/> (e.g. a registering connection cannot use IP authentication). A
+/// credentialed trunk (<see cref="SipAccountMode.Trunk"/> + digest) may carry an
+/// <see cref="OutboundProxy"/> and an <see cref="InboundNumbers"/> DID whitelist.
 /// </summary>
 public sealed record CreateSipAccountRequest(
     string? DisplayName,
@@ -27,5 +29,7 @@ public sealed record CreateSipAccountRequest(
     string? ClientCertificate,
     string? ClientCertificateSecretRef,
     int? RegistrationExpirySeconds,
+    string? OutboundProxy,
+    IReadOnlyList<string>? InboundNumbers,
     int? MaxConcurrentCalls,
     bool? Enabled) : ISipConnectionInput;

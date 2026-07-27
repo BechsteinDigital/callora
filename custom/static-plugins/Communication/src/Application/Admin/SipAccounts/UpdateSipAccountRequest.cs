@@ -7,6 +7,8 @@ namespace Callora.Plugin.Communication.Application.Admin.SipAccounts;
 /// enabled/status lifecycle is managed by the enable/disable routes, not here. Secret material
 /// (<see cref="Password"/>, <see cref="ClientCertificate"/>) is optional — omit it to keep the stored
 /// credential, provide it to rotate. <see cref="MaxConcurrentCalls"/> omitted keeps the current value.
+/// A credentialed trunk (<see cref="SipAccountMode.Trunk"/> + digest) may carry an
+/// <see cref="OutboundProxy"/> and an <see cref="InboundNumbers"/> DID whitelist.
 /// </summary>
 public sealed record UpdateSipAccountRequest(
     string? DisplayName,
@@ -21,4 +23,6 @@ public sealed record UpdateSipAccountRequest(
     string? ClientCertificate,
     string? ClientCertificateSecretRef,
     int? RegistrationExpirySeconds,
+    string? OutboundProxy,
+    IReadOnlyList<string>? InboundNumbers,
     int? MaxConcurrentCalls) : ISipConnectionInput;
