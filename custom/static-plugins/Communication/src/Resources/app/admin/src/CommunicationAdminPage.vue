@@ -6,6 +6,14 @@ import { onMounted, reactive, ref } from 'vue'
 // the target workspace explicitly (?workspaceKey=…), so the page carries that field.
 const API_BASE = '/api/ext/admin/plugins/communication/'
 const TRANSPORTS = ['Udp', 'Tcp', 'Tls'] as const
+// Matches SipAuthMethod on the backend. The mode (Register/Trunk) and registration
+// expiry are derived server-side from the method, so the form only picks the method
+// and its credential shape.
+const AUTH_METHODS = [
+  { value: 'Digest', label: 'Digest (Registrierung)' },
+  { value: 'IpAuthenticated', label: 'IP-Trunk (ohne Zugangsdaten)' },
+  { value: 'MutualTls', label: 'Mutual TLS (Client-Zertifikat)' },
+] as const
 
 interface SipAccount {
   id: string
@@ -25,7 +33,24 @@ const loading = ref(false)
 const busy = ref(false)
 const error = ref<string | null>(null)
 const notice = ref<string | null>(null)
-const form = reactive({ displayName: '', host: '', port: 5060, transport: 'Udp', username: '', password: '' })
+const form = reactive({
+  displayName: '',
+  host: '',
+  port: 5060,
+  transport: 'Udp',
+  authMethod: 'Digest',
+  username: '',
+  password: '',
+  authId: '',
+  clientCertificate: '',
+})
+
+function resetForm(): void {
+  Object.assign(form, {
+    displayName: '', host: '', port: 5060, transport: 'Udp',
+    authMethod: 'Digest', username: '', password: '', authId: '', clientCertificate: '',
+  })
+}
 
 async function request(method: string, path: string, body?: unknown): Promise<unknown> {
   const ws = encodeURIComponent(workspaceKey.value.trim())
@@ -92,24 +117,42 @@ function remove(account: SipAccount): void {
 }
 
 async function create(): Promise<void> {
-  if (!form.displayName.trim() || !form.host.trim() || !form.username.trim() || !form.password) {
-    error.value = 'Anzeigename, Host, Benutzername und Passwort sind erforderlich.'
+  if (!form.displayName.trim() || !form.host.trim()) {
+    error.value = 'Anzeigename und Host sind erforderlich.'
     return
   }
-  await run(
-    request('POST', 'sip-accounts', {
-      displayName: form.displayName.trim(),
-      host: form.host.trim(),
-      port: Number(form.port) || 5060,
-      transport: form.transport,
-      authMethod: 'Digest',
-      username: form.username.trim(),
-      password: form.password,
-      enabled: true,
-    }),
-    'Account angelegt.',
-  )
-  Object.assign(form, { displayName: '', host: '', port: 5060, transport: 'Udp', username: '', password: '' })
+
+  const body: Record<string, unknown> = {
+    displayName: form.displayName.trim(),
+    host: form.host.trim(),
+    port: Number(form.port) || 5060,
+    transport: form.transport,
+    authMethod: form.authMethod,
+    enabled: true,
+  }
+
+  // Credential shape per method (mode/expiry are derived server-side):
+  // Digest needs username+password, MutualTls a client certificate, IP-trunk nothing.
+  if (form.authMethod === 'Digest') {
+    if (!form.username.trim() || !form.password) {
+      error.value = 'Für Digest sind Benutzername und Passwort erforderlich.'
+      return
+    }
+    body.username = form.username.trim()
+    body.password = form.password
+    if (form.authId.trim()) {
+      body.authId = form.authId.trim()
+    }
+  } else if (form.authMethod === 'MutualTls') {
+    if (!form.clientCertificate.trim()) {
+      error.value = 'Für Mutual TLS ist ein Client-Zertifikat (PEM) erforderlich.'
+      return
+    }
+    body.clientCertificate = form.clientCertificate.trim()
+  }
+
+  await run(request('POST', 'sip-accounts', body), 'Account angelegt.')
+  resetForm()
 }
 
 onMounted(() => {
@@ -153,12 +196,37 @@ onMounted(() => {
           </select>
         </label>
         <label style="display: flex; flex-direction: column; font-size: 0.85rem; gap: 0.15rem">
-          Benutzername<input v-model="form.username" />
+          Verfahren
+          <select v-model="form.authMethod">
+            <option v-for="m in AUTH_METHODS" :key="m.value" :value="m.value">{{ m.label }}</option>
+          </select>
         </label>
-        <label style="display: flex; flex-direction: column; font-size: 0.85rem; gap: 0.15rem">
-          Passwort<input v-model="form.password" type="password" />
+
+        <template v-if="form.authMethod === 'Digest'">
+          <label style="display: flex; flex-direction: column; font-size: 0.85rem; gap: 0.15rem">
+            Benutzername<input v-model="form.username" />
+          </label>
+          <label style="display: flex; flex-direction: column; font-size: 0.85rem; gap: 0.15rem">
+            Passwort<input v-model="form.password" type="password" />
+          </label>
+          <label style="display: flex; flex-direction: column; font-size: 0.85rem; gap: 0.15rem">
+            Auth-ID (optional)<input v-model="form.authId" />
+          </label>
+        </template>
+
+        <label
+          v-else-if="form.authMethod === 'MutualTls'"
+          style="grid-column: 1 / -1; display: flex; flex-direction: column; font-size: 0.85rem; gap: 0.15rem"
+        >
+          Client-Zertifikat (PEM)
+          <textarea v-model="form.clientCertificate" rows="4" placeholder="-----BEGIN CERTIFICATE-----" style="font-family: monospace" />
         </label>
-        <button type="submit" :disabled="busy">Account anlegen</button>
+
+        <p v-else style="grid-column: 1 / -1; font-size: 0.85rem; color: var(--cal-color-text-muted)">
+          IP-Trunk: keine Zugangsdaten — die Gegenstelle authentifiziert über die Absender-IP (Modus Trunk).
+        </p>
+
+        <button type="submit" :disabled="busy" style="grid-column: 1 / -1; justify-self: start">Account anlegen</button>
       </form>
 
       <p v-if="!accounts.length">{{ loading ? 'Lädt…' : 'Keine SIP-Accounts in diesem Workspace.' }}</p>
