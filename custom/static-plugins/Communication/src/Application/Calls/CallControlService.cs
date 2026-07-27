@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq;
 using Callora.Core.Application.Events.Contracts;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Domain.Calls;
@@ -101,6 +102,14 @@ public sealed class CallControlService : ICallControlService, IDisposable
     /// <inheritdoc />
     public CallSnapshot? Get(string workspaceKey, string callId) =>
         TryGetOwned(workspaceKey, callId, out var tracked) ? Snapshot(tracked.Call) : null;
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<CallHistoryEntry>> ListRecentAsync(
+        string workspaceKey, int limit, CancellationToken cancellationToken = default)
+    {
+        var logs = await _callLogStore.ListRecentAsync(workspaceKey, limit, cancellationToken).ConfigureAwait(false);
+        return [.. logs.Select(CallHistoryEntry.FromDomain)];
+    }
 
     /// <summary>Detaches every live handler so no tracked call outlives the service (plugin stop/unload).</summary>
     public void Dispose()

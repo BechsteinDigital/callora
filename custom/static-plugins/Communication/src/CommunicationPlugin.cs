@@ -6,6 +6,7 @@ using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
+using Callora.Plugin.Communication.Application.Admin.Calls;
 using Callora.Plugin.Communication.Application.Admin.SipAccounts;
 using Callora.Plugin.Communication.Application.Calls;
 using Callora.Plugin.Communication.Application.Compliance;
@@ -68,14 +69,31 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             as IPluginDbContextFactory<CommunicationDbContext>;
         var dataProtector = context.Services.GetService(typeof(IPluginDataProtector)) as IPluginDataProtector;
 
+        // Call-control primitive: the neutral seam for placing/controlling calls plus call.* events and
+        // call history. Built first (when a database is present — it records history) so its REST routes
+        // can join the admin surface below; also exported for in-process plugins (Dialer/PBX/CRM).
+        IReadOnlyList<HostAdminApiRouteRegistration> callRoutes = [];
+        if (dbContextFactory is not null)
+        {
+            _callControlService = new CallControlService(
+                _channelRegistry,
+                new EfCallLogStore(dbContextFactory),
+                context.Services.GetService(typeof(IBusinessEventBus)) as IBusinessEventBus,
+                ResolveLogger<CallControlService>(context.Services),
+                TimeProvider.System);
+            context.Export<ICallControlService>(_callControlService);
+            callRoutes = CallAdminRoutes.Build(_callControlService);
+        }
+
         // Operator Admin-API: the status route always; the SIP-account management routes only when
-        // persistence and a data protector are present (credentials must be protectable). The account
-        // routes read/write the DB that this same StartAsync migrates below.
+        // persistence and a data protector are present (credentials must be protectable) plus the
+        // call-control routes above. These read/write the DB that this same StartAsync migrates below.
         IReadOnlyList<HostAdminApiRouteRegistration> accountRoutes =
             dbContextFactory is not null && dataProtector is not null
                 ? SipAccountAdminRoutes.Build(new EfSipAccountStore(dbContextFactory), dataProtector, Id)
                 : [];
-        context.Export<IHostAdminApiExtensionContributor>(new CommunicationAdminApiExtensionContributor(accountRoutes));
+        context.Export<IHostAdminApiExtensionContributor>(
+            new CommunicationAdminApiExtensionContributor([.. accountRoutes, .. callRoutes]));
 
         // The channel registry is where the voice bridge registers channels and consumers resolve
         // them; exported unconditionally since it needs no database.
@@ -106,16 +124,6 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             audioStreamProvider, ResolveLogger<SdkCallAudioRegistrar>(context.Services));
         context.Export<IHostWebSocketEndpointContributor>(new CommunicationMediaWebSocketContributor(
             new EfMediaStreamSessionStore(dbContextFactory), audioStreamProvider));
-
-        // Call-control primitive: the neutral seam for placing/controlling calls plus call.* events and
-        // call history. Exported for in-process plugins (Dialer/PBX/CRM) and, later, the REST adapter.
-        _callControlService = new CallControlService(
-            _channelRegistry,
-            new EfCallLogStore(dbContextFactory),
-            context.Services.GetService(typeof(IBusinessEventBus)) as IBusinessEventBus,
-            ResolveLogger<CallControlService>(context.Services),
-            TimeProvider.System);
-        context.Export<ICallControlService>(_callControlService);
 
         await ProvisionVoiceChannelsAsync(context, dbContextFactory, cancellationToken).ConfigureAwait(false);
     }
