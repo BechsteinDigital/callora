@@ -1,4 +1,5 @@
-import { defineComponent, h, type Component } from 'vue'
+import * as Vue from 'vue'
+import type { Component } from 'vue'
 import { registerExtension } from './registry'
 import { registerHook, type HookContext } from './hooks'
 import { registerService } from './services'
@@ -47,7 +48,11 @@ export interface CalloraAdminGlobal {
   registerExtension(slot: string, component: Component, order?: number): void
   registerHook<T>(name: string, handler: (ctx: HookContext<T>) => void | Promise<void>, order?: number): void
   registerService<T>(key: string, implementation: T, meta?: { priority?: number }): void
-  vue: { h: typeof h; defineComponent: typeof defineComponent }
+  // The host's full Vue runtime, shared so a plugin bundle builds real .vue SFCs
+  // against the SAME Vue instance (Vue marked external, mapped to CalloraAdmin.vue).
+  // A plugin must never bundle its own Vue — two runtimes break reactivity and
+  // component instancing across the boundary.
+  vue: typeof Vue
 }
 
 // The plugin whose bundle is currently executing; register* calls made during that
@@ -122,7 +127,7 @@ export function installGlobalApi(): void {
     registerHook: (name, handler, order) => registerHook(name, handler, order, currentPluginId),
     registerService: (key, implementation, meta) =>
       registerService(key, implementation, { pluginId: currentPluginId, priority: meta?.priority }),
-    vue: { h, defineComponent },
+    vue: Vue,
   }
   ;(globalThis as unknown as { CalloraAdmin?: CalloraAdminGlobal }).CalloraAdmin = api
 }

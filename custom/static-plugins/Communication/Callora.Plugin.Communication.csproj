@@ -9,6 +9,10 @@
     <!-- Nur der Runtime-Code unter src/ wird kompiliert — OHNE das verschachtelte
          Abstractions-Vertragsprojekt (eigenes Assembly, eigene csproj). -->
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- Die Admin-UI-Frontend-Quelle (Vite/npm, inkl. node_modules) gehört NICHT ins
+         Paket und nicht in die Default-Globs — nur das gebaute Bundle unter
+         Resources/public/admin reist mit (siehe None-Include unten). -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);src\Resources\app\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -48,6 +52,14 @@
 
   <ItemGroup>
     <None Include="registry.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- Admin-UI-Bundle: reist als Static Web Asset im Plugin-Paket mit. Der Host-
+         PluginUiAssetPublisher findet es unter src/Resources/public/admin und
+         publiziert es; die Datei wird als Klartext-Quelle geliefert (kein Vue-Bundling,
+         Vue kommt vom Host über window.CalloraAdmin). Der relative Ausgabepfad bleibt
+         erhalten, damit der Publisher die 'admin'-Surface erkennt. -->
+    <None Include="src/Resources/public/admin/**/*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
