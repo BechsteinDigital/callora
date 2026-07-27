@@ -1,3 +1,4 @@
+using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Secrets.Contracts;
@@ -5,7 +6,9 @@ using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
+using Callora.Plugin.Communication.Application.Admin.Calls;
 using Callora.Plugin.Communication.Application.Admin.SipAccounts;
+using Callora.Plugin.Communication.Application.Calls;
 using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Infrastructure.Capabilities;
 using Callora.Plugin.Communication.Infrastructure.Channels;
@@ -46,6 +49,14 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     private VoiceChannelProvisioner? _voiceProvisioner;
     private CommunicationRuntimeCapabilitySource? _capabilitySource;
 
+    // Call-control primitive, exported for in-process consumers (and the REST adapter); set when the
+    // plugin has a database (it records call history). Disposed on stop so no call handler dangles.
+    private CallControlService? _callControlService;
+
+    // Observes inbound calls on every registered channel → call.ringing + history + lifecycle. Set
+    // alongside the call-control service; detaches on stop.
+    private IncomingCallObserver? _incomingCallObserver;
+
     // Only set when the plugin builds the voice client itself (config-enabled path). The plugin owns
     // its lifecycle and disposes it on stop; an injected runtime is owned by the host, not disposed here.
     private CalloraVoipSdk.IVoipClient? _ownedVoipClient;
@@ -62,14 +73,37 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             as IPluginDbContextFactory<CommunicationDbContext>;
         var dataProtector = context.Services.GetService(typeof(IPluginDataProtector)) as IPluginDataProtector;
 
+        // Call-control primitive: the neutral seam for placing/controlling calls plus call.* events and
+        // call history. Built first (when a database is present — it records history) so its REST routes
+        // can join the admin surface below; also exported for in-process plugins (Dialer/PBX/CRM).
+        IReadOnlyList<HostAdminApiRouteRegistration> callRoutes = [];
+        if (dbContextFactory is not null)
+        {
+            _callControlService = new CallControlService(
+                _channelRegistry,
+                new EfCallLogStore(dbContextFactory),
+                context.Services.GetService(typeof(IBusinessEventBus)) as IBusinessEventBus,
+                ResolveLogger<CallControlService>(context.Services),
+                TimeProvider.System);
+            context.Export<ICallControlService>(_callControlService);
+            callRoutes = CallAdminRoutes.Build(_callControlService);
+
+            // Observe inbound calls on every channel (present and future) → call.ringing + history +
+            // lifecycle. Started now so it catches channels as voice provisioning registers them below.
+            // It never answers or routes — that is a consumer plugin's (PBX) decision.
+            _incomingCallObserver = new IncomingCallObserver(_channelRegistry, _callControlService);
+            _incomingCallObserver.Start();
+        }
+
         // Operator Admin-API: the status route always; the SIP-account management routes only when
-        // persistence and a data protector are present (credentials must be protectable). The account
-        // routes read/write the DB that this same StartAsync migrates below.
+        // persistence and a data protector are present (credentials must be protectable) plus the
+        // call-control routes above. These read/write the DB that this same StartAsync migrates below.
         IReadOnlyList<HostAdminApiRouteRegistration> accountRoutes =
             dbContextFactory is not null && dataProtector is not null
                 ? SipAccountAdminRoutes.Build(new EfSipAccountStore(dbContextFactory), dataProtector, Id)
                 : [];
-        context.Export<IHostAdminApiExtensionContributor>(new CommunicationAdminApiExtensionContributor(accountRoutes));
+        context.Export<IHostAdminApiExtensionContributor>(
+            new CommunicationAdminApiExtensionContributor([.. accountRoutes, .. callRoutes]));
 
         // The channel registry is where the voice bridge registers channels and consumers resolve
         // them; exported unconditionally since it needs no database.
@@ -115,6 +149,9 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             await _audioRegistrar.ClearAsync().ConfigureAwait(false);
         }
 
+        // Stop observing inbound calls before disposing the service it feeds.
+        _incomingCallObserver?.Dispose();
+        _callControlService?.Dispose();
         _capabilitySource?.Dispose();
 
         // Dispose the voice client only if the plugin built it (config-enabled path); an injected
