@@ -110,6 +110,14 @@ public sealed class BackendHostOptions
     public string[] AllowedCsrfOrigins { get; set; } = [];
 
     /// <summary>
+    /// Forwarded-header handling for deployments behind a TLS-terminating reverse
+    /// proxy (Caddy/Nginx). Off by default; enable it so the app sees the external
+    /// <c>https://</c> origin — otherwise the same-origin CSRF check rejects every
+    /// cookie-authenticated mutation. See <see cref="BackendForwardedHeadersOptions"/>.
+    /// </summary>
+    public BackendForwardedHeadersOptions ForwardedHeaders { get; set; } = new();
+
+    /// <summary>
     /// Base URI for RFC 9457 problem types. Defaults to a URN so no
     /// registered domain is required; point it at a documentation host
     /// (ending with "/") once one exists.

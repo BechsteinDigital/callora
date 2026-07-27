@@ -284,6 +284,12 @@ public static class CalloraHostCompositionExtensions
     {
         var backendOptions = app.Services.GetRequiredService<BackendHostOptions>();
 
+        // Behind a TLS-terminating reverse proxy the external scheme/host arrive as
+        // forwarded headers; apply them first (before anything reads scheme/host) so the
+        // same-origin CSRF check, Secure cookies and redirects see the public https origin.
+        // No-op unless BackendHost:ForwardedHeaders:Enabled.
+        app.UseBackendForwardedHeaders(backendOptions);
+
         // R4: expected domain faults (CalloraException) become RFC 9457 problems. Registered
         // first so it wraps the whole endpoint pipeline.
         app.UseExceptionHandler();
