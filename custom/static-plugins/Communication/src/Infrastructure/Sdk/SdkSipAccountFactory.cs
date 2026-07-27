@@ -12,9 +12,11 @@ namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 /// no network call — so it is fully unit-tested; the SDK connect that consumes its output is not.
 /// </summary>
 /// <remarks>
-/// v1 supports digest (registering) accounts only. IP-authenticated trunks and mutual-TLS accounts
-/// carry no SIP user identity / need certificate handling that is designed against a real registrar
-/// (B4-deep-3), so they are rejected here rather than mapped to a half-valid account.
+/// v1 supports digest accounts: a plain registering account and a credentialed (digest) trunk that
+/// registers but accepts trunk inbound (multiple DIDs, optional outbound proxy). IP-authenticated
+/// trunks (registration-less) and mutual-TLS accounts carry no SIP user identity / need certificate
+/// handling designed against a real registrar (B4-deep-3), so they are rejected here rather than
+/// mapped to a half-valid account.
 /// </remarks>
 public sealed class SdkSipAccountFactory
 {
@@ -56,6 +58,12 @@ public sealed class SdkSipAccountFactory
                 $"Could not resolve the SIP password for account '{account.Id}'.");
         }
 
+        // A credentialed trunk registers but accepts trunk inbound: an optional outbound proxy and a
+        // DID whitelist. For a plain register account these stay at the SDK defaults (AcceptTrunkInbound
+        // already true, no proxy, no whitelist), so nothing is forced onto it. The SDK properties are
+        // init-only, so the trunk fields are set here in the initializer rather than after the fact.
+        var isTrunk = connection.Mode == SipAccountMode.Trunk;
+
         return new SdkSipAccount
         {
             DisplayName = account.DisplayName,
@@ -65,6 +73,9 @@ public sealed class SdkSipAccountFactory
             Port = connection.Port,
             Transport = MapTransport(connection.Transport),
             RegistrationExpiry = connection.RegistrationExpirySeconds ?? DefaultRegistrationExpirySeconds,
+            AcceptTrunkInbound = true,
+            OutboundProxy = isTrunk ? connection.OutboundProxy : null,
+            InboundNumbers = isTrunk ? connection.InboundNumbers : null,
         };
     }
 

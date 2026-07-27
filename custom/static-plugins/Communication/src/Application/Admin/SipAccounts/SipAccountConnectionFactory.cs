@@ -53,13 +53,17 @@ internal sealed class SipAccountConnectionFactory(IPluginDataProtector dataProte
             return false;
         }
 
-        // Register connections need an expiry (default it); trunks must not carry one.
+        // A connection registers unless it is the registration-less IP-authenticated trunk; a
+        // registering connection needs an expiry (default it), the IP-auth trunk must not carry one.
+        var registers = !(mode == SipAccountMode.Trunk && authMethod == SipAuthMethod.IpAuthenticated);
         var expiry = input.RegistrationExpirySeconds
-            ?? (mode == SipAccountMode.Register ? DefaultRegistrationExpirySeconds : (int?)null);
+            ?? (registers ? DefaultRegistrationExpirySeconds : (int?)null);
 
         try
         {
-            connection = new SipConnection(input.Host!, port, transport, mode, authentication!, expiry);
+            connection = new SipConnection(
+                input.Host!, port, transport, mode, authentication!, expiry,
+                input.OutboundProxy, input.InboundNumbers ?? []);
         }
         catch (ArgumentException ex)
         {
