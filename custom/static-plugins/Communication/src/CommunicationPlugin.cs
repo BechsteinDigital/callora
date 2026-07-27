@@ -1,4 +1,5 @@
 using Callora.Core.Application.Events.Contracts;
+using Callora.Core.Application.Mcp.Contracts;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Secrets.Contracts;
@@ -10,6 +11,7 @@ using Callora.Plugin.Communication.Application.Admin.Calls;
 using Callora.Plugin.Communication.Application.Admin.SipAccounts;
 using Callora.Plugin.Communication.Application.Calls;
 using Callora.Plugin.Communication.Application.Compliance;
+using Callora.Plugin.Communication.Application.Mcp;
 using Callora.Plugin.Communication.Infrastructure.Capabilities;
 using Callora.Plugin.Communication.Infrastructure.Channels;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
@@ -87,6 +89,12 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
                 TimeProvider.System);
             context.Export<ICallControlService>(_callControlService);
             callRoutes = CallAdminRoutes.Build(_callControlService);
+
+            // Contribute the call-control primitives as MCP tools so out-of-process AI agents can place
+            // and control calls over the host's /mcp surface — the same service, an additional face. The
+            // host owns transport, auth, workspace scope and permission enforcement; the plugin supplies
+            // only the tools.
+            context.Export<IMcpToolContributor>(new CommunicationMcpToolContributor(_callControlService));
 
             // Observe inbound calls on every channel (present and future) → call.ringing + history +
             // lifecycle. Started now so it catches channels as voice provisioning registers them below.

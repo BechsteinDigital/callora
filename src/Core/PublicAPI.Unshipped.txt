@@ -1751,7 +1751,7 @@ Callora.Core.Application.Plugins.RuntimePluginHost.GetExports(System.Type! contr
 Callora.Core.Application.Plugins.RuntimePluginHost.GetOwnedExports(System.Type! contractType) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.CalloraPluginExport!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.InstallAsync(string! assemblyPath, string? entryTypeName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.RuntimePluginInstallResult!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.LoadedPlugins.get -> System.Collections.Generic.IReadOnlyCollection<Callora.Core.Application.Plugins.RuntimePluginDescriptor!>!
-Callora.Core.Application.Plugins.RuntimePluginHost.RuntimePluginHost(System.IServiceProvider! services, Callora.Core.Application.Options.CalloraHostingOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.RuntimePluginHost!>! logger, Callora.Core.Application.Plugins.RuntimeCapabilityRegistry? runtimeCapabilities = null) -> void
+Callora.Core.Application.Plugins.RuntimePluginHost.RuntimePluginHost(System.IServiceProvider! services, Callora.Core.Application.Options.CalloraHostingOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.RuntimePluginHost!>! logger, Callora.Core.Application.Plugins.RuntimeCapabilityRegistry? runtimeCapabilities = null, Callora.Core.Infrastructure.Mcp.McpToolRegistry? mcpTools = null) -> void
 Callora.Core.Application.Plugins.RuntimePluginHost.TryGetExport(System.Type! contractType, out object? service) -> bool
 Callora.Core.Application.Plugins.RuntimePluginHost.UninstallAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.RuntimePluginUninstallResult!>!
 Callora.Core.Application.Plugins.RuntimePluginInstallResult
@@ -4837,3 +4837,64 @@ Callora.Core.Application.Policies.BackendHostOptions.ForwardedHeaders.set -> voi
 Callora.Core.Infrastructure.Security.BackendForwardedHeaders
 static Callora.Core.Infrastructure.Security.BackendForwardedHeaders.Build(Callora.Core.Application.Policies.BackendForwardedHeadersOptions! options) -> Microsoft.AspNetCore.Builder.ForwardedHeadersOptions!
 static Callora.Core.Infrastructure.Security.BackendForwardedHeaders.UseBackendForwardedHeaders(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
+Callora.Core.Application.Mcp.Contracts.IMcpToolContributor
+Callora.Core.Application.Mcp.Contracts.IMcpToolContributor.Tools.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Mcp.Contracts.McpToolRegistration!>!
+Callora.Core.Application.Mcp.Contracts.McpToolInvocation
+Callora.Core.Application.Mcp.Contracts.McpToolInvocation.McpToolInvocation(System.Text.Json.JsonElement Arguments, string! WorkspaceKey) -> void
+Callora.Core.Application.Mcp.Contracts.McpToolInvocation.Arguments.get -> System.Text.Json.JsonElement
+Callora.Core.Application.Mcp.Contracts.McpToolInvocation.Arguments.init -> void
+Callora.Core.Application.Mcp.Contracts.McpToolInvocation.WorkspaceKey.get -> string!
+Callora.Core.Application.Mcp.Contracts.McpToolInvocation.WorkspaceKey.init -> void
+Callora.Core.Application.Mcp.Contracts.McpToolInvocation.<Clone>$() -> Callora.Core.Application.Mcp.Contracts.McpToolInvocation!
+Callora.Core.Application.Mcp.Contracts.McpToolInvocation.Deconstruct(out System.Text.Json.JsonElement Arguments, out string! WorkspaceKey) -> void
+Callora.Core.Application.Mcp.Contracts.McpToolInvocation.Equals(Callora.Core.Application.Mcp.Contracts.McpToolInvocation? other) -> bool
+override Callora.Core.Application.Mcp.Contracts.McpToolInvocation.Equals(object? obj) -> bool
+override Callora.Core.Application.Mcp.Contracts.McpToolInvocation.GetHashCode() -> int
+override Callora.Core.Application.Mcp.Contracts.McpToolInvocation.ToString() -> string!
+static Callora.Core.Application.Mcp.Contracts.McpToolInvocation.operator !=(Callora.Core.Application.Mcp.Contracts.McpToolInvocation? left, Callora.Core.Application.Mcp.Contracts.McpToolInvocation? right) -> bool
+static Callora.Core.Application.Mcp.Contracts.McpToolInvocation.operator ==(Callora.Core.Application.Mcp.Contracts.McpToolInvocation? left, Callora.Core.Application.Mcp.Contracts.McpToolInvocation? right) -> bool
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.McpToolRegistration(string! Name, string! Description, System.Text.Json.JsonElement InputSchema, string! RequiredPermission, System.Func<Callora.Core.Application.Mcp.Contracts.McpToolInvocation!, System.Threading.CancellationToken, System.Threading.Tasks.Task<Callora.Core.Application.Mcp.Contracts.McpToolResult!>!>! Handler) -> void
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.Name.get -> string!
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.Name.init -> void
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.Description.get -> string!
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.Description.init -> void
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.InputSchema.get -> System.Text.Json.JsonElement
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.InputSchema.init -> void
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.RequiredPermission.get -> string!
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.RequiredPermission.init -> void
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.Handler.get -> System.Func<Callora.Core.Application.Mcp.Contracts.McpToolInvocation!, System.Threading.CancellationToken, System.Threading.Tasks.Task<Callora.Core.Application.Mcp.Contracts.McpToolResult!>!>!
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.Handler.init -> void
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.<Clone>$() -> Callora.Core.Application.Mcp.Contracts.McpToolRegistration!
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.Deconstruct(out string! Name, out string! Description, out System.Text.Json.JsonElement InputSchema, out string! RequiredPermission, out System.Func<Callora.Core.Application.Mcp.Contracts.McpToolInvocation!, System.Threading.CancellationToken, System.Threading.Tasks.Task<Callora.Core.Application.Mcp.Contracts.McpToolResult!>!>! Handler) -> void
+Callora.Core.Application.Mcp.Contracts.McpToolRegistration.Equals(Callora.Core.Application.Mcp.Contracts.McpToolRegistration? other) -> bool
+override Callora.Core.Application.Mcp.Contracts.McpToolRegistration.Equals(object? obj) -> bool
+override Callora.Core.Application.Mcp.Contracts.McpToolRegistration.GetHashCode() -> int
+override Callora.Core.Application.Mcp.Contracts.McpToolRegistration.ToString() -> string!
+static Callora.Core.Application.Mcp.Contracts.McpToolRegistration.operator !=(Callora.Core.Application.Mcp.Contracts.McpToolRegistration? left, Callora.Core.Application.Mcp.Contracts.McpToolRegistration? right) -> bool
+static Callora.Core.Application.Mcp.Contracts.McpToolRegistration.operator ==(Callora.Core.Application.Mcp.Contracts.McpToolRegistration? left, Callora.Core.Application.Mcp.Contracts.McpToolRegistration? right) -> bool
+Callora.Core.Application.Mcp.Contracts.McpToolResult
+Callora.Core.Application.Mcp.Contracts.McpToolResult.McpToolResult(string! Content, bool IsError = false) -> void
+Callora.Core.Application.Mcp.Contracts.McpToolResult.Content.get -> string!
+Callora.Core.Application.Mcp.Contracts.McpToolResult.Content.init -> void
+Callora.Core.Application.Mcp.Contracts.McpToolResult.IsError.get -> bool
+Callora.Core.Application.Mcp.Contracts.McpToolResult.IsError.init -> void
+Callora.Core.Application.Mcp.Contracts.McpToolResult.<Clone>$() -> Callora.Core.Application.Mcp.Contracts.McpToolResult!
+Callora.Core.Application.Mcp.Contracts.McpToolResult.Deconstruct(out string! Content, out bool IsError) -> void
+Callora.Core.Application.Mcp.Contracts.McpToolResult.Equals(Callora.Core.Application.Mcp.Contracts.McpToolResult? other) -> bool
+override Callora.Core.Application.Mcp.Contracts.McpToolResult.Equals(object? obj) -> bool
+override Callora.Core.Application.Mcp.Contracts.McpToolResult.GetHashCode() -> int
+override Callora.Core.Application.Mcp.Contracts.McpToolResult.ToString() -> string!
+static Callora.Core.Application.Mcp.Contracts.McpToolResult.operator !=(Callora.Core.Application.Mcp.Contracts.McpToolResult? left, Callora.Core.Application.Mcp.Contracts.McpToolResult? right) -> bool
+static Callora.Core.Application.Mcp.Contracts.McpToolResult.operator ==(Callora.Core.Application.Mcp.Contracts.McpToolResult? left, Callora.Core.Application.Mcp.Contracts.McpToolResult? right) -> bool
+static Callora.Core.Application.Mcp.Contracts.McpToolResult.Json(object! value) -> Callora.Core.Application.Mcp.Contracts.McpToolResult!
+static Callora.Core.Application.Mcp.Contracts.McpToolResult.Error(string! message) -> Callora.Core.Application.Mcp.Contracts.McpToolResult!
+Callora.Core.Infrastructure.Mcp.McpToolRegistry
+Callora.Core.Infrastructure.Mcp.McpToolRegistry.McpToolRegistry(ModelContextProtocol.Server.McpServerPrimitiveCollection<ModelContextProtocol.Server.McpServerTool!>! tools, Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Mcp.McpToolRegistry!>? logger = null) -> void
+Callora.Core.Infrastructure.Mcp.McpToolRegistry.Register(string! pluginId, Callora.Core.Application.Mcp.Contracts.IMcpToolContributor! contributor) -> void
+Callora.Core.Infrastructure.Mcp.McpToolRegistry.Deregister(string! pluginId) -> void
+Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions
+const Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions.McpEndpointPattern = "/mcp" -> string!
+const Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions.McpAuthorizationPolicy = "CalloraMcp" -> string!
+static Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions.AddCalloraMcp(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.AspNetCore.Authentication.AuthenticationBuilder! authenticationBuilder, string! forwardAuthenticateScheme, string! resource, string? authorizationServer) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions.MapCalloraMcp(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!

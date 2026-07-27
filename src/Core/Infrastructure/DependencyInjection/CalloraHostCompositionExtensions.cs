@@ -159,6 +159,19 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddBackendPersistence(backendOptions);
         builder.Services.AddBackendApiSecurity(backendOptions);
         builder.Services.AddBackendRateLimiting(backendOptions);
+
+        // Agent-native surface (MCP): one Streamable-HTTP server mounted at /mcp, its live tool
+        // collection kept in sync with the active plugin catalog. The operator-JWT scheme configured by
+        // AddBackendApiSecurity still validates the bearer token (MCP forwards authentication to it);
+        // the MCP scheme owns the RFC 9728 401 challenge that points clients at the resource metadata.
+        // v1 advertises an OAuth authorization server only when OIDC is configured — otherwise
+        // "bring your own token" (empty authorization_servers, empty scopes). Plugins contribute the
+        // tools via IMcpToolContributor.
+        builder.Services.AddCalloraMcp(
+            builder.Services.AddAuthentication(),
+            forwardAuthenticateScheme: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme,
+            resource: ResolveMcpResourceUrl(backendOptions),
+            authorizationServer: backendOptions.OidcAuthority);
         builder.Services.AddScoped<IPluginLifecycleService, PluginLifecycleService>();
         builder.Services.AddScoped<IWorkspacePluginActivationReader, EfWorkspacePluginActivationReader>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.IWorkspacePluginActivationStore, EfWorkspacePluginActivationStore>();
@@ -279,6 +292,20 @@ public static class CalloraHostCompositionExtensions
         return builder;
     }
 
+    // The MCP protected-resource identifier. It is advertised in resource metadata for OAuth discovery,
+    // so it must be an absolute URL ending in the mount path. Derived from the public origin (the first
+    // configured CSRF origin) when available; a local default otherwise. A dedicated public-origin
+    // setting (and strict per-resource token audience) is a documented follow-up.
+    private static string ResolveMcpResourceUrl(BackendHostOptions options)
+    {
+        var origin = options.AllowedCsrfOrigins.FirstOrDefault(
+            static candidate => Uri.TryCreate(candidate, UriKind.Absolute, out _));
+        var baseOrigin = string.IsNullOrWhiteSpace(origin)
+            ? "http://localhost"
+            : origin.TrimEnd('/');
+        return baseOrigin + CalloraMcpCompositionExtensions.McpEndpointPattern;
+    }
+
     /// <summary>Wires middleware and maps every host and plugin endpoint.</summary>
     public static WebApplication MapCalloraHost(this WebApplication app)
     {
@@ -347,6 +374,10 @@ public static class CalloraHostCompositionExtensions
         // Callora.Workspace; the skeleton composes both modules explicitly.
         app.MapAuthEndpoints();
         app.MapControllers();
+
+        // Agent-native surface: the authenticated MCP Streamable HTTP endpoint. The mount is fixed at
+        // start; the tools it serves change dynamically as plugins activate/deactivate.
+        app.MapCalloraMcp();
 
         // Dev-Defaults (JWT-Key, Demo-Admin-Passwort, DB-Passwort, Bootstrap-API-Key)
         // dürfen eine Produktionsumgebung nie erreichen: außerhalb Development wird der
