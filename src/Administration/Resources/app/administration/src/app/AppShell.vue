@@ -6,7 +6,7 @@
         <RouterLink v-for="item in nav" :key="item.to" :to="item.to">{{ item.label }}</RouterLink>
         <template v-if="pluginNav.length">
           <div class="nav-heading">Erweiterungen</div>
-          <RouterLink v-for="item in pluginNav" :key="item.id" :to="item.to">{{ item.label }}</RouterLink>
+          <RouterLink v-for="item in pluginNav" :key="`${item.pluginId}:${item.id}`" :to="item.to">{{ item.label }}</RouterLink>
         </template>
       </nav>
     </aside>
