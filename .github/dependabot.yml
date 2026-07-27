@@ -16,31 +16,7 @@ updates:
       interval: weekly
 
   - package-ecosystem: npm
-    directory: /apps/workspace-shell
-    schedule:
-      interval: weekly
-    groups:
-      npm-all:
-        patterns: ["*"]
-
-  - package-ecosystem: npm
-    directory: /apps/legacy-admin-shell
-    schedule:
-      interval: weekly
-    groups:
-      npm-all:
-        patterns: ["*"]
-
-  - package-ecosystem: npm
-    directory: /apps/shell-core
-    schedule:
-      interval: weekly
-    groups:
-      npm-all:
-        patterns: ["*"]
-
-  - package-ecosystem: npm
-    directory: /apps/shell-design
+    directory: /src/Administration/Resources/app/administration
     schedule:
       interval: weekly
     groups:
