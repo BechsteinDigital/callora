@@ -4423,8 +4423,11 @@ Callora.Core.Application.Policies.BackendHostOptions.AllowedCsrfOrigins.get -> s
 Callora.Core.Application.Policies.BackendHostOptions.AllowedCsrfOrigins.set -> void
 Callora.Core.Infrastructure.Security.BackendCsrfProtectionExtensions
 Callora.Core.Infrastructure.Security.BackendCsrfValidator
+Callora.Core.Infrastructure.Security.BackendLoginCsrfProtection
 static Callora.Core.Infrastructure.Security.BackendCsrfProtectionExtensions.UseBackendCsrfGuard(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
 static Callora.Core.Infrastructure.Security.BackendCsrfValidator.IsForbidden(string! method, bool hasAuthCookie, string? originHeader, string? refererHeader, string! requestOrigin, System.Collections.Generic.IReadOnlyCollection<string!>! allowedOrigins) -> bool
+static Callora.Core.Infrastructure.Security.BackendCsrfValidator.IsForbiddenLogin(string! method, string? originHeader, string? refererHeader, string! requestOrigin, System.Collections.Generic.IReadOnlyCollection<string!>! allowedOrigins) -> bool
+static Callora.Core.Infrastructure.Security.BackendLoginCsrfProtection.RequireSameOriginLogin(this Microsoft.AspNetCore.Builder.RouteHandlerBuilder! builder) -> Microsoft.AspNetCore.Builder.RouteHandlerBuilder!
 Callora.Core.Application.Policies.BackendHostOptions.InitialOperator.get -> Callora.Core.Application.Policies.BackendInitialOperatorOptions!
 Callora.Core.Application.Policies.BackendHostOptions.InitialOperator.set -> void
 Callora.Core.Application.Policies.BackendInitialOperatorOptions
