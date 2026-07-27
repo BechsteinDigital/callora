@@ -23,6 +23,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     private readonly SemaphoreSlim _mutationLock = new(1, 1);
     private readonly SharedContractAssemblyRegistry _sharedContracts;
     private readonly RuntimeCapabilityRegistry? _runtimeCapabilities;
+    private readonly Callora.Core.Infrastructure.Mcp.McpToolRegistry? _mcpTools;
     private long _exportSequence;
 
     /// <summary>
@@ -32,13 +33,15 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         IServiceProvider services,
         CalloraHostingOptions options,
         ILogger<RuntimePluginHost> logger,
-        RuntimeCapabilityRegistry? runtimeCapabilities = null)
+        RuntimeCapabilityRegistry? runtimeCapabilities = null,
+        Callora.Core.Infrastructure.Mcp.McpToolRegistry? mcpTools = null)
     {
         _services = services;
         _options = options;
         _logger = logger;
         _sharedContracts = new SharedContractAssemblyRegistry(logger);
         _runtimeCapabilities = runtimeCapabilities;
+        _mcpTools = mcpTools;
     }
 
     /// <inheritdoc />
@@ -720,6 +723,21 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                 _logger.LogError(ex, "Failed to register the runtime capability source of plugin {PluginId}.", pluginId);
             }
         }
+
+        // A plugin's MCP tool contribution is added to the host's live tool collection so it is served
+        // immediately on activation. A failure here must not break the plugin's activation (fail-open for
+        // the plugin, fail-closed for its tools).
+        if (contractType == typeof(Callora.Core.Application.Mcp.Contracts.IMcpToolContributor) && _mcpTools is not null)
+        {
+            try
+            {
+                _mcpTools.Register(pluginId, (Callora.Core.Application.Mcp.Contracts.IMcpToolContributor)service);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to register MCP tools of plugin {PluginId}.", pluginId);
+            }
+        }
     }
 
     private void RemoveExportsByPlugin(string pluginId)
@@ -752,6 +770,10 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         // Drop any runtime capability source the plugin registered (idempotent if it had none), so its
         // conditional capabilities immediately stop counting when it is deactivated.
         _runtimeCapabilities?.Unregister(pluginId);
+
+        // Withdraw the plugin's MCP tools from the live collection (idempotent if it had none), so they
+        // immediately stop being advertised when it is deactivated.
+        _mcpTools?.Deregister(pluginId);
     }
 
     private static RuntimePluginDescriptor ToDescriptor(InstalledPluginRecord record) =>
