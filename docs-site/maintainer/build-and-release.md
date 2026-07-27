@@ -110,9 +110,6 @@ Runs on push to `main` and on every pull request. Three jobs:
 2. **Admin Shell (Vitest + Build)** — `npm ci`, `npm run test`, `npm run build`
    in `src/Administration/Resources/app/administration` (Node 22). The Vitest gate
    keeps UI regressions off `main`; the build is the type/bundle check.
-3. **Build shells** — matrix build of the legacy `apps/legacy-admin-shell` and
-   `apps/workspace-shell` (kept building until the colocated shell fully takes
-   over).
 
 Additional repo-wide quality automation (per `docs/QUALITY_STANDARDS.md`): CodeQL
 (C# + JS/TS), Dependabot (nuget, npm, github-actions, weekly), and CycloneDX SBOMs.
@@ -136,10 +133,9 @@ public Community Edition (Settings → Pages → Source: GitHub Actions, then se
 ### `.github/workflows/release.yml`
 
 Runs on a pushed tag matching `v*`. It builds and tests in Release, publishes the
-host backend (`dotnet publish src/Core/Callora.Core.csproj`), generates SBOMs
-(CycloneDX for .NET, `npm sbom` for the shells), packages the host as
-`callora-host.tar.gz`, and creates a GitHub release with generated notes and the
-SBOM + tarball attached.
+host backend (`dotnet publish src/Core/Callora.Core.csproj`), generates a
+CycloneDX SBOM for .NET, packages the host as `callora-host.tar.gz`, and creates a
+GitHub release with generated notes and the SBOM + tarball attached.
 
 ## Versioning and releases
 
