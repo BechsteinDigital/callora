@@ -24,10 +24,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/core/auth/authStore'
 import { visibleNavItems } from './navigation'
 import { usePluginNavigation, loadPluginNavigation } from '@/core/extensions/pluginNavigation'
+import { useOnboarding, shouldAutoRedirect, markAutoShown } from '@/modules/onboarding/onboarding'
 import UserMenu from '@/core/ui/UserMenu.vue'
 import WorkspaceSwitcher from '@/core/workspace/WorkspaceSwitcher.vue'
 
@@ -42,7 +43,23 @@ const nav = computed(() => visibleNavItems(ctx.value))
 // Plugin-contributed entries, appended under an "Erweiterungen" heading. The
 // server already permission-filters them, so they render as delivered.
 const { items: pluginNav } = usePluginNavigation()
-onMounted(() => void loadPluginNavigation())
+
+// First-run onboarding: on a fresh install (operator, no workspace yet) send the
+// operator to the wizard once. Only operators; skipped on the wizard route itself
+// and once auto-shown (localStorage), so it never re-forces on later reloads.
+const router = useRouter()
+const route = useRoute()
+onMounted(async () => {
+  void loadPluginNavigation()
+  if (!ctx.value?.isOperator) {
+    return
+  }
+  await useOnboarding().loadStatus()
+  if (shouldAutoRedirect() && route.path !== '/onboarding') {
+    markAutoShown()
+    void router.push('/onboarding')
+  }
+})
 </script>
 
 <style scoped lang="scss">
