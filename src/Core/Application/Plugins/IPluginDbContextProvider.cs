@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Core.Application.Plugins;
@@ -12,9 +13,12 @@ public interface IPluginDbContextProvider
 {
     /// <summary>
     /// Configures the options builder with the host database connection and
-    /// the given migrations assembly (the plugin assembly).
+    /// the plugin's migrations assembly. The assembly is passed as a loaded
+    /// <see cref="Assembly"/> instance — not by name — so EF Core never issues
+    /// an <c>Assembly.Load</c> from its own (host) load context, which cannot
+    /// resolve a plugin assembly that lives in the plugin's collectible ALC.
     /// </summary>
-    void ConfigureOptions(DbContextOptionsBuilder builder, string migrationsAssemblyName);
+    void ConfigureOptions(DbContextOptionsBuilder builder, Assembly migrationsAssembly);
 
     /// <summary>Advisory lock key derived from the plugin id.</summary>
     long GetMigrationLockKey(string pluginId);

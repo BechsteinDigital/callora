@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <IsPackable>false</IsPackable>
+    <!-- Test-fixture plugin: a real, ALC-loadable IHostManagedPlugin whose entry
+         type derives a DbContext from the host-provided EF Core. It carries its
+         OWN copy of Microsoft.EntityFrameworkCore.dll in the output directory, so
+         without the host-provided-assembly unification in PluginAssemblyLoadContext
+         the plugin ALC would load a duplicate EF Core and the DbContext would fail
+         the IPluginDbContextFactory<TContext> generic constraint at activation.
+         Built with the solution but referenced by nothing — it only ever loads
+         through a plugin load context. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compile against the Core contracts, but the host provides them at runtime
+         (Callora.* type identity is unified via the default context). -->
+    <ProjectReference Include="..\..\..\src\Core\Callora.Core.csproj" Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy-local EF Core: the plugin output dir carries its own copy so the
+         AssemblyDependencyResolver could load it as a duplicate identity — the
+         exact production condition the fix unifies to the host's copy. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+  </ItemGroup>
+
+</Project>

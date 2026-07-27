@@ -1,0 +1,5 @@
+# Admin-UI-Frontend: Toolchain und Build-Artefakt sind nicht versioniert.
+# Die Quelle (app/admin/src, package.json, vite.config.ts) ist es; das gebaute
+# Bundle (public/admin) erzeugt build.sh vor dem Packen/Signieren.
+app/admin/node_modules/
+public/admin/

@@ -4,6 +4,10 @@
       <div class="brand">Callora</div>
       <nav>
         <RouterLink v-for="item in nav" :key="item.to" :to="item.to">{{ item.label }}</RouterLink>
+        <template v-if="pluginNav.length">
+          <div class="nav-heading">Erweiterungen</div>
+          <RouterLink v-for="item in pluginNav" :key="item.id" :to="item.to">{{ item.label }}</RouterLink>
+        </template>
       </nav>
     </aside>
     <div class="main">
@@ -23,6 +27,7 @@ import { computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/core/auth/authStore'
 import { visibleNavItems } from './navigation'
+import { usePluginNavigation, loadPluginNavigation } from '@/core/extensions/pluginNavigation'
 import { useOnboarding, shouldAutoRedirect, markAutoShown } from '@/modules/onboarding/onboarding'
 import UserMenu from '@/core/ui/UserMenu.vue'
 import WorkspaceSwitcher from '@/core/workspace/WorkspaceSwitcher.vue'
@@ -35,12 +40,17 @@ const ctx = useAuthStore().context
 // sees what they may open. Hiding is convenience, not a security boundary.
 const nav = computed(() => visibleNavItems(ctx.value))
 
+// Plugin-contributed entries, appended under an "Erweiterungen" heading. The
+// server already permission-filters them, so they render as delivered.
+const { items: pluginNav } = usePluginNavigation()
+
 // First-run onboarding: on a fresh install (operator, no workspace yet) send the
 // operator to the wizard once. Only operators; skipped on the wizard route itself
 // and once auto-shown (localStorage), so it never re-forces on later reloads.
 const router = useRouter()
 const route = useRoute()
 onMounted(async () => {
+  void loadPluginNavigation()
   if (!ctx.value?.isOperator) {
     return
   }
@@ -74,6 +84,14 @@ onMounted(async () => {
   text-decoration: none;
   display: block;
   padding: var(--cal-space) 0;
+}
+
+.nav-heading {
+  margin-top: calc(var(--cal-space) * 2);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cal-color-text-muted);
 }
 
 .topbar {

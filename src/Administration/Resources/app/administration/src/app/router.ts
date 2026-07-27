@@ -34,6 +34,9 @@ export const router = createRouter({
         { path: 'webhooks', component: () => import('@/modules/webhooks/WebhooksListView.vue') },
         { path: 'config', component: () => import('@/modules/config/SystemConfigView.vue') },
         { path: 'media', component: () => import('@/modules/media/MediaLibraryView.vue') },
+        // Neutral host for plugin-contributed admin pages; the target of plugin
+        // navigation entries (e.g. /extensions/communication).
+        { path: 'extensions/:pluginId', component: () => import('@/modules/extensions/ExtensionHostView.vue') },
       ],
     },
   ],

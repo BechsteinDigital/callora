@@ -288,6 +288,19 @@ public static class WorkspacePublicEndpoints
                     CancellationToken cancellationToken) =>
                 {
                     var requestPath = "/" + (path ?? string.Empty);
+
+                    // The not-found sink is terminal. When the workspace shell is
+                    // hosted same-origin (WorkspaceShellBaseUrl is a local path, e.g.
+                    // "/"), an unresolved request redirects to the 404 path — which
+                    // lands back on this catch-all and, still unresolved, would
+                    // redirect to itself forever. Serve a real 404 instead. With an
+                    // external shell base the redirect leaves this origin, so the
+                    // request never returns here and this guard does not trigger.
+                    if (IsWorkspaceNotFoundPath(requestPath, hostOptions.WorkspaceShellBaseUrl))
+                    {
+                        return Results.NotFound();
+                    }
+
                     if (IsAdminPath(requestPath))
                     {
                         var adminRelativePath = requestPath["/admin".Length..];
@@ -542,6 +555,17 @@ public static class WorkspacePublicEndpoints
             workspaceShellBaseUrl,
             "/404",
             new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase));
+    }
+
+    // True when the request already targets the not-found sink for a same-origin
+    // shell base — the guard that keeps the 404 redirect from looping onto itself.
+    private static bool IsWorkspaceNotFoundPath(string requestPath, string workspaceShellBaseUrl)
+    {
+        var notFoundTarget = BuildWorkspaceNotFoundRedirectUrl(workspaceShellBaseUrl);
+        return string.Equals(
+            NormalizePath(requestPath),
+            NormalizePath(notFoundTarget),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     private static string NormalizePath(string? input)
