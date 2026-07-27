@@ -104,6 +104,86 @@ public sealed class PluginAdminExtensionEndpointsTests
     }
 
     [Fact]
+    public async Task ProxyRoute_WorkspaceScopedCaller_PluginUnavailable_ReturnsForbiddenWithoutInvokingHandler()
+    {
+        var handlerCalls = 0;
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new StaticPluginAvailabilityEvaluator("voip"),
+            onHandlerInvoked: () => Interlocked.Increment(ref handlerCalls));
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "ws-42");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/sip-accounts/sip-main");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(0, handlerCalls); // the plugin route handler must not run when the plugin is dark
+    }
+
+    [Fact]
+    public async Task ProxyRoute_WorkspaceScopedCaller_PluginAvailable_ExecutesHandler()
+    {
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new StaticPluginAvailabilityEvaluator(/* nothing unavailable */));
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "ws-42");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/sip-accounts/sip-main");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.Equal("sip-main", payload!["sipAccountId"]);
+    }
+
+    [Fact]
+    public async Task ProxyRoute_WithoutPermission_ReturnsForbiddenBeforeQueryingAvailability()
+    {
+        var evaluatorQueried = false;
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new RecordingPluginAvailabilityEvaluator(() => evaluatorQueried = true));
+        var client = app.GetTestClient();
+        // No permission header → RBAC must reject before the availability gate.
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "ws-42");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/sip-accounts/sip-main");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.False(evaluatorQueried); // availability must not be evaluated for an unauthorized caller
+    }
+
+    [Fact]
+    public async Task ProxyRoute_PlatformOperator_SkipsAvailabilityGate()
+    {
+        var evaluatorQueried = false;
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new RecordingPluginAvailabilityEvaluator(() => evaluatorQueried = true));
+        var client = app.GetTestClient();
+        // No workspace key → platform operator (WorkspaceKey == null): no per-workspace gate.
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/sip-accounts/sip-main");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(evaluatorQueried); // no workspace scope → availability is skipped entirely
+    }
+
+    [Fact]
+    public async Task ProxyRoute_UnknownRoute_ReturnsNotFound()
+    {
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new StaticPluginAvailabilityEvaluator("voip"));
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "ws-42");
+
+        // No matching route → 404, unchanged and reached before any availability gate.
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/does-not-exist");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task RbacPermissions_IncludePluginPermissions()
     {
         await using var app = await CreateAppAsync();
@@ -119,8 +199,16 @@ public sealed class PluginAdminExtensionEndpointsTests
         Assert.Contains(payload!, permission => permission.PermissionKey == "sipaccount.create");
     }
 
-    private static async Task<WebApplication> CreateAppAsync()
+    private static async Task<WebApplication> CreateAppAsync(
+        IPluginAvailabilityEvaluator? availabilityEvaluator = null,
+        Action? onHandlerInvoked = null)
     {
+        HostAdminApiResponse RunHandler(Func<HostAdminApiRequest, HostAdminApiResponse> body, HostAdminApiRequest request)
+        {
+            onHandlerInvoked?.Invoke();
+            return body(request);
+        }
+
         var contributor = new StaticHostAdminApiExtensionContributor
         {
             PluginId = "voip",
@@ -141,26 +229,26 @@ public sealed class PluginAdminExtensionEndpointsTests
                     "GET",
                     "sip-accounts/{sipAccountId}",
                     "sipaccount.read",
-                    new StaticHostAdminApiRouteHandler(request =>
+                    new StaticHostAdminApiRouteHandler(request => RunHandler(req =>
                     {
-                        var sipAccountId = request.RouteValues.TryGetValue("sipAccountId", out var value)
+                        var sipAccountId = req.RouteValues.TryGetValue("sipAccountId", out var value)
                             ? value
                             : string.Empty;
                         return new HostAdminApiResponse(200, new Dictionary<string, string>
                         {
                             ["sipAccountId"] = sipAccountId
                         });
-                    })),
+                    }, request))),
                 // Echoes the workspace the dispatcher resolved for the caller, to assert scope flow.
                 new HostAdminApiRouteRegistration(
                     "GET",
                     "whoami",
                     "sipaccount.read",
-                    new StaticHostAdminApiRouteHandler(request =>
+                    new StaticHostAdminApiRouteHandler(request => RunHandler(req =>
                         new HostAdminApiResponse(200, new Dictionary<string, string>
                         {
-                            ["workspaceKey"] = request.WorkspaceKey ?? "(null)"
-                        })))
+                            ["workspaceKey"] = req.WorkspaceKey ?? "(null)"
+                        }), request)))
             ]
         };
 
@@ -177,6 +265,10 @@ public sealed class PluginAdminExtensionEndpointsTests
         {
             [typeof(IHostAdminApiExtensionContributor)] = [contributor]
         }));
+        if (availabilityEvaluator is not null)
+        {
+            builder.Services.AddSingleton(availabilityEvaluator);
+        }
 
         var app = builder.Build();
         app.UseAuthentication();
@@ -185,5 +277,21 @@ public sealed class PluginAdminExtensionEndpointsTests
         app.MapRbacEndpoints();
         await app.StartAsync();
         return app;
+    }
+
+    /// <summary>
+    /// Records whether the availability gate queried it, so ordering assertions
+    /// can prove the gate is (or is not) reached for a given caller.
+    /// </summary>
+    private sealed class RecordingPluginAvailabilityEvaluator(Action onEvaluated) : IPluginAvailabilityEvaluator
+    {
+        public Task<PluginAvailability> EvaluateAsync(
+            string pluginId,
+            string workspaceKey,
+            CancellationToken cancellationToken = default)
+        {
+            onEvaluated();
+            return Task.FromResult(new PluginAvailability(true, Array.Empty<PluginAvailabilityFactor>()));
+        }
     }
 }

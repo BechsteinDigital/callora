@@ -3,6 +3,7 @@ using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
+using Microsoft.Extensions.DependencyInjection;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -68,6 +69,27 @@ public static class PluginAdminExtensionEndpoints
             return Results.Forbid();
         }
 
+        // A permitted caller still only reaches the plugin when it is effectively
+        // available in the caller's workspace (REV2 §13): an entitlement lapse,
+        // missing capability, unhealthy runtime or inactive workspace returns 403
+        // rather than routing into a plugin that should be dark. Ordered after the
+        // permission check so unavailability is never disclosed to callers who
+        // lack the permission. Platform operators (WorkspaceKey == null) carry no
+        // per-workspace scope and so are not gated, mirroring the API data source.
+        var workspaceKey = workspaceScope.WorkspaceKey;
+        if (!string.IsNullOrWhiteSpace(workspaceKey) &&
+            httpContext.RequestServices.GetService<IPluginAvailabilityEvaluator>() is { } availabilityEvaluator)
+        {
+            var availability = await availabilityEvaluator
+                .EvaluateAsync(match.Contributor.PluginId, workspaceKey, cancellationToken)
+                .ConfigureAwait(false);
+            if (!availability.IsAvailable)
+            {
+                // Generic response — no internal availability detail is leaked.
+                return Results.Forbid();
+            }
+        }
+
         var request = new HostAdminApiRequest(
             match.Contributor.PluginId,
             httpContext.Request.Method,
@@ -78,7 +100,7 @@ public static class PluginAdminExtensionEndpoints
             ResolveUserId(httpContext.User),
             // Authoritative workspace scope from the caller's token: the caller's own workspace for a
             // workspace-scoped operator, null for a platform operator (super-admin/global).
-            workspaceScope.WorkspaceKey);
+            workspaceKey);
 
         var response = await match.Route.Handler.HandleAsync(request, cancellationToken).ConfigureAwait(false);
         var statusCode = response.StatusCode;
