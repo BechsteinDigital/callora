@@ -1,3 +1,4 @@
+using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Secrets.Contracts;
@@ -6,6 +7,7 @@ using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Admin.SipAccounts;
+using Callora.Plugin.Communication.Application.Calls;
 using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Infrastructure.Capabilities;
 using Callora.Plugin.Communication.Infrastructure.Channels;
@@ -45,6 +47,10 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     private SdkCallAudioRegistrar? _audioRegistrar;
     private VoiceChannelProvisioner? _voiceProvisioner;
     private CommunicationRuntimeCapabilitySource? _capabilitySource;
+
+    // Call-control primitive, exported for in-process consumers (and the REST adapter); set when the
+    // plugin has a database (it records call history). Disposed on stop so no call handler dangles.
+    private CallControlService? _callControlService;
 
     // Only set when the plugin builds the voice client itself (config-enabled path). The plugin owns
     // its lifecycle and disposes it on stop; an injected runtime is owned by the host, not disposed here.
@@ -101,6 +107,16 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         context.Export<IHostWebSocketEndpointContributor>(new CommunicationMediaWebSocketContributor(
             new EfMediaStreamSessionStore(dbContextFactory), audioStreamProvider));
 
+        // Call-control primitive: the neutral seam for placing/controlling calls plus call.* events and
+        // call history. Exported for in-process plugins (Dialer/PBX/CRM) and, later, the REST adapter.
+        _callControlService = new CallControlService(
+            _channelRegistry,
+            new EfCallLogStore(dbContextFactory),
+            context.Services.GetService(typeof(IBusinessEventBus)) as IBusinessEventBus,
+            ResolveLogger<CallControlService>(context.Services),
+            TimeProvider.System);
+        context.Export<ICallControlService>(_callControlService);
+
         await ProvisionVoiceChannelsAsync(context, dbContextFactory, cancellationToken).ConfigureAwait(false);
     }
 
@@ -115,6 +131,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             await _audioRegistrar.ClearAsync().ConfigureAwait(false);
         }
 
+        _callControlService?.Dispose();
         _capabilitySource?.Dispose();
 
         // Dispose the voice client only if the plugin built it (config-enabled path); an injected
