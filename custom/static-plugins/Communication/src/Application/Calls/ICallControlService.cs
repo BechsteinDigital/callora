@@ -26,4 +26,9 @@ public interface ICallControlService
     /// Returns a snapshot of a live call owned by the workspace, or <c>null</c> when it is not tracked.
     /// </summary>
     CallSnapshot? Get(string workspaceKey, string callId);
+
+    /// <summary>
+    /// Returns the most recent recorded calls for the workspace, newest first, capped at <paramref name="limit"/>.
+    /// </summary>
+    Task<IReadOnlyList<CallHistoryEntry>> ListRecentAsync(string workspaceKey, int limit, CancellationToken cancellationToken = default);
 }
