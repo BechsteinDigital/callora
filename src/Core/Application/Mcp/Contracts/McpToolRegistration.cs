@@ -6,8 +6,11 @@ namespace Callora.Core.Application.Mcp.Contracts;
 /// A single MCP tool a plugin contributes, described in SDK-neutral terms. The host translates each
 /// registration into a live transport tool: it advertises <see cref="Name"/>, <see cref="Description"/>
 /// and <see cref="InputSchema"/>, enforces <see cref="RequiredPermission"/> plus workspace scope per
-/// call, then invokes <see cref="Handler"/> with the resolved workspace. Because plugins name only the
-/// permission (not any licensing/entitlement gate), commercialization stays a separate, later axis.
+/// call, then runs the contributing plugin through the internal availability gate (which carries the
+/// entitlement factor) before invoking <see cref="Handler"/> with the resolved workspace. Plugins name
+/// only the permission — the host tracks plugin provenance and per-workspace availability itself — so the
+/// commercial licensing layer (portal/account) stays a separate, later axis while the internal
+/// availability gate already applies per tool call.
 /// </summary>
 /// <param name="Name">The tool's unique name as exposed to MCP clients (for example <c>place_call</c>).</param>
 /// <param name="Description">A human-readable description shown to MCP clients.</param>
