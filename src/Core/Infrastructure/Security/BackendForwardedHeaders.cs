@@ -28,10 +28,16 @@ public static class BackendForwardedHeaders
 
         var result = new ForwardedHeadersOptions
         {
+            // Only proto + host: those drive the external origin the CSRF check, Secure
+            // cookies and redirects need. X-Forwarded-For is deliberately NOT processed —
+            // it would rewrite the connection's remote IP, and the only client-IP consumer
+            // (the rate limiter) reads the header itself, so honouring it here adds a
+            // spoofable surface without a consumer.
             ForwardedHeaders = ForwardedHeaderKinds.XForwardedProto
-                | ForwardedHeaderKinds.XForwardedHost
-                | ForwardedHeaderKinds.XForwardedFor,
-            ForwardLimit = options.ForwardLimit <= 0 ? null : options.ForwardLimit,
+                | ForwardedHeaderKinds.XForwardedHost,
+            // <= 0 would map to null = "unlimited hops" in ASP.NET; clamp to a single
+            // proxy instead so a misconfiguration tightens rather than removes the limit.
+            ForwardLimit = options.ForwardLimit <= 0 ? 1 : options.ForwardLimit,
         };
 
         // Drop the framework's loopback-only defaults so trust is exactly what we
