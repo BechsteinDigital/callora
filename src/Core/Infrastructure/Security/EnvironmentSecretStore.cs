@@ -10,6 +10,21 @@ public sealed class EnvironmentSecretStore : ISecretStore
 {
     private const string Prefix = "CALLORA_SECRET_";
 
+    private readonly Func<string, string?> _readVariable;
+
+    public EnvironmentSecretStore()
+        : this(Environment.GetEnvironmentVariable)
+    {
+    }
+
+    // Testable seam: tests inject a reader instead of mutating a process-global
+    // environment variable, which would pollute parallel tests. Production reads the
+    // real environment via the parameterless constructor.
+    internal EnvironmentSecretStore(Func<string, string?> readVariable)
+    {
+        _readVariable = readVariable;
+    }
+
     public Task<string?> GetSecretAsync(string name, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -18,7 +33,7 @@ public sealed class EnvironmentSecretStore : ISecretStore
         }
 
         var variableName = Prefix + NormalizeName(name);
-        var value = Environment.GetEnvironmentVariable(variableName);
+        var value = _readVariable(variableName);
         return Task.FromResult(string.IsNullOrEmpty(value) ? null : value);
     }
 
