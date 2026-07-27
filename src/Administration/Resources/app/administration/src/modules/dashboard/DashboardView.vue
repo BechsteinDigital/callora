@@ -2,6 +2,8 @@
   <section class="dashboard">
     <h1>Übersicht</h1>
 
+    <GettingStartedCard v-if="showGettingStarted" />
+
     <div class="kpis">
       <article v-for="m in visibleMetrics" :key="m.key" class="kpi">
         <span class="kpi-value" :class="{ err: values[m.key] === 'error' }">{{ display(values[m.key]) }}</span>
@@ -34,8 +36,21 @@ import { workspacesApi } from '@/modules/workspaces/workspacesApi'
 import { pluginsApi, isPluginActive } from '@/modules/plugins/pluginsApi'
 import { jobsApi } from '@/modules/jobs/jobsApi'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
+import GettingStartedCard from '@/modules/onboarding/GettingStartedCard.vue'
+import { useOnboarding } from '@/modules/onboarding/onboarding'
 
 const ctx = useAuthStore().context
+
+// The onboarding card stays on the dashboard until setup is complete or dismissed;
+// only operators see it (a scoped admin has no fresh-install setup to do).
+const { isReady: onboardingReady, isComplete: onboardingComplete, isDismissed: onboardingDismissed } = useOnboarding()
+const showGettingStarted = computed(
+  () =>
+    (ctx.value?.isOperator ?? false) &&
+    onboardingReady.value &&
+    !onboardingComplete.value &&
+    !onboardingDismissed.value,
+)
 
 // null = still loading, 'error' = load failed, number = the metric value.
 type MetricValue = number | null | 'error'
