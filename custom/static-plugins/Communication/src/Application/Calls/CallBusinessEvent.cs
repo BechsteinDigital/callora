@@ -41,6 +41,11 @@ public sealed class CallBusinessEvent : IBusinessEvent
     /// <inheritdoc />
     public string? WorkspaceKey { get; }
 
+    /// <summary>An inbound call is ringing on a channel (not yet answered).</summary>
+    public static CallBusinessEvent Ringing(
+        string workspaceKey, string callId, CallDirection direction, string remoteParty, CallState state, DateTimeOffset at) =>
+        new(CallEventTypes.Ringing, workspaceKey, callId, direction, remoteParty, state, at);
+
     /// <summary>An outbound call was placed and is being established.</summary>
     public static CallBusinessEvent Placed(
         string workspaceKey, string callId, CallDirection direction, string remoteParty, CallState state, DateTimeOffset at) =>

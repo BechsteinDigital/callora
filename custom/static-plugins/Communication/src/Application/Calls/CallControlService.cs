@@ -51,14 +51,52 @@ public sealed class CallControlService : ICallControlService, IDisposable
             .PlaceCallAsync(new CallTarget(command.To, command.DisplayName), cancellationToken)
             .ConfigureAwait(false);
 
+        // Log the operator's verbatim target for an outbound call (not the SDK's normalized remote party).
+        await StartTrackingAsync(command.WorkspaceKey, channel, call, CallDirection.Outbound, command.To, cancellationToken)
+            .ConfigureAwait(false);
+        return Snapshot(call);
+    }
+
+    /// <summary>
+    /// Begins tracking one inbound call arriving on a channel: records history, publishes
+    /// <c>call.ringing</c> and follows its lifecycle. Does not answer or route the call — that is a
+    /// consumer's (e.g. a PBX plugin's) decision. Called by the inbound-call observer, not consumers.
+    /// </summary>
+    public async Task ObserveIncomingAsync(
+        string workspaceKey, ICommunicationChannel channel, ICall call, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
+        ArgumentNullException.ThrowIfNull(channel);
+        ArgumentNullException.ThrowIfNull(call);
+
+        try
+        {
+            // Invoked fire-and-forget from the channel's IncomingCall event — swallow and log failures
+            // so a recording error never propagates back into the channel's event dispatch.
+            // For an inbound call the remote party is only known from the call itself.
+            await StartTrackingAsync(workspaceKey, channel, call, CallDirection.Inbound, call.Target.Value, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to observe inbound call {CallId} on channel {ChannelId}.", call.CallId, channel.ChannelId);
+        }
+    }
+
+    // Shared tracking for both directions: record the start, publish the initial event before wiring
+    // the lifecycle (so consumers see placed/ringing ahead of any state-changed/ended), then re-check
+    // once for a call that already advanced past its initial state before we subscribed.
+    private async Task StartTrackingAsync(
+        string workspaceKey, ICommunicationChannel channel, ICall call, CallDirection direction, string remoteParty, CancellationToken cancellationToken)
+    {
         var startedAt = _timeProvider.GetUtcNow();
         var log = CallLog.Start(
             id: call.CallId,
-            workspaceKey: command.WorkspaceKey,
+            workspaceKey: workspaceKey,
             accountId: channel.ChannelId,
             lineId: null,
-            direction: CallDirection.Outbound,
-            remoteParty: command.To,
+            direction: direction,
+            remoteParty: remoteParty,
             localIdentity: channel.DisplayName,
             handledBy: null,
             correlationId: null,
@@ -66,24 +104,18 @@ public sealed class CallControlService : ICallControlService, IDisposable
         await _callLogStore.AddAsync(log, cancellationToken).ConfigureAwait(false);
 
         void Handler(object? sender, CallStateChangedEventArgs e) => _ = HandleStateChangeAsync(call.CallId, e.CurrentState);
-        _active[call.CallId] = new TrackedCall(command.WorkspaceKey, call, log, Handler);
+        _active[call.CallId] = new TrackedCall(workspaceKey, call, log, Handler);
 
-        // Publish placed before wiring the lifecycle so consumers always observe placed ahead of any
-        // state-changed/ended, even for a call that terminates the instant it is placed.
-        await PublishAsync(
-            CallBusinessEvent.Placed(command.WorkspaceKey, call.CallId, CallDirection.Outbound, command.To, call.State, startedAt),
-            cancellationToken).ConfigureAwait(false);
+        var initial = direction == CallDirection.Outbound
+            ? CallBusinessEvent.Placed(workspaceKey, call.CallId, direction, remoteParty, call.State, startedAt)
+            : CallBusinessEvent.Ringing(workspaceKey, call.CallId, direction, remoteParty, call.State, startedAt);
+        await PublishAsync(initial, cancellationToken).ConfigureAwait(false);
 
         call.StateChanged += Handler;
-
-        // Race: the call may have advanced past Connecting before we subscribed. Re-evaluate once so a
-        // fast Connected/Terminated is not missed; the handlers are idempotent against a double fire.
         if (call.State is CallState.Connected or CallState.Terminated)
         {
             await HandleStateChangeAsync(call.CallId, call.State).ConfigureAwait(false);
         }
-
-        return Snapshot(call);
     }
 
     /// <inheritdoc />
@@ -152,7 +184,7 @@ public sealed class CallControlService : ICallControlService, IDisposable
                     await OnTerminatedAsync(callId).ConfigureAwait(false);
                     break;
                 default:
-                    break; // Connecting/Ringing carry no history change for an outbound call.
+                    break; // Connecting/Ringing carry no history change for either direction.
             }
         }
         catch (Exception ex)
@@ -189,10 +221,12 @@ public sealed class CallControlService : ICallControlService, IDisposable
         tracked.Call.StateChanged -= tracked.Handler;
 
         var endedAt = _timeProvider.GetUtcNow();
-        // Without a protocol disconnect cause on the neutral ICall, an unanswered outbound call is
-        // recorded as Failed (the only non-answered outcome that fits an outbound leg). Enriching this
-        // to Busy/NoAnswer needs a disconnect cause on ICall — tracked as a follow-up.
-        var outcome = tracked.Log.AnsweredAt is not null ? CallOutcome.Completed : CallOutcome.Failed;
+        // Answered → Completed. Unanswered: an inbound leg that never connected is Missed; an outbound
+        // leg is Failed (the only non-answered outcome that fits it). Without a protocol disconnect
+        // cause on the neutral ICall we cannot distinguish Busy/NoAnswer — tracked as a follow-up.
+        var outcome = tracked.Log.AnsweredAt is not null
+            ? CallOutcome.Completed
+            : tracked.Log.Direction == CallDirection.Inbound ? CallOutcome.Missed : CallOutcome.Failed;
         tracked.Log.End(endedAt, outcome, disconnectCause: null);
         await _callLogStore.UpdateAsync(tracked.Log).ConfigureAwait(false);
         await PublishAsync(

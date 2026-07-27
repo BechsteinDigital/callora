@@ -53,6 +53,10 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     // plugin has a database (it records call history). Disposed on stop so no call handler dangles.
     private CallControlService? _callControlService;
 
+    // Observes inbound calls on every registered channel → call.ringing + history + lifecycle. Set
+    // alongside the call-control service; detaches on stop.
+    private IncomingCallObserver? _incomingCallObserver;
+
     // Only set when the plugin builds the voice client itself (config-enabled path). The plugin owns
     // its lifecycle and disposes it on stop; an injected runtime is owned by the host, not disposed here.
     private CalloraVoipSdk.IVoipClient? _ownedVoipClient;
@@ -83,6 +87,12 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
                 TimeProvider.System);
             context.Export<ICallControlService>(_callControlService);
             callRoutes = CallAdminRoutes.Build(_callControlService);
+
+            // Observe inbound calls on every channel (present and future) → call.ringing + history +
+            // lifecycle. Started now so it catches channels as voice provisioning registers them below.
+            // It never answers or routes — that is a consumer plugin's (PBX) decision.
+            _incomingCallObserver = new IncomingCallObserver(_channelRegistry, _callControlService);
+            _incomingCallObserver.Start();
         }
 
         // Operator Admin-API: the status route always; the SIP-account management routes only when
@@ -139,6 +149,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             await _audioRegistrar.ClearAsync().ConfigureAwait(false);
         }
 
+        // Stop observing inbound calls before disposing the service it feeds.
+        _incomingCallObserver?.Dispose();
         _callControlService?.Dispose();
         _capabilitySource?.Dispose();
 
