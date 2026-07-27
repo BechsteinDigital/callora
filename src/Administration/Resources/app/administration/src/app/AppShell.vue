@@ -19,10 +19,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { RouterLink, RouterView } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/core/auth/authStore'
 import { visibleNavItems } from './navigation'
+import { useOnboarding, shouldAutoRedirect, markAutoShown } from '@/modules/onboarding/onboarding'
 import UserMenu from '@/core/ui/UserMenu.vue'
 import WorkspaceSwitcher from '@/core/workspace/WorkspaceSwitcher.vue'
 
@@ -33,6 +34,22 @@ const ctx = useAuthStore().context
 // The sidebar mirrors each target's server-side read gate; a scoped admin only
 // sees what they may open. Hiding is convenience, not a security boundary.
 const nav = computed(() => visibleNavItems(ctx.value))
+
+// First-run onboarding: on a fresh install (operator, no workspace yet) send the
+// operator to the wizard once. Only operators; skipped on the wizard route itself
+// and once auto-shown (localStorage), so it never re-forces on later reloads.
+const router = useRouter()
+const route = useRoute()
+onMounted(async () => {
+  if (!ctx.value?.isOperator) {
+    return
+  }
+  await useOnboarding().loadStatus()
+  if (shouldAutoRedirect() && route.path !== '/onboarding') {
+    markAutoShown()
+    void router.push('/onboarding')
+  }
+})
 </script>
 
 <style scoped lang="scss">
