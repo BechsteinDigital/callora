@@ -36,6 +36,7 @@ public static class AuthEndpoints
                 httpContext,
                 cancellationToken))
             .WithName("Auth_Api_Login")
+            .RequireSameOriginLogin()
             .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
 
         apiGroup.MapPost("/logout", (
@@ -97,6 +98,7 @@ public static class AuthEndpoints
                 httpContext,
                 cancellationToken))
             .WithName("Auth_Workspace_Login")
+            .RequireSameOriginLogin()
             .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
     }
 
