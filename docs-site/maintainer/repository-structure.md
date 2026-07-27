@@ -15,16 +15,16 @@ docfx/               this documentation site
 docs/                local design notes, ADRs, runbooks (gitignored in part)
 scripts/             dev helpers (dev-build.sh, dev-test.sh, dev-check.sh, build-repo-map.sh)
 ops/                 local frontdoor config, plans, specs
-apps/                LEGACY Nuxt shells (workspace-shell + legacy-admin-shell)
 Callora.Host.sln     the solution
 Directory.Build.props / Directory.Packages.props   shared build + Central Package Management
 global.json          pinned .NET 10 SDK
 ```
 
-> **Note:** `apps/` is **legacy**. The admin shell now lives colocated in
-> `src/Administration` and the surface runtime in `src/Surface.Rendering`. The
-> `apps/workspace-shell` and `apps/legacy-admin-shell` still build in CI and are
-> deployed separately, but new work does not go there.
+> **Note:** the admin and surface shells run **colocated in the framework
+> libraries** — the Vue 3 admin shell in `src/Administration` (served at `/admin`)
+> and the server-side surface runtime in `src/Surface.Rendering` (served at
+> `/surface-app`). The former standalone Nuxt shells under `apps/` have been
+> retired.
 
 ## `src/` — the framework libraries
 
