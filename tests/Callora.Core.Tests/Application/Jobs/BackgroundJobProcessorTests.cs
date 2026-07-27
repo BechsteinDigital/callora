@@ -43,9 +43,14 @@ public sealed class BackgroundJobProcessorTests
         var job = BackgroundJob.Create("test.job", "{}", DateTimeOffset.UtcNow, maxAttempts: 2, null, DateTimeOffset.UtcNow);
         await store.AddAsync(job);
 
+        // The reschedule is ScheduledAtUtc = <process time> + RetryBaseDelay (100ms).
+        // Assert against the instant captured BEFORE processing, not DateTimeOffset.UtcNow
+        // after it: the 100ms backoff is smaller than the wall-clock drift under parallel
+        // test load, so comparing to "now" after processing made this flaky.
+        var beforeProcessing = DateTimeOffset.UtcNow;
         Assert.True(await processor.ProcessNextAsync(CancellationToken.None));
         Assert.Equal(BackgroundJobStatus.Pending, job.Status);
-        Assert.True(job.ScheduledAtUtc > DateTimeOffset.UtcNow);
+        Assert.True(job.ScheduledAtUtc > beforeProcessing);
         Assert.Equal("Simulated job failure.", job.LastError);
 
         // Retry sofort fällig machen und erneut verarbeiten.
