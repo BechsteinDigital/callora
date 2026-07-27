@@ -64,10 +64,14 @@
 - Tests: Fake-`ICommunicationChannel`/`ICall` + Fake-`ICallLogStore` + Fake-`IBusinessEventBus`;
   belegt Place→Log(Start)+placed, Connected→answered, Terminated→ended, Hangup, Workspace-Scope.
 
-### Slice 1b — Inbound-Beobachtung (in-process)
-- `IncomingCallObserver`: abonniert `registry.ChannelRegistered` → je Channel `IncomingCall` →
-  `CallLog.Start(Inbound)` + `call.ringing` + denselben Lifecycle-Recorder. **Kein** Auto-Answer,
-  **kein** Routing (das ist PBX). Nur beobachten/protokollieren/eventen.
+### Slice 1b — Inbound-Beobachtung (in-process) — UMGESETZT
+- `IncomingCallObserver` abonniert `registry.ChannelRegistered`/`ChannelUnregistered` (+ Bestand via
+  `GetAllRegistrations`) → je Channel `IncomingCall` → `CallControlService.ObserveIncomingAsync` →
+  `CallLog.Start(Inbound)` + `call.ringing` + derselbe Lifecycle. **Kein** Auto-Answer, **kein** Routing
+  (das ist PBX). Nur beobachten/protokollieren/eventen.
+- Gemeinsames Tracking beider Richtungen in `CallControlService.StartTrackingAsync` herausgezogen
+  (place vs. observe teilen es). Outcome verfeinert: unbeantwortet + Inbound → `Missed`, Outbound →
+  `Failed`. Inbound-Beobachtung fängt Fehler (fire-and-forget aus dem Event); place propagiert weiter.
 
 ### Slice 2 — REST-Gesicht + Historie
 - `CallsManage`-Permission ergänzen. Routen über `HostAdminApiRouteRegistration`:

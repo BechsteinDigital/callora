@@ -52,6 +52,21 @@ public sealed class CallControlServiceTests
     }
 
     [Fact]
+    public async Task PlaceCall_LogsVerbatimOperatorTarget_NotTheChannelReportedTarget()
+    {
+        var (service, registry, store, _) = CreateService();
+        // The channel/SDK may report a normalized remote party; the history + call.placed must keep the
+        // operator's verbatim "to", while the live snapshot reflects the call's actual target.
+        var call = new ControllableCall("call-1", target: "sip:+49301234567@sbc.example.com");
+        registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
+
+        var snapshot = await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
+
+        Assert.Equal("+49301234567", store.Added[0].RemoteParty);
+        Assert.Equal("sip:+49301234567@sbc.example.com", snapshot.Target);
+    }
+
+    [Fact]
     public async Task PlaceCall_WithExplicitChannelId_UsesThatChannel()
     {
         var (service, registry, _, _) = CreateService();
@@ -200,6 +215,61 @@ public sealed class CallControlServiceTests
         Assert.Equal(CallOutcome.Completed, store.Added[0].Outcome); // history still recorded without a bus
     }
 
+    // --- Inbound observation (no auto-answer / no routing) ---
+
+    [Fact]
+    public async Task ObserveIncoming_RecordsRingingLog_AndPublishesRinging()
+    {
+        var (service, _, store, bus) = CreateService();
+        var channel = new FakeCommunicationChannel();
+        var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound);
+
+        await service.ObserveIncomingAsync(Workspace, channel, call);
+
+        var log = Assert.Single(store.Added);
+        Assert.Equal(CallDirection.Inbound, log.Direction);
+        Assert.Equal(CallOutcome.InProgress, log.Outcome);
+        Assert.Contains(bus.Published, e => e.EventName == CallEventTypes.Ringing);
+        Assert.NotNull(service.Get(Workspace, "in-1")); // tracked until it ends
+    }
+
+    [Fact]
+    public async Task ObserveIncoming_Answered_MarksAnswered()
+    {
+        var (service, _, store, _) = CreateService();
+        var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound);
+        await service.ObserveIncomingAsync(Workspace, new FakeCommunicationChannel(), call);
+
+        call.Transition(CallState.Connected);
+
+        Assert.NotNull(store.Added[0].AnsweredAt);
+    }
+
+    [Fact]
+    public async Task ObserveIncoming_UnansweredThenEnded_RecordsMissed()
+    {
+        var (service, _, store, _) = CreateService();
+        var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound);
+        await service.ObserveIncomingAsync(Workspace, new FakeCommunicationChannel(), call);
+
+        call.Transition(CallState.Terminated);
+
+        Assert.Equal(CallOutcome.Missed, store.Added[0].Outcome); // inbound unanswered = missed, not failed
+    }
+
+    [Fact]
+    public async Task ObserveIncoming_AnsweredThenEnded_RecordsCompleted()
+    {
+        var (service, _, store, _) = CreateService();
+        var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound);
+        await service.ObserveIncomingAsync(Workspace, new FakeCommunicationChannel(), call);
+
+        call.Transition(CallState.Connected);
+        call.Transition(CallState.Terminated);
+
+        Assert.Equal(CallOutcome.Completed, store.Added[0].Outcome);
+    }
+
     [Fact]
     public async Task Terminated_FiredTwice_FinalizesExactlyOnce()
     {
@@ -262,11 +332,11 @@ internal sealed class FakeCommunicationChannel : ICommunicationChannel
         remove { }
     }
 
-    public event EventHandler<IncomingCallEventArgs>? IncomingCall
-    {
-        add { }
-        remove { }
-    }
+    public event EventHandler<IncomingCallEventArgs>? IncomingCall;
+
+    public void RaiseIncoming(ICall call) => IncomingCall?.Invoke(this, new IncomingCallEventArgs(call));
+
+    public bool HasIncomingSubscribers => IncomingCall is not null;
 
     public Task<ICall> PlaceCallAsync(CallTarget target, CancellationToken cancellationToken = default)
     {
