@@ -9,18 +9,14 @@ public sealed class SecretStoreTests
     [Fact]
     public async Task EnvironmentSecretStore_ReadsPrefixedVariable_WithNormalizedName()
     {
-        Environment.SetEnvironmentVariable("CALLORA_SECRET_MARKETPLACE_API_KEY", "env-value");
-        try
-        {
-            var store = new EnvironmentSecretStore();
+        // Inject the environment reader instead of mutating a process-global variable,
+        // which would pollute config-reading tests running in parallel. This still
+        // exercises the CALLORA_SECRET_<NAME> prefixing + name normalization.
+        var store = new EnvironmentSecretStore(variableName =>
+            variableName == "CALLORA_SECRET_MARKETPLACE_API_KEY" ? "env-value" : null);
 
-            Assert.Equal("env-value", await store.GetSecretAsync("marketplace-api.key"));
-            Assert.Null(await store.GetSecretAsync("unknown"));
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("CALLORA_SECRET_MARKETPLACE_API_KEY", null);
-        }
+        Assert.Equal("env-value", await store.GetSecretAsync("marketplace-api.key"));
+        Assert.Null(await store.GetSecretAsync("unknown"));
     }
 
     [Fact]
