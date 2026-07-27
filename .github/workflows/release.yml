@@ -44,15 +44,6 @@ jobs:
           dotnet tool install --global CycloneDX
           dotnet CycloneDX Callora.Host.sln --json --output artifacts/sbom --filename callora-host.cdx.json
 
-      - name: Generate SBOM (npm shells)
-        run: |
-          mkdir -p artifacts/sbom
-          for shell in workspace-shell shell-core shell-design; do
-            if [ -f "apps/$shell/package-lock.json" ] || [ -f "apps/$shell/package.json" ]; then
-              (cd "apps/$shell" && npm sbom --sbom-format cyclonedx --package-lock-only > "../../artifacts/sbom/$shell.cdx.json") || echo "SBOM for $shell skipped"
-            fi
-          done
-
       - name: Package host artifact
         run: tar -czf artifacts/callora-host.tar.gz -C artifacts/callora-host .
 

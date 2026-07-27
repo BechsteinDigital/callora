@@ -1,20 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Local build helper.
+# Local build helper. Builds the solution (the colocated admin/surface UIs build as
+# part of the .NET build via their MSBuild targets — no separate UI step).
 #
 # Usage:
 #   ./scripts/dev-build.sh
 #   ./scripts/dev-build.sh --configuration Release
 #   ./scripts/dev-build.sh --solution Callora.Host.sln
-#   ./scripts/dev-build.sh --skip-admin-ui
-#   ./scripts/dev-build.sh --skip-workspace-ui
 
 CONFIGURATION="Debug"
 SOLUTION=""
 NO_RESTORE=""
-SKIP_ADMIN_UI="false"
-SKIP_WORKSPACE_UI="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -30,16 +27,8 @@ while [[ $# -gt 0 ]]; do
       NO_RESTORE="--no-restore"
       shift
       ;;
-    --skip-admin-ui)
-      SKIP_ADMIN_UI="true"
-      shift
-      ;;
-    --skip-workspace-ui)
-      SKIP_WORKSPACE_UI="true"
-      shift
-      ;;
     *)
-      echo "Usage: $0 [--configuration <Debug|Release>] [--solution <path>] [--no-restore] [--skip-admin-ui] [--skip-workspace-ui]"
+      echo "Usage: $0 [--configuration <Debug|Release>] [--solution <path>] [--no-restore]"
       exit 1
       ;;
   esac
@@ -66,11 +55,3 @@ if [[ -z "$NO_RESTORE" ]]; then
 fi
 
 dotnet build "$SOLUTION" --configuration "$CONFIGURATION" $NO_RESTORE --nologo --verbosity minimal
-
-if [[ "$SKIP_ADMIN_UI" != "true" ]]; then
-  ./scripts/build-admin-ui.sh
-fi
-
-if [[ "$SKIP_WORKSPACE_UI" != "true" ]]; then
-  ./scripts/build-workspace-ui.sh
-fi

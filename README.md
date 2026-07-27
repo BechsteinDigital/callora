@@ -117,7 +117,7 @@ API ist danach erreichbar unter:
 ## Notes
 - Backend API supports the plugin lifecycle (`install/activate/deactivate/uninstall`) and `install/nuget`.
 - Admin shell source lives in `src/Administration/Resources/app/administration` (colocated) and ships with the Administration package.
-- Workspace shell source lives in `apps/workspace-shell` and is deployed separately.
+- The tenant surface runtime is server-side rendered in `src/Surface.Rendering` (colocated Vue at `Resources/app/surface`, served at `/surface-app`).
 
 ## Communication Plugin (System-Tier)
 - Projekt: `custom/static-plugins/Communication/Callora.Plugin.Communication.csproj`
