@@ -15,6 +15,7 @@ namespace Callora.Core.Tests.Communication.Sdk;
 internal sealed class FakePeerConnection : IPeerConnection
 {
     private readonly List<byte> _sentDtmf = [];
+    private readonly List<string> _addedCandidates = [];
 
     public PeerConnectionState State { get; set; } = PeerConnectionState.New;
 
@@ -24,11 +25,27 @@ internal sealed class FakePeerConnection : IPeerConnection
 
     public bool HasStateChangedSubscribers => ConnectionStateChanged is not null;
 
-    public event EventHandler<PeerConnectionState>? ConnectionStateChanged;
+    // ── Signalling recorders (S3) ───────────────────────────────────────────────
+    /// <summary>The offer SDP handed back by <see cref="CreateOffer"/>.</summary>
+    public string OfferSdp { get; set; } = "v=0-offer";
 
-#pragma warning disable CS0067 // Events the adapter never observes.
-    public event EventHandler<RemoteTrack>? TrackReceived;
+    /// <summary>Set once <see cref="CreateOffer"/> is called.</summary>
+    public bool OfferCreated { get; private set; }
+
+    /// <summary>The remote SDP applied via <see cref="SetRemoteDescriptionAsync"/>, if any.</summary>
+    public string? RemoteDescription { get; private set; }
+
+    /// <summary>Set once <see cref="StartAsync"/> is called.</summary>
+    public bool Started { get; private set; }
+
+    /// <summary>Remote ICE candidates applied via <see cref="AddIceCandidateAsync"/>, in order.</summary>
+    public IReadOnlyList<string> AddedCandidates => _addedCandidates;
+
+    public event EventHandler<PeerConnectionState>? ConnectionStateChanged;
     public event EventHandler<string>? LocalIceCandidateDiscovered;
+
+#pragma warning disable CS0067 // Events the adapters never observe.
+    public event EventHandler<RemoteTrack>? TrackReceived;
     public event EventHandler<DtmfTone>? DtmfReceived;
     public event EventHandler? VideoKeyFrameRequested;
 #pragma warning restore CS0067
@@ -39,6 +56,10 @@ internal sealed class FakePeerConnection : IPeerConnection
         State = newState;
         ConnectionStateChanged?.Invoke(this, newState);
     }
+
+    /// <summary>Raises a locally discovered ICE candidate (RFC 8838 trickle) for the signalling tests.</summary>
+    public void RaiseLocalIceCandidate(string candidate) =>
+        LocalIceCandidateDiscovered?.Invoke(this, candidate);
 
     public Task SendDtmfAsync(byte toneCode, int durationMs = 160, CancellationToken cancellationToken = default)
     {
@@ -52,23 +73,50 @@ internal sealed class FakePeerConnection : IPeerConnection
         return ValueTask.CompletedTask;
     }
 
-    // ── Members the adapter must never touch ────────────────────────────────────
+    /// <summary>A local ICE candidate raised at offer time (SDK surfaces the host candidate then), if set.</summary>
+    public string? CandidateOnOffer { get; set; }
+
+    public string CreateOffer()
+    {
+        OfferCreated = true;
+        if (CandidateOnOffer is not null)
+        {
+            RaiseLocalIceCandidate(CandidateOnOffer);
+        }
+
+        return OfferSdp;
+    }
+
+    public Task AddIceCandidateAsync(string candidate, CancellationToken cancellationToken = default)
+    {
+        _addedCandidates.Add(candidate);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Hook run right after a remote description is applied (lets a test drive the peer state).</summary>
+    public Action? OnRemoteDescriptionApplied { get; set; }
+
+    public Task<string> SetRemoteDescriptionAsync(string remoteSdp, CancellationToken cancellationToken = default)
+    {
+        RemoteDescription = remoteSdp;
+        OnRemoteDescriptionApplied?.Invoke();
+        // Offerer applying the peer's answer: the SDK returns the local offer unchanged.
+        return Task.FromResult(OfferSdp);
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken = default)
+    {
+        Started = true;
+        return Task.CompletedTask;
+    }
+
+    // ── Members neither adapter nor signalling handler touch ─────────────────────
     public string? LocalDescription => throw new NotSupportedException();
 
     public IPEndPoint? LocalMediaEndPoint => throw new NotSupportedException();
 
-    public string CreateOffer() => throw new NotSupportedException();
-
-    public Task AddIceCandidateAsync(string candidate, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
-
-    public Task<string> SetRemoteDescriptionAsync(string remoteSdp, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
-
     public Task GatherCandidatesAsync(CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
-
-    public Task StartAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
     public ValueTask SendAudioAsync(ReadOnlyMemory<byte> payload, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
