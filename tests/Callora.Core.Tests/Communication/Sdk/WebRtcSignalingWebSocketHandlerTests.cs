@@ -176,6 +176,58 @@ public sealed class WebRtcSignalingWebSocketHandlerTests
     }
 
     [Fact]
+    public async Task AnswerDeadline_NoBrowserAnswer_DisposesPeer_WithoutHangingLoop()
+    {
+        // Arrange: socket blocks after the queue drains (simulates a browser that never replies).
+        // A very short deadline is injected so the test does not take 30 s in CI.
+        var peer = new FakePeerConnection();
+        var (handler, session) = NewHandler(peer, answerDeadline: TimeSpan.FromMilliseconds(50));
+        var socket = new FakeSignalingWebSocket { BlockAfterQueueDrained = true };
+
+        // Act: handler must return (not hang) and dispose the peer once the deadline fires.
+        await handler.HandleAsync(Connection(socket, session), CancellationToken.None);
+
+        // Assert: peer was disposed (deadline path — no WebRtcCall took it over).
+        Assert.Equal(1, peer.DisposeCount);
+    }
+
+    [Fact]
+    public async Task AnswerDeadline_AfterAnswer_DoesNotCapSocket()
+    {
+        // After the answer, the deadline is disarmed. The socket stays open until the client closes it.
+        // Verified by: handler completes without error and the peer is NOT disposed (a WebRtcCall owns it).
+        var peer = new FakePeerConnection();
+        var (handler, session) = NewHandler(peer, answerDeadline: TimeSpan.FromMilliseconds(50));
+        var socket = new FakeSignalingWebSocket(Frame("answer", sdp: "v=0-answer"));
+        peer.OnRemoteDescriptionApplied = () => peer.RaiseStateChanged(PeerConnectionState.Connected);
+
+        await handler.HandleAsync(Connection(socket, session), CancellationToken.None);
+
+        // The deadline was disarmed; normal close path — peer is not disposed because a WebRtcCall owns it.
+        Assert.Equal(0, peer.DisposeCount);
+    }
+
+    [Fact]
+    public async Task StartAsync_GathersCandidates_AfterOffer_BeforeStart()
+    {
+        // GatherCandidatesAsync must be called in StartAsync (after the offer, so buffered candidates
+        // already flushed) and before peer.StartAsync (which the answer handler triggers). Order: offer →
+        // gather → start.
+        var peer = new FakePeerConnection();
+        var (handler, session) = NewHandler(peer);
+        var socket = new FakeSignalingWebSocket(Frame("answer", sdp: "v=0-browser-answer"));
+
+        await handler.HandleAsync(Connection(socket, session), CancellationToken.None);
+
+        Assert.True(peer.CandidatesGathered, "GatherCandidatesAsync must be called to enable STUN/NAT traversal.");
+        var gatherIdx = peer.CallOrder.IndexOf("gather");
+        var offerIdx = peer.CallOrder.IndexOf("offer");
+        var startIdx = peer.CallOrder.IndexOf("start");
+        Assert.True(offerIdx >= 0 && gatherIdx > offerIdx, "gather must come after offer in call order.");
+        Assert.True(startIdx < 0 || gatherIdx < startIdx, "gather must come before start (transport) in call order.");
+    }
+
+    [Fact]
     public async Task NoSessionResolved_ClosesWithoutCreatingPeer()
     {
         var resolver = new FakeSessionResolver(session: null);
@@ -190,14 +242,19 @@ public sealed class WebRtcSignalingWebSocketHandlerTests
         Assert.False(resolver.Client.CreatePeerCalled);
     }
 
-    private static (WebRtcSignalingWebSocketHandler Handler, WebRtcSignalingSession Session) NewHandler(FakePeerConnection peer)
+    private static (WebRtcSignalingWebSocketHandler Handler, WebRtcSignalingSession Session) NewHandler(
+        FakePeerConnection peer,
+        TimeSpan? answerDeadline = null)
     {
         var client = new RecordingWebRtcClient(peer);
         var channel = new WebRtcVoiceChannel("webrtc-1", "Browser Voice", CommunicationPlugin.Id, client);
         var session = new WebRtcSignalingSession(
             client, channel, "call-webrtc-1", new CallTarget("webrtc:browser-x", "Bob"));
         var resolver = new FakeSessionResolver(session);
-        var handler = new WebRtcSignalingWebSocketHandler(resolver, NullLogger<WebRtcSignalingWebSocketHandler>.Instance);
+        var handler = new WebRtcSignalingWebSocketHandler(
+            resolver,
+            NullLogger<WebRtcSignalingWebSocketHandler>.Instance,
+            answerDeadline);
         return (handler, session);
     }
 

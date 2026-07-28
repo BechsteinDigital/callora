@@ -131,30 +131,6 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         _capabilitySource = new CommunicationRuntimeCapabilitySource(_channelRegistry);
         context.Export<IRuntimeCapabilitySource>(_capabilitySource);
 
-        // WebRTC surface: in-memory token store + channel provisioner + minter. Wired here —
-        // before the DB gate — because the in-memory store needs no persistence. The Signaling
-        // Contributor is exported alongside the media contributor (host appends all exports of the same type).
-        if (IsWebRtcEnabled(context.Services))
-        {
-            var loggerFactory = context.Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
-            var webRtcOptions = WebRtcClientOptions.FromConfiguration(
-                context.Services.GetService(typeof(IConfiguration)) as IConfiguration);
-            _ownedWebRtcClient = HeadlessWebRtcClientFactory.Create(webRtcOptions, loggerFactory);
-            _webRtcProvisioner = new WebRtcChannelProvisioner(
-                _ownedWebRtcClient,
-                _channelRegistry,
-                Id,
-                ResolveLogger<WebRtcChannelProvisioner>(context.Services));
-            var signalingStore = new WebRtcSignalingSessionStore(TimeProvider.System);
-            var minter = new WebRtcSessionMinter(_webRtcProvisioner, signalingStore, TimeSpan.FromMinutes(2));
-            context.Export<IWebRtcSessionMinter>(minter);
-            context.Export<IHostWebSocketEndpointContributor>(
-                new WebRtcSignalingContributor(
-                    signalingStore,
-                    signalingStore,
-                    ResolveLogger<WebRtcSignalingWebSocketHandler>(context.Services)));
-        }
-
         // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
         // Host die DB-Factory bereitstellt (ein minimaler Host ohne Persistenz degradiert sauber).
         if (dbContextFactory is null)
@@ -163,6 +139,42 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         }
 
         await dbContextFactory.MigrateAsync(cancellationToken).ConfigureAwait(false);
+
+        // WebRTC surface: placed after the DB gate because IncomingCallObserver + CallControlService
+        // (built above, when a DB is present) must exist before WebRtcVoiceChannel.IncomingCall can fire —
+        // without them an inbound call would have no ringing event, no history, and no lifecycle.
+        // Consequence: WebRTC requires a database (consistent with the SIP voice path). Without a DB the
+        // plugin degrades cleanly: no minter or signalling contributor exported, no error.
+        // The in-memory token store still needs no persistence; it is constructed here for wiring symmetry.
+        if (IsWebRtcEnabled(context.Services))
+        {
+            var loggerFactory = context.Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
+            var configuration = context.Services.GetService(typeof(IConfiguration)) as IConfiguration;
+            var webRtcOptions = WebRtcClientOptions.FromConfiguration(configuration);
+            _ownedWebRtcClient = HeadlessWebRtcClientFactory.Create(webRtcOptions, loggerFactory);
+
+            // A channel is externally reachable when STUN/TURN is configured or the bind endpoint is
+            // non-loopback — either ensures NAT traversal is possible for remote browsers. IsLoopback
+            // covers both IPv4 (127.0.0.0/8) and IPv6 (::1).
+            var externallyReachable = webRtcOptions.IceServers.Count > 0
+                || !System.Net.IPAddress.IsLoopback(webRtcOptions.LocalEndPoint.Address);
+
+            var tokenLifetime = TimeSpan.FromMinutes(2);
+            _webRtcProvisioner = new WebRtcChannelProvisioner(
+                _ownedWebRtcClient,
+                _channelRegistry,
+                Id,
+                externallyReachable,
+                ResolveLogger<WebRtcChannelProvisioner>(context.Services));
+            var signalingStore = new WebRtcSignalingSessionStore(TimeProvider.System, tokenLifetime);
+            var minter = new WebRtcSessionMinter(_webRtcProvisioner, signalingStore, tokenLifetime);
+            context.Export<IWebRtcSessionMinter>(minter);
+            context.Export<IHostWebSocketEndpointContributor>(
+                new WebRtcSignalingContributor(
+                    signalingStore,
+                    signalingStore,
+                    ResolveLogger<WebRtcSignalingWebSocketHandler>(context.Services)));
+        }
 
         context.Export<IWorkspaceDataPurgeContributor>(new CommunicationDataPurgeContributor(
             new CommunicationWorkspaceDataPurger(dbContextFactory)));

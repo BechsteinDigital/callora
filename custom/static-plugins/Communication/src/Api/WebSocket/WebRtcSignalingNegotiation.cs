@@ -34,6 +34,8 @@ internal sealed class WebRtcSignalingNegotiation(
     /// is the offerer, so the offer must reach the browser before any candidate for it: candidates the SDK
     /// surfaces at offer time (RFC 8838) are buffered and flushed right after the offer is sent; later ones
     /// trickle out immediately. The connected transition attaches the incoming call.
+    /// After the offer and buffered candidates are flushed, STUN gathering is triggered so that
+    /// server-reflexive candidates (RFC 8445 §5.1.1) start to trickle through the same gate.
     /// </summary>
     public async ValueTask StartAsync(CancellationToken cancellationToken)
     {
@@ -57,10 +59,26 @@ internal sealed class WebRtcSignalingNegotiation(
         {
             await channel.SendAsync(WebRtcSignalMessage.IceCandidate(candidate), cancellationToken).ConfigureAwait(false);
         }
+
+        // Trigger STUN/server-reflexive candidate gathering (RFC 8445 §5.1.1). No-op without STUN servers.
+        // Must run after the offer and before the transport starts (the answer handler calls peer.StartAsync);
+        // surfaced candidates trickle out through the same LocalIceCandidateDiscovered gate (_offerSent is
+        // now true → they are sent immediately instead of buffered).
+        await peer.GatherCandidatesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Applies one inbound signalling frame to the peer.</summary>
-    public async ValueTask HandleAsync(WebRtcSignalMessage message, CancellationToken cancellationToken)
+    /// <param name="message">The parsed signalling frame.</param>
+    /// <param name="cancellationToken">Overall session lifetime / host cancellation.</param>
+    /// <param name="disarmDeadline">
+    /// Optional callback invoked immediately after a valid <c>answer</c> is applied and the transport
+    /// started. The handler uses this to cancel any answer-deadline timer: once the answer has arrived
+    /// the socket must stay open (for continued trickle) and must not be capped by the deadline.
+    /// </param>
+    public async ValueTask HandleAsync(
+        WebRtcSignalMessage message,
+        CancellationToken cancellationToken,
+        Action? disarmDeadline = null)
     {
         switch (message.Type)
         {
@@ -69,6 +87,10 @@ internal sealed class WebRtcSignalingNegotiation(
                 // remote description). As the offerer, the returned SDP is our unchanged offer — ignored.
                 await peer.SetRemoteDescriptionAsync(message.Sdp!, cancellationToken).ConfigureAwait(false);
                 await peer.StartAsync(cancellationToken).ConfigureAwait(false);
+                // Disarm the answer deadline now that the answer has been received and the transport
+                // started. The socket remains open for continued trickle until the call ends or the
+                // host cancels; we must not cap it with the pre-answer deadline.
+                disarmDeadline?.Invoke();
                 break;
 
             case WebRtcSignalMessage.TypeCandidate when !string.IsNullOrWhiteSpace(message.Candidate):
