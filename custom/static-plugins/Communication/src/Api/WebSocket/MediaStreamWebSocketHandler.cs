@@ -43,7 +43,11 @@ public sealed class MediaStreamWebSocketHandler(
                 return;
             }
 
-            await using var scopedAudio = audioStream;
+            // The stream is call-scoped and owned by the SdkCallAudioRegistrar, which disposes it on
+            // Call-Terminated.  The WS handler is a pure consumer: it opens and reads the stream but
+            // must never dispose it — doing so while the call is still live would tear down the shared
+            // audio path for the entire call.
+            var scopedAudio = audioStream;
             using var channel = new WebSocketMediaFrameChannel(connection.Socket);
             var start = new MediaStreamStartMetadata(
                 session.Id,
