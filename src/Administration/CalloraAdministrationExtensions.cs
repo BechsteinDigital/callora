@@ -34,6 +34,7 @@ public static class CalloraAdministrationExtensions
         app.MapPluginEndpoints();
         app.MapPluginAdminExtensionEndpoints();
         app.MapPluginWebSocketEndpoints();
+        app.MapPluginPublicHttpEndpoints();
         app.MapPluginAssetEndpoints(options);
         app.MapEntitlementSyncEndpoints();
         app.MapEntitlementManagementEndpoints();
