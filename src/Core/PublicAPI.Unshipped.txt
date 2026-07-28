@@ -4907,3 +4907,70 @@ Callora.Core.Application.Plugins.PluginDependencyVersionGate.TryValidate(System.
 Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider
 Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider.LoadedContractVersionProvider(Callora.Core.Application.Plugins.SharedContractAssemblyRegistry? sharedContracts = null, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider!>? logger = null) -> void
 Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider.Resolve(string! contractId) -> Semver.SemVersion?
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Body.get -> string?
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Body.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Deconstruct(out string! PluginId, out string! Method, out string! RoutePath, out System.Collections.Generic.IReadOnlyDictionary<string!, string?>! RouteValues, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Query, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, out string? Body) -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Equals(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Headers.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.HostPublicHttpRequest(string! PluginId, string! Method, string! RoutePath, System.Collections.Generic.IReadOnlyDictionary<string!, string?>! RouteValues, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Query, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Headers, string? Body) -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Method.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Method.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.PluginId.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.PluginId.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Query.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Query.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.RoutePath.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.RoutePath.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string?>!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.RouteValues.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Body.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Body.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.ContentType.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.ContentType.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Deconstruct(out int StatusCode, out string! ContentType, out string! Body, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>? Headers) -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Equals(Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Headers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Headers.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.HostPublicHttpResponse(int StatusCode, string! ContentType, string! Body, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? Headers = null) -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.StatusCode.get -> int
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.StatusCode.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Deconstruct(out string! Method, out string! RouteTemplate, out Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler! Handler) -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Equals(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Handler.get -> Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Handler.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.HostPublicHttpRouteRegistration(string! Method, string! RouteTemplate, Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler! Handler) -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Method.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Method.init -> void
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.RouteTemplate.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.RouteTemplate.init -> void
+Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor
+Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor.PluginId.get -> string!
+Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor.PublicHttpRoutes.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration!>!
+Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler
+Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse!>
+override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.ToString() -> string!
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.operator !=(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest.operator ==(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Html(string! html) -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse!
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Json(string! json) -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse!
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.NotFound() -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse!
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.operator !=(Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.operator ==(Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.Redirect(string! location) -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse!
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.operator !=(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.operator ==(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? right) -> bool
