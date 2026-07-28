@@ -9,6 +9,21 @@ updates:
     groups:
       nuget-all:
         patterns: ["*"]
+    # Major-Bumps, die das aktuelle .NET-SDK deckelt, bewusst ignorieren, bis SDK/Framework
+    # nachziehen — sonst schlägt Dependabot wöchentlich brechende PRs vor:
+    ignore:
+      # Roslyn-Familie: ein Analyzer darf keine neuere Compiler-Version referenzieren als der
+      # SDK-Host (CS9057). Major erst mit einem SDK, dessen Roslyn ≥ die Major zulässt.
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.CodeAnalysis.Analyzers"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.CodeAnalysis.PublicApiAnalyzers"
+        update-types: ["version-update:semver-major"]
+      # Microsoft.OpenApi: ASP.NET-OpenApi (10.0.x) baut gegen die 2.x-API; 3.x bricht den
+      # Source-Generator (CS0200, IOpenApiMediaType.Example read-only).
+      - dependency-name: "Microsoft.OpenApi"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
