@@ -172,6 +172,17 @@ public static class CalloraHostCompositionExtensions
             forwardAuthenticateScheme: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme,
             resource: ResolveMcpResourceUrl(backendOptions),
             authorizationServer: backendOptions.OidcAuthority);
+        // Install-time SemVer dependency gate (ABI compatibility): resolves the versions the
+        // host provides for a plugin's declared dependencies and rejects installs whose declared
+        // npm ranges are not satisfied. The provider reads from loaded assemblies (default ALC);
+        // the shared-contract registry is host-encapsulated, so it is not supplied here.
+        builder.Services.AddSingleton<Callora.Core.Application.Plugins.IProvidedContractVersionProvider>(
+            static sp => new Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider(
+                logger: sp.GetService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider>>()));
+        builder.Services.AddSingleton<Callora.Core.Application.Plugins.PluginDependencyVersionGate>(
+            static sp => new Callora.Core.Application.Plugins.PluginDependencyVersionGate(
+                sp.GetRequiredService<Callora.Core.Application.Plugins.IProvidedContractVersionProvider>(),
+                sp.GetService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.PluginDependencyVersionGate>>()));
         builder.Services.AddScoped<IPluginLifecycleService, PluginLifecycleService>();
         builder.Services.AddScoped<IWorkspacePluginActivationReader, EfWorkspacePluginActivationReader>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.IWorkspacePluginActivationStore, EfWorkspacePluginActivationStore>();

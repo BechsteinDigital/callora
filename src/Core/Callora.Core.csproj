@@ -70,6 +70,8 @@
     <PackageReference Include="Microsoft.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
+    <!-- Plugin dependency install gate: npm-range SemVer enforcement. -->
+    <PackageReference Include="Semver" />
   </ItemGroup>
 
 </Project>

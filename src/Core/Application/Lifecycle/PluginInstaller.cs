@@ -14,7 +14,8 @@ public sealed class PluginInstaller(
     INuGetPluginAssemblyResolver nuGetAssemblyResolver,
     IPluginExtensionRegistrationStore extensionRegistrationStore,
     PluginLifecycleReporter reporter,
-    PluginInstallationRecorder recorder)
+    PluginInstallationRecorder recorder,
+    PluginDependencyVersionGate dependencyVersionGate)
 {
     /// <summary>
     /// Resolves one NuGet package and installs the contained plugin assembly.
@@ -158,6 +159,35 @@ public sealed class PluginInstaller(
                 null,
                 signatureVerification.ErrorMessage,
                 signatureErrorCode);
+        }
+
+        // Runs after signature verification so a signature/security failure always wins over a
+        // dependency-version failure for a package that trips both gates (still before commit).
+        if (package is not null &&
+            !dependencyVersionGate.TryValidate(package.Dependencies, out var dependencyError))
+        {
+            var dependencyMessage = dependencyError
+                ?? "Plugin dependency versions are not satisfied by the host.";
+            await reporter.ReportInstallGateRejectAsync(
+                    pluginId: package.PluginId,
+                    requestedBy: requestedBy,
+                    message: dependencyMessage,
+                    gateType: "registry.dependency_version",
+                    reasonCode: PluginLifecycleErrorCodes.PluginDependencyVersionUnsatisfied,
+                    assemblyPath: assemblyPath,
+                    additionalMetadata: new Dictionary<string, string>
+                    {
+                        ["registryPluginId"] = package.PluginId
+                    },
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return new PluginLifecycleServiceResult(
+                PluginLifecycleServiceStatus.BadRequest,
+                false,
+                null,
+                dependencyMessage,
+                PluginLifecycleErrorCodes.PluginDependencyVersionUnsatisfied);
         }
 
         var result = await lifecycle.InstallAsync(assemblyPath, effectiveEntryTypeName, cancellationToken)
