@@ -10,6 +10,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, WorkspaceMemberSnapshot>> _members = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, byte> _knownUsers = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, bool> _tenants = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, SurfaceOverlay> _surfaceOverlays = new(StringComparer.OrdinalIgnoreCase);
 
     public Task<IReadOnlyList<WorkspaceSnapshot>> ListAsync(
         string? tenantKey = null,
@@ -127,6 +128,61 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
 
         var resolved = WorkspacePublicRouteMatcher.ResolveBest(candidates, requestHost, requestPath);
         return Task.FromResult(resolved);
+    }
+
+    public Task<WorkspaceSurfaceSnapshot?> ResolveSurfaceByPublicRouteAsync(
+        string requestHost,
+        string requestPath,
+        string? tenantKey = null,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var candidates = _workspaces.Values.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(tenantKey))
+        {
+            var normalizedTenantKey = tenantKey.Trim();
+            candidates = candidates.Where(x => string.Equals(x.TenantKey, normalizedTenantKey, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var workspace = WorkspacePublicRouteMatcher.ResolveBest(candidates, requestHost, requestPath);
+        if (workspace is null)
+        {
+            return Task.FromResult<WorkspaceSurfaceSnapshot?>(null);
+        }
+
+        // This fake models one surface per workspace (its public route). A per-surface
+        // overlay lets a test pin the surface's own AccessMode/SurfaceKey/Locale; without
+        // one, AccessMode derives from the workspace access policy so existing seeds keep
+        // their behaviour.
+        _surfaceOverlays.TryGetValue(workspace.WorkspaceKey, out var overlay);
+        var accessMode = overlay?.AccessMode ??
+            (workspace.SurfaceAccessPolicy == SurfaceAccessPolicy.Authenticated
+                ? SurfaceAccessMode.Authenticated
+                : SurfaceAccessMode.Public);
+
+        var snapshot = new WorkspaceSurfaceSnapshot(
+            Guid.NewGuid(),
+            workspace.WorkspaceKey,
+            overlay?.SurfaceKey ?? "default",
+            workspace.DisplayName,
+            "spa",
+            workspace.PublicBaseUrl,
+            workspace.PublicHost,
+            workspace.PublicPathPrefix,
+            accessMode,
+            overlay?.Locale,
+            null,
+            null,
+            workspace.ThemePluginId,
+            workspace.ThemeVersion,
+            workspace.IsActive,
+            workspace.CreatedAtUtc,
+            workspace.UpdatedAtUtc)
+        {
+            TenantKey = workspace.TenantKey
+        };
+        return Task.FromResult<WorkspaceSurfaceSnapshot?>(snapshot);
     }
 
     public Task<bool> RemoveAsync(
@@ -331,4 +387,23 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             }
         }
     }
+
+    /// <summary>
+    /// Pins the per-surface identity (access mode, key, locale) the resolved surface for a
+    /// workspace reports, so a test can exercise per-surface gating and context without a
+    /// real surface store.
+    /// </summary>
+    public void SetSurface(
+        string workspaceKey,
+        SurfaceAccessMode accessMode,
+        string surfaceKey = "default",
+        string? locale = null)
+    {
+        if (!string.IsNullOrWhiteSpace(workspaceKey))
+        {
+            _surfaceOverlays[workspaceKey.Trim()] = new SurfaceOverlay(accessMode, surfaceKey, locale);
+        }
+    }
+
+    private sealed record SurfaceOverlay(SurfaceAccessMode AccessMode, string SurfaceKey, string? Locale);
 }
