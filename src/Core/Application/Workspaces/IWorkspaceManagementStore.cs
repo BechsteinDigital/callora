@@ -31,6 +31,24 @@ public interface IWorkspaceManagementStore
         string? tenantKey = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Resolves the request host and path to the concrete <see cref="WorkspaceSurfaceSnapshot"/>
+    /// that best matches (ADR-014 §5), rather than only its owning workspace. Callers that
+    /// gate or render per surface need the surface's own <c>AccessMode</c>, <c>SurfaceKey</c>,
+    /// <c>Locale</c> and theme — the workspace-level <see cref="ResolveByPublicRouteAsync"/>
+    /// discards these. Returns <see langword="null"/> when no active surface (on an active
+    /// workspace and tenant) matches.
+    /// </summary>
+    /// <param name="requestHost">The incoming request host.</param>
+    /// <param name="requestPath">The incoming request path.</param>
+    /// <param name="tenantKey">Optional tenant to scope resolution to.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<WorkspaceSurfaceSnapshot?> ResolveSurfaceByPublicRouteAsync(
+        string requestHost,
+        string requestPath,
+        string? tenantKey = null,
+        CancellationToken cancellationToken = default);
+
     Task<bool> RemoveAsync(
         string workspaceKey,
         CancellationToken cancellationToken = default);
