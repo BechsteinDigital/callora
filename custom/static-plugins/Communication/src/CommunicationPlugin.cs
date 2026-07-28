@@ -17,6 +17,7 @@ using Callora.Plugin.Communication.Infrastructure.Channels;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
 using Callora.Plugin.Communication.Infrastructure.Sdk;
+using CalloraVoipSdk.WebRtc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -63,8 +64,15 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     // its lifecycle and disposes it on stop; an injected runtime is owned by the host, not disposed here.
     private CalloraVoipSdk.IVoipClient? _ownedVoipClient;
 
+    // Set during StartAsync when the WebRTC surface is wired; torn down on stop.
+    private IWebRtcClient? _ownedWebRtcClient;
+    private WebRtcChannelProvisioner? _webRtcProvisioner;
+
     /// <summary>Configuration key that enables the plugin's self-built SDK voice client.</summary>
     internal const string VoiceEnabledConfigKey = "Communication:Voice:Enabled";
+
+    /// <summary>Configuration key that enables the plugin's self-built WebRTC client.</summary>
+    internal const string WebRtcEnabledConfigKey = "Communication:WebRtc:Enabled";
 
     /// <inheritdoc />
     public async ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
@@ -123,6 +131,30 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         _capabilitySource = new CommunicationRuntimeCapabilitySource(_channelRegistry);
         context.Export<IRuntimeCapabilitySource>(_capabilitySource);
 
+        // WebRTC surface: in-memory token store + channel provisioner + minter. Wired here —
+        // before the DB gate — because the in-memory store needs no persistence. The Signaling
+        // Contributor is exported alongside the media contributor (host appends all exports of the same type).
+        if (IsWebRtcEnabled(context.Services))
+        {
+            var loggerFactory = context.Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
+            var webRtcOptions = WebRtcClientOptions.FromConfiguration(
+                context.Services.GetService(typeof(IConfiguration)) as IConfiguration);
+            _ownedWebRtcClient = HeadlessWebRtcClientFactory.Create(webRtcOptions, loggerFactory);
+            _webRtcProvisioner = new WebRtcChannelProvisioner(
+                _ownedWebRtcClient,
+                _channelRegistry,
+                Id,
+                ResolveLogger<WebRtcChannelProvisioner>(context.Services));
+            var signalingStore = new WebRtcSignalingSessionStore(TimeProvider.System);
+            var minter = new WebRtcSessionMinter(_webRtcProvisioner, signalingStore, TimeSpan.FromMinutes(2));
+            context.Export<IWebRtcSessionMinter>(minter);
+            context.Export<IHostWebSocketEndpointContributor>(
+                new WebRtcSignalingContributor(
+                    signalingStore,
+                    signalingStore,
+                    ResolveLogger<WebRtcSignalingWebSocketHandler>(context.Services)));
+        }
+
         // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
         // Host die DB-Factory bereitstellt (ein minimaler Host ohne Persistenz degradiert sauber).
         if (dbContextFactory is null)
@@ -165,6 +197,13 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         // Dispose the voice client only if the plugin built it (config-enabled path); an injected
         // runtime's client belongs to the host. Done after teardown so no channel outlives its line.
         _ownedVoipClient?.Dispose();
+
+        // WebRTC teardown: deregister channels first, then async-dispose the client.
+        _webRtcProvisioner?.Teardown();
+        if (_ownedWebRtcClient is not null)
+        {
+            await _ownedWebRtcClient.DisposeAsync().ConfigureAwait(false);
+        }
 
         _channelRegistry.Clear();
     }
@@ -225,6 +264,12 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     internal static bool IsVoiceEnabled(IServiceProvider services) =>
         services.GetService(typeof(IConfiguration)) is IConfiguration configuration
         && bool.TryParse(configuration[VoiceEnabledConfigKey], out var enabled)
+        && enabled;
+
+    // Reads the WebRTC deployment switch from host configuration; absent/unparseable means WebRTC stays off.
+    internal static bool IsWebRtcEnabled(IServiceProvider services) =>
+        services.GetService(typeof(IConfiguration)) is IConfiguration configuration
+        && bool.TryParse(configuration[WebRtcEnabledConfigKey], out var enabled)
         && enabled;
 
     private static ILogger<T> ResolveLogger<T>(IServiceProvider services) =>
