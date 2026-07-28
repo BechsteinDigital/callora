@@ -1,6 +1,4 @@
-using Callora.Plugin.Communication.Abstractions;
-
-namespace Callora.Plugin.Communication.Application.Calls;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Read-only view of one live call, returned to callers of <see cref="ICallControlService"/> so they

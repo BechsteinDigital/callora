@@ -1,6 +1,4 @@
-using Callora.Plugin.Communication.Domain.Calls;
-
-namespace Callora.Plugin.Communication.Application.Calls;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Read-only history view of one recorded call. Enum values are projected to strings so the shape is
@@ -25,22 +23,4 @@ public sealed record CallHistoryEntry(
     DateTimeOffset? EndedAt,
     int DurationSeconds,
     string Outcome,
-    string? DisconnectCause)
-{
-    /// <summary>Projects a persisted <see cref="CallLog"/> to its read-only history view.</summary>
-    public static CallHistoryEntry FromDomain(CallLog log)
-    {
-        ArgumentNullException.ThrowIfNull(log);
-
-        return new CallHistoryEntry(
-            log.Id,
-            log.Direction.ToString(),
-            log.RemoteParty,
-            log.StartedAt,
-            log.AnsweredAt,
-            log.EndedAt,
-            log.DurationSeconds,
-            log.Outcome.ToString(),
-            log.DisconnectCause);
-    }
-}
+    string? DisconnectCause);
