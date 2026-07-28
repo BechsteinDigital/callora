@@ -1082,3 +1082,23 @@ override Callora.Administration.Api.PluginWebSocketRouteMatch.GetHashCode() -> i
 override Callora.Administration.Api.PluginWebSocketRouteMatch.ToString() -> string!
 static Callora.Administration.Api.PluginWebSocketRouteMatch.operator !=(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool
 static Callora.Administration.Api.PluginWebSocketRouteMatch.operator ==(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool
+Callora.Administration.Api.PluginPublicHttpEndpoints
+Callora.Administration.Api.PluginPublicHttpRouteMatch
+Callora.Administration.Api.PluginPublicHttpRouteMatch.<Clone>$() -> Callora.Administration.Api.PluginPublicHttpRouteMatch!
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Contributor.get -> Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor!
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Contributor.init -> void
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Deconstruct(out Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor! Contributor, out Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration! Route, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Equals(Callora.Administration.Api.PluginPublicHttpRouteMatch? other) -> bool
+Callora.Administration.Api.PluginPublicHttpRouteMatcher
+Callora.Administration.Api.PluginPublicHttpRouteMatch.PluginPublicHttpRouteMatch(Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor! Contributor, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration! Route, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Route.get -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration!
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Route.init -> void
+Callora.Administration.Api.PluginPublicHttpRouteMatch.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Administration.Api.PluginPublicHttpRouteMatch.RouteValues.init -> void
+override Callora.Administration.Api.PluginPublicHttpRouteMatch.Equals(object? obj) -> bool
+override Callora.Administration.Api.PluginPublicHttpRouteMatch.GetHashCode() -> int
+override Callora.Administration.Api.PluginPublicHttpRouteMatch.ToString() -> string!
+static Callora.Administration.Api.PluginPublicHttpEndpoints.MapPluginPublicHttpEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.PluginPublicHttpRouteMatcher.FindMatch(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor!>! contributors, string! pluginId, string! httpMethod, string! routePath) -> Callora.Administration.Api.PluginPublicHttpRouteMatch?
+static Callora.Administration.Api.PluginPublicHttpRouteMatch.operator !=(Callora.Administration.Api.PluginPublicHttpRouteMatch? left, Callora.Administration.Api.PluginPublicHttpRouteMatch? right) -> bool
+static Callora.Administration.Api.PluginPublicHttpRouteMatch.operator ==(Callora.Administration.Api.PluginPublicHttpRouteMatch? left, Callora.Administration.Api.PluginPublicHttpRouteMatch? right) -> bool
