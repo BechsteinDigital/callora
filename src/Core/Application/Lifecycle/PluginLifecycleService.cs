@@ -45,7 +45,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         ICalloraPluginCatalog? pluginCatalog = null,
         ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null,
         Callora.Core.Application.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null,
-        Callora.Core.Application.Plugins.IWorkspacePluginActivationReader? workspaceActivationReader = null)
+        Callora.Core.Application.Plugins.IWorkspacePluginActivationReader? workspaceActivationReader = null,
+        Callora.Core.Application.Plugins.PluginDependencyVersionGate? dependencyVersionGate = null)
     {
         _lifecycle = lifecycle;
         _activationPolicy = activationPolicy;
@@ -60,6 +61,9 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
             catalog,
             extensionPointRegistryStore,
             extensionRegistrationStore);
+        var effectiveDependencyGate = dependencyVersionGate
+            ?? new Callora.Core.Application.Plugins.PluginDependencyVersionGate(
+                new Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider());
         _installer = new PluginInstaller(
             lifecycle,
             packageRegistryReader,
@@ -67,7 +71,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
             nuGetAssemblyResolver,
             extensionRegistrationStore,
             _reporter,
-            _recorder);
+            _recorder,
+            effectiveDependencyGate);
         _updater = new PluginUpdater(
             lifecycle,
             nuGetAssemblyResolver,
@@ -107,7 +112,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         INuGetPluginAssemblyResolver nuGetAssemblyResolver,
         IHostApplicationEventPublisher eventPublisher,
         ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null,
-        Callora.Core.Application.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null)
+        Callora.Core.Application.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null,
+        Callora.Core.Application.Plugins.PluginDependencyVersionGate? dependencyVersionGate = null)
         : this(
             lifecycle,
             activationPolicy,
@@ -123,7 +129,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
             eventPublisher,
             new EmptyWorkspaceManagementStore(),
             localPluginInstallSourceResolver: localPluginInstallSourceResolver,
-            workspaceActivationStore: workspaceActivationStore)
+            workspaceActivationStore: workspaceActivationStore,
+            dependencyVersionGate: dependencyVersionGate)
     {
     }
 
