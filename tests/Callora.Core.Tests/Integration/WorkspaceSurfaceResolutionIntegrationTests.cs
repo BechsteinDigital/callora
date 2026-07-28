@@ -140,6 +140,40 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task InactiveSurface_IsNotResolved_ByEitherResolver()
+    {
+        // Guards the security-relevant assumption the render endpoint now relies on:
+        // it dropped its own IsActive re-check and trusts the store's match loop to filter
+        // inactive surfaces. This proves that filter directly against real Postgres.
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        await using var context = await FreshContextWithTenantAsync();
+        var workspaceStore = new EfWorkspaceManagementStore(context);
+        var surfaceStore = new EfWorkspaceSurfaceStore(context);
+
+        _ = await workspaceStore.UpsertAsync(
+            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, publicBaseUrl: "primary.example.de");
+
+        // An inactive surface on its own host must never be served.
+        await surfaceStore.UpsertAsync("workspace-a", new WorkspaceSurfaceInput(
+            SurfaceKey: "retired",
+            DisplayName: "Retired Portal",
+            SurfaceType: "spa",
+            PublicBaseUrl: "retired.example.de",
+            PublicHost: "retired.example.de",
+            PublicPathPrefix: "/",
+            AccessMode: SurfaceAccessMode.Public,
+            Locale: null,
+            TemplatePluginId: null,
+            TemplateVersion: null,
+            ThemePluginId: null,
+            ThemeVersion: null,
+            IsActive: false));
+
+        Assert.Null(await workspaceStore.ResolveSurfaceByPublicRouteAsync("retired.example.de", "/"));
+        Assert.Null(await workspaceStore.ResolveByPublicRouteAsync("retired.example.de", "/"));
+    }
+
+    [SkippableFact]
     public async Task ResolveByPublicRoute_BehaviourUnchanged_AlongsideResolveSurface()
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
