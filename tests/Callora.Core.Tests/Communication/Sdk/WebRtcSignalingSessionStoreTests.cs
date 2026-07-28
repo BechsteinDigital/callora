@@ -27,7 +27,7 @@ public sealed class WebRtcSignalingSessionStoreTests
     public async Task Mint_ThenTryConsume_ReturnsToken_AsSubject()
     {
         var clock = new FakeTimeProvider();
-        var store = new WebRtcSignalingSessionStore(clock);
+        var store = new WebRtcSignalingSessionStore(clock, DefaultTtl);
         var session = MakeSession();
 
         var token = store.Mint(session);
@@ -41,7 +41,7 @@ public sealed class WebRtcSignalingSessionStoreTests
     public async Task TryConsume_SecondTime_SameToken_ReturnsNull()
     {
         var clock = new FakeTimeProvider();
-        var store = new WebRtcSignalingSessionStore(clock);
+        var store = new WebRtcSignalingSessionStore(clock, DefaultTtl);
         var token = store.Mint(MakeSession());
         var now = clock.GetUtcNow();
 
@@ -55,7 +55,7 @@ public sealed class WebRtcSignalingSessionStoreTests
     public async Task TryConsume_ExpiredToken_ReturnsNull()
     {
         var clock = new FakeTimeProvider();
-        var store = new WebRtcSignalingSessionStore(clock);
+        var store = new WebRtcSignalingSessionStore(clock, DefaultTtl);
         var token = store.Mint(MakeSession());
 
         // Advance past the TTL.
@@ -70,7 +70,7 @@ public sealed class WebRtcSignalingSessionStoreTests
     public async Task ResolveAsync_AfterConsume_ReturnsSession()
     {
         var clock = new FakeTimeProvider();
-        var store = new WebRtcSignalingSessionStore(clock);
+        var store = new WebRtcSignalingSessionStore(clock, DefaultTtl);
         var session = MakeSession();
         var token = store.Mint(session);
 
@@ -84,7 +84,7 @@ public sealed class WebRtcSignalingSessionStoreTests
     public async Task ResolveAsync_SecondTime_ReturnsNull_OneShot()
     {
         var clock = new FakeTimeProvider();
-        var store = new WebRtcSignalingSessionStore(clock);
+        var store = new WebRtcSignalingSessionStore(clock, DefaultTtl);
         var token = store.Mint(MakeSession());
 
         var subject = await store.TryConsumeAsync(token, clock.GetUtcNow(), DefaultTtl);
@@ -98,7 +98,7 @@ public sealed class WebRtcSignalingSessionStoreTests
     public async Task TryConsume_UnknownToken_ReturnsNull()
     {
         var clock = new FakeTimeProvider();
-        var store = new WebRtcSignalingSessionStore(clock);
+        var store = new WebRtcSignalingSessionStore(clock, DefaultTtl);
 
         var subject = await store.TryConsumeAsync("does-not-exist", clock.GetUtcNow(), DefaultTtl);
 
@@ -109,7 +109,7 @@ public sealed class WebRtcSignalingSessionStoreTests
     public async Task ResolveAsync_UnknownSubject_ReturnsNull()
     {
         var clock = new FakeTimeProvider();
-        var store = new WebRtcSignalingSessionStore(clock);
+        var store = new WebRtcSignalingSessionStore(clock, DefaultTtl);
 
         var session = await store.ResolveAsync("ghost-subject");
 
@@ -120,10 +120,28 @@ public sealed class WebRtcSignalingSessionStoreTests
     public async Task ResolveAsync_NullSubject_ReturnsNull()
     {
         var clock = new FakeTimeProvider();
-        var store = new WebRtcSignalingSessionStore(clock);
+        var store = new WebRtcSignalingSessionStore(clock, DefaultTtl);
 
         var session = await store.ResolveAsync(null);
 
         Assert.Null(session);
+    }
+
+    [Fact]
+    public async Task Mint_PurgesExpiredEntries_BeforeInserting()
+    {
+        // Arrange: mint a first token, then advance time past the lifetime so it is expired.
+        var clock = new FakeTimeProvider();
+        var store = new WebRtcSignalingSessionStore(clock, DefaultTtl);
+        var firstToken = store.Mint(MakeSession());
+
+        clock.Advance(DefaultTtl + TimeSpan.FromSeconds(1));
+
+        // Act: minting a second token should purge the first (expired) entry.
+        store.Mint(MakeSession());
+
+        // Assert: the first (expired) token is no longer resolvable.
+        var resolved = await store.ResolveAsync(firstToken);
+        Assert.Null(resolved);
     }
 }

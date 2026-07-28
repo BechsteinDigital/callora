@@ -11,19 +11,37 @@ namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 /// outbound placement — a WebRTC call is browser-initiated over the signalling channel.
 /// </summary>
 /// <remarks>
-/// Health is derived from the client's liveness: the client binds no socket until a peer is created, so
-/// while it is alive the channel is <see cref="ChannelHealth.Up"/> (ready to accept browser peers). There
-/// is no registration handshake that could degrade, so no <see cref="ICommunicationChannel.HealthChanged"/>
-/// transition is raised in v1; the event exists for a future health source (e.g. TURN reachability).
+/// Health reflects external reachability: <see cref="ChannelHealth.Up"/> when at least one STUN/TURN
+/// server is configured or the bind endpoint is not loopback (meaning the server is reachable from
+/// outside), <see cref="ChannelHealth.Degraded"/> otherwise — the client is alive but NAT traversal
+/// will only succeed for local/loopback peers. There is no dynamic health transition in v1; the value
+/// is fixed at construction. <see cref="ICommunicationChannel.HealthChanged"/> exists for a future
+/// source (e.g. live TURN-reachability probes).
 /// </remarks>
 public sealed class WebRtcVoiceChannel : IVoiceChannel
 {
     private static readonly IReadOnlyCollection<string> VoiceCapability = [CommunicationCapabilities.Voice];
 
     private readonly IWebRtcClient _client;
+    private readonly ChannelHealth _health;
 
     /// <summary>Wraps <paramref name="client"/> as a workspace channel identified by the given ids.</summary>
-    public WebRtcVoiceChannel(string channelId, string displayName, string pluginId, IWebRtcClient client)
+    /// <param name="channelId">Stable channel identifier.</param>
+    /// <param name="displayName">Human-readable name shown in admin UIs.</param>
+    /// <param name="pluginId">The owning plugin identifier.</param>
+    /// <param name="client">The underlying WebRTC client; caller owns its lifetime.</param>
+    /// <param name="externallyReachable">
+    /// <see langword="true"/> when the deployment has STUN/TURN configured or is bound to a non-loopback
+    /// address, meaning remote browsers can establish NAT-traversed connections.
+    /// <see langword="false"/> for loopback-only / no-ICE-server deployments — the channel is
+    /// <see cref="ChannelHealth.Degraded"/> (alive but not externally reachable).
+    /// </param>
+    public WebRtcVoiceChannel(
+        string channelId,
+        string displayName,
+        string pluginId,
+        IWebRtcClient client,
+        bool externallyReachable = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
@@ -34,6 +52,7 @@ public sealed class WebRtcVoiceChannel : IVoiceChannel
         DisplayName = displayName;
         PluginId = pluginId;
         _client = client;
+        _health = externallyReachable ? ChannelHealth.Up : ChannelHealth.Degraded;
     }
 
     /// <inheritdoc />
@@ -49,11 +68,11 @@ public sealed class WebRtcVoiceChannel : IVoiceChannel
     public IReadOnlyCollection<string> Capabilities => VoiceCapability;
 
     /// <inheritdoc />
-    public ChannelHealth Health => ChannelHealth.Up;
+    public ChannelHealth Health => _health;
 
     /// <inheritdoc />
-    // No health source in v1 (no registration handshake that could degrade), so this never fires yet; it
-    // stays on the contract for a future source (e.g. TURN reachability).
+    // No dynamic health source in v1; the health is fixed at construction from deployment configuration.
+    // The event exists for a future source (e.g. live TURN reachability probes).
 #pragma warning disable CS0067
     public event EventHandler<ChannelHealthChangedEventArgs>? HealthChanged;
 #pragma warning restore CS0067

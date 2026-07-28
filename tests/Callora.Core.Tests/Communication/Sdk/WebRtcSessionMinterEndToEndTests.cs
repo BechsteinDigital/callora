@@ -28,10 +28,11 @@ public sealed class WebRtcSessionMinterEndToEndTests
             client,
             registry,
             "communication",
+            externallyReachable: true,
             NullLogger<WebRtcChannelProvisioner>.Instance);
         // Use system clock: the E2E flow tests routing correctness, not TTL precision.
         // TTL precision is covered by WebRtcSignalingSessionStoreTests with FakeTimeProvider.
-        var store = new WebRtcSignalingSessionStore(TimeProvider.System);
+        var store = new WebRtcSignalingSessionStore(TimeProvider.System, Ttl);
         var minter = new WebRtcSessionMinter(provisioner, store, Ttl);
         return (minter, store, client);
     }

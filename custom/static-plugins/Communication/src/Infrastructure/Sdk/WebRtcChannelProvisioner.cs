@@ -16,6 +16,7 @@ internal sealed class WebRtcChannelProvisioner
     private readonly IWebRtcClient _client;
     private readonly ICommunicationChannelRegistry _registry;
     private readonly string _pluginId;
+    private readonly bool _externallyReachable;
     private readonly ILogger<WebRtcChannelProvisioner> _logger;
 
     // Protects _channels and _registrations from concurrent get-or-create/teardown calls.
@@ -27,11 +28,17 @@ internal sealed class WebRtcChannelProvisioner
     /// <param name="client">The shared WebRTC client; caller (plugin) owns and disposes it.</param>
     /// <param name="registry">The host channel registry to register each new channel into.</param>
     /// <param name="pluginId">The plugin identifier stamped onto every provisioned channel.</param>
+    /// <param name="externallyReachable">
+    /// Forwarded to each <see cref="WebRtcVoiceChannel"/>: <see langword="true"/> when the deployment
+    /// has STUN/TURN configured or binds a non-loopback address. Channels created with
+    /// <see langword="false"/> report <see cref="Abstractions.ChannelHealth.Degraded"/>.
+    /// </param>
     /// <param name="logger">Diagnostic logger.</param>
     public WebRtcChannelProvisioner(
         IWebRtcClient client,
         ICommunicationChannelRegistry registry,
         string pluginId,
+        bool externallyReachable,
         ILogger<WebRtcChannelProvisioner> logger)
     {
         ArgumentNullException.ThrowIfNull(client);
@@ -42,6 +49,7 @@ internal sealed class WebRtcChannelProvisioner
         _client = client;
         _registry = registry;
         _pluginId = pluginId;
+        _externallyReachable = externallyReachable;
         _logger = logger;
     }
 
@@ -65,7 +73,7 @@ internal sealed class WebRtcChannelProvisioner
             }
 
             var channelId = $"webrtc-{workspaceKey}";
-            var channel = new WebRtcVoiceChannel(channelId, "WebRTC", _pluginId, _client);
+            var channel = new WebRtcVoiceChannel(channelId, "WebRTC", _pluginId, _client, _externallyReachable);
             var registration = _registry.Register(workspaceKey, channel);
             _registrations.Add(registration);
             _channels[workspaceKey] = channel;
