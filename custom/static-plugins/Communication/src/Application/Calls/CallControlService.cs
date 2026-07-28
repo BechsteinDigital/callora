@@ -140,7 +140,7 @@ public sealed class CallControlService : ICallControlService, IDisposable
         string workspaceKey, int limit, CancellationToken cancellationToken = default)
     {
         var logs = await _callLogStore.ListRecentAsync(workspaceKey, limit, cancellationToken).ConfigureAwait(false);
-        return [.. logs.Select(CallHistoryEntry.FromDomain)];
+        return [.. logs.Select(CallHistoryEntryMapper.FromDomain)];
     }
 
     /// <summary>Detaches every live handler so no tracked call outlives the service (plugin stop/unload).</summary>

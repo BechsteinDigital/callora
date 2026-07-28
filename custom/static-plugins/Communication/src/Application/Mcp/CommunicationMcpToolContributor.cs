@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Callora.Core.Application.Mcp.Contracts;
+using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Admin.Calls;
-using Callora.Plugin.Communication.Application.Calls;
 
 namespace Callora.Plugin.Communication.Application.Mcp;
 

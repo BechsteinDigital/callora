@@ -1,4 +1,4 @@
-namespace Callora.Plugin.Communication.Application.Calls;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Request to place one outbound call. The channel is chosen by <see cref="ChannelId"/> when given,

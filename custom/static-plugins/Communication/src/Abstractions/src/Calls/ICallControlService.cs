@@ -1,4 +1,4 @@
-namespace Callora.Plugin.Communication.Application.Calls;
+namespace Callora.Plugin.Communication.Abstractions;
 
 /// <summary>
 /// Channel-neutral call-control primitive: the single seam through which any consumer — an in-process
