@@ -189,6 +189,8 @@ internal sealed class FakePlainCall : ICall
 
     public CallTarget Target => new("sip:x@example.com");
 
+    public CallTerminationReason? TerminationReason => null;
+
     public event EventHandler<CallStateChangedEventArgs>? StateChanged
     {
         add { }

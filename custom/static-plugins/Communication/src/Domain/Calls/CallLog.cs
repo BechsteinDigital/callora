@@ -177,7 +177,8 @@ public sealed class CallLog
 
     /// <summary>Outcomes valid only for a call that was never answered.</summary>
     private static bool IsUnansweredOutcome(CallOutcome outcome) =>
-        outcome is CallOutcome.Missed or CallOutcome.Rejected or CallOutcome.Busy or CallOutcome.Failed;
+        outcome is CallOutcome.Missed or CallOutcome.Rejected or CallOutcome.Busy
+            or CallOutcome.NoAnswer or CallOutcome.Canceled or CallOutcome.Failed;
 
     /// <summary>Replaces the remote party with a pseudonym for GDPR erasure.</summary>
     public void Pseudonymize(string pseudonym)
