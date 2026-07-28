@@ -19,5 +19,11 @@ public enum CallOutcome
     Failed = 4,
 
     /// <summary>Remote party was busy.</summary>
-    Busy = 5
+    Busy = 5,
+
+    /// <summary>The call rang but was never answered (no pickup / timed out).</summary>
+    NoAnswer = 6,
+
+    /// <summary>The invitation was cancelled before it was answered.</summary>
+    Canceled = 7
 }

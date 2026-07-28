@@ -19,6 +19,13 @@ public interface ICall
     CallTarget Target { get; }
 
     /// <summary>
+    /// Why the call ended, set no later than the transition to <see cref="CallState.Terminated"/>.
+    /// <see langword="null"/> while the call is not yet terminated, or when it ended without a
+    /// reportable cause.
+    /// </summary>
+    CallTerminationReason? TerminationReason { get; }
+
+    /// <summary>
     /// Raised on every state transition. Implementations must raise transitions
     /// in order and must not raise after <see cref="CallState.Terminated"/>.
     /// </summary>

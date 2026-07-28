@@ -113,6 +113,8 @@ public sealed class CallLogTests
     [InlineData(CallOutcome.Missed)]
     [InlineData(CallOutcome.Rejected)]
     [InlineData(CallOutcome.Busy)]
+    [InlineData(CallOutcome.NoAnswer)]
+    [InlineData(CallOutcome.Canceled)]
     public void End_Answered_WithUnansweredOutcome_Throws(CallOutcome outcome)
     {
         var log = Started();
@@ -125,6 +127,8 @@ public sealed class CallLogTests
     [InlineData(CallOutcome.Missed)]
     [InlineData(CallOutcome.Rejected)]
     [InlineData(CallOutcome.Busy)]
+    [InlineData(CallOutcome.NoAnswer)]
+    [InlineData(CallOutcome.Canceled)]
     [InlineData(CallOutcome.Failed)]
     public void End_Unanswered_WithUnansweredOutcome_Succeeds(CallOutcome outcome)
     {
