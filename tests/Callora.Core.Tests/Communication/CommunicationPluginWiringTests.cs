@@ -72,13 +72,14 @@ public sealed class CommunicationPluginWiringTests
     [Fact]
     public async Task StartAsync_WhenWebRtcEnabled_ExportsMinterAndSignalingContributor()
     {
+        // WebRTC requires a DB (IncomingCallObserver + CallControlService must exist for inbound calls).
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 [CommunicationPlugin.WebRtcEnabledConfigKey] = "true",
             })
             .Build();
-        var context = new CapturingHostPluginContext(hasDbFactory: false, configuration: config);
+        var context = new CapturingHostPluginContext(hasDbFactory: true, configuration: config);
 
         await new CommunicationPlugin().StartAsync(context);
 
@@ -88,6 +89,31 @@ public sealed class CommunicationPluginWiringTests
         Assert.True(
             context.AllExports.Any(e => e.Service is WebRtcSignalingContributor),
             "A WebRtcSignalingContributor should be exported when WebRTC is enabled.");
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenWebRtcEnabled_ButNoDbFactory_DoesNotExportMinter()
+    {
+        // Without a DB, WebRTC degrades cleanly: no minter or signalling contributor, no throw.
+        // Reason: IncomingCallObserver + CallControlService only exist when a DB is present; without them
+        // a connected WebRTC peer would raise IncomingCall into a void (no ringing event, no history).
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [CommunicationPlugin.WebRtcEnabledConfigKey] = "true",
+            })
+            .Build();
+        var context = new CapturingHostPluginContext(hasDbFactory: false, configuration: config);
+
+        var exception = await Record.ExceptionAsync(() => new CommunicationPlugin().StartAsync(context).AsTask());
+
+        Assert.Null(exception);
+        Assert.False(
+            context.AllExports.Any(e => e.ContractType == typeof(IWebRtcSessionMinter)),
+            "IWebRtcSessionMinter must not be exported when no DB factory is present.");
+        Assert.False(
+            context.AllExports.Any(e => e.Service is WebRtcSignalingContributor),
+            "WebRtcSignalingContributor must not be exported when no DB factory is present.");
     }
 
     [Fact]

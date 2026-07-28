@@ -30,5 +30,11 @@ public interface IWebRtcSessionMinter
     /// generated. Pass a value to correlate a signalling round-trip with an earlier booking.
     /// </param>
     /// <returns>A fresh, single-use <see cref="WebRtcSessionTicket"/>.</returns>
+    /// <remarks>
+    /// <strong>Authorization responsibility:</strong> the minter does not enforce workspace authorization.
+    /// It materializes a channel for any <paramref name="workspaceKey"/> it receives. The caller MUST
+    /// verify that it is authorized to act on behalf of <paramref name="workspaceKey"/> before calling
+    /// this method (e.g. by validating a workspace-scoped operator JWT).
+    /// </remarks>
     WebRtcSessionTicket MintSession(string workspaceKey, CallTarget target, string? callId = null);
 }

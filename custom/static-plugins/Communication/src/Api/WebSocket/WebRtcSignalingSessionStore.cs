@@ -24,20 +24,41 @@ internal sealed class WebRtcSignalingSessionStore : IWebRtcSignalingTokenStore, 
     private readonly ConcurrentDictionary<string, WebRtcSignalingSessionStoreEntry> _entries =
         new(StringComparer.Ordinal);
     private readonly TimeProvider _timeProvider;
+    private readonly TimeSpan _maxTokenLifetime;
 
     /// <param name="timeProvider">Used to stamp entries at mint time and evaluate TTL at consume time.</param>
-    public WebRtcSignalingSessionStore(TimeProvider timeProvider)
+    /// <param name="maxTokenLifetime">
+    /// The maximum age of a minted token. Entries older than this value are opportunistically swept from
+    /// memory when a new token is minted (lazy GC — no background timer). Should match the TTL passed to
+    /// <see cref="IWebRtcSignalingTokenStore.TryConsumeAsync"/>.
+    /// </param>
+    public WebRtcSignalingSessionStore(TimeProvider timeProvider, TimeSpan maxTokenLifetime)
     {
         ArgumentNullException.ThrowIfNull(timeProvider);
+
         _timeProvider = timeProvider;
+        _maxTokenLifetime = maxTokenLifetime;
     }
 
     /// <summary>
     /// Stores <paramref name="session"/> and returns an opaque, cryptographically-random connect-token.
+    /// Before inserting, opportunistically removes all entries older than <c>maxTokenLifetime</c> so the
+    /// dictionary does not grow unboundedly when callers mint tokens without ever connecting.
     /// </summary>
     public string Mint(WebRtcSignalingSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
+
+        // Lazy sweep: remove any entry that has outlived its maximum lifetime. ConcurrentDictionary
+        // enumeration is safe against concurrent modifications; TryRemove is idempotent.
+        var cutoff = _timeProvider.GetUtcNow() - _maxTokenLifetime;
+        foreach (var kvp in _entries)
+        {
+            if (kvp.Value.CreatedAt < cutoff)
+            {
+                _entries.TryRemove(kvp.Key, out _);
+            }
+        }
 
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         _entries[token] = new WebRtcSignalingSessionStoreEntry(session, _timeProvider.GetUtcNow());

@@ -15,11 +15,13 @@ public sealed class WebRtcChannelProvisionerTests
 {
     private static WebRtcChannelProvisioner NewProvisioner(
         FakeWebRtcClient client,
-        CommunicationChannelRegistry registry) =>
+        CommunicationChannelRegistry registry,
+        bool externallyReachable = true) =>
         new(
             client,
             registry,
             "communication",
+            externallyReachable,
             NullLogger<WebRtcChannelProvisioner>.Instance);
 
     [Fact]
@@ -102,5 +104,29 @@ public sealed class WebRtcChannelProvisionerTests
         var provisioner = NewProvisioner(client, registry);
 
         Assert.Same(client, provisioner.Client);
+    }
+
+    [Fact]
+    public void GetOrCreateChannel_ExternallyReachable_ReportsHealthUp()
+    {
+        var client = new FakeWebRtcClient();
+        var registry = new CommunicationChannelRegistry();
+        var provisioner = NewProvisioner(client, registry, externallyReachable: true);
+
+        var channel = provisioner.GetOrCreateChannel("ws-reach");
+
+        Assert.Equal(Callora.Plugin.Communication.Abstractions.ChannelHealth.Up, channel.Health);
+    }
+
+    [Fact]
+    public void GetOrCreateChannel_NotExternallyReachable_ReportsHealthDegraded()
+    {
+        var client = new FakeWebRtcClient();
+        var registry = new CommunicationChannelRegistry();
+        var provisioner = NewProvisioner(client, registry, externallyReachable: false);
+
+        var channel = provisioner.GetOrCreateChannel("ws-noreach");
+
+        Assert.Equal(Callora.Plugin.Communication.Abstractions.ChannelHealth.Degraded, channel.Health);
     }
 }
