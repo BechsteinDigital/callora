@@ -2,7 +2,6 @@ using System.Text.Json;
 using Callora.Core.Application.Mcp.Contracts;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Admin;
-using Callora.Plugin.Communication.Application.Calls;
 using Callora.Plugin.Communication.Application.Mcp;
 using Xunit;
 

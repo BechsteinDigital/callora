@@ -1,5 +1,5 @@
 using Callora.Core.Application.Plugins.Contracts;
-using Callora.Plugin.Communication.Application.Calls;
+using Callora.Plugin.Communication.Abstractions;
 
 namespace Callora.Plugin.Communication.Application.Admin.Calls;
 
