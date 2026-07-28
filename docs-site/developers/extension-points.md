@@ -60,6 +60,8 @@ Plugin routes are attached dynamically (no host restart). See
 | **IHostWebSocketEndpointContributor** | Contributable | Contribute host-level WebSocket endpoints (real-time surface). |
 | **IHostWebSocketHandler** | Contributable | Service an accepted plugin WebSocket connection. |
 | **IWebSocketConnectAuthorizer** | Contributable | Validate a WebSocket connect-token before the connection is accepted. |
+| **IHostPublicHttpEndpointContributor** | Contributable | Contribute anonymous public HTTP endpoints under `/public/{pluginId}/…` (GET/POST, no platform auth). |
+| **IHostPublicHttpRouteHandler** | Contributable | Handle one plugin public HTTP route — responsible for all input validation and access control. |
 
 ## Service decoration
 
