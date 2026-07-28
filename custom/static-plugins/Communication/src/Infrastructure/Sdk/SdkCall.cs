@@ -5,6 +5,9 @@ using NativeCall = CalloraVoipSdk.Core.Domain.Calls.ICall;
 using SdkCallDirection = CalloraVoipSdk.Core.Domain.Calls.CallDirection;
 using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;
 using SdkCallStateChangedEventArgs = CalloraVoipSdk.Core.Domain.Events.CallStateChangedEventArgs;
+using SdkCallTerminatedBy = CalloraVoipSdk.Core.Domain.Calls.CallTerminatedBy;
+using SdkCallTerminationCategory = CalloraVoipSdk.Core.Domain.Calls.CallTerminationCategory;
+using SdkCallTerminationReason = CalloraVoipSdk.Core.Domain.Calls.CallTerminationReason;
 using SdkDtmfTone = CalloraVoipSdk.Core.Domain.Calls.DtmfTone;
 
 namespace Callora.Plugin.Communication.Infrastructure.Sdk;
@@ -47,6 +50,9 @@ public sealed class SdkCall : IVoipCall
 
     /// <inheritdoc />
     public CallTarget Target => new(_sdkCall.RemoteParty);
+
+    /// <inheritdoc />
+    public CallTerminationReason? TerminationReason => MapTerminationReason(_sdkCall.TerminationReason);
 
     /// <inheritdoc />
     public event EventHandler<CallStateChangedEventArgs>? StateChanged;
@@ -136,5 +142,34 @@ public sealed class SdkCall : IVoipCall
         SdkCallDirection.Inbound => CallDirection.Inbound,
         SdkCallDirection.Outbound => CallDirection.Outbound,
         _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, "Unknown SDK call direction."),
+    };
+
+    private static CallTerminationReason? MapTerminationReason(SdkCallTerminationReason? reason) =>
+        reason is null
+            ? null
+            : new CallTerminationReason(
+                MapCategory(reason.Category),
+                reason.SipStatusCode,
+                reason.ReasonPhrase,
+                MapTerminatedBy(reason.TerminatedBy),
+                reason.RetryAfterSeconds);
+
+    private static CallTerminationCategory MapCategory(SdkCallTerminationCategory category) => category switch
+    {
+        SdkCallTerminationCategory.Completed => CallTerminationCategory.Completed,
+        SdkCallTerminationCategory.Busy => CallTerminationCategory.Busy,
+        SdkCallTerminationCategory.NoAnswer => CallTerminationCategory.NoAnswer,
+        SdkCallTerminationCategory.Rejected => CallTerminationCategory.Rejected,
+        SdkCallTerminationCategory.Canceled => CallTerminationCategory.Canceled,
+        SdkCallTerminationCategory.Failed => CallTerminationCategory.Failed,
+        _ => throw new ArgumentOutOfRangeException(nameof(category), category, "Unknown SDK termination category."),
+    };
+
+    private static CallTerminatedBy MapTerminatedBy(SdkCallTerminatedBy terminatedBy) => terminatedBy switch
+    {
+        SdkCallTerminatedBy.Local => CallTerminatedBy.Local,
+        SdkCallTerminatedBy.Remote => CallTerminatedBy.Remote,
+        SdkCallTerminatedBy.Unknown => CallTerminatedBy.Unknown,
+        _ => throw new ArgumentOutOfRangeException(nameof(terminatedBy), terminatedBy, "Unknown SDK terminated-by."),
     };
 }

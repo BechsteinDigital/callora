@@ -221,17 +221,64 @@ public sealed class CallControlService : ICallControlService, IDisposable
         tracked.Call.StateChanged -= tracked.Handler;
 
         var endedAt = _timeProvider.GetUtcNow();
-        // Answered → Completed. Unanswered: an inbound leg that never connected is Missed; an outbound
-        // leg is Failed (the only non-answered outcome that fits it). Without a protocol disconnect
-        // cause on the neutral ICall we cannot distinguish Busy/NoAnswer — tracked as a follow-up.
-        var outcome = tracked.Log.AnsweredAt is not null
-            ? CallOutcome.Completed
-            : tracked.Log.Direction == CallDirection.Inbound ? CallOutcome.Missed : CallOutcome.Failed;
-        tracked.Log.End(endedAt, outcome, disconnectCause: null);
+        var (outcome, disconnectCause) = ResolveOutcome(tracked);
+        tracked.Log.End(endedAt, outcome, disconnectCause);
         await _callLogStore.UpdateAsync(tracked.Log).ConfigureAwait(false);
         await PublishAsync(
             CallBusinessEvent.Ended(tracked.WorkspaceKey, callId, tracked.Log.Direction, tracked.Log.RemoteParty, endedAt),
             CancellationToken.None).ConfigureAwait(false);
+    }
+
+    // Derives the terminal outcome + disconnect cause, reconciled with whether the call was answered
+    // (CallLog.End enforces answered→{Completed,Failed}, unanswered→{Missed,Rejected,Busy,NoAnswer,
+    // Canceled,Failed}). Uses the SDK-supplied termination reason when present; otherwise falls back
+    // to the coarse heuristic (answered→Completed, unanswered inbound→Missed / outbound→Failed).
+    private static (CallOutcome Outcome, string? DisconnectCause) ResolveOutcome(TrackedCall tracked)
+    {
+        var wasAnswered = tracked.Log.AnsweredAt is not null;
+        var reason = tracked.Call.TerminationReason;
+
+        if (reason is null)
+        {
+            var fallback = wasAnswered
+                ? CallOutcome.Completed
+                : tracked.Log.Direction == CallDirection.Inbound ? CallOutcome.Missed : CallOutcome.Failed;
+            return (fallback, null);
+        }
+
+        var outcome = wasAnswered
+            // An answered call can only end Completed or Failed; anything else is a protocol anomaly → Failed.
+            ? reason.Category == CallTerminationCategory.Completed ? CallOutcome.Completed : CallOutcome.Failed
+            : MapUnansweredOutcome(reason.Category, tracked.Log.Direction);
+
+        return (outcome, DescribeDisconnectCause(reason));
+    }
+
+    private static CallOutcome MapUnansweredOutcome(CallTerminationCategory category, CallDirection direction) => category switch
+    {
+        CallTerminationCategory.Busy => CallOutcome.Busy,
+        CallTerminationCategory.NoAnswer => CallOutcome.NoAnswer,
+        CallTerminationCategory.Rejected => CallOutcome.Rejected,
+        CallTerminationCategory.Canceled => CallOutcome.Canceled,
+        CallTerminationCategory.Failed => CallOutcome.Failed,
+        // An unanswered call reported "Completed" is untypical; map to the safe unanswered equivalent.
+        CallTerminationCategory.Completed => direction == CallDirection.Inbound ? CallOutcome.Missed : CallOutcome.Failed,
+        _ => throw new ArgumentOutOfRangeException(nameof(category), category, "Unknown termination category."),
+    };
+
+    // Compact protocol detail for the DisconnectCause column (varchar(200)): "486 Busy Here",
+    // else the reason phrase, else null.
+    private static string? DescribeDisconnectCause(CallTerminationReason reason)
+    {
+        var cause = (reason.SipStatusCode, reason.ReasonPhrase) switch
+        {
+            (int code, { Length: > 0 } phrase) => $"{code} {phrase}",
+            (int code, _) => code.ToString(),
+            (null, { Length: > 0 } phrase) => phrase,
+            _ => null,
+        };
+
+        return cause is { Length: > 200 } ? cause[..200] : cause;
     }
 
     private bool TryGetOwned(string workspaceKey, string callId, out TrackedCall tracked)

@@ -14,6 +14,9 @@ using SdkCallDirection = CalloraVoipSdk.Core.Domain.Calls.CallDirection;
 using SdkCallId = CalloraVoipSdk.Core.Domain.Calls.CallId;
 using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;
 using SdkCallStateChangedEventArgs = CalloraVoipSdk.Core.Domain.Events.CallStateChangedEventArgs;
+using SdkCallTerminatedBy = CalloraVoipSdk.Core.Domain.Calls.CallTerminatedBy;
+using SdkCallTerminationCategory = CalloraVoipSdk.Core.Domain.Calls.CallTerminationCategory;
+using SdkCallTerminationReason = CalloraVoipSdk.Core.Domain.Calls.CallTerminationReason;
 using SdkDtmfTone = CalloraVoipSdk.Core.Domain.Calls.DtmfTone;
 
 namespace Callora.Core.Tests.Communication.Sdk;
@@ -68,6 +71,56 @@ public sealed class SdkCallTests
         var call = NewCall(new FakeSdkCall { Direction = sdkDirection });
 
         Assert.Equal(expected, call.Direction);
+    }
+
+    [Fact]
+    public void TerminationReason_NullWhenSdkHasNone()
+    {
+        var call = NewCall(new FakeSdkCall { TerminationReason = null });
+
+        Assert.Null(call.TerminationReason);
+    }
+
+    [Theory]
+    [InlineData(SdkCallTerminationCategory.Completed, CallTerminationCategory.Completed)]
+    [InlineData(SdkCallTerminationCategory.Busy, CallTerminationCategory.Busy)]
+    [InlineData(SdkCallTerminationCategory.NoAnswer, CallTerminationCategory.NoAnswer)]
+    [InlineData(SdkCallTerminationCategory.Rejected, CallTerminationCategory.Rejected)]
+    [InlineData(SdkCallTerminationCategory.Canceled, CallTerminationCategory.Canceled)]
+    [InlineData(SdkCallTerminationCategory.Failed, CallTerminationCategory.Failed)]
+    public void TerminationReason_MapsEverySdkCategory(SdkCallTerminationCategory sdkCategory, CallTerminationCategory expected)
+    {
+        var sdk = new FakeSdkCall
+        {
+            TerminationReason = new SdkCallTerminationReason { Category = sdkCategory },
+        };
+        var call = NewCall(sdk);
+
+        Assert.Equal(expected, call.TerminationReason!.Category);
+    }
+
+    [Fact]
+    public void TerminationReason_CopiesProtocolDetail()
+    {
+        var sdk = new FakeSdkCall
+        {
+            TerminationReason = new SdkCallTerminationReason
+            {
+                Category = SdkCallTerminationCategory.Busy,
+                SipStatusCode = 486,
+                ReasonPhrase = "Busy Here",
+                TerminatedBy = SdkCallTerminatedBy.Remote,
+                RetryAfterSeconds = 30,
+            },
+        };
+        var reason = NewCall(sdk).TerminationReason;
+
+        Assert.NotNull(reason);
+        Assert.Equal(CallTerminationCategory.Busy, reason!.Category);
+        Assert.Equal(486, reason.SipStatusCode);
+        Assert.Equal("Busy Here", reason.ReasonPhrase);
+        Assert.Equal(CallTerminatedBy.Remote, reason.TerminatedBy);
+        Assert.Equal(30, reason.RetryAfterSeconds);
     }
 
     [Fact]
@@ -245,7 +298,7 @@ internal sealed class FakeSdkCall : NativeCall
         typeof(SdkCallStateChangedEventArgs).GetConstructor(
             BindingFlags.Instance | BindingFlags.NonPublic,
             binder: null,
-            types: [typeof(SdkCallState), typeof(SdkCallState), typeof(NativeCall)],
+            types: [typeof(SdkCallState), typeof(SdkCallState), typeof(NativeCall), typeof(SdkCallTerminationReason)],
             modifiers: null)
         ?? throw new InvalidOperationException("SDK CallStateChangedEventArgs ctor signature changed.");
 
@@ -256,6 +309,8 @@ internal sealed class FakeSdkCall : NativeCall
     public SdkCallDirection Direction { get; init; } = SdkCallDirection.Outbound;
 
     public string RemoteParty { get; init; } = "sip:peer@example.com";
+
+    public SdkCallTerminationReason? TerminationReason { get; set; }
 
     public CallActionResult RejectResult { get; init; } = CallActionResult.Success();
 
@@ -282,7 +337,7 @@ internal sealed class FakeSdkCall : NativeCall
     public void RaiseStateChanged(SdkCallState oldState, SdkCallState newState)
     {
         State = newState;
-        var args = (SdkCallStateChangedEventArgs)StateArgsCtor.Invoke([oldState, newState, this]);
+        var args = (SdkCallStateChangedEventArgs)StateArgsCtor.Invoke([oldState, newState, this, TerminationReason]);
         StateChanged?.Invoke(this, args);
     }
 
@@ -332,6 +387,8 @@ internal sealed class FakeSdkCall : NativeCall
     public Task HoldAsync(CancellationToken ct = default) => throw new NotSupportedException();
 
     public Task UnholdAsync(CancellationToken ct = default) => throw new NotSupportedException();
+
+    public Task RestartIceAsync(CancellationToken ct = default) => throw new NotSupportedException();
 
     public Task BlindTransferAsync(string targetUri, CancellationToken ct = default) => throw new NotSupportedException();
 
