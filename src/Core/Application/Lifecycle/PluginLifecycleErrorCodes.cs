@@ -27,4 +27,5 @@ public static class PluginLifecycleErrorCodes
     public const string PluginRollbackFailed = "PLUGIN_ROLLBACK_FAILED";
     public const string PluginRequiredCapabilityMissing = "PLUGIN_REQUIRED_CAPABILITY_MISSING";
     public const string PluginCapabilityInUse = "PLUGIN_CAPABILITY_IN_USE";
+    public const string PluginDependencyVersionUnsatisfied = "PLUGIN_DEPENDENCY_VERSION_UNSATISFIED";
 }

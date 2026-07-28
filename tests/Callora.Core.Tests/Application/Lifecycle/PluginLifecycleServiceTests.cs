@@ -1268,4 +1268,74 @@ public sealed class PluginLifecycleServiceTests
         Assert.Equal(PluginInstallationState.Active, updated.State);
     }
 
+    [Fact]
+    public async Task InstallAsync_DependencyVersionOutOfRange_ReturnsBadRequest_WithoutInstallCall()
+    {
+        var lifecycle = new FakeHostPluginLifecycle();
+        var policy = new StaticPluginActivationPolicy(PluginActivationDecision.Allow());
+        var audit = new InMemoryHostAuditStore();
+        var installations = new InMemoryPluginInstallationRepository();
+        var registryReader = new StaticPluginPackageRegistryReader
+        {
+            Result = new PluginPackageRegistryReadResult(
+                HasRegistryFile: true,
+                IsValid: true,
+                RegistryPath: "/tmp/registry.json",
+                Registry: new PluginPackageRegistryMetadata(
+                    "v1",
+                    "1.0",
+                    "Callora Voip Plugin",
+                    "plugin-reg",
+                    "1.0.0",
+                    "plugin-reg.dll",
+                    "Plugins.Entry",
+                    [],
+                    new Dictionary<string, string>
+                    {
+                        ["Callora.Plugin.Communication.Abstractions"] = ">=1.4.0"
+                    }))
+        };
+        // Host provides 1.1.0 for the declared dependency — below the >=1.4.0 range.
+        var provider = new FakeProvidedContractVersionProvider();
+        provider.Set(
+            "Callora.Plugin.Communication.Abstractions",
+            Semver.SemVersion.Parse("1.1.0", Semver.SemVersionStyles.Any));
+        var gate = new PluginDependencyVersionGate(provider);
+
+        var sut = new PluginLifecycleService(
+            lifecycle,
+            policy,
+            new InMemoryPluginEntitlementStore(new BackendHostOptions()),
+            audit,
+            installations,
+            new NoOpHostUnitOfWork(),
+            registryReader,
+            new StaticPluginPackageSignatureVerifier(),
+            new StaticNuGetPluginAssemblyResolver(),
+            new RecordingHostApplicationEventPublisher(),
+            dependencyVersionGate: gate);
+
+        var result = await sut.InstallAsync(new InstallPluginCommand("/tmp/plugin-reg.dll", null, "tester"));
+
+        Assert.Equal(PluginLifecycleServiceStatus.BadRequest, result.Status);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(PluginLifecycleErrorCodes.PluginDependencyVersionUnsatisfied, result.ErrorCode);
+        Assert.Equal(0, lifecycle.InstallCallCount);
+        Assert.NotNull(result.Message);
+        Assert.Contains("Callora.Plugin.Communication.Abstractions", result.Message);
+
+        var entries = await audit.GetRecentAsync();
+        Assert.Single(entries);
+        Assert.Equal("registry.dependency_version", entries[0].Metadata!["gateType"]);
+    }
+
+    private sealed class FakeProvidedContractVersionProvider : IProvidedContractVersionProvider
+    {
+        private readonly Dictionary<string, Semver.SemVersion> _versions = new(System.StringComparer.OrdinalIgnoreCase);
+
+        public void Set(string contractId, Semver.SemVersion version) => _versions[contractId] = version;
+
+        public Semver.SemVersion? Resolve(string contractId) =>
+            _versions.TryGetValue(contractId, out var version) ? version : null;
+    }
 }
