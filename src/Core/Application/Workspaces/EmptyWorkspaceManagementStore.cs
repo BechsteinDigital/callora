@@ -66,6 +66,13 @@ internal sealed class EmptyWorkspaceManagementStore : IWorkspaceManagementStore
         CancellationToken cancellationToken = default) =>
         Task.FromResult<WorkspaceSnapshot?>(null);
 
+    public Task<WorkspaceSurfaceSnapshot?> ResolveSurfaceByPublicRouteAsync(
+        string requestHost,
+        string requestPath,
+        string? tenantKey = null,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<WorkspaceSurfaceSnapshot?>(null);
+
     public Task<bool> RemoveAsync(
         string workspaceKey,
         CancellationToken cancellationToken = default) =>

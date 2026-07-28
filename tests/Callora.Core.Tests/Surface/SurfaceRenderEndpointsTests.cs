@@ -110,10 +110,27 @@ public sealed class SurfaceRenderEndpointsTests
     }
 
     [Fact]
-    public async Task Render_AuthenticatedPolicy_AnonymousCaller_RedirectsToLogin()
+    public async Task Render_PublicSurface_AnonymousCaller_Renders()
     {
         var store = await SeededStoreAsync();
-        _ = await store.SetSurfaceAccessPolicyAsync("acme", SurfaceAccessPolicy.Authenticated);
+        store.SetSurface("acme", SurfaceAccessMode.Public);
+
+        await using var app = await CreateAppAsync(store, configure: null);
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/surface/render");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("data-workspace=\"acme\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Render_AuthenticatedSurface_AnonymousCaller_RedirectsToLogin()
+    {
+        var store = await SeededStoreAsync();
+        store.SetSurface("acme", SurfaceAccessMode.Authenticated);
 
         await using var app = await CreateAppAsync(store, configure: null);
         var client = app.GetTestClient();
@@ -128,10 +145,27 @@ public sealed class SurfaceRenderEndpointsTests
     }
 
     [Fact]
-    public async Task Render_AuthenticatedPolicy_AuthenticatedCaller_Renders()
+    public async Task Render_MixedSurface_AnonymousCaller_RendersShell()
     {
         var store = await SeededStoreAsync();
-        _ = await store.SetSurfaceAccessPolicyAsync("acme", SurfaceAccessPolicy.Authenticated);
+        store.SetSurface("acme", SurfaceAccessMode.Mixed);
+
+        await using var app = await CreateAppAsync(store, configure: null);
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/surface/render");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("data-workspace=\"acme\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Render_AuthenticatedSurface_AuthenticatedCaller_Renders()
+    {
+        var store = await SeededStoreAsync();
+        store.SetSurface("acme", SurfaceAccessMode.Authenticated);
 
         await using var app = await CreateAppAsync(store, configure: null, authenticate: true);
         var client = app.GetTestClient();
@@ -142,6 +176,48 @@ public sealed class SurfaceRenderEndpointsTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var html = await response.Content.ReadAsStringAsync();
         Assert.Contains("data-workspace=\"acme\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Render_FlowsPerSurfaceKeyAndLocale_IntoContext()
+    {
+        var store = await SeededStoreAsync();
+        store.SetSurface("acme", SurfaceAccessMode.Public, surfaceKey: "partner", locale: "en");
+
+        var capturingRenderer = new CapturingSurfaceRenderer();
+        await using var app = await CreateAppAsync(
+            store,
+            configure: services => services.AddSingleton<ISurfaceRenderer>(capturingRenderer));
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/surface/render");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var context = capturingRenderer.LastContext!;
+        Assert.Equal("partner", context.SurfaceKey);
+        Assert.Equal("en", context.Locale);
+        Assert.Equal("acme", context.WorkspaceKey);
+        Assert.Equal("tenant-a", context.TenantKey);
+    }
+
+    [Fact]
+    public async Task Render_SurfaceWithoutLocale_DefaultsLocaleToDe()
+    {
+        var store = await SeededStoreAsync();
+        store.SetSurface("acme", SurfaceAccessMode.Public, surfaceKey: "default", locale: null);
+
+        var capturingRenderer = new CapturingSurfaceRenderer();
+        await using var app = await CreateAppAsync(
+            store,
+            configure: services => services.AddSingleton<ISurfaceRenderer>(capturingRenderer));
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/surface/render");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("de", capturingRenderer.LastContext!.Locale);
     }
 
     private static async Task<InMemoryWorkspaceManagementStore> SeededStoreAsync()

@@ -175,6 +175,28 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         string? tenantKey = null,
         CancellationToken cancellationToken = default)
     {
+        var best = await MatchSurfaceByPublicRouteAsync(requestHost, requestPath, tenantKey, cancellationToken)
+            .ConfigureAwait(false);
+        return best is null ? null : ToSnapshot(best.Workspace, best.Workspace.Tenant);
+    }
+
+    public async Task<WorkspaceSurfaceSnapshot?> ResolveSurfaceByPublicRouteAsync(
+        string requestHost,
+        string requestPath,
+        string? tenantKey = null,
+        CancellationToken cancellationToken = default)
+    {
+        var best = await MatchSurfaceByPublicRouteAsync(requestHost, requestPath, tenantKey, cancellationToken)
+            .ConfigureAwait(false);
+        return best is null ? null : ToSurfaceSnapshot(best);
+    }
+
+    private async Task<WorkspaceSurface?> MatchSurfaceByPublicRouteAsync(
+        string requestHost,
+        string requestPath,
+        string? tenantKey,
+        CancellationToken cancellationToken)
+    {
         // Public routing resolves through surfaces (ADR-014 §5/§14): a workspace's
         // "default" surface mirrors its public route, so today's behaviour is preserved
         // while additional surfaces route to the same workspace.
@@ -220,7 +242,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             bestScore = score;
         }
 
-        return best is null ? null : ToSnapshot(best.Workspace, best.Workspace.Tenant);
+        return best;
     }
 
     public async Task<bool> RemoveAsync(
@@ -490,6 +512,31 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             workspace.UpdatedAtUtc)
         {
             SurfaceAccessPolicy = workspace.SurfaceAccessPolicy
+        };
+    }
+
+    private static WorkspaceSurfaceSnapshot ToSurfaceSnapshot(WorkspaceSurface surface)
+    {
+        return new WorkspaceSurfaceSnapshot(
+            surface.Id,
+            surface.Workspace.WorkspaceKey,
+            surface.SurfaceKey,
+            surface.DisplayName,
+            surface.SurfaceType,
+            surface.PublicBaseUrl,
+            surface.PublicHost,
+            surface.PublicPathPrefix,
+            surface.AccessMode,
+            surface.Locale,
+            surface.TemplatePluginId,
+            surface.TemplateVersion,
+            surface.ThemePluginId,
+            surface.ThemeVersion,
+            surface.IsActive,
+            surface.CreatedAtUtc,
+            surface.UpdatedAtUtc)
+        {
+            TenantKey = surface.Workspace.Tenant.TenantKey
         };
     }
 

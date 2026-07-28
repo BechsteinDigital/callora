@@ -14,8 +14,9 @@ namespace Callora.Surface.Rendering.Api;
 /// (<c>index.njk</c>), the entry is rendered through the confined bundle loader with
 /// the full plugin chain in scope, so a real installed template plugin's Nunjucks
 /// views (extends/block/include) render at its surface. A workspace that publishes no
-/// entry falls back to the built-in SPA shell. Anonymous — the access policy layer
-/// (Public/Authenticated/Mixed) is a later phase.
+/// entry falls back to the built-in SPA shell. The resolved surface is gated on its own
+/// access mode (Public/Authenticated/Mixed): an Authenticated surface redirects an
+/// anonymous caller to log in, Public and Mixed render anonymously.
 /// </summary>
 public static class SurfaceRenderEndpoints
 {
@@ -41,24 +42,26 @@ public static class SurfaceRenderEndpoints
                 var host = httpContext.Request.Host.Host;
                 var path = httpContext.Request.Path.HasValue ? httpContext.Request.Path.Value! : "/";
 
-                var workspace = await workspaceStore
-                    .ResolveByPublicRouteAsync(host, path, cancellationToken: cancellationToken)
+                var surface = await workspaceStore
+                    .ResolveSurfaceByPublicRouteAsync(host, path, cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
-                if (workspace is null || !workspace.IsActive || !workspace.TenantIsActive)
+                // A non-null result is already guaranteed active: the store's matching loop
+                // skips inactive surfaces, workspaces and tenants — no re-check needed here.
+                if (surface is null)
                 {
                     return Results.NotFound();
                 }
 
-                // Access policy (ADR-014 §3.4): an Authenticated surface is server-side
-                // gated — an anonymous caller is redirected to log in, not served the
-                // shell. Public surfaces (the default) stay open. This is the authoritative
-                // boundary; client-side UI hiding is never a substitute.
-                if (workspace.SurfaceAccessPolicy == SurfaceAccessPolicy.Authenticated &&
+                // Access mode (ADR-014 §6.1) is gated per surface. Authenticated redirects an
+                // anonymous caller to log in; Public and Mixed serve the shell anonymously
+                // (Mixed's per-route protection is not this endpoint's concern). This is the
+                // authoritative boundary; client-side UI hiding is never a substitute.
+                if (surface.AccessMode == SurfaceAccessMode.Authenticated &&
                     httpContext.User.Identity?.IsAuthenticated != true)
                 {
                     var returnUrl = httpContext.Request.Path + httpContext.Request.QueryString;
                     return Results.Redirect(
-                        $"/login?workspaceKey={Uri.EscapeDataString(workspace.WorkspaceKey)}" +
+                        $"/login?workspaceKey={Uri.EscapeDataString(surface.WorkspaceKey)}" +
                         $"&returnUrl={Uri.EscapeDataString(returnUrl)}");
                 }
 
@@ -69,25 +72,22 @@ public static class SurfaceRenderEndpoints
                 if (themeResolver is not null)
                 {
                     var theme = await themeResolver
-                        .ResolveAsync(workspace.WorkspaceKey, cancellationToken)
+                        .ResolveAsync(surface.WorkspaceKey, cancellationToken)
                         .ConfigureAwait(false);
                     effectiveTheme = theme?.ValuesByKey;
                 }
 
                 var context = new SurfaceRenderContext(
-                    TenantKey: workspace.TenantKey,
-                    WorkspaceKey: workspace.WorkspaceKey,
-                    // Per-surface identity (key/type/locale) is not yet resolved from the
-                    // public route — a workspace resolves to its default surface. Distinct
-                    // per-surface resolution is a later phase; these stay the defaults.
-                    SurfaceKey: "default",
-                    SurfaceType: "spa",
-                    Locale: "de",
+                    TenantKey: surface.TenantKey,
+                    WorkspaceKey: surface.WorkspaceKey,
+                    SurfaceKey: surface.SurfaceKey,
+                    SurfaceType: surface.SurfaceType,
+                    Locale: string.IsNullOrWhiteSpace(surface.Locale) ? "de" : surface.Locale,
                     Tokens: SurfaceThemeTokens.Compose(
-                        workspace.ThemePluginId, workspace.ThemeVersion, effectiveTheme));
+                        surface.ThemePluginId, surface.ThemeVersion, effectiveTheme));
 
                 var html = await RenderSurfaceAsync(
-                    renderer, chainResolver, bundles, loggerFactory, workspace.WorkspaceKey, context, cancellationToken)
+                    renderer, chainResolver, bundles, loggerFactory, surface.WorkspaceKey, context, cancellationToken)
                     .ConfigureAwait(false);
                 return Results.Content(html, "text/html; charset=utf-8");
             })
