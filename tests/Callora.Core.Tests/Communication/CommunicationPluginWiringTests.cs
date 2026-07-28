@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Callora.Core.Application.Persistence.Contracts;
@@ -7,7 +8,9 @@ using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Tests.Communication.Sdk;
 using Callora.Plugin.Communication;
 using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
+using Microsoft.Extensions.Configuration;
 using Xunit;
 
 namespace Callora.Core.Tests.Communication;
@@ -65,20 +68,77 @@ public sealed class CommunicationPluginWiringTests
             [new RuntimeCapabilityGrant(CommunicationCapabilities.Voice, "ws-1")],
             source.CurrentGrants);
     }
+
+    [Fact]
+    public async Task StartAsync_WhenWebRtcEnabled_ExportsMinterAndSignalingContributor()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [CommunicationPlugin.WebRtcEnabledConfigKey] = "true",
+            })
+            .Build();
+        var context = new CapturingHostPluginContext(hasDbFactory: false, configuration: config);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        Assert.True(
+            context.AllExports.Any(e => e.ContractType == typeof(IWebRtcSessionMinter)),
+            "IWebRtcSessionMinter should be exported when WebRTC is enabled.");
+        Assert.True(
+            context.AllExports.Any(e => e.Service is WebRtcSignalingContributor),
+            "A WebRtcSignalingContributor should be exported when WebRTC is enabled.");
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenWebRtcDisabled_DoesNotExportMinter()
+    {
+        // No config → WebRTC disabled.
+        var context = new CapturingHostPluginContext(hasDbFactory: false);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        Assert.False(
+            context.AllExports.Any(e => e.ContractType == typeof(IWebRtcSessionMinter)),
+            "IWebRtcSessionMinter must not be exported when WebRTC is disabled.");
+        Assert.False(
+            context.AllExports.Any(e => e.Service is WebRtcSignalingContributor),
+            "WebRtcSignalingContributor must not be exported when WebRTC is disabled.");
+    }
 }
 
-internal sealed class CapturingHostPluginContext(bool hasDbFactory) : IHostPluginContext, IServiceProvider
+internal sealed class CapturingHostPluginContext(
+    bool hasDbFactory,
+    IConfiguration? configuration = null) : IHostPluginContext, IServiceProvider
 {
+    /// <summary>Last export per contract type (existing tests rely on this).</summary>
     public Dictionary<Type, object> Exports { get; } = [];
+
+    /// <summary>Every export in registration order — supports multiple exports of the same contract type.</summary>
+    public List<(Type ContractType, object Service)> AllExports { get; } = [];
 
     public IServiceProvider Services => this;
 
-    public void Export(Type contractType, object service) => Exports[contractType] = service;
+    public void Export(Type contractType, object service)
+    {
+        Exports[contractType] = service;
+        AllExports.Add((contractType, service));
+    }
 
-    public object? GetService(Type serviceType) =>
-        hasDbFactory && serviceType == typeof(IPluginDbContextFactory<CommunicationDbContext>)
-            ? new NoopMigrateDbContextFactory()
-            : null;
+    public object? GetService(Type serviceType)
+    {
+        if (hasDbFactory && serviceType == typeof(IPluginDbContextFactory<CommunicationDbContext>))
+        {
+            return new NoopMigrateDbContextFactory();
+        }
+
+        if (serviceType == typeof(IConfiguration))
+        {
+            return configuration;
+        }
+
+        return null;
+    }
 }
 
 internal sealed class NoopMigrateDbContextFactory : IPluginDbContextFactory<CommunicationDbContext>
