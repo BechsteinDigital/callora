@@ -49,6 +49,6 @@ public sealed class SdkVoiceChannelConnector : IVoiceChannelConnector
             return null;
         }
 
-        return new SdkVoiceChannel(account.Id, account.DisplayName, _pluginId, line, _runtime.CreateMediaTap);
+        return new SdkVoiceChannel(account.Id, account.DisplayName, _pluginId, line, _runtime.CreateMediaTap, account.MaxConcurrentCalls);
     }
 }

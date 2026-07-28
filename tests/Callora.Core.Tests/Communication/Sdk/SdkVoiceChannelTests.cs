@@ -8,6 +8,7 @@ using CalloraVoipSdk.Core.Application.Media;
 using CalloraVoipSdk.Core.Domain.Lines;
 using Xunit;
 using NativeCall = CalloraVoipSdk.Core.Domain.Calls.ICall;
+using SdkCallState = CalloraVoipSdk.Core.Domain.Calls.CallState;
 using SdkIncomingCallEventArgs = CalloraVoipSdk.Core.Domain.Events.IncomingCallEventArgs;
 
 namespace Callora.Core.Tests.Communication.Sdk;
@@ -36,7 +37,7 @@ public sealed class SdkVoiceChannelTests
     [Fact]
     public void Identity_ProjectsCtorValues_AndDeclaresVoice()
     {
-        var channel = new SdkVoiceChannel("ch-1", "Berlin Trunk", "callora.communication", new FakePhoneLine(), Tap);
+        var channel = new SdkVoiceChannel("ch-1", "Berlin Trunk", "callora.communication", new FakePhoneLine(), Tap, maxConcurrentCalls: 10);
 
         Assert.Equal("ch-1", channel.ChannelId);
         Assert.Equal("Berlin Trunk", channel.DisplayName);
@@ -121,7 +122,7 @@ public sealed class SdkVoiceChannelTests
         var receiver = new FakeMediaReceiver();
         var sender = new FakeMediaSender();
         var line = new FakePhoneLine { DialResult = new FakeSdkCall() };
-        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, () => (receiver, sender));
+        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, () => (receiver, sender), maxConcurrentCalls: 10);
 
         var call = Assert.IsAssignableFrom<IVoipCall>(await channel.PlaceCallAsync(new CallTarget("sip:x@example.com")));
         await using var audio = await call.OpenAudioAsync();
@@ -174,10 +175,81 @@ public sealed class SdkVoiceChannelTests
         Assert.Equal(0, count); // no health event after dispose
     }
 
+    // ── S3: MaxConcurrentCalls enforcement ─────────────────────────────────────
+
+    [Fact]
+    public async Task PlaceCall_AtLimit_Throws()
+    {
+        // max=1, one active outbound call → second PlaceCallAsync must throw.
+        var sdkCall1 = new FakeSdkCall { State = SdkCallState.Connected };
+        var sdkCall2 = new FakeSdkCall { State = SdkCallState.Idle };
+        var line = new FakePhoneLine { DialResult = sdkCall1 };
+        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, Tap, maxConcurrentCalls: 1);
+
+        _ = await channel.PlaceCallAsync(new CallTarget("sip:a@example.com")); // occupies the slot
+
+        line.DialResult = sdkCall2;
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            channel.PlaceCallAsync(new CallTarget("sip:b@example.com")));
+    }
+
+    [Fact]
+    public async Task PlaceCall_AfterTerminated_Succeeds_Again()
+    {
+        // After the first call terminates (counter decrements), a new outbound call must succeed.
+        var sdkCall1 = new FakeSdkCall { State = SdkCallState.Connected };
+        var line = new FakePhoneLine { DialResult = sdkCall1 };
+        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, Tap, maxConcurrentCalls: 1);
+
+        _ = await channel.PlaceCallAsync(new CallTarget("sip:a@example.com"));
+
+        // Terminate the first call → counter decrements.
+        sdkCall1.RaiseStateChanged(SdkCallState.Connected, SdkCallState.Terminated);
+
+        var sdkCall2 = new FakeSdkCall { State = SdkCallState.Idle };
+        line.DialResult = sdkCall2;
+        var call2 = await channel.PlaceCallAsync(new CallTarget("sip:b@example.com")); // must not throw
+
+        Assert.NotNull(call2);
+    }
+
+    [Fact]
+    public async Task InboundCountsAgainstLimit_BlocksOutbound()
+    {
+        // An inbound call occupies a slot, so outbound at max=1 must throw.
+        var sdkInbound = new FakeSdkCall { State = SdkCallState.Ringing };
+        var sdkOutbound = new FakeSdkCall { State = SdkCallState.Idle };
+        var line = new FakePhoneLine { DialResult = sdkOutbound };
+        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, Tap, maxConcurrentCalls: 1);
+        channel.IncomingCall += (_, _) => { }; // subscribe so inbound is counted
+
+        line.RaiseIncomingCall(sdkInbound); // fills the slot
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            channel.PlaceCallAsync(new CallTarget("sip:b@example.com")));
+    }
+
+    [Fact]
+    public async Task DialFailure_ReleasesReservation_AllowingNextCall()
+    {
+        // If DialAsync throws, the reserved slot must be released so the next call can proceed.
+        var line = new FakePhoneLine(); // DialResult is null → will throw
+        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, Tap, maxConcurrentCalls: 1);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            channel.PlaceCallAsync(new CallTarget("sip:a@example.com")));
+
+        // Provide a working result for the second attempt.
+        line.DialResult = new FakeSdkCall { State = SdkCallState.Idle };
+        var call = await channel.PlaceCallAsync(new CallTarget("sip:b@example.com")); // must not throw
+
+        Assert.NotNull(call);
+    }
+
     private static (IMediaReceiver Receiver, IMediaSender Sender) Tap() => (new FakeMediaReceiver(), new FakeMediaSender());
 
     private static SdkVoiceChannel NewChannel(FakePhoneLine line) =>
-        new("ch", "Line", "plugin", line, Tap);
+        new("ch", "Line", "plugin", line, Tap, maxConcurrentCalls: 10);
 }
 
 /// <summary>
