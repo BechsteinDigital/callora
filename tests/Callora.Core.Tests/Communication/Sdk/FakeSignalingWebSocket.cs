@@ -65,12 +65,25 @@ internal sealed class FakeSignalingWebSocket : WebSocket
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// When <see langword="true"/>, <see cref="ReceiveAsync"/> blocks indefinitely (waiting for
+    /// <paramref name="cancellationToken"/> to fire) once the inbound queue is drained, rather than
+    /// returning a close frame. Use this to test deadline/cancellation paths.
+    /// </summary>
+    public bool BlockAfterQueueDrained { get; init; }
+
     public override async Task<WebSocketReceiveResult> ReceiveAsync(
         ArraySegment<byte> buffer,
         CancellationToken cancellationToken)
     {
         if (_inbound.Count == 0)
         {
+            if (BlockAfterQueueDrained)
+            {
+                // Block until the caller's token fires (e.g. deadline or host cancel).
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
+            }
+
             _closed = true;
             return new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true);
         }

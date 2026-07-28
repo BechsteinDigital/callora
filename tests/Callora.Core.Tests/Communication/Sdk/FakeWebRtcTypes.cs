@@ -38,6 +38,15 @@ internal sealed class FakePeerConnection : IPeerConnection
     /// <summary>Set once <see cref="StartAsync"/> is called.</summary>
     public bool Started { get; private set; }
 
+    /// <summary>Set once <see cref="GatherCandidatesAsync"/> is called.</summary>
+    public bool CandidatesGathered { get; private set; }
+
+    /// <summary>
+    /// Records the order of key lifecycle calls — "offer", "gather", "start" — so tests can assert
+    /// that STUN gathering happens after the offer and before the transport starts.
+    /// </summary>
+    public List<string> CallOrder { get; } = [];
+
     /// <summary>Remote ICE candidates applied via <see cref="AddIceCandidateAsync"/>, in order.</summary>
     public IReadOnlyList<string> AddedCandidates => _addedCandidates;
 
@@ -79,6 +88,7 @@ internal sealed class FakePeerConnection : IPeerConnection
     public string CreateOffer()
     {
         OfferCreated = true;
+        CallOrder.Add("offer");
         if (CandidateOnOffer is not null)
         {
             RaiseLocalIceCandidate(CandidateOnOffer);
@@ -107,6 +117,7 @@ internal sealed class FakePeerConnection : IPeerConnection
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
         Started = true;
+        CallOrder.Add("start");
         return Task.CompletedTask;
     }
 
@@ -115,8 +126,12 @@ internal sealed class FakePeerConnection : IPeerConnection
 
     public IPEndPoint? LocalMediaEndPoint => throw new NotSupportedException();
 
-    public Task GatherCandidatesAsync(CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+    public Task GatherCandidatesAsync(CancellationToken cancellationToken = default)
+    {
+        CandidatesGathered = true;
+        CallOrder.Add("gather");
+        return Task.CompletedTask;
+    }
 
     public ValueTask SendAudioAsync(ReadOnlyMemory<byte> payload, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
