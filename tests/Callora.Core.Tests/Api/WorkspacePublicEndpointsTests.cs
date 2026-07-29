@@ -268,6 +268,114 @@ public sealed class WorkspacePublicEndpointsTests
         Assert.Contains("\"chain\":[\"dialer\",\"voip\"]", content, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task UiChain_PublicSurface_AnonymousCaller_InAuthenticatedWorkspace_ReturnsChain()
+    {
+        // The workspace is Authenticated but the named surface is Public: the per-surface
+        // gate must let the anonymous caller through, matching /surface/render.
+        await using var app = await CreateAppAsync();
+        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
+        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
+        await SeedSurfaceAsync(app, "workspace-public", "site", SurfaceAccessMode.Public);
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync(
+            "/workspace/public/ui-chain?workspaceKey=workspace-public&surfaceKey=site");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"chain\":[\"dialer\",\"voip\"]", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UiChain_MixedSurface_AnonymousCaller_InAuthenticatedWorkspace_ReturnsChain()
+    {
+        // A Mixed surface has public routes, so its chain must load anonymously.
+        await using var app = await CreateAppAsync();
+        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
+        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
+        await SeedSurfaceAsync(app, "workspace-public", "shop", SurfaceAccessMode.Mixed);
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync(
+            "/workspace/public/ui-chain?workspaceKey=workspace-public&surfaceKey=shop");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"chain\":[\"dialer\",\"voip\"]", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UiChain_AuthenticatedSurface_AnonymousCaller_ReturnsNotFound()
+    {
+        // The workspace is Public but the named surface is Authenticated: the per-surface
+        // gate must 404 the anonymous caller (no inventory leak).
+        await using var app = await CreateAppAsync();
+        await SeedSurfaceAsync(app, "workspace-public", "desk", SurfaceAccessMode.Authenticated);
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync(
+            "/workspace/public/ui-chain?workspaceKey=workspace-public&surfaceKey=desk");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UiChain_AuthenticatedSurface_AuthenticatedCaller_ReturnsChain()
+    {
+        await using var app = await CreateAppAsync(authenticate: true);
+        await SeedSurfaceAsync(app, "workspace-public", "desk", SurfaceAccessMode.Authenticated);
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync(
+            "/workspace/public/ui-chain?workspaceKey=workspace-public&surfaceKey=desk");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"chain\":[\"dialer\",\"voip\"]", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UiChain_UnknownSurfaceKey_FallsBackToWorkspaceGate()
+    {
+        // The surface does not exist, so the gate falls back to the workspace-wide policy:
+        // an Authenticated workspace 404s the anonymous caller even with a surfaceKey.
+        await using var app = await CreateAppAsync();
+        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
+        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync(
+            "/workspace/public/ui-chain?workspaceKey=workspace-public&surfaceKey=missing");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private static async Task SeedSurfaceAsync(
+        WebApplication app,
+        string workspaceKey,
+        string surfaceKey,
+        SurfaceAccessMode accessMode)
+    {
+        var surfaceStore = app.Services.GetRequiredService<IWorkspaceSurfaceStore>();
+        _ = await surfaceStore.UpsertAsync(
+            workspaceKey,
+            new WorkspaceSurfaceInput(
+                SurfaceKey: surfaceKey,
+                DisplayName: surfaceKey,
+                SurfaceType: "web",
+                PublicBaseUrl: null,
+                PublicHost: null,
+                PublicPathPrefix: "/",
+                AccessMode: accessMode,
+                Locale: null,
+                TemplatePluginId: null,
+                TemplateVersion: null,
+                ThemePluginId: null,
+                ThemeVersion: null,
+                IsActive: true));
+    }
+
     private static async Task<WebApplication> CreateAppAsync(
         bool authenticate = false,
         string workspaceShellBaseUrl = "https://workspace-shell.local/")
@@ -285,6 +393,7 @@ public sealed class WorkspacePublicEndpointsTests
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddSingleton<IWorkspaceManagementStore>(workspaceStore);
+        builder.Services.AddSingleton<IWorkspaceSurfaceStore>(new InMemoryWorkspaceSurfaceStore());
         builder.Services.AddSingleton(new BackendHostOptions
         {
             DefaultTenantKey = "tenant-a",
