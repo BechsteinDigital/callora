@@ -162,7 +162,10 @@ describe('loadSurfacePlugins', () => {
       { fetchJson, doc: document, loadScript: injectingLoader(), now },
     )
 
-    expect(fetchJson).toHaveBeenCalledWith('/workspace/public/ui-chain?workspaceKey=acme')
+    // The context carries a surfaceKey, so it is passed through for the per-surface gate.
+    expect(fetchJson).toHaveBeenCalledWith(
+      '/workspace/public/ui-chain?workspaceKey=acme&surfaceKey=portal',
+    )
     const scripts = Array.from(document.querySelectorAll('script[data-callora-plugin-entry]'))
     expect(scripts.map((s) => s.getAttribute('src'))).toEqual([
       '/plugin-assets/theme/app/workspace/main.js',
@@ -182,6 +185,36 @@ describe('loadSurfacePlugins', () => {
         durationMs: 5,
       },
     ])
+  })
+
+  it('omits surfaceKey from the chain URL when the context has none (workspace-wide gate)', async () => {
+    const fetchJson = vi.fn(async (url: string) =>
+      url.startsWith('/workspace/public/ui-chain') ? { chain: ['voip'] } : manifest,
+    )
+
+    await loadSurfacePlugins(
+      { workspaceKey: 'acme', surfaceKey: '' },
+      {},
+      { fetchJson, doc: document, loadScript: injectingLoader() },
+    )
+
+    expect(fetchJson).toHaveBeenCalledWith('/workspace/public/ui-chain?workspaceKey=acme')
+  })
+
+  it('encodes the surfaceKey when appending it to the chain URL', async () => {
+    const fetchJson = vi.fn(async (url: string) =>
+      url.startsWith('/workspace/public/ui-chain') ? { chain: ['voip'] } : manifest,
+    )
+
+    await loadSurfacePlugins(
+      { workspaceKey: 'acme', surfaceKey: 'a b/c' },
+      {},
+      { fetchJson, doc: document, loadScript: injectingLoader() },
+    )
+
+    expect(fetchJson).toHaveBeenCalledWith(
+      '/workspace/public/ui-chain?workspaceKey=acme&surfaceKey=a%20b%2Fc',
+    )
   })
 
   it('isolates a failing bundle: it is recorded as error, logged, and the rest still load', async () => {

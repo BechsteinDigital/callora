@@ -209,7 +209,7 @@ export async function loadSurfacePlugins(
 
   let assets: ResolvedSurfaceAssets
   try {
-    const chain = await fetchChain(fetchJson, uiChainUrl, context.workspaceKey)
+    const chain = await fetchChain(fetchJson, uiChainUrl, context.workspaceKey, context.surfaceKey)
     if (chain.length === 0) {
       return publishResults(doc, [])
     }
@@ -296,8 +296,15 @@ async function fetchChain(
   fetchJson: (url: string) => Promise<unknown>,
   uiChainUrl: string,
   workspaceKey: string,
+  surfaceKey?: string,
 ): Promise<string[]> {
-  const url = `${uiChainUrl}?workspaceKey=${encodeURIComponent(workspaceKey)}`
+  // The optional surfaceKey lets the server gate on the surface's per-surface AccessMode
+  // (Public/Mixed load anonymously; Authenticated requires a session), consistent with
+  // /surface/render. Omitting it keeps the workspace-wide gate — backwards compatible.
+  let url = `${uiChainUrl}?workspaceKey=${encodeURIComponent(workspaceKey)}`
+  if (surfaceKey) {
+    url += `&surfaceKey=${encodeURIComponent(surfaceKey)}`
+  }
   const result = (await fetchJson(url)) as { chain?: unknown }
   return Array.isArray(result?.chain)
     ? result.chain.filter((id): id is string => typeof id === 'string')

@@ -126,10 +126,12 @@ public static class WorkspacePublicEndpoints
                 "/workspace/public/ui-chain",
                 async (
                     string? workspaceKey,
+                    string? surfaceKey,
                     HttpContext httpContext,
                     WorkspaceUiChainResolver uiChainResolver,
                     BackendHostOptions hostOptions,
                     IWorkspaceManagementStore workspaceStore,
+                    IWorkspaceSurfaceStore surfaceStore,
                     CancellationToken cancellationToken) =>
                 {
                     var normalizedKey = string.IsNullOrWhiteSpace(workspaceKey)
@@ -145,12 +147,30 @@ public static class WorkspacePublicEndpoints
                         return Results.NotFound();
                     }
 
-                    // An Authenticated workspace does not expose its plugin inventory to an
-                    // anonymous caller: it 404s exactly like a non-existent one, so the chain
-                    // cannot be enumerated for fingerprinting. An authenticated caller gets the
-                    // chain; a browser was already sent to log in by /surface/render (P4).
-                    if (workspace!.SurfaceAccessPolicy == SurfaceAccessPolicy.Authenticated &&
-                        httpContext.User.Identity?.IsAuthenticated != true)
+                    // The access gate is per-surface when a surfaceKey is supplied, matching
+                    // /surface/render (ADR-014 §6.1): a Mixed surface has public routes, so its
+                    // chain loads anonymously even inside an otherwise Authenticated workspace.
+                    // Only an Authenticated surface requires a caller identity. Without a
+                    // surfaceKey — or when the named surface is unknown — it falls back to the
+                    // workspace-wide SurfaceAccessPolicy (backwards compatible).
+                    var requiresAuth = workspace!.SurfaceAccessPolicy == SurfaceAccessPolicy.Authenticated;
+                    if (!string.IsNullOrWhiteSpace(surfaceKey))
+                    {
+                        var surface = await surfaceStore
+                            .GetAsync(normalizedKey, surfaceKey.Trim(), cancellationToken)
+                            .ConfigureAwait(false);
+                        if (surface is not null)
+                        {
+                            requiresAuth = surface.AccessMode == SurfaceAccessMode.Authenticated;
+                        }
+                    }
+
+                    // An Authenticated surface (or workspace) does not expose its plugin
+                    // inventory to an anonymous caller: it 404s exactly like a non-existent one,
+                    // so the chain cannot be enumerated for fingerprinting. An authenticated
+                    // caller gets the chain; a browser was already sent to log in by
+                    // /surface/render (P4).
+                    if (requiresAuth && httpContext.User.Identity?.IsAuthenticated != true)
                     {
                         return Results.NotFound();
                     }
