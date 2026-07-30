@@ -4,12 +4,10 @@ using Callora.Plugin.Communication.Abstractions;
 namespace Callora.Plugin.Communication.Infrastructure.Capabilities;
 
 /// <summary>
-/// Derives the plugin's runtime <c>communication.voice</c> grants from the channel registry: voice is
-/// provided in a workspace exactly while that workspace has at least one registered voice channel whose
-/// <see cref="ICommunicationChannel.Health"/> is <see cref="ChannelHealth.Up"/>. It tracks channel
-/// registration/removal and each voice channel's <see cref="ICommunicationChannel.HealthChanged"/>,
-/// emitting <see cref="CapabilitiesChanged"/> when a workspace's voice availability flips. The grace
-/// dampening of a loss is applied downstream by the host's runtime-capability registry.
+/// Derives runtime communication grants from the SDK-neutral channel registry. A capability is
+/// provided in a workspace exactly while that workspace has at least one registered channel declaring
+/// it with <see cref="ICommunicationChannel.Health"/> equal to <see cref="ChannelHealth.Up"/>.
+/// Voice, video, WebRTC and future channel capabilities follow the same adapter path.
 /// </summary>
 /// <remarks>Thread-safe. <see cref="CapabilitiesChanged"/> is raised outside the internal lock.</remarks>
 public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySource, IDisposable
@@ -18,7 +16,7 @@ public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySou
     private readonly object _gate = new();
     private readonly Dictionary<ICommunicationChannel, (string WorkspaceKey, EventHandler<ChannelHealthChangedEventArgs> Handler)> _tracked =
         new(ReferenceEqualityComparer.Instance);
-    private readonly HashSet<string> _satisfiedWorkspaces = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<RuntimeCapabilityGrant> _grants = new(RuntimeCapabilityGrantComparer.Instance);
 
     private bool _disposed;
 
@@ -38,12 +36,12 @@ public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySou
                 Track(workspaceKey, channel);
             }
 
-            foreach (var workspaceKey in _tracked.Values.Select(t => t.WorkspaceKey).Distinct(StringComparer.OrdinalIgnoreCase).ToArray())
+            foreach (var workspaceKey in _tracked.Values
+                         .Select(t => t.WorkspaceKey)
+                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                         .ToArray())
             {
-                if (IsVoiceAvailable(workspaceKey))
-                {
-                    _satisfiedWorkspaces.Add(workspaceKey);
-                }
+                _grants.UnionWith(GetAvailableGrants(workspaceKey));
             }
         }
     }
@@ -55,9 +53,7 @@ public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySou
         {
             lock (_gate)
             {
-                return _satisfiedWorkspaces
-                    .Select(workspaceKey => new RuntimeCapabilityGrant(CommunicationCapabilities.Voice, workspaceKey))
-                    .ToArray();
+                return _grants.ToArray();
             }
         }
     }
@@ -93,12 +89,11 @@ public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySou
         Reevaluate(workspaceKey);
     }
 
-    // Subscribes to a voice channel's health changes; returns false for non-voice or already-tracked channels.
+    // Subscribes to a capability-bearing channel's health changes; returns false when it has no declared
+    // capability or is already tracked.
     private bool Track(string workspaceKey, ICommunicationChannel channel)
     {
-        // Match the registry's own capability lookup exactly (GetChannelsByCapability uses the default
-        // ordinal comparer), so a tracked channel is always one IsVoiceAvailable can also find.
-        if (!channel.Capabilities.Contains(CommunicationCapabilities.Voice, StringComparer.Ordinal))
+        if (channel.Capabilities.Count == 0)
         {
             return false;
         }
@@ -115,7 +110,7 @@ public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySou
 
     private void Reevaluate(string workspaceKey)
     {
-        RuntimeCapabilityChanged? change = null;
+        List<RuntimeCapabilityChanged> changes;
         lock (_gate)
         {
             if (_disposed)
@@ -123,29 +118,43 @@ public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySou
                 return;
             }
 
-            var satisfied = IsVoiceAvailable(workspaceKey);
-            var wasSatisfied = _satisfiedWorkspaces.Contains(workspaceKey);
-            if (satisfied && !wasSatisfied)
+            var current = GetAvailableGrants(workspaceKey);
+            var previous = _grants
+                .Where(grant => string.Equals(grant.WorkspaceKey, workspaceKey, StringComparison.OrdinalIgnoreCase))
+                .ToHashSet(RuntimeCapabilityGrantComparer.Instance);
+
+            changes = current
+                .Except(previous)
+                .Select(grant => new RuntimeCapabilityChanged(grant.Capability, grant.WorkspaceKey, Satisfied: true))
+                .Concat(previous
+                    .Except(current)
+                    .Select(grant => new RuntimeCapabilityChanged(grant.Capability, grant.WorkspaceKey, Satisfied: false)))
+                .ToList();
+
+            foreach (var previousGrant in previous)
             {
-                _satisfiedWorkspaces.Add(workspaceKey);
-                change = new RuntimeCapabilityChanged(CommunicationCapabilities.Voice, workspaceKey, Satisfied: true);
+                _grants.Remove(previousGrant);
             }
-            else if (!satisfied && wasSatisfied)
+
+            foreach (var currentGrant in current)
             {
-                _satisfiedWorkspaces.Remove(workspaceKey);
-                change = new RuntimeCapabilityChanged(CommunicationCapabilities.Voice, workspaceKey, Satisfied: false);
+                _grants.Add(currentGrant);
             }
         }
 
-        if (change is not null)
+        foreach (var change in changes)
         {
             CapabilitiesChanged?.Invoke(change);
         }
     }
 
-    private bool IsVoiceAvailable(string workspaceKey) =>
-        _registry.GetChannelsByCapability(workspaceKey, CommunicationCapabilities.Voice)
-            .Any(channel => channel.Health == ChannelHealth.Up);
+    private HashSet<RuntimeCapabilityGrant> GetAvailableGrants(string workspaceKey) =>
+        _registry.GetChannels(workspaceKey)
+            .Where(channel => channel.Health == ChannelHealth.Up)
+            .SelectMany(channel => channel.Capabilities)
+            .Where(capability => !string.IsNullOrWhiteSpace(capability))
+            .Select(capability => new RuntimeCapabilityGrant(capability.Trim(), workspaceKey))
+            .ToHashSet(RuntimeCapabilityGrantComparer.Instance);
 
     /// <inheritdoc />
     public void Dispose()
@@ -163,7 +172,7 @@ public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySou
             _registry.ChannelUnregistered -= OnChannelUnregistered;
             subscriptions = [.. _tracked.Select(t => (t.Key, t.Value.Handler))];
             _tracked.Clear();
-            _satisfiedWorkspaces.Clear();
+            _grants.Clear();
         }
 
         foreach (var (channel, handler) in subscriptions)

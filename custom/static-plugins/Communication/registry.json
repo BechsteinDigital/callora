@@ -10,7 +10,9 @@
     "communication.foundation"
   ],
   "conditionalCapabilities": [
-    "communication.voice"
+    "communication.voice",
+    "communication.video",
+    "communication.webrtc"
   ],
   "dependencies": {
     "Callora.Core": ">=0.1.0",
