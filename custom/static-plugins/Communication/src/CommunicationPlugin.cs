@@ -5,18 +5,23 @@ using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Secrets.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugin.Communication.Abstractions.Conference;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Admin.Calls;
 using Callora.Plugin.Communication.Application.Admin.SipAccounts;
 using Callora.Plugin.Communication.Application.Calls;
 using Callora.Plugin.Communication.Application.Compliance;
+using Callora.Plugin.Communication.Application.Conference;
 using Callora.Plugin.Communication.Application.Mcp;
+using Callora.Plugin.Communication.Application.RealtimeMedia;
 using Callora.Plugin.Communication.Infrastructure.Capabilities;
 using Callora.Plugin.Communication.Infrastructure.Channels;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
+using Callora.Plugin.Communication.Infrastructure.RealtimeMedia;
 using Callora.Plugin.Communication.Infrastructure.Sdk;
+using CalloraVoipSdk;
 using CalloraVoipSdk.WebRtc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -67,6 +72,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     // Set during StartAsync when the WebRTC surface is wired; torn down on stop.
     private IWebRtcClient? _ownedWebRtcClient;
     private WebRtcChannelProvisioner? _webRtcProvisioner;
+
+    // Real-time media provider (M1 port) + the conference SFU over it (M2). Built alongside the WebRTC
+    // surface and exported as IConferenceService for cross-plugin consumers (videoconference, call-center).
+    // The provider owns its SDK client; both are disposed on stop.
+    private CalloraVoipSdkProvider? _conferenceMediaProvider;
 
     /// <summary>Configuration key that enables the plugin's self-built SDK voice client.</summary>
     internal const string VoiceEnabledConfigKey = "Communication:Voice:Enabled";
@@ -174,6 +184,18 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
                     signalingStore,
                     signalingStore,
                     ResolveLogger<WebRtcSignalingWebSocketHandler>(context.Services)));
+
+            // Conference SFU (M2) over the neutral media provider port (M1): a dedicated media provider —
+            // its own SDK client, video enabled so conference peers carry camera tracks — plus the
+            // ConferenceService over it. Exported as IConferenceService for cross-plugin consumers
+            // (videoconference, call-center) via the same curated-export path as ICommunicationChannelRegistry.
+            var conferencePeerOptions = ToConferencePeerOptions(webRtcOptions);
+            _conferenceMediaProvider = CalloraVoipSdkProvider.Create(conferencePeerOptions, loggerFactory);
+            var conferenceService = new ConferenceService(
+                _conferenceMediaProvider,
+                conferencePeerOptions,
+                ResolveLogger<ConferenceService>(context.Services));
+            context.Export<IConferenceService>(conferenceService);
         }
 
         context.Export<IWorkspaceDataPurgeContributor>(new CommunicationDataPurgeContributor(
@@ -215,6 +237,13 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         if (_ownedWebRtcClient is not null)
         {
             await _ownedWebRtcClient.DisposeAsync().ConfigureAwait(false);
+        }
+
+        // Conference SFU teardown: dispose the media provider (which owns its SDK client). Any live
+        // participant sessions are owned by the consuming vertical and disposed by it on socket close.
+        if (_conferenceMediaProvider is not null)
+        {
+            await _conferenceMediaProvider.DisposeAsync().ConfigureAwait(false);
         }
 
         _channelRegistry.Clear();
@@ -283,6 +312,31 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         services.GetService(typeof(IConfiguration)) is IConfiguration configuration
         && bool.TryParse(configuration[WebRtcEnabledConfigKey], out var enabled)
         && enabled;
+
+    // Maps the deployment WebRTC options onto the neutral per-peer options the conference SFU builds its
+    // peers with. Video is forced on (a conference carries camera tracks) regardless of the voice-oriented
+    // config default; ICE servers and audio codecs carry over so conference peers reach remote browsers the
+    // same way the voice channel does.
+    internal static MediaPeerOptions ToConferencePeerOptions(WebRtcClientOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        return new MediaPeerOptions
+        {
+            AudioCodecs = options.AudioCodecs,
+            EnableVideo = true,
+            IceServers = [.. options.IceServers.Select(ToMediaIceServer)],
+            LocalEndPoint = options.LocalEndPoint,
+        };
+    }
+
+    private static MediaIceServer ToMediaIceServer(IceServerConfiguration server) => new(
+        server.Host,
+        server.Port,
+        server.Type.ToString().ToLowerInvariant(),
+        server.Transport.ToString().ToLowerInvariant(),
+        server.Username,
+        server.Password);
 
     private static ILogger<T> ResolveLogger<T>(IServiceProvider services) =>
         services.GetService(typeof(ILogger<T>)) as ILogger<T> ?? NullLogger<T>.Instance;
