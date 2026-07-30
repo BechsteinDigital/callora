@@ -88,7 +88,9 @@ Thumbs.db
 # Documentation (DocFX)
 # ------------------------------
 _site/
-docs
+# docs/ enthält handgeschriebene Konzept-Docs (ignoriert) — aber die ADRs gehören ins Repo.
+docs/*
+!docs/adr/
 # DocFX-generierte API-Metadaten (aus dem Quellcode, nicht versionieren).
 docfx/api/*.yml
 docfx/api/.manifest
@@ -103,6 +105,8 @@ docfx/api/.manifest
 # VitePress-Doku-Site (konzeptuelle Docs) gehört ins Repo.
 !docs-site/**/*.md
 !docs-site/*.md
+# Architecture Decision Records gehören ins Repo (docs/* ist sonst ignoriert).
+!docs/adr/**/*.md
 # Verbindliche Entwicklungsregeln — Standard für Host und Plugins.
 !ENGINEERING_RULES.md
 !CODE_STRUCTURE_RULES.md
