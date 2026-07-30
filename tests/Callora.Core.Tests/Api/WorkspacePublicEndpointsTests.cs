@@ -65,6 +65,74 @@ public sealed class WorkspacePublicEndpointsTests
     }
 
     [Fact]
+    public async Task SameOriginShell_ResolvableWorkspacePath_RedirectsToAdminShell_NotLoop()
+    {
+        // The seeded workspace resolves at /dialer. With a same-origin shell base ("/") the shell
+        // redirect target is /dialer again — a self-redirect loop. There is no separate workspace-shell
+        // SPA to hand off to in a colocated deployment, so fall back to the admin shell.
+        await using var app = await CreateAppAsync(workspaceShellBaseUrl: "/");
+
+        var client = app.GetTestClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/dialer");
+        request.Headers.Host = "localhost";
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("https://admin-shell.local/admin/", response.Headers.Location?.ToString());
+    }
+
+    [Fact]
+    public async Task SameOriginShell_RootWithResolvableWorkspace_RedirectsToAdminShell_NotLoop()
+    {
+        // Colocated deploy default: WorkspaceShellBaseUrl="/" and a workspace resolves at the root.
+        // The root handler would redirect "/" → "/" forever; instead it sends the operator to the admin shell.
+        await using var app = await CreateAppAsync(workspaceShellBaseUrl: "/");
+        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
+        _ = await store.UpsertAsync(
+            tenantKey: "tenant-a",
+            workspaceKey: "workspace-root",
+            displayName: "Workspace Root",
+            workspaceType: "voice",
+            isActive: true,
+            publicBaseUrl: "localhost");
+
+        var client = app.GetTestClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/");
+        request.Headers.Host = "localhost";
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("https://admin-shell.local/admin/", response.Headers.Location?.ToString());
+    }
+
+    [Fact]
+    public async Task SameOriginShell_LoginForRootWorkspace_RedirectsToAdminShell_NotLoop()
+    {
+        // /login for a root-prefix workspace on a same-origin shell base ("/") would redirect to
+        // /login forever. The self-redirect guard sends it to the admin shell instead.
+        await using var app = await CreateAppAsync(workspaceShellBaseUrl: "/");
+        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
+        _ = await store.UpsertAsync(
+            tenantKey: "tenant-a",
+            workspaceKey: "workspace-root",
+            displayName: "Workspace Root",
+            workspaceType: "voice",
+            isActive: true,
+            publicBaseUrl: "localhost");
+
+        var client = app.GetTestClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/login");
+        request.Headers.Host = "localhost";
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.StartsWith("https://admin-shell.local/admin/", response.Headers.Location?.ToString());
+    }
+
+    [Fact]
     public async Task WorkspaceBootstrapScript_UsesRefererPathForContextResolution()
     {
         await using var app = await CreateAppAsync();

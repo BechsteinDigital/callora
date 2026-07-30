@@ -262,6 +262,11 @@ public static class WorkspacePublicEndpoints
                         hostOptions.WorkspaceShellBaseUrl,
                         workspaceLoginPath,
                         query);
+                    if (WouldSelfRedirect(redirectUrl, httpContext.Request.Path.Value ?? workspaceLoginPath))
+                    {
+                        return Results.Redirect(BuildAdminShellRedirectUrl(hostOptions, query));
+                    }
+
                     return Results.Redirect(redirectUrl);
                 })
             .AllowAnonymous()
@@ -289,10 +294,16 @@ public static class WorkspacePublicEndpoints
                         return Results.Redirect(notFoundRedirect);
                     }
 
+                    var query = ToSingleValueQueryDictionary(httpContext.Request.Query);
                     var workspaceUrl = BuildRedirectUrl(
                         hostOptions.WorkspaceShellBaseUrl,
                         requestPath,
-                        ToSingleValueQueryDictionary(httpContext.Request.Query));
+                        query);
+                    if (WouldSelfRedirect(workspaceUrl, requestPath))
+                    {
+                        return Results.Redirect(BuildAdminShellRedirectUrl(hostOptions, query));
+                    }
+
                     return Results.Redirect(workspaceUrl);
                 })
             .AllowAnonymous()
@@ -353,10 +364,16 @@ public static class WorkspacePublicEndpoints
                         var notFoundRedirect = BuildWorkspaceNotFoundRedirectUrl(hostOptions.WorkspaceShellBaseUrl);
                         return Results.Redirect(notFoundRedirect);
                     }
+                    var query = ToSingleValueQueryDictionary(httpContext.Request.Query);
                     var workspaceUrl = BuildRedirectUrl(
                         hostOptions.WorkspaceShellBaseUrl,
                         requestPath,
-                        ToSingleValueQueryDictionary(httpContext.Request.Query));
+                        query);
+                    if (WouldSelfRedirect(workspaceUrl, requestPath))
+                    {
+                        return Results.Redirect(BuildAdminShellRedirectUrl(hostOptions, query));
+                    }
+
                     return Results.Redirect(workspaceUrl);
                 })
             .AllowAnonymous()
@@ -575,6 +592,30 @@ public static class WorkspacePublicEndpoints
             workspaceShellBaseUrl,
             "/404",
             new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase));
+    }
+
+    private static string BuildAdminShellRedirectUrl(
+        BackendHostOptions hostOptions,
+        IReadOnlyDictionary<string, string?> query) =>
+        BuildRedirectUrl(hostOptions.AdminShellBaseUrl, "/", query);
+
+    // True when a same-origin workspace-shell redirect would target the very path being served —
+    // a self-redirect loop. Happens when WorkspaceShellBaseUrl is a local path (e.g. "/") that
+    // resolves back onto this handler. Absolute (external-shell) targets leave this origin, so they
+    // never self-redirect and are excluded.
+    private static bool WouldSelfRedirect(string redirectTarget, string requestPath)
+    {
+        if (redirectTarget.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            redirectTarget.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var targetPath = redirectTarget.Split('?', '#')[0];
+        return string.Equals(
+            NormalizePath(targetPath),
+            NormalizePath(requestPath),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     // True when the request already targets the not-found sink for a same-origin
