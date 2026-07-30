@@ -21,4 +21,16 @@ public static class CommunicationCapabilities
     /// capability that no runtime can satisfy.
     /// </summary>
     public const string Voice = "communication.voice";
+
+    /// <summary>
+    /// Multi-party or point-to-point video communication. Providers implement the media technology
+    /// behind their own adapter; the Communication foundation remains SDK-neutral.
+    /// </summary>
+    public const string Video = "communication.video";
+
+    /// <summary>
+    /// Browser WebRTC connectivity supplied by a communication-channel adapter. This capability says
+    /// nothing about the concrete WebRTC SDK used by that provider.
+    /// </summary>
+    public const string WebRtc = "communication.webrtc";
 }
