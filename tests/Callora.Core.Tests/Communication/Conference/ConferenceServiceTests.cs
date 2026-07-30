@@ -35,7 +35,7 @@ public sealed class ConferenceServiceTests
     }
 
     [Fact]
-    public async Task Join_ProducesInitialOffer_AndGathers()
+    public async Task Join_ProducesInitialOffer_ThenStartSignalingGathers()
     {
         var (service, provider) = NewService();
 
@@ -44,6 +44,10 @@ public sealed class ConferenceServiceTests
         Assert.Equal("offer", a.InitialOffer.Type);
         var peerA = provider.CreatedPeers[0];
         Assert.Equal(1, peerA.CreateOfferCount);
+        // Gathering is deferred out of Join so no candidate is raised before the vertical subscribes.
+        Assert.Equal(0, peerA.GatherCount);
+
+        await a.StartSignalingAsync();
         Assert.Equal(1, peerA.GatherCount);
     }
 
@@ -94,6 +98,7 @@ public sealed class ConferenceServiceTests
         var (service, _) = NewService();
 
         var a = await service.JoinAsync(Conf, "A");
+        await a.StartSignalingAsync(); // the vertical starts signalling before others join → reneg enabled
         var reoffers = new List<SessionDescription>();
         a.OfferProduced += (_, offer) => reoffers.Add(offer);
 
@@ -253,6 +258,7 @@ public sealed class ConferenceServiceTests
         var (service, _) = NewService();
 
         var a = await service.JoinAsync(Conf, "A");
+        await a.StartSignalingAsync(); // the vertical starts signalling → reneg on B's join actually fires
         var peerA = PeerOf(a);
 
         // First answer starts the transport.
@@ -276,7 +282,10 @@ public sealed class ConferenceServiceTests
         var a = await service.JoinAsync(Conf, "A");
         a.LocalIceCandidateProduced += (_, c) => candidates.Add(c);
 
-        // After the initial offer the trickle gate is open — a candidate is relayed straight through.
+        // The vertical subscribes, relays the offer, then starts signalling — this opens the trickle gate.
+        await a.StartSignalingAsync();
+
+        // Now a candidate is relayed straight through.
         PeerOf(a).RaiseLocalIceCandidate(new IceCandidate("candidate:host 1 udp"));
 
         var relayed = Assert.Single(candidates);
