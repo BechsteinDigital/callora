@@ -19,6 +19,14 @@ internal sealed class FakePeerConnection : IPeerConnection
 
     public PeerConnectionState State { get; set; } = PeerConnectionState.New;
 
+    // SDK 4.7.0 added multi-track / signalling-state / bitrate surface to IPeerConnection. These voice-path
+    // adapter tests do not exercise it, so the members below are throwing stubs (matching this fake's
+    // "everything the adapter does not touch throws" convention). The neutral RealtimeMedia adapter (M1)
+    // is exercised by its own dedicated fake under Communication/RealtimeMedia.
+    public SignalingState SignalingState => throw new NotSupportedException();
+
+    public long? RecommendedOutgoingBitrateBps => throw new NotSupportedException();
+
     public int DisposeCount { get; private set; }
 
     public IReadOnlyList<byte> SentDtmf => _sentDtmf;
@@ -57,6 +65,8 @@ internal sealed class FakePeerConnection : IPeerConnection
     public event EventHandler<RemoteTrack>? TrackReceived;
     public event EventHandler<DtmfTone>? DtmfReceived;
     public event EventHandler? VideoKeyFrameRequested;
+    public event EventHandler<SignalingState>? SignalingStateChanged;
+    public event EventHandler<BitrateRecommendation>? RecommendedBitrateChanged;
 #pragma warning restore CS0067
 
     /// <summary>Sets <see cref="State"/> and raises the lifecycle event with the new state.</summary>
@@ -145,6 +155,21 @@ internal sealed class FakePeerConnection : IPeerConnection
     public IDisposable AttachMediaTap(IMediaTap tap) => throw new NotSupportedException();
 
     public WebRtcStats GetStats() => throw new NotSupportedException();
+
+    // SDK 4.7.0 multi-track / PLI surface — untouched by the voice-path adapters under test.
+    public IVideoTrack AddVideoTrack() => throw new NotSupportedException();
+
+    public IVideoTrack AddVideoTrack(VideoTrackOptions options) => throw new NotSupportedException();
+
+    public IAudioTrack AddAudioTrack() => throw new NotSupportedException();
+
+    public IAudioTrack AddAudioTrack(AudioTrackOptions options) => throw new NotSupportedException();
+
+    public ValueTask<bool> RequestVideoKeyFrameAsync(CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    public ValueTask<bool> RequestVideoKeyFrameAsync(string mid, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
 }
 
 /// <summary>
