@@ -19,7 +19,7 @@ public sealed class ConferenceParticipantTests
         new(peer, () => ValueTask.CompletedTask, NullLogger.Instance);
 
     [Fact]
-    public async Task TrickleGate_BuffersCandidatesDuringOffer_ThenFlushes()
+    public async Task TrickleGate_BuffersCandidatesUntilStartSignaling_ThenFlushes()
     {
         var peer = new FakeMediaPeer();
         var session = NewSession(peer);
@@ -38,9 +38,15 @@ public sealed class ConferenceParticipantTests
         await session.InitializeAsync();
 
         Assert.Equal(0, seenDuringOffer);              // buffered while the offer was being produced
-        var flushed = Assert.Single(relayed);          // flushed immediately after the offer
-        Assert.Equal("early", flushed.Candidate);
+        Assert.Empty(relayed);                         // and NOT flushed by Initialize/JoinAsync — the vertical
+                                                       // has not yet subscribed and started signalling
         Assert.Equal("offer", session.InitialOffer.Type);
+
+        // The vertical relays the offer, then starts signalling → the buffered candidate flushes now.
+        await session.StartSignalingAsync();
+
+        var flushed = Assert.Single(relayed);
+        Assert.Equal("early", flushed.Candidate);
     }
 
     [Fact]
@@ -49,6 +55,7 @@ public sealed class ConferenceParticipantTests
         var peer = new FakeMediaPeer();
         var session = NewSession(peer);
         await session.InitializeAsync();
+        await session.StartSignalingAsync(); // the vertical starts signalling → renegotiation is enabled
 
         SessionDescription? reoffer = null;
         session.OfferProduced += (_, o) => reoffer = o;
