@@ -11,9 +11,8 @@ using Xunit;
 namespace Callora.Core.Tests.Communication.Capabilities;
 
 /// <summary>
-/// The Communication runtime-capability source (Runtime-Capability S4b): <c>communication.voice</c> is
-/// granted in a workspace exactly while it has a registered voice channel with <c>Health==Up</c>. It
-/// reacts to channel registration/removal and health transitions and emits changes per workspace.
+/// The Communication runtime-capability source grants every capability of healthy, SDK-neutral
+/// channel adapters and reacts to registration, removal and health transitions per workspace.
 /// </summary>
 public sealed class CommunicationRuntimeCapabilitySourceTests
 {
@@ -90,6 +89,30 @@ public sealed class CommunicationRuntimeCapabilitySourceTests
 
         Assert.Empty(changes);
         Assert.Empty(source.CurrentGrants);
+    }
+
+    [Fact]
+    public void HealthyVideoWebRtcChannel_GrantsBothAdapterCapabilities()
+    {
+        var registry = new CommunicationChannelRegistry();
+        using var source = new CommunicationRuntimeCapabilitySource(registry);
+        var changes = Capture(source);
+
+        registry.Register("ws-1", new FakeVoiceChannel
+        {
+            ChannelId = "video",
+            Capabilities = [CommunicationCapabilities.Video, CommunicationCapabilities.WebRtc],
+            Health = ChannelHealth.Up,
+        });
+
+        Assert.Equal(
+            [
+                new RuntimeCapabilityGrant(CommunicationCapabilities.Video, "ws-1"),
+                new RuntimeCapabilityGrant(CommunicationCapabilities.WebRtc, "ws-1"),
+            ],
+            source.CurrentGrants.OrderBy(grant => grant.Capability));
+        Assert.Equal(2, changes.Count);
+        Assert.All(changes, change => Assert.True(change.Satisfied));
     }
 
     [Fact]
