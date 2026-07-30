@@ -38,8 +38,9 @@ internal sealed class ConferenceMediaRouter
     /// fan-out and its downstream PLI for upstream key-frame requests, then registers it. Runs the topology
     /// mutation under the conference lock; renegotiation of the affected participants and the joiner's
     /// initial key-frame priming are fired outside the lock (network sends). The joiner's own
-    /// <see cref="ConferenceParticipant.InitializeAsync"/> (initial offer + gather) is driven by the
-    /// service <em>after</em> this returns, so the offer reflects the wired topology.
+    /// <see cref="ConferenceParticipant.InitializeAsync"/> (which produces the initial offer; candidate
+    /// gather is deferred to <see cref="ConferenceParticipant.StartSignalingAsync"/> the vertical calls) is
+    /// driven by the service <em>after</em> this returns, so the offer reflects the wired topology.
     /// </summary>
     public void ParticipantJoined(string conferenceId, string participantId, ConferenceParticipant session, CancellationToken ct = default)
     {
