@@ -27,6 +27,17 @@ public interface IConferenceParticipant : IAsyncDisposable
     SessionDescription InitialOffer { get; }
 
     /// <summary>
+    /// Begins trickle ICE for this session — call it <em>after</em> subscribing to
+    /// <see cref="LocalIceCandidateProduced"/> (and <see cref="OfferProduced"/>) and relaying the
+    /// <see cref="InitialOffer"/>. It opens the trickle gate, flushes the candidates buffered while the offer
+    /// was produced, then gathers server-reflexive (STUN) candidates — all surfaced through
+    /// <see cref="LocalIceCandidateProduced"/>. Gathering is deferred out of
+    /// <see cref="IConferenceService.JoinAsync"/> precisely so no candidate is raised before the vertical has
+    /// subscribed (which would lose it); a browser only ever applies candidates for an offer it has seen.
+    /// </summary>
+    Task StartSignalingAsync(CancellationToken ct = default);
+
+    /// <summary>
     /// Applies the browser's answer — the reply to <see cref="InitialOffer"/> or to a renegotiation offer
     /// raised by <see cref="OfferProduced"/>. Starting the transport happens once, on the first answer.
     /// </summary>

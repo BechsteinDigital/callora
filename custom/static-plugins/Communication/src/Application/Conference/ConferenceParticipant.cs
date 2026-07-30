@@ -79,10 +79,12 @@ internal sealed class ConferenceParticipant : IConferenceParticipant
     public IMediaPeer Peer => _peer;
 
     /// <summary>
-    /// Subscribes to the peer's ICE events, produces the initial offer (under the signalling gate), flushes
-    /// any candidates buffered while it was produced, then gathers server-reflexive candidates (RFC 8445
-    /// §5.1.1) once the trickle gate is open so they reach a browser that has seen the offer. Called once by
-    /// the service after the SFU topology is wired.
+    /// Subscribes to the peer's ICE events and produces the initial offer (under the signalling gate) so
+    /// <see cref="InitialOffer"/> is ready when <see cref="IConferenceService.JoinAsync"/> returns. It does
+    /// NOT flush or gather candidates: the trickle gate stays closed and any candidate surfaced during
+    /// CreateOffer is buffered. Gathering is deferred to <see cref="StartSignalingAsync"/> so nothing is
+    /// raised before the vertical — which only obtains this session after JoinAsync returns — has subscribed.
+    /// Called once by the service while wiring the SFU topology.
     /// </summary>
     public async Task InitializeAsync(CancellationToken ct = default)
     {
@@ -97,8 +99,13 @@ internal sealed class ConferenceParticipant : IConferenceParticipant
         {
             _signalingGate.Release();
         }
+    }
 
-        // Open the trickle gate and flush candidates that arrived during CreateOffer.
+    /// <inheritdoc />
+    public async Task StartSignalingAsync(CancellationToken ct = default)
+    {
+        // Open the trickle gate and flush candidates buffered while the offer was produced — now with the
+        // vertical subscribed, so they are relayed rather than lost.
         IceCandidate[] buffered;
         lock (_candidateGate)
         {
