@@ -1,7 +1,7 @@
 import { computed, createApp, defineComponent, h } from 'vue'
 import App from './App.vue'
 import { readSurfaceContext, resolveSurfaceContext, type SurfaceContext } from './surface-context'
-import type { SurfaceRegistry } from './surface-registry'
+import { isSurfaceViewVisible, type SurfaceRegistry } from './surface-registry'
 
 /**
  * Mounts the surface runtime in whichever mode the SSR output calls for — both are
@@ -41,7 +41,12 @@ function islandHost(registry: SurfaceRegistry, viewId: string, context: SurfaceC
   return defineComponent({
     name: 'CalloraSurfaceIsland',
     setup() {
-      const view = computed(() => registry.views.find((candidate) => candidate.id === viewId))
+      const view = computed(() =>
+        registry.views.find(
+          (candidate) =>
+            candidate.id === viewId && isSurfaceViewVisible(candidate, context.surfaceKey),
+        ),
+      )
       return () => (view.value ? h(view.value.component, { context }) : null)
     },
   })

@@ -129,4 +129,33 @@ describe('workspacesApi', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/surfaces/a%20b')
     expect(fetchMock.mock.calls[0][1].method).toBe('DELETE')
   })
+
+  it('lists plugin assignments from the workspace sub-resource', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      respond([{ pluginId: 'videoconference', isAssigned: false }]),
+    )
+    globalThis.fetch = fetchMock
+
+    const list = await workspacesApi.listPlugins('a b')
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/a%20b/plugins')
+    expect(list[0].pluginId).toBe('videoconference')
+  })
+
+  it('assigns a plugin via PUT and sends the desired assignment state', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      respond({ pluginId: 'video conference', isAssigned: true }),
+    )
+    globalThis.fetch = fetchMock
+
+    await workspacesApi.setPluginAssignment('a b', 'video conference', true)
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      '/api/workspaces/a%20b/plugins/video%20conference',
+    )
+    expect(fetchMock.mock.calls[0][1].method).toBe('PUT')
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual({
+      isAssigned: true,
+    })
+  })
 })

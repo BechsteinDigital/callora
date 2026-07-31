@@ -1,9 +1,12 @@
 using Callora.Core.Application.Extensions;
+using Callora.Core.Application.Policies;
+using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Workspaces;
 using Callora.Core.Tests.Support;
 using Callora.Surface.Rendering;
 using Callora.Surface.Rendering.Api;
+using Callora.Workspace.Api;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -28,6 +31,28 @@ public sealed class SurfaceRenderEndpointsTests
         Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType!.ToString());
         var html = await response.Content.ReadAsStringAsync();
         Assert.Contains("id=\"callora-app\"", html, StringComparison.Ordinal);
+        Assert.Contains("data-workspace=\"acme\"", html, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/meet")]
+    public async Task ColocatedSurfaceRoute_WithWorkspaceEndpointsMapped_RendersWithoutRedirect(
+        string requestPath)
+    {
+        await using var app = await CreateAppAsync(
+            store: null,
+            configure: null,
+            mapWorkspaceEndpoints: true);
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync(requestPath);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType!.ToString());
+        Assert.Null(response.Headers.Location);
+        var html = await response.Content.ReadAsStringAsync();
         Assert.Contains("data-workspace=\"acme\"", html, StringComparison.Ordinal);
     }
 
@@ -233,13 +258,31 @@ public sealed class SurfaceRenderEndpointsTests
     private static async Task<WebApplication> CreateAppAsync(
         InMemoryWorkspaceManagementStore? store,
         Action<IServiceCollection>? configure,
-        bool authenticate = false)
+        bool authenticate = false,
+        bool mapWorkspaceEndpoints = false)
     {
         store ??= await SeededStoreAsync();
 
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddSingleton<IWorkspaceManagementStore>(store);
+        builder.Services.AddSingleton<IWorkspaceSurfaceStore>(new InMemoryWorkspaceSurfaceStore());
+        builder.Services.AddSingleton(new BackendHostOptions
+        {
+            DefaultTenantKey = "tenant-a",
+            AdminShellBaseUrl = "/admin",
+            WorkspaceShellBaseUrl = "/"
+        });
+        builder.Services.AddSingleton<IWorkspaceTemplateResolutionService>(
+            new StaticWorkspaceTemplateResolutionService([]));
+        builder.Services.AddSingleton<IWorkspacePluginActivationReader>(
+            new StaticWorkspacePluginActivationReader([]));
+        builder.Services.AddSingleton<IPluginAvailabilityEvaluator>(
+            new StaticPluginAvailabilityEvaluator());
+        builder.Services.AddSingleton<IWorkspaceThemeSettingsStore>(
+            new InMemoryWorkspaceThemeSettingsStore());
+        builder.Services.AddScoped<WorkspaceUiChainResolver>();
+        builder.Services.AddScoped<WorkspacePublicThemeResolver>();
         builder.Services.AddCalloraSurfaceRendering();
         if (authenticate)
         {
@@ -258,6 +301,10 @@ public sealed class SurfaceRenderEndpointsTests
             app.UseAuthentication();
         }
         app.MapSurfaceRenderEndpoints();
+        if (mapWorkspaceEndpoints)
+        {
+            app.MapWorkspacePublicEndpoints();
+        }
         await app.StartAsync();
         return app;
     }

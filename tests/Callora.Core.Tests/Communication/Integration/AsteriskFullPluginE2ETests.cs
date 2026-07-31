@@ -26,7 +26,7 @@ namespace Callora.Core.Tests.Communication.Integration;
 /// H2 — the monolithic full-plugin voice E2E, opt-in via CALLORA_ASTERISK_TESTS=1 (needs a running
 /// Asterisk) and Docker (Testcontainers Postgres). It boots the REAL <see cref="CommunicationPlugin.StartAsync"/>
 /// path — not the connector directly: a persisted, encrypted SIP account in a real plugin database, the
-/// config switch <c>Communication:Voice:Enabled=true</c>, no injected runtime (the plugin self-builds the
+/// config switch <c>Voice:Enabled=true</c>, no injected runtime (the plugin self-builds the
 /// SDK client) — and asserts the whole chain lands: real digest registration → a healthy voice channel
 /// in the registry → <c>communication.voice</c> granted for the workspace. Closes the "no single system
 /// test" gap. Start Asterisk first (see ops/spikes/asterisk-b4deep3).
@@ -90,7 +90,7 @@ public sealed class AsteriskFullPluginE2ETests : IAsyncLifetime
             new DomainSipAccount("acc-e2e", Workspace, "E2E Line", connection, maxConcurrentCalls: 1, enabled: true));
 
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { ["Communication:Voice:Enabled"] = "true" })
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Voice:Enabled"] = "true" })
             .Build();
         var context = new E2EHostPluginContext(_factory, dataProtector, configuration);
 
@@ -145,6 +145,8 @@ public sealed class AsteriskFullPluginE2ETests : IAsyncLifetime
         public Dictionary<Type, object> Exports { get; } = [];
 
         public IServiceProvider Services => this;
+
+        public IConfiguration PluginConfiguration => configuration;
 
         public void Export(Type contractType, object service) => Exports[contractType] = service;
 

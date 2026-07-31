@@ -38,6 +38,10 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddScoped<ITenantManagementStore, EfTenantManagementStore>();
         services.AddScoped<IWorkspaceManagementStore, EfWorkspaceManagementStore>();
         services.AddScoped<IWorkspaceSurfaceStore, EfWorkspaceSurfaceStore>();
+        services.AddScoped<WorkspaceSurfaceProvisioner>();
+        services.AddSingleton<
+            Callora.Core.Application.Workspaces.Contracts.IWorkspaceSurfaceProvisioner,
+            ScopedWorkspaceSurfaceProvisioner>();
         services.AddScoped<IWorkspaceTemplateRegistryStore, EfWorkspaceTemplateRegistryStore>();
         services.AddScoped<IWorkspaceThemeSettingsStore, EfWorkspaceThemeSettingsStore>();
         services.AddScoped<IPasswordHasher<BackendUser>, PasswordHasher<BackendUser>>();

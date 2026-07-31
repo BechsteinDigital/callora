@@ -1,4 +1,5 @@
 using Callora.Core.Application.Plugins.Contracts;
+using Microsoft.Extensions.Configuration;
 
 namespace Callora.Core.Application.Plugins;
 
@@ -12,6 +13,11 @@ internal sealed class PluginContext(
     // veröffentlichte Verträge, plugin-gebundene Dienste (PLAT-252) und
     // plugin-übergreifend exportierte Contract-Services (REV2 §9.3).
     public IServiceProvider Services { get; } = new CuratedPluginServiceProvider(services, pluginId, resolveExport);
+
+    public IConfiguration? PluginConfiguration { get; } =
+        services.GetService(typeof(IConfiguration)) is IConfiguration configuration
+            ? configuration.GetSection(pluginId)
+            : null;
 
     public void Export(Type contractType, object service)
     {

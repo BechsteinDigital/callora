@@ -641,7 +641,61 @@ Callora.Core.Application.Extensions.WorkspaceThemeSettingValueSnapshot.Workspace
 Callora.Core.Application.Extensions.WorkspaceThemeSettingValueSnapshot.WorkspaceThemeSettingValueSnapshot(string! WorkspaceKey, string! PluginId, string! SettingKey, string! ValueJson, System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Core.Application.Extensions.WorkspaceUiChainResolver
 Callora.Core.Application.Extensions.WorkspaceUiChainResolver.ResolveAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Callora.Core.Application.Extensions.WorkspaceUiChainResolver.ResolveAsync(string! workspaceKey, string? surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
 Callora.Core.Application.Extensions.WorkspaceUiChainResolver.WorkspaceUiChainResolver(Callora.Core.Application.Extensions.IWorkspaceTemplateResolutionService! templateResolution, Callora.Core.Application.Plugins.IWorkspacePluginActivationReader! activationReader, Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator! availabilityEvaluator) -> void
+Callora.Core.Application.Extensions.WorkspaceUiChainResolver.WorkspaceUiChainResolver(Callora.Core.Application.Extensions.IWorkspaceTemplateResolutionService! templateResolution, Callora.Core.Application.Plugins.IWorkspacePluginActivationReader! activationReader, Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator! availabilityEvaluator, Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore? surfaceStore) -> void
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment.DisplayName.get -> string!
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment.IsActive.get -> bool
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment.IsAssigned.get -> bool
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment.IsEntitled.get -> bool
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment.IsGloballyActive.get -> bool
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment.PluginId.get -> string!
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment.WorkspacePluginAssignment(string! pluginId, string! displayName, bool isGloballyActive, bool isEntitled, bool isActive, bool isAssigned) -> void
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentChangeResult
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentChangeResult.Assignment.get -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment?
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentChangeResult.ErrorCode.get -> string?
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentChangeResult.Message.get -> string?
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentChangeResult.Status.get -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentChangeResult.WorkspacePluginAssignmentChangeResult(Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus status, Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment? assignment = null, string? message = null, string? errorCode = null) -> void
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentListResult
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentListResult.Items.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment!>!
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentListResult.Message.get -> string?
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentListResult.Status.get -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentListResult.WorkspacePluginAssignmentListResult(Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus status, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment!>! items, string? message = null) -> void
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService.ListAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentListResult!>!
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService.SetAssignedAsync(string! workspaceKey, string! pluginId, bool isAssigned, string? requestedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentChangeResult!>!
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService.WorkspacePluginAssignmentService(Callora.Core.Application.Workspaces.IWorkspaceManagementStore! workspaceStore, Callora.Core.Application.Lifecycle.IPluginLifecycleService! lifecycleService, Callora.Core.Application.Plugins.IWorkspacePluginActivationReader! activationReader, Callora.Core.Application.Entitlements.IPluginEntitlementStore! entitlementStore, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService!>! logger) -> void
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.Forbidden = 5 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.LifecycleRejected = 4 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.Ok = 0 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.PersistenceFailed = 6 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.PluginInactive = 3 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.PluginNotFound = 2 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.WorkspaceNotFound = 1 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Workspaces.Contracts.IWorkspaceSurfaceProvisioner
+Callora.Core.Application.Workspaces.Contracts.IWorkspaceSurfaceProvisioner.EnsureAsync(string! workspaceKey, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition! definition, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation?>!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode.Authenticated = 1 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode.Mixed = 2 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode.Public = 0 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.AccessMode.get -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.DisplayName.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.PluginSurfaceDefinition(string! surfaceKey, string! displayName, string! surfaceType, string! publicPathSuffix, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode accessMode, string! templatePluginId, string? templateVersion = null) -> void
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.PublicPathSuffix.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.SurfaceKey.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.SurfaceType.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.TemplatePluginId.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.TemplateVersion.get -> string?
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.PluginSurfaceLocation(string! workspaceKey, string! surfaceKey, string! publicPath, string! publicUrl) -> void
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.PublicPath.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.PublicUrl.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.SurfaceKey.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.WorkspaceKey.get -> string!
 Callora.Core.Application.Features.IFeatureFlagService
 Callora.Core.Application.Features.IFeatureFlagService.GetAll() -> System.Collections.Generic.IReadOnlyDictionary<string!, bool>!
 Callora.Core.Application.Features.IFeatureFlagService.IsEnabled(string! key) -> bool
@@ -1446,6 +1500,7 @@ Callora.Core.Application.Plugins.Contracts.IHostAdminApiRouteHandler
 Callora.Core.Application.Plugins.Contracts.IHostAdminApiRouteHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostAdminApiResponse!>
 Callora.Core.Application.Plugins.Contracts.IHostPluginContext
 Callora.Core.Application.Plugins.Contracts.IHostPluginContext.Export(System.Type! contractType, object! service) -> void
+Callora.Core.Application.Plugins.Contracts.IHostPluginContext.PluginConfiguration.get -> Microsoft.Extensions.Configuration.IConfiguration?
 Callora.Core.Application.Plugins.Contracts.IHostPluginContext.Services.get -> System.IServiceProvider!
 Callora.Core.Application.Plugins.Contracts.IHostPluginExtensionContributor
 Callora.Core.Application.Plugins.Contracts.IHostPluginExtensionContributor.Capabilities.get -> System.Collections.Generic.IReadOnlyList<string!>!

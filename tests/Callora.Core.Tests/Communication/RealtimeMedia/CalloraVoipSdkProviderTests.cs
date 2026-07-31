@@ -1,8 +1,10 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Callora.Plugin.Communication;
 using Callora.Plugin.Communication.Application.RealtimeMedia;
 using Callora.Plugin.Communication.Infrastructure.RealtimeMedia;
+using Callora.Plugin.Communication.Infrastructure.Sdk;
 using CalloraVoipSdk;
 using Xunit;
 
@@ -48,6 +50,7 @@ public sealed class CalloraVoipSdkProviderTests
             AudioCodecs = ["opus", "PCMU"],
             VideoCodecs = ["H264"],
             EnableVideo = true,
+            UseStableNumericMediaIds = true,
             LocalEndPoint = new IPEndPoint(IPAddress.Loopback, 5555),
             IceServers =
             [
@@ -60,6 +63,7 @@ public sealed class CalloraVoipSdkProviderTests
         Assert.Equal(["opus", "PCMU"], config.AudioCodecs);
         Assert.Equal(["H264"], config.VideoCodecs);
         Assert.True(config.EnableVideo);
+        Assert.True(config.UseStableNumericMediaIds);
         Assert.Equal(new IPEndPoint(IPAddress.Loopback, 5555), config.LocalEndPoint);
 
         var mapped = Assert.Single(config.IceServers);
@@ -79,5 +83,14 @@ public sealed class CalloraVoipSdkProviderTests
         Assert.Equal(["opus"], config.AudioCodecs);
         Assert.False(config.EnableVideo);
         Assert.Empty(config.IceServers);
+    }
+
+    [Fact]
+    public void ConferencePeerOptionsEnableStableNumericMediaIdsForRenegotiation()
+    {
+        var options = CommunicationPlugin.ToConferencePeerOptions(new WebRtcClientOptions());
+
+        Assert.True(options.UseStableNumericMediaIds);
+        Assert.Equal(["H264"], options.VideoCodecs);
     }
 }

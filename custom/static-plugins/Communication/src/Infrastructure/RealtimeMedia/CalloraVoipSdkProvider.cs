@@ -62,6 +62,7 @@ internal sealed class CalloraVoipSdkProvider : IRealtimeMediaProvider, IAsyncDis
             AudioCodecs = options.AudioCodecs,
             VideoCodecs = options.VideoCodecs,
             EnableVideo = options.EnableVideo,
+            UseStableNumericMediaIds = options.UseStableNumericMediaIds,
             LocalEndPoint = options.LocalEndPoint,
             LoggerFactory = loggerFactory,
         };

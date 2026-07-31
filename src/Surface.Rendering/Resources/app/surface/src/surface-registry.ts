@@ -12,6 +12,8 @@ export interface SurfaceView {
   component: Component
   /** Ascending render order; unset sorts as 0. */
   order?: number
+  /** Optional surface-key allowlist; absent means the view is workspace-wide. */
+  surfaceKeys?: readonly string[]
 }
 
 /**
@@ -39,4 +41,12 @@ export function createSurfaceRegistry(): SurfaceRegistry {
       views.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     },
   }
+}
+
+export function isSurfaceViewVisible(view: SurfaceView, surfaceKey: string): boolean {
+  return (
+    !view.surfaceKeys ||
+    view.surfaceKeys.length === 0 ||
+    view.surfaceKeys.some((candidate) => candidate === surfaceKey)
+  )
 }

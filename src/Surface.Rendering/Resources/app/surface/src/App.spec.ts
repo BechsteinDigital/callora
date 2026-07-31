@@ -31,4 +31,25 @@ describe('surface host (grundgerüst)', () => {
     expect(wrapper.find('[data-testid="surface-empty"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="demo"]').text()).toBe('acme')
   })
+
+  it('renders a surface-scoped view only on its assigned surface', () => {
+    const registry = createSurfaceRegistry()
+    registry.registerView({
+      id: 'videoconference.room',
+      component: defineComponent({ render: () => h('span', { 'data-testid': 'room' }) }),
+      surfaceKeys: ['videoconference'],
+    })
+
+    const otherSurface = mount(App, { props: { context, registry } })
+    const conferenceSurface = mount(App, {
+      props: {
+        context: { ...context, surfaceKey: 'videoconference' },
+        registry,
+      },
+    })
+
+    expect(otherSurface.find('[data-testid="room"]').exists()).toBe(false)
+    expect(otherSurface.find('[data-testid="surface-empty"]').exists()).toBe(true)
+    expect(conferenceSurface.find('[data-testid="room"]').exists()).toBe(true)
+  })
 })

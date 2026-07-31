@@ -1102,3 +1102,19 @@ static Callora.Administration.Api.PluginPublicHttpEndpoints.MapPluginPublicHttpE
 static Callora.Administration.Api.PluginPublicHttpRouteMatcher.FindMatch(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor!>! contributors, string! pluginId, string! httpMethod, string! routePath) -> Callora.Administration.Api.PluginPublicHttpRouteMatch?
 static Callora.Administration.Api.PluginPublicHttpRouteMatch.operator !=(Callora.Administration.Api.PluginPublicHttpRouteMatch? left, Callora.Administration.Api.PluginPublicHttpRouteMatch? right) -> bool
 static Callora.Administration.Api.PluginPublicHttpRouteMatch.operator ==(Callora.Administration.Api.PluginPublicHttpRouteMatch? left, Callora.Administration.Api.PluginPublicHttpRouteMatch? right) -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest
+Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.IsAssigned.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.IsAssigned.init -> void
+Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.SetWorkspacePluginAssignmentApiRequest() -> void
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.DisplayName.get -> string!
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsActive.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsAssigned.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsEntitled.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsGloballyActive.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.PluginId.get -> string!
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.WorkspacePluginAssignmentApiResponse(string! pluginId, string! displayName, bool isGloballyActive, bool isEntitled, bool isActive, bool isAssigned) -> void
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.List(string! workspaceKey, Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService! service, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.SetAssignment(string! workspaceKey, string! pluginId, Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest! request, Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService! service, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.WorkspacePluginsController() -> void
