@@ -90,6 +90,17 @@ export interface WorkspaceSurfaceUpsert {
   isActive: boolean
 }
 
+// Product-level workspace assignment. An assignment is effective only when
+// entitlement and workspace activation are both true.
+export interface WorkspacePluginAssignment {
+  pluginId: string
+  displayName: string
+  isGloballyActive: boolean
+  isEntitled: boolean
+  isActive: boolean
+  isAssigned: boolean
+}
+
 // The backend SurfaceAccessMode enum (ADR-014 §5.2).
 export const SURFACE_ACCESS_MODES = ['Public', 'Authenticated', 'Mixed'] as const
 
@@ -174,5 +185,28 @@ export const workspacesApi = {
         method: 'DELETE',
       }),
     )
+  },
+
+  async listPlugins(workspaceKey: string): Promise<WorkspacePluginAssignment[]> {
+    return (
+      await unwrap(
+        await apiFetch(`${basePath}/${encodeURIComponent(workspaceKey)}/plugins`),
+      )
+    ).json()
+  },
+
+  async setPluginAssignment(
+    workspaceKey: string,
+    pluginId: string,
+    isAssigned: boolean,
+  ): Promise<WorkspacePluginAssignment> {
+    return (
+      await unwrap(
+        await apiFetch(
+          `${basePath}/${encodeURIComponent(workspaceKey)}/plugins/${encodeURIComponent(pluginId)}`,
+          jsonInit('PUT', { isAssigned }),
+        ),
+      )
+    ).json()
   },
 }

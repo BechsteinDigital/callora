@@ -8,7 +8,7 @@ using Xunit;
 namespace Callora.Core.Tests.Communication.Sdk;
 
 /// <summary>
-/// WebRTC S1 — headless client setup. The <c>Communication:WebRtc</c> section drives the deployment ICE
+/// WebRTC S1 — headless client setup. The plugin-scoped <c>WebRtc</c> section drives the deployment ICE
 /// (STUN/TURN), audio codecs and video flag; absent/unparseable values fall back to the WebRTC standard
 /// (Opus, host-only ICE). Unlike the SIP path there is no µ-law bridge — WebRTC is Opus/transport-only.
 /// </summary>
@@ -20,6 +20,7 @@ public sealed class HeadlessWebRtcClientFactoryTests
         var config = HeadlessWebRtcClientFactory.BuildConfiguration(new WebRtcClientOptions());
 
         Assert.Equal(["opus"], config.AudioCodecs);
+        Assert.Equal(["H264"], config.VideoCodecs);
         Assert.False(config.EnableVideo);
         Assert.Empty(config.IceServers);
         Assert.Null(config.LoggerFactory);
@@ -31,6 +32,7 @@ public sealed class HeadlessWebRtcClientFactoryTests
         var options = new WebRtcClientOptions
         {
             AudioCodecs = ["opus", "PCMU"],
+            VideoCodecs = ["VP8", "H264"],
             EnableVideo = true,
             LocalEndPoint = new IPEndPoint(IPAddress.Parse("10.0.0.5"), 40000),
             IceServers =
@@ -51,6 +53,7 @@ public sealed class HeadlessWebRtcClientFactoryTests
         var mapped = HeadlessWebRtcClientFactory.BuildConfiguration(options);
 
         Assert.Equal(["opus", "PCMU"], mapped.AudioCodecs);
+        Assert.Equal(["VP8", "H264"], mapped.VideoCodecs);
         Assert.True(mapped.EnableVideo);
         Assert.Equal(new IPEndPoint(IPAddress.Parse("10.0.0.5"), 40000), mapped.LocalEndPoint);
 
@@ -84,6 +87,7 @@ public sealed class HeadlessWebRtcClientFactoryTests
         foreach (var options in new[] { fromNull, fromEmpty })
         {
             Assert.Equal(["opus"], options.AudioCodecs);
+            Assert.Equal(["H264"], options.VideoCodecs);
             Assert.False(options.EnableVideo);
             Assert.Empty(options.IceServers);
         }
@@ -94,21 +98,24 @@ public sealed class HeadlessWebRtcClientFactoryTests
     {
         var options = WebRtcClientOptions.FromConfiguration(Config(new()
         {
-            ["Communication:WebRtc:EnableVideo"] = "true",
-            ["Communication:WebRtc:AudioCodecs:0"] = "opus",
-            ["Communication:WebRtc:AudioCodecs:1"] = "G722",
-            ["Communication:WebRtc:IceServers:0:Host"] = "stun.example.org",
-            ["Communication:WebRtc:IceServers:0:Type"] = "stun",
-            ["Communication:WebRtc:IceServers:1:Host"] = "turn.example.org",
-            ["Communication:WebRtc:IceServers:1:Port"] = "5349",
-            ["Communication:WebRtc:IceServers:1:Type"] = "turn",
-            ["Communication:WebRtc:IceServers:1:Transport"] = "tls",
-            ["Communication:WebRtc:IceServers:1:Username"] = "user",
-            ["Communication:WebRtc:IceServers:1:Password"] = "secret",
+            ["WebRtc:EnableVideo"] = "true",
+            ["WebRtc:AudioCodecs:0"] = "opus",
+            ["WebRtc:AudioCodecs:1"] = "G722",
+            ["WebRtc:VideoCodecs:0"] = "VP8",
+            ["WebRtc:VideoCodecs:1"] = "H264",
+            ["WebRtc:IceServers:0:Host"] = "stun.example.org",
+            ["WebRtc:IceServers:0:Type"] = "stun",
+            ["WebRtc:IceServers:1:Host"] = "turn.example.org",
+            ["WebRtc:IceServers:1:Port"] = "5349",
+            ["WebRtc:IceServers:1:Type"] = "turn",
+            ["WebRtc:IceServers:1:Transport"] = "tls",
+            ["WebRtc:IceServers:1:Username"] = "user",
+            ["WebRtc:IceServers:1:Password"] = "secret",
         }));
 
         Assert.True(options.EnableVideo);
         Assert.Equal(["opus", "G722"], options.AudioCodecs);
+        Assert.Equal(["VP8", "H264"], options.VideoCodecs);
 
         Assert.Collection(
             options.IceServers,
@@ -134,8 +141,8 @@ public sealed class HeadlessWebRtcClientFactoryTests
     {
         var options = WebRtcClientOptions.FromConfiguration(Config(new()
         {
-            ["Communication:WebRtc:IceServers:0:Type"] = "stun", // no Host → not a usable entry
-            ["Communication:WebRtc:IceServers:1:Host"] = "stun.example.org",
+            ["WebRtc:IceServers:0:Type"] = "stun", // no Host → not a usable entry
+            ["WebRtc:IceServers:1:Host"] = "stun.example.org",
         }));
 
         var server = Assert.Single(options.IceServers);

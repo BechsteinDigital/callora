@@ -6,7 +6,7 @@ namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 
 /// <summary>
 /// Deployment-tunable settings for the plugin's self-built WebRTC client, read from the
-/// <c>Communication:WebRtc</c> configuration section. Mirrors <see cref="VoiceClientOptions"/> for the
+/// plugin-scoped <c>WebRtc</c> configuration section. Mirrors <see cref="VoiceClientOptions"/> for the
 /// SIP facade: every value defaults to the SDK/WebRTC standard, so an unconfigured deployment offers
 /// Opus over a fresh per-peer DTLS identity with host-only ICE gathering.
 /// </summary>
@@ -24,6 +24,9 @@ internal sealed record WebRtcClientOptions
     /// <summary>Audio codecs to offer, by name. Default is Opus — the WebRTC audio standard.</summary>
     public IReadOnlyList<string> AudioCodecs { get; init; } = ["opus"];
 
+    /// <summary>Video codecs to offer when video is enabled. Default is H264 for browser interoperability.</summary>
+    public IReadOnlyList<string> VideoCodecs { get; init; } = ["H264"];
+
     /// <summary>Whether to offer a video m-line. Default false; v1 passes this through without wiring media.</summary>
     public bool EnableVideo { get; init; }
 
@@ -31,7 +34,7 @@ internal sealed record WebRtcClientOptions
     public IPEndPoint LocalEndPoint { get; init; } = new(IPAddress.Loopback, 0);
 
     /// <summary>
-    /// Reads the options from the <c>Communication:WebRtc</c> section; unparseable values fall back to the
+    /// Reads the options from the plugin-scoped <c>WebRtc</c> section; unparseable values fall back to the
     /// defaults. ICE servers are read from the <c>IceServers</c> array (each entry: Host, optional Port,
     /// Type stun|turn, Transport udp|tcp|tls, optional Username/Password).
     /// </summary>
@@ -43,11 +46,12 @@ internal sealed record WebRtcClientOptions
             return defaults;
         }
 
-        var section = configuration.GetSection("Communication:WebRtc");
+        var section = configuration.GetSection("WebRtc");
         return new WebRtcClientOptions
         {
             IceServers = ReadIceServers(section.GetSection("IceServers")),
             AudioCodecs = ReadCodecs(section.GetSection("AudioCodecs"), defaults.AudioCodecs),
+            VideoCodecs = ReadCodecs(section.GetSection("VideoCodecs"), defaults.VideoCodecs),
             EnableVideo = ParseBool(section["EnableVideo"], defaults.EnableVideo),
             LocalEndPoint = ParseEndPoint(section["LocalEndPoint"], defaults.LocalEndPoint),
         };

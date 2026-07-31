@@ -35,7 +35,7 @@ namespace Callora.Plugin.Communication;
 /// purge and the media WebSocket surface, and — when voice is enabled for the deployment — provisions a
 /// live voice channel per enabled SIP account. Voice turns on either when the host injects an
 /// <see cref="ISdkVoiceRuntime"/> (tests/custom hosts) or when configuration sets
-/// <c>Communication:Voice:Enabled=true</c>, in which case the plugin builds the real SDK voice client itself.
+/// plugin-scoped <c>Voice:Enabled=true</c>, in which case the plugin builds the real SDK voice client itself.
 /// </summary>
 public sealed class CommunicationPlugin : IHostManagedPlugin
 {
@@ -79,10 +79,10 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     private CalloraVoipSdkProvider? _conferenceMediaProvider;
 
     /// <summary>Configuration key that enables the plugin's self-built SDK voice client.</summary>
-    internal const string VoiceEnabledConfigKey = "Communication:Voice:Enabled";
+    internal const string VoiceEnabledConfigKey = "Voice:Enabled";
 
     /// <summary>Configuration key that enables the plugin's self-built WebRTC client.</summary>
-    internal const string WebRtcEnabledConfigKey = "Communication:WebRtc:Enabled";
+    internal const string WebRtcEnabledConfigKey = "WebRtc:Enabled";
 
     /// <inheritdoc />
     public async ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
@@ -156,11 +156,10 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         // Consequence: WebRTC requires a database (consistent with the SIP voice path). Without a DB the
         // plugin degrades cleanly: no minter or signalling contributor exported, no error.
         // The in-memory token store still needs no persistence; it is constructed here for wiring symmetry.
-        if (IsWebRtcEnabled(context.Services))
+        if (IsWebRtcEnabled(context.PluginConfiguration))
         {
             var loggerFactory = context.Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
-            var configuration = context.Services.GetService(typeof(IConfiguration)) as IConfiguration;
-            var webRtcOptions = WebRtcClientOptions.FromConfiguration(configuration);
+            var webRtcOptions = WebRtcClientOptions.FromConfiguration(context.PluginConfiguration);
             _ownedWebRtcClient = HeadlessWebRtcClientFactory.Create(webRtcOptions, loggerFactory);
 
             // A channel is externally reachable when STUN/TURN is configured or the bind endpoint is
@@ -262,7 +261,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             return;
         }
 
-        var voiceRuntime = ResolveVoiceRuntime(context.Services);
+        var voiceRuntime = ResolveVoiceRuntime(context.Services, context.PluginConfiguration);
         if (voiceRuntime is null)
         {
             return;
@@ -284,33 +283,42 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
 
     // An explicitly injected runtime (tests/custom hosts) always wins. Otherwise, when the deployment
     // enables voice via configuration, the plugin builds and owns the real SDK voice client itself.
-    internal ISdkVoiceRuntime? ResolveVoiceRuntime(IServiceProvider services)
+    internal ISdkVoiceRuntime? ResolveVoiceRuntime(
+        IServiceProvider services,
+        IConfiguration? pluginConfiguration = null)
     {
         if (services.GetService(typeof(ISdkVoiceRuntime)) is ISdkVoiceRuntime injected)
         {
             return injected;
         }
 
-        if (!IsVoiceEnabled(services))
+        pluginConfiguration ??= services.GetService(typeof(IConfiguration)) as IConfiguration;
+        if (!IsVoiceEnabled(pluginConfiguration))
         {
             return null;
         }
 
-        var options = VoiceClientOptions.FromConfiguration(services.GetService(typeof(IConfiguration)) as IConfiguration);
+        var options = VoiceClientOptions.FromConfiguration(pluginConfiguration);
         _ownedVoipClient = HeadlessVoipClientFactory.Create(options);
         return new VoipClientVoiceRuntime(_ownedVoipClient);
     }
 
     // Reads the deployment switch from host configuration; absent/unparseable means voice stays off.
     internal static bool IsVoiceEnabled(IServiceProvider services) =>
-        services.GetService(typeof(IConfiguration)) is IConfiguration configuration
-        && bool.TryParse(configuration[VoiceEnabledConfigKey], out var enabled)
+        IsVoiceEnabled(services.GetService(typeof(IConfiguration)) as IConfiguration);
+
+    internal static bool IsVoiceEnabled(IConfiguration? pluginConfiguration) =>
+        pluginConfiguration is not null
+        && bool.TryParse(pluginConfiguration[VoiceEnabledConfigKey], out var enabled)
         && enabled;
 
     // Reads the WebRTC deployment switch from host configuration; absent/unparseable means WebRTC stays off.
     internal static bool IsWebRtcEnabled(IServiceProvider services) =>
-        services.GetService(typeof(IConfiguration)) is IConfiguration configuration
-        && bool.TryParse(configuration[WebRtcEnabledConfigKey], out var enabled)
+        IsWebRtcEnabled(services.GetService(typeof(IConfiguration)) as IConfiguration);
+
+    internal static bool IsWebRtcEnabled(IConfiguration? pluginConfiguration) =>
+        pluginConfiguration is not null
+        && bool.TryParse(pluginConfiguration[WebRtcEnabledConfigKey], out var enabled)
         && enabled;
 
     // Maps the deployment WebRTC options onto the neutral per-peer options the conference SFU builds its
@@ -324,7 +332,12 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         return new MediaPeerOptions
         {
             AudioCodecs = options.AudioCodecs,
+            VideoCodecs = options.VideoCodecs,
             EnableVideo = true,
+            // Conference peers add one audio/video pair per remote participant after their initial offer.
+            // Stable numeric MIDs keep every previously negotiated m-line at the same index during those
+            // re-offers, as RFC 8829 and browser setRemoteDescription require.
+            UseStableNumericMediaIds = true,
             IceServers = [.. options.IceServers.Select(ToMediaIceServer)],
             LocalEndPoint = options.LocalEndPoint,
         };

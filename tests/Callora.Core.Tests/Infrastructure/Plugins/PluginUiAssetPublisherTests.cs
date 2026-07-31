@@ -501,6 +501,48 @@ public sealed class PluginUiAssetPublisherTests
         }
     }
 
+    [Fact]
+    public async Task PublishAllAsync_PackagedResourcesRoot_IsPublished()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"callora-plugin-assets-{Guid.NewGuid():N}");
+        var pluginDirectory = Path.Combine(tempRoot, "custom", "plugins");
+        var pluginRoot = Path.Combine(pluginDirectory, "videoconference");
+        var adminDirectory = Path.Combine(pluginRoot, "Resources", "public", "admin");
+        var webRoot = Path.Combine(tempRoot, "wwwroot");
+        Directory.CreateDirectory(adminDirectory);
+        Directory.CreateDirectory(webRoot);
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(pluginRoot, "registry.json"),
+                """{ "pluginId": "videoconference", "assemblyFileName": "Callora.Plugin.VideoConference.dll" }""");
+            await File.WriteAllTextAsync(
+                Path.Combine(adminDirectory, "main.js"),
+                "console.log('videoconference admin');");
+            var sut = new PluginUiAssetPublisher(
+                new InMemoryPluginInstallationRepository(),
+                new TestWebHostEnvironment { WebRootPath = webRoot, ContentRootPath = tempRoot },
+                new CalloraHostingOptions { PluginDirectory = pluginDirectory },
+                NullLogger<PluginUiAssetPublisher>.Instance);
+
+            await sut.PublishAllAsync();
+
+            var manifestPath = Path.Combine(webRoot, "plugin-assets", ".build", "ui-assets.manifest.json");
+            using var document = JsonDocument.Parse(await File.ReadAllTextAsync(manifestPath));
+            var entry = Assert.Single(document.RootElement.GetProperty("entries").EnumerateArray());
+            Assert.Equal("videoconference", entry.GetProperty("pluginId").GetString());
+            Assert.Equal("videoconference/app/admin/main.js", entry.GetProperty("entryPath").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
     private static string? ReadWorkspaceEntryHash(string manifestJson)
     {
         using var document = JsonDocument.Parse(manifestJson);

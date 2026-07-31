@@ -67,6 +67,23 @@ describe('mountSurface — islands mode', () => {
 
     expect(document.querySelector('[data-testid="loose.view"]')?.textContent).toBe('default')
   })
+
+  it('does not mount a matching island when the view belongs to another surface', () => {
+    document.body.innerHTML =
+      '<main data-workspace="acme" data-surface="portal">' +
+      '  <div data-callora-island="videoconference.room"></div>' +
+      '</main>'
+    const registry = createSurfaceRegistry()
+    registry.registerView({
+      id: 'videoconference.room',
+      component: probe('videoconference.room'),
+      surfaceKeys: ['videoconference'],
+    })
+
+    mountSurface(registry, document)
+
+    expect(document.querySelector('[data-testid="videoconference.room"]')).toBeNull()
+  })
 })
 
 describe('mountSurface — no mount points', () => {

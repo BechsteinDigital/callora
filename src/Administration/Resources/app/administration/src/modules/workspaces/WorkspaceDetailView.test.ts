@@ -17,6 +17,7 @@ vi.mock('./workspacesApi', () => ({ workspacesApi: { get: getMock, upsert: upser
 // the detail-view tests stay focused on the workspace fields.
 vi.mock('./WorkspaceMembers.vue', () => ({ default: { name: 'WorkspaceMembers', template: '<div />' } }))
 vi.mock('./WorkspaceSurfaces.vue', () => ({ default: { name: 'WorkspaceSurfaces', template: '<div />' } }))
+vi.mock('./WorkspacePlugins.vue', () => ({ default: { name: 'WorkspacePlugins', template: '<div />' } }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: { value: null } }) }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: routeParams.value }),

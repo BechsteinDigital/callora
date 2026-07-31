@@ -1,4 +1,6 @@
 using Callora.Core.Application.Extensions;
+using Callora.Core.Application.Workspaces;
+using Callora.Core.Domain.Workspaces;
 using Callora.Core.Tests.Support;
 using Xunit;
 
@@ -63,6 +65,53 @@ public sealed class WorkspaceUiChainResolverTests
         var chain = await resolver.ResolveAsync("workspace-a");
 
         Assert.Equal(["dialer"], chain);
+    }
+
+    [Fact]
+    public async Task Resolve_ForSurface_PrependsAssignedSurfaceTemplate()
+    {
+        var surfaceStore = new InMemoryWorkspaceSurfaceStore();
+        _ = await surfaceStore.UpsertAsync(
+            "workspace-a",
+            new WorkspaceSurfaceInput(
+                SurfaceKey: "videoconference",
+                DisplayName: "Video conference",
+                SurfaceType: "videoconference",
+                PublicBaseUrl: null,
+                PublicHost: null,
+                PublicPathPrefix: "/meet",
+                AccessMode: SurfaceAccessMode.Mixed,
+                Locale: "de",
+                TemplatePluginId: "videoconference",
+                TemplateVersion: "1.0.0",
+                ThemePluginId: null,
+                ThemeVersion: null,
+                IsActive: true));
+        var resolver = new WorkspaceUiChainResolver(
+            new StaticWorkspaceTemplateResolutionService(
+                [Template("template-alpha", "workspace.base")]),
+            new StaticWorkspacePluginActivationReader(["videoconference", "dialer"]),
+            new StaticPluginAvailabilityEvaluator(),
+            surfaceStore);
+
+        var chain = await resolver.ResolveAsync("workspace-a", "videoconference");
+
+        Assert.Equal(["videoconference", "template-alpha", "dialer"], chain);
+    }
+
+    [Fact]
+    public async Task Resolve_ForUnknownSurface_FallsBackToWorkspaceChain()
+    {
+        var resolver = new WorkspaceUiChainResolver(
+            new StaticWorkspaceTemplateResolutionService(
+                [Template("template-alpha", "workspace.base")]),
+            new StaticWorkspacePluginActivationReader(["dialer"]),
+            new StaticPluginAvailabilityEvaluator(),
+            new InMemoryWorkspaceSurfaceStore());
+
+        var chain = await resolver.ResolveAsync("workspace-a", "missing");
+
+        Assert.Equal(["template-alpha", "dialer"], chain);
     }
 
     private static WorkspaceTemplateEffectiveSnapshot Template(string pluginId, string templateKey) =>

@@ -18,6 +18,12 @@ internal sealed record MediaPeerOptions
     /// <summary>Whether the peer offers video.</summary>
     public bool EnableVideo { get; init; }
 
+    /// <summary>
+    /// Whether to use stable numeric MIDs and append runtime tracks in insertion order for browser-safe
+    /// renegotiation. Default false for fixed-track voice peers.
+    /// </summary>
+    public bool UseStableNumericMediaIds { get; init; }
+
     /// <summary>ICE helper servers (STUN/TURN) for candidate gathering. Default: none (host-only).</summary>
     public IReadOnlyList<MediaIceServer> IceServers { get; init; } = [];
 
