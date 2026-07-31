@@ -1,7 +1,7 @@
 <template>
   <section class="extension-host">
     <template v-if="pages.length">
-      <component :is="page" v-for="(page, index) in pages" :key="index" />
+      <component :is="page" v-for="(page, index) in pages" :key="index" :ctx="pageContext" />
     </template>
     <div v-else class="placeholder">
       <h1>{{ pluginId }}</h1>
@@ -15,9 +15,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getExtensions } from '@/core/extensions/registry'
+import { useWorkspaceContext } from '@/core/workspace/workspaceContext'
 
 // Generic host for a plugin's admin page. The route is neutral: it renders
 // whatever component a plugin registered for its page slot (via a UI bundle),
@@ -25,9 +26,15 @@ import { getExtensions } from '@/core/extensions/registry'
 // domain-neutral — no plugin-specific code here.
 const route = useRoute()
 const pluginId = computed(() => String(route.params.pluginId ?? ''))
+const { activeWorkspace, ensure: ensureWorkspace } = useWorkspaceContext()
+const pageContext = computed(() => ({
+  workspaceKey: activeWorkspace.value.trim() || null,
+}))
 
 // Slot convention for a plugin's full admin page — a stable public contract.
 const pages = computed(() => getExtensions(`extension.page.${pluginId.value}`))
+
+onMounted(ensureWorkspace)
 </script>
 
 <style scoped lang="scss">

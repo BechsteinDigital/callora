@@ -19,6 +19,23 @@ describe('registerSurfaceView', () => {
     expect(registerView).toHaveBeenCalledWith({ id: 'voip.calls', component: stub })
   })
 
+  it('forwards a surface allowlist as part of the public view contract', () => {
+    const registerView = vi.fn()
+    window.calloraSurface = { views: [], registerView } as SurfaceRegistry
+
+    registerSurfaceView({
+      id: 'videoconference.room',
+      component: stub,
+      surfaceKeys: ['videoconference'],
+    })
+
+    expect(registerView).toHaveBeenCalledWith({
+      id: 'videoconference.room',
+      component: stub,
+      surfaceKeys: ['videoconference'],
+    })
+  })
+
   it('is a no-op with a warning (never throws) when the runtime is absent', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 

@@ -15,7 +15,7 @@
     "communication.webrtc"
   ],
   "dependencies": {
-    "Callora.Core": ">=0.1.0",
-    "Callora.Plugin.Communication.Abstractions": ">=0.1.0"
+    "Callora.Core": ">=0.1.0-local",
+    "Callora.Plugin.Communication.Abstractions": ">=0.1.0-local"
   }
 }

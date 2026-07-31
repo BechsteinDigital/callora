@@ -5,7 +5,7 @@ namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 /// <summary>
 /// Builds the server-side CalloraVoipSdk client the plugin registers voice accounts through when a
 /// deployment enables voice. The signalling transport and media-security posture come from
-/// <see cref="VoiceClientOptions"/> (the <c>Communication:Voice</c> config); codec and bridge format
+/// <see cref="VoiceClientOptions"/> (the plugin-scoped <c>Voice</c> config); codec and bridge format
 /// stay G.711 µ-law (<c>PCMU</c>) because the media bridge (<c>SdkCallAudioStream</c>) is µ-law only.
 /// The default silence audio device means a headless server needs no audio hardware — media flows
 /// through each call's media tap (the RTP↔bridge). The caller owns the returned client and disposes it.

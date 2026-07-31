@@ -6,7 +6,7 @@ namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 /// <summary>
 /// Builds the server-side CalloraVoipSdk WebRTC client the plugin creates peer connections through when a
 /// deployment enables browser voice. The counterpart to <see cref="HeadlessVoipClientFactory"/> for the
-/// SIP facade: it maps the deployment <see cref="WebRtcClientOptions"/> (the <c>Communication:WebRtc</c>
+/// SIP facade: it maps the deployment <see cref="WebRtcClientOptions"/> (the plugin-scoped <c>WebRtc</c>
 /// config) directly onto the SDK's immutable <see cref="WebRtcConfiguration"/> and constructs a
 /// <see cref="WebRtcClient"/> — the WebRTC analogue of <c>new VoipClient(config)</c>, so no host DI
 /// container is needed. The caller owns the returned client and disposes it asynchronously.
@@ -24,8 +24,9 @@ internal static class HeadlessWebRtcClientFactory
 
     /// <summary>
     /// Maps the deployment options directly onto the SDK <see cref="WebRtcConfiguration"/> — the ICE
-    /// servers, audio codecs, video flag and local endpoint modelled by <see cref="WebRtcClientOptions"/>.
-    /// The remaining configuration fields (video codecs, simulcast, DTLS identity) keep their SDK defaults.
+    /// servers, audio/video codecs, video flag and local endpoint modelled by
+    /// <see cref="WebRtcClientOptions"/>. The remaining configuration fields (simulcast and DTLS identity)
+    /// keep their SDK defaults.
     /// Kept a pure, testable function so the option-to-configuration mapping is verifiable without
     /// constructing a real client. The <paramref name="loggerFactory"/> is passed through when set so a
     /// later wiring slice can supply the host's factory for peer diagnostics.
@@ -38,6 +39,7 @@ internal static class HeadlessWebRtcClientFactory
         {
             IceServers = options.IceServers,
             AudioCodecs = options.AudioCodecs,
+            VideoCodecs = options.VideoCodecs,
             EnableVideo = options.EnableVideo,
             LocalEndPoint = options.LocalEndPoint,
             LoggerFactory = loggerFactory,

@@ -8,7 +8,7 @@ using Xunit;
 namespace Callora.Core.Tests.Communication.Sdk;
 
 /// <summary>
-/// H1 — deployment-tunable voice config. The <c>Communication:Voice</c> section drives transport and
+/// H1 — deployment-tunable voice config. The plugin-scoped <c>Voice</c> section drives transport and
 /// media-security posture; absent/unparseable values fall back to the SDK defaults (so an unconfigured
 /// deployment is unchanged). Codec and bridge format are always PCMU (the media bridge is µ-law only).
 /// </summary>
@@ -35,11 +35,11 @@ public sealed class VoiceClientOptionsTests
     {
         var options = VoiceClientOptions.FromConfiguration(Config(new()
         {
-            ["Communication:Voice:Transport"] = "Tls",
-            ["Communication:Voice:SrtpPolicy"] = "Required",
-            ["Communication:Voice:OfferDtlsSrtp"] = "true",
-            ["Communication:Voice:RequireSecureSignalingForSdes"] = "true",
-            ["Communication:Voice:InboundMediaTimeoutSeconds"] = "30",
+            ["Voice:Transport"] = "Tls",
+            ["Voice:SrtpPolicy"] = "Required",
+            ["Voice:OfferDtlsSrtp"] = "true",
+            ["Voice:RequireSecureSignalingForSdes"] = "true",
+            ["Voice:InboundMediaTimeoutSeconds"] = "30",
         }));
 
         Assert.Equal(SipTransport.Tls, options.Transport);
@@ -56,8 +56,8 @@ public sealed class VoiceClientOptionsTests
     {
         var options = VoiceClientOptions.FromConfiguration(Config(new()
         {
-            ["Communication:Voice:Transport"] = transport,
-            ["Communication:Voice:InboundMediaTimeoutSeconds"] = "-5", // non-positive → default
+            ["Voice:Transport"] = transport,
+            ["Voice:InboundMediaTimeoutSeconds"] = "-5", // non-positive → default
         }));
 
         Assert.Equal(SipTransport.Udp, options.Transport);

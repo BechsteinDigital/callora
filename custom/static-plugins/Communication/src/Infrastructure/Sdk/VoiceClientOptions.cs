@@ -6,7 +6,7 @@ namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 
 /// <summary>
 /// Deployment-tunable settings for the plugin's self-built voice client, read from the
-/// <c>Communication:Voice</c> configuration section. Every value defaults to the SDK/reference default,
+/// plugin-scoped <c>Voice</c> configuration section. Every value defaults to the SDK/reference default,
 /// so an unconfigured deployment behaves exactly as before. Codec and bridge format are deliberately
 /// NOT exposed: the media bridge (<c>SdkCallAudioStream</c>) is G.711 µ-law only, so they stay PCMU.
 /// </summary>
@@ -27,7 +27,7 @@ internal sealed record VoiceClientOptions
     /// <summary>How long to wait for inbound media before treating the call as silent (default 15 s).</summary>
     public TimeSpan InboundMediaTimeout { get; init; } = TimeSpan.FromSeconds(15);
 
-    /// <summary>Reads the options from the <c>Communication:Voice</c> section; unparseable values fall back.</summary>
+    /// <summary>Reads the options from the plugin-scoped <c>Voice</c> section; unparseable values fall back.</summary>
     public static VoiceClientOptions FromConfiguration(IConfiguration? configuration)
     {
         var defaults = new VoiceClientOptions();
@@ -36,7 +36,7 @@ internal sealed record VoiceClientOptions
             return defaults;
         }
 
-        var section = configuration.GetSection("Communication:Voice");
+        var section = configuration.GetSection("Voice");
         return new VoiceClientOptions
         {
             Transport = ParseEnum(section["Transport"], defaults.Transport),
