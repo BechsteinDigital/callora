@@ -295,6 +295,29 @@ public sealed class WorkspacePublicEndpointsTests
     }
 
     [Fact]
+    public async Task UiChainEndpoint_WithSurfaceTemplate_ReturnsSurfaceSpecificChain()
+    {
+        await using var app = await CreateAppAsync();
+        await SeedSurfaceAsync(
+            app,
+            "workspace-public",
+            "videoconference",
+            SurfaceAccessMode.Mixed,
+            templatePluginId: "videoconference");
+
+        var client = app.GetTestClient();
+        var response = await client.GetAsync(
+            "/workspace/public/ui-chain?workspaceKey=workspace-public&surfaceKey=videoconference");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(
+            "\"chain\":[\"videoconference\",\"dialer\",\"voip\"]",
+            content,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ThemeEndpoint_WithoutAssignedTheme_ReturnsEmptyValues()
     {
         await using var app = await CreateAppAsync();
@@ -423,7 +446,8 @@ public sealed class WorkspacePublicEndpointsTests
         WebApplication app,
         string workspaceKey,
         string surfaceKey,
-        SurfaceAccessMode accessMode)
+        SurfaceAccessMode accessMode,
+        string? templatePluginId = null)
     {
         var surfaceStore = app.Services.GetRequiredService<IWorkspaceSurfaceStore>();
         _ = await surfaceStore.UpsertAsync(
@@ -437,7 +461,7 @@ public sealed class WorkspacePublicEndpointsTests
                 PublicPathPrefix: "/",
                 AccessMode: accessMode,
                 Locale: null,
-                TemplatePluginId: null,
+                TemplatePluginId: templatePluginId,
                 TemplateVersion: null,
                 ThemePluginId: null,
                 ThemeVersion: null,

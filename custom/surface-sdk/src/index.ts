@@ -22,6 +22,11 @@ export interface SurfaceView {
   component: Component
   /** Ascending render order in app mode; unset sorts as 0. */
   order?: number
+  /**
+   * Optional allowlist of surface keys this view belongs to. Omit it for a
+   * workspace-wide contribution.
+   */
+  surfaceKeys?: readonly string[]
 }
 
 /** The runtime registry plugins dock into (window.calloraSurface). */

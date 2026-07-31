@@ -12,7 +12,7 @@ namespace Callora.Core.Tests.Communication;
 /// <summary>
 /// Deployment wiring of the self-built voice client (B4-deep-3 follow-up): voice turns on when the host
 /// injects an <see cref="ISdkVoiceRuntime"/> (tests/custom hosts) or when configuration sets
-/// <c>Communication:Voice:Enabled=true</c>. An injected runtime always wins; otherwise the plugin builds
+/// plugin-scoped <c>Voice:Enabled=true</c>. An injected runtime always wins; otherwise the plugin builds
 /// its own only when configured. The self-build → real-registration path itself is covered end-to-end by
 /// the opt-in Asterisk integration tests.
 /// </summary>

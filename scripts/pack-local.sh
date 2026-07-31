@@ -18,6 +18,7 @@ PROJECTS=(
   "src/Core/Callora.Core.csproj"
   "src/Administration/Callora.Administration.csproj"
   "src/Workspace/Callora.Workspace.csproj"
+  "src/Surface.Rendering/Callora.Surface.Rendering.csproj"
   "custom/static-plugins/Communication/src/Abstractions/Callora.Plugin.Communication.Abstractions.csproj"
 )
 
@@ -28,6 +29,9 @@ mkdir -p "$FEED"
 for proj in "${PROJECTS[@]}"; do
   echo "→ pack $proj"
   dotnet pack "$REPO_ROOT/$proj" -c Release \
+    --disable-build-servers \
+    -m:1 \
+    --tl:off \
     -p:MinVerVersionOverride="$VERSION" \
     -o "$FEED"
 done

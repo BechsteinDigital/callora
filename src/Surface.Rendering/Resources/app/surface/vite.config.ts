@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
+import { browserProcessDefinitions } from './src/build-constants'
 
 // The surface runtime is the neutral grundgerüst that the SSR SurfaceShell loads
 // into #callora-app (ADR-014 §8). It builds as ONE self-mounting IIFE bundle with
@@ -11,6 +12,10 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: '/surface-app/',
+  // Vue's browser bundle still contains CommonJS-style environment guards.
+  // The Surface is loaded directly as an IIFE (there is no Node/process shim),
+  // so leaving these references intact aborts the shell before it can mount.
+  define: browserProcessDefinitions,
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   build: {
     outDir: fileURLToPath(new URL('../../../wwwroot/surface-app', import.meta.url)),

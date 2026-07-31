@@ -196,14 +196,17 @@ public sealed class PluginUiAssetPublisher(
             Directory.Delete(backupRoot, recursive: true);
         }
 
-        // Move the live set aside (a rename, not a copy), then move staging into
-        // place. Same volume (siblings under wwwroot) → each Move is an atomic rename.
+        // Move the live set aside, then move staging into place. The common path is
+        // an atomic same-filesystem rename. Some Docker OverlayFS configurations
+        // reject renaming a lower-layer directory with EXDEV even for sibling paths;
+        // the directory operation then copies through a temporary directory on the
+        // destination filesystem and performs the final rename there.
         if (Directory.Exists(liveRoot))
         {
-            Directory.Move(liveRoot, backupRoot);
+            PluginUiAssetDirectoryOperations.MoveDirectory(liveRoot, backupRoot);
         }
 
-        Directory.Move(stagingRoot, liveRoot);
+        PluginUiAssetDirectoryOperations.MoveDirectory(stagingRoot, liveRoot);
 
         if (Directory.Exists(backupRoot))
         {
@@ -327,6 +330,9 @@ public sealed class PluginUiAssetPublisher(
             Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "public")) ||
             Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "app")) ||
             Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "views", "workspace")) ||
+            Directory.Exists(Path.Combine(pluginRoot, "Resources", "public")) ||
+            Directory.Exists(Path.Combine(pluginRoot, "Resources", "app")) ||
+            Directory.Exists(Path.Combine(pluginRoot, "Resources", "views", "workspace")) ||
             Directory.Exists(Path.Combine(pluginRoot, "public")) ||
             Directory.Exists(Path.Combine(pluginRoot, "app")) ||
             Directory.Exists(Path.Combine(pluginRoot, "views", "workspace"));
@@ -536,8 +542,10 @@ public sealed class PluginUiAssetPublisher(
         string[] candidates =
         [
             Path.Combine(pluginRoot, "src", "Resources", "public", surface),
+            Path.Combine(pluginRoot, "Resources", "public", surface),
             Path.Combine(pluginRoot, "public", surface),
             Path.Combine(pluginRoot, "src", "Resources", "app", surface),
+            Path.Combine(pluginRoot, "Resources", "app", surface),
             Path.Combine(pluginRoot, "app", surface)
         ];
 
@@ -558,6 +566,12 @@ public sealed class PluginUiAssetPublisher(
         if (Directory.Exists(sourcePreferred))
         {
             return sourcePreferred;
+        }
+
+        var packagedResources = Path.Combine(pluginRoot, "Resources", "views", "workspace");
+        if (Directory.Exists(packagedResources))
+        {
+            return packagedResources;
         }
 
         return Path.Combine(pluginRoot, "views", "workspace");

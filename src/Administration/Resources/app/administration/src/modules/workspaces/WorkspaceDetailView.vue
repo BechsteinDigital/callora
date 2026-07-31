@@ -38,6 +38,11 @@
     </form>
 
     <WorkspaceMembers v-if="isEdit && loaded" :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
+    <WorkspacePlugins
+      v-if="isEdit && loaded"
+      :workspace-key="loaded.workspaceKey"
+      :can-manage="canManagePlugins"
+    />
     <WorkspaceSurfaces v-if="isEdit && loaded" :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
   </section>
 </template>
@@ -51,6 +56,7 @@ import { hasPermission } from '@/core/auth/permissions'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import WorkspaceMembers from './WorkspaceMembers.vue'
+import WorkspacePlugins from './WorkspacePlugins.vue'
 import WorkspaceSurfaces from './WorkspaceSurfaces.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
@@ -74,6 +80,7 @@ const saving = ref(false)
 // workspace.update — same key that guards the workspace upsert. UI-only.
 const ctx = useAuthStore().context
 const canManage = computed(() => hasPermission(ctx.value, 'workspace.update'))
+const canManagePlugins = computed(() => hasPermission(ctx.value, 'plugin.execute'))
 
 // The key and display name are required; the type is required by the backend too.
 const canSubmit = computed(
@@ -157,7 +164,7 @@ onMounted(load)
 <style scoped lang="scss">
 .detail {
   padding: calc(var(--cal-space) * 3);
-  max-width: 460px;
+  max-width: 920px;
 }
 
 .form {
@@ -165,6 +172,7 @@ onMounted(load)
   flex-direction: column;
   gap: calc(var(--cal-space) * 1.5);
   margin-top: calc(var(--cal-space) * 2);
+  max-width: 460px;
 }
 
 .form label {

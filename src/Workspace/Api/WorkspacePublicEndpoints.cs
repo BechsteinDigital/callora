@@ -176,7 +176,7 @@ public static class WorkspacePublicEndpoints
                     }
 
                     var chain = await uiChainResolver
-                        .ResolveAsync(normalizedKey, cancellationToken)
+                        .ResolveAsync(normalizedKey, surfaceKey, cancellationToken)
                         .ConfigureAwait(false);
                     return Results.Ok(new
                     {
@@ -377,7 +377,12 @@ public static class WorkspacePublicEndpoints
                     return Results.Redirect(workspaceUrl);
                 })
             .AllowAnonymous()
-            .ExcludeFromDescription();
+            .ExcludeFromDescription()
+            // In a colocated host Surface.Rendering owns public non-file paths.
+            // Keeping this fallback at a later order lets concrete Workspace/API
+            // routes win normally and leaves the redirect available to hosts that
+            // do not compose Surface.Rendering.
+            .WithOrder(100);
     }
 
     private static string ResolveForwardedHost(HttpContext httpContext)

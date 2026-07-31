@@ -1,5 +1,6 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Workspaces;
 
 namespace Callora.Core.Application.Extensions;
 
@@ -9,27 +10,67 @@ namespace Callora.Core.Application.Extensions;
 /// workspace's remaining active plugins. The shells load UI bundles in this
 /// order so later bundles can extend blocks contributed by earlier ones.
 /// </summary>
-public sealed class WorkspaceUiChainResolver(
-    IWorkspaceTemplateResolutionService templateResolution,
-    IWorkspacePluginActivationReader activationReader,
-    IPluginAvailabilityEvaluator availabilityEvaluator)
+public sealed class WorkspaceUiChainResolver
 {
+    private readonly IWorkspaceTemplateResolutionService _templateResolution;
+    private readonly IWorkspacePluginActivationReader _activationReader;
+    private readonly IPluginAvailabilityEvaluator _availabilityEvaluator;
+    private readonly IWorkspaceSurfaceStore? _surfaceStore;
+
+    public WorkspaceUiChainResolver(
+        IWorkspaceTemplateResolutionService templateResolution,
+        IWorkspacePluginActivationReader activationReader,
+        IPluginAvailabilityEvaluator availabilityEvaluator)
+        : this(templateResolution, activationReader, availabilityEvaluator, surfaceStore: null)
+    {
+    }
+
+    public WorkspaceUiChainResolver(
+        IWorkspaceTemplateResolutionService templateResolution,
+        IWorkspacePluginActivationReader activationReader,
+        IPluginAvailabilityEvaluator availabilityEvaluator,
+        IWorkspaceSurfaceStore? surfaceStore)
+    {
+        _templateResolution = templateResolution;
+        _activationReader = activationReader;
+        _availabilityEvaluator = availabilityEvaluator;
+        _surfaceStore = surfaceStore;
+    }
+
     public async Task<IReadOnlyList<string>> ResolveAsync(
         string workspaceKey,
+        CancellationToken cancellationToken = default) =>
+        await ResolveAsync(workspaceKey, surfaceKey: null, cancellationToken).ConfigureAwait(false);
+
+    public async Task<IReadOnlyList<string>> ResolveAsync(
+        string workspaceKey,
+        string? surfaceKey,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
         var normalizedKey = workspaceKey.Trim();
 
-        var effectiveTemplates = await templateResolution
+        var effectiveTemplates = await _templateResolution
             .ResolveAsync(normalizedKey, cancellationToken)
             .ConfigureAwait(false);
-        var activePluginIds = await activationReader
+        var activePluginIds = await _activationReader
             .ListActivePluginIdsAsync(normalizedKey, cancellationToken)
             .ConfigureAwait(false);
 
         var chain = new List<string>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (_surfaceStore is not null && !string.IsNullOrWhiteSpace(surfaceKey))
+        {
+            var surface = await _surfaceStore
+                .GetAsync(normalizedKey, surfaceKey.Trim(), cancellationToken)
+                .ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(surface?.TemplatePluginId) &&
+                seen.Add(surface.TemplatePluginId))
+            {
+                chain.Add(surface.TemplatePluginId);
+            }
+        }
 
         foreach (var template in effectiveTemplates)
         {
@@ -50,7 +91,7 @@ public sealed class WorkspaceUiChainResolver(
             // available in the workspace (REV2 §13): a lapsed entitlement,
             // missing capability or an unhealthy runtime drops it from the chain
             // without touching its desired activation.
-            var availability = await availabilityEvaluator
+            var availability = await _availabilityEvaluator
                 .EvaluateAsync(pluginId, normalizedKey, cancellationToken)
                 .ConfigureAwait(false);
             if (availability.IsAvailable)

@@ -145,6 +145,8 @@ internal sealed class CapturingHostPluginContext(
 
     public IServiceProvider Services => this;
 
+    public IConfiguration? PluginConfiguration => configuration;
+
     public void Export(Type contractType, object service)
     {
         Exports[contractType] = service;
