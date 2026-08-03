@@ -49,6 +49,9 @@
          Abhängigkeitsspine, daher solution-weit wirksam. NU1510 (Pruning-Hinweis "Referenz
          überflüssig") ist hier gewollt unterdrückt — die Referenz erzwingt die Patch-Version;
          KEINE Security-Advisory wird unterdrückt. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="System.Security.Cryptography.Xml" NoWarn="NU1510" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
