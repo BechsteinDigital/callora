@@ -46,6 +46,16 @@ internal sealed class ConferenceParticipant : IConferenceParticipant
     private bool _started;
     private bool _disposed;
 
+    // Glare guard (RFC 8829 perfect-negotiation, offerer-only). At most ONE offer may be outstanding — raised
+    // with its answer not yet applied. A renegotiation requested while an offer is outstanding must NOT
+    // supersede it with a fresh offer: that strands the browser's in-flight answer, so the peer's BUNDLE media
+    // session is never built and every forwarded frame then faults ("apply a BUNDLE remote description before
+    // exchanging media"). The request is instead recorded and served when the outstanding answer lands — a
+    // single re-offer reflects the latest topology, collapsing multiple pending requests. All three fields are
+    // read/written only under _signalingGate.
+    private bool _offerOutstanding;
+    private bool _renegotiationPending;
+
     /// <inheritdoc />
     public event EventHandler<SessionDescription>? OfferProduced;
 
@@ -94,6 +104,9 @@ internal sealed class ConferenceParticipant : IConferenceParticipant
         try
         {
             _initialOffer = _peer.CreateOffer();
+            // The initial offer awaits the browser's first answer — an offer is now outstanding, so a
+            // topology change before that answer defers rather than superseding it.
+            _offerOutstanding = true;
         }
         finally
         {
@@ -131,6 +144,7 @@ internal sealed class ConferenceParticipant : IConferenceParticipant
         // ApplyRemoteDescription + the first StartAsync are serialised against a concurrent renegotiation
         // offer. StartAsync runs only on the FIRST answer; a renegotiation answer re-applies the remote
         // description but never restarts the already-live transport.
+        SessionDescription? deferredRenegotiationOffer = null;
         await _signalingGate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
@@ -140,10 +154,26 @@ internal sealed class ConferenceParticipant : IConferenceParticipant
                 _started = true;
                 await _peer.StartAsync(ct).ConfigureAwait(false);
             }
+
+            // The outstanding offer's answer has landed. If a topology change requested a renegotiation while
+            // it was in flight, produce the deferred re-offer now (a single fresh offer reflects the latest
+            // topology). Raised outside the gate below so the OfferProduced handler never re-enters it.
+            _offerOutstanding = false;
+            if (_renegotiationPending)
+            {
+                _renegotiationPending = false;
+                deferredRenegotiationOffer = _peer.CreateOffer();
+                _offerOutstanding = true;
+            }
         }
         finally
         {
             _signalingGate.Release();
+        }
+
+        if (deferredRenegotiationOffer is not null)
+        {
+            OfferProduced?.Invoke(this, deferredRenegotiationOffer);
         }
     }
 
@@ -180,11 +210,22 @@ internal sealed class ConferenceParticipant : IConferenceParticipant
 
         try
         {
-            await _signalingGate.WaitAsync(ct).ConfigureAwait(false);
             SessionDescription offer;
+            await _signalingGate.WaitAsync(ct).ConfigureAwait(false);
             try
             {
+                if (_offerOutstanding)
+                {
+                    // An offer is still awaiting its answer. Superseding it with a fresh offer would strand the
+                    // browser's in-flight answer (RFC 8829 glare) and leave the peer's media session unbuilt —
+                    // record the request; ApplyAnswerAsync serves it once the outstanding answer lands.
+                    _renegotiationPending = true;
+                    _logger.LogDebug("Conference session: renegotiation deferred — an offer is still awaiting its answer.");
+                    return;
+                }
+
                 offer = _peer.CreateOffer();
+                _offerOutstanding = true;
             }
             finally
             {

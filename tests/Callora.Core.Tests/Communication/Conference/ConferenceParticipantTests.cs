@@ -56,6 +56,7 @@ public sealed class ConferenceParticipantTests
         var session = NewSession(peer);
         await session.InitializeAsync();
         await session.StartSignalingAsync(); // the vertical starts signalling → renegotiation is enabled
+        await session.ApplyAnswerAsync(new SessionDescription("answer", "sdp-1")); // the initial cycle completes first
 
         SessionDescription? reoffer = null;
         session.OfferProduced += (_, o) => reoffer = o;
@@ -65,6 +66,57 @@ public sealed class ConferenceParticipantTests
         Assert.NotNull(reoffer);
         Assert.Equal("offer", reoffer!.Type);
         Assert.NotEqual(session.InitialOffer.Sdp, reoffer.Sdp); // a second, distinct offer
+        Assert.Equal(2, peer.CreateOfferCount);
+    }
+
+    [Fact]
+    public async Task Renegotiate_WhileInitialOfferUnanswered_DefersUntilAnswerApplied()
+    {
+        var peer = new FakeMediaPeer();
+        var session = NewSession(peer);
+        await session.InitializeAsync();
+        await session.StartSignalingAsync();
+
+        var offers = new List<SessionDescription>();
+        session.OfferProduced += (_, o) => offers.Add(o);
+
+        // A topology change asks to renegotiate while the initial offer is still awaiting its answer. The
+        // server must NOT supersede the in-flight offer (that would strand the browser's answer and leave the
+        // peer's media session unbuilt) — the re-offer is deferred.
+        await session.RenegotiateAsync();
+
+        Assert.Empty(offers);
+        Assert.Equal(1, peer.CreateOfferCount); // only the initial offer so far
+
+        // The browser's answer to the initial offer lands → the deferred renegotiation is served now.
+        await session.ApplyAnswerAsync(new SessionDescription("answer", "sdp-1"));
+
+        var served = Assert.Single(offers);
+        Assert.Equal("offer", served.Type);
+        Assert.Equal(2, peer.CreateOfferCount); // initial + the deferred renegotiation
+    }
+
+    [Fact]
+    public async Task Renegotiate_ManyWhileUnanswered_CollapseToOneOfferOnAnswer()
+    {
+        var peer = new FakeMediaPeer();
+        var session = NewSession(peer);
+        await session.InitializeAsync();
+        await session.StartSignalingAsync();
+
+        var offers = new List<SessionDescription>();
+        session.OfferProduced += (_, o) => offers.Add(o);
+
+        // Three participants join in quick succession before the initial answer — all deferred.
+        await session.RenegotiateAsync();
+        await session.RenegotiateAsync();
+        await session.RenegotiateAsync();
+        Assert.Empty(offers);
+
+        await session.ApplyAnswerAsync(new SessionDescription("answer", "sdp-1"));
+
+        // A single re-offer reflects the latest topology — pending renegotiations collapse into one.
+        Assert.Single(offers);
         Assert.Equal(2, peer.CreateOfferCount);
     }
 
