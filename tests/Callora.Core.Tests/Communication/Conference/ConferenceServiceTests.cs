@@ -99,6 +99,7 @@ public sealed class ConferenceServiceTests
 
         var a = await service.JoinAsync(Conf, "A");
         await a.StartSignalingAsync(); // the vertical starts signalling before others join → reneg enabled
+        await a.ApplyAnswerAsync(new SessionDescription("answer", "sdp-1")); // A's initial offer/answer completes
         var reoffers = new List<SessionDescription>();
         a.OfferProduced += (_, offer) => reoffers.Add(offer);
 
@@ -131,6 +132,10 @@ public sealed class ConferenceServiceTests
         var b = await service.JoinAsync(Conf, "B");
         var c = await service.JoinAsync(Conf, "C");
 
+        // Consumers must have a live transport for the router to forward to them.
+        PeerOf(b).RaiseConnectionStateChanged(MediaConnectionState.Connected);
+        PeerOf(c).RaiseConnectionStateChanged(MediaConnectionState.Connected);
+
         // A publishes a video track; the router subscribes on RemoteTrackReceived.
         var trackA = new FakeRemoteMediaTrack(MediaTrackKind.Video, "A");
         PeerOf(a).RaiseRemoteTrackReceived(trackA);
@@ -156,6 +161,7 @@ public sealed class ConferenceServiceTests
 
         var a = await service.JoinAsync(Conf, "A");
         var b = await service.JoinAsync(Conf, "B");
+        PeerOf(b).RaiseConnectionStateChanged(MediaConnectionState.Connected);
 
         var trackA = new FakeRemoteMediaTrack(MediaTrackKind.Video, "A");
         PeerOf(a).RaiseRemoteTrackReceived(trackA);
@@ -177,6 +183,7 @@ public sealed class ConferenceServiceTests
 
         var a = await service.JoinAsync(Conf, "A");
         var b = await service.JoinAsync(Conf, "B");
+        PeerOf(b).RaiseConnectionStateChanged(MediaConnectionState.Connected);
 
         var audioTrackA = new FakeRemoteMediaTrack(MediaTrackKind.Audio, "A");
         PeerOf(a).RaiseRemoteTrackReceived(audioTrackA);
@@ -185,6 +192,28 @@ public sealed class ConferenceServiceTests
         // The audio frame lands on B's audio-for-A track, not the video one.
         Assert.Single(PeerOf(b).OutboundFor("A", MediaTrackKind.Audio)!.SentFrames);
         Assert.Empty(PeerOf(b).OutboundFor("A", MediaTrackKind.Video)!.SentFrames);
+    }
+
+    [Fact]
+    public async Task FrameFanOut_SkipsConsumerWhosePeerIsNotConnected()
+    {
+        var (service, _) = NewService();
+
+        var a = await service.JoinAsync(Conf, "A");
+        var b = await service.JoinAsync(Conf, "B");
+
+        var trackA = new FakeRemoteMediaTrack(MediaTrackKind.Video, "A");
+        PeerOf(a).RaiseRemoteTrackReceived(trackA);
+
+        // B's peer has not reached Connected (its answer is not applied → no BUNDLE media session). Sending
+        // onto it would fault every frame, so the router must skip it rather than spool an exception storm.
+        trackA.RaiseFrame(new MediaFrame(new byte[] { 1 }, RtpTimestamp: 1u, IsKeyFrame: false, StreamId: "A"));
+        Assert.Empty(PeerOf(b).OutboundFor("A", MediaTrackKind.Video)!.SentFrames);
+
+        // Once B's transport is live, forwarding to it resumes.
+        PeerOf(b).RaiseConnectionStateChanged(MediaConnectionState.Connected);
+        trackA.RaiseFrame(new MediaFrame(new byte[] { 2 }, RtpTimestamp: 2u, IsKeyFrame: false, StreamId: "A"));
+        Assert.Single(PeerOf(b).OutboundFor("A", MediaTrackKind.Video)!.SentFrames);
     }
 
     [Fact]

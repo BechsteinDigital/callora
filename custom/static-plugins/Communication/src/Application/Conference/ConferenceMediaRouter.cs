@@ -199,6 +199,15 @@ internal sealed class ConferenceMediaRouter
                 continue;
             }
 
+            // Readiness gate: only forward to a consumer whose transport is live. A peer whose answer has not
+            // been applied has no BUNDLE media session, so every send onto it faults ("apply a BUNDLE remote
+            // description before exchanging media") — skip it until it reaches Connected rather than spooling a
+            // per-frame exception storm at a consumer that cannot yet receive.
+            if (consumer.Peer.ConnectionState != MediaConnectionState.Connected)
+            {
+                continue;
+            }
+
             if (!consumer.Outbound.TryGetValue(sourceParticipantId, out var tracks))
             {
                 continue;
