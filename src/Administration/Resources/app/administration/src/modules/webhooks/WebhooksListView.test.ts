@@ -20,6 +20,11 @@ vi.mock('./webhooksApi', () => ({
 }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: contextRef }) }))
 
+// The confirm dialog is a promise-based store now, not window.confirm — mock it so
+// each test can decide what the operator answers.
+const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }))
+vi.mock('@/core/feedback/confirm', () => ({ confirm: confirmMock }))
+
 function ctx(permissions: string[]): AdminContext {
   return {
     userId: 'u',
@@ -52,6 +57,7 @@ function page(items: WebhookSubscription[], nextCursor: string | null = null, to
 
 beforeEach(() => {
   listMock.mockReset().mockResolvedValue(page([hook({})]))
+  confirmMock.mockReset().mockResolvedValue(true)
   createMock.mockReset().mockResolvedValue(hook({}))
   setActiveMock.mockReset().mockResolvedValue(undefined)
   removeMock.mockReset().mockResolvedValue(undefined)
@@ -77,8 +83,8 @@ describe('WebhooksListView', () => {
     const wrapper = mount(WebhooksListView)
     await flushPromises()
 
-    expect(wrapper.find('form.create').exists()).toBe(false)
-    expect(wrapper.find('.link-danger').exists()).toBe(false)
+    expect(wrapper.find('form.webhooks__form').exists()).toBe(false)
+    expect(wrapper.find('.is-danger-ghost').exists()).toBe(false)
   })
 
   it('creates a webhook from the form (empty workspace → null) and reloads', async () => {
@@ -89,7 +95,7 @@ describe('WebhooksListView', () => {
     await wrapper.find('input[name="eventName"]').setValue('user.created')
     await wrapper.find('input[name="targetUrl"]').setValue('https://x.example.de')
     await wrapper.find('input[name="secret"]').setValue('topsecret')
-    await wrapper.find('form.create').trigger('submit')
+    await wrapper.find('form.webhooks__form').trigger('submit')
     await flushPromises()
 
     expect(createMock).toHaveBeenCalledTimes(1)
@@ -116,7 +122,7 @@ describe('WebhooksListView', () => {
     await wrapper.find('input[name="eventName"]').setValue('user.created')
     await wrapper.find('input[name="targetUrl"]').setValue('https://x.example.de')
     await wrapper.find('input[name="secret"]').setValue('topsecret')
-    await wrapper.find('form.create').trigger('submit')
+    await wrapper.find('form.webhooks__form').trigger('submit')
     await flushPromises()
 
     // The hook sees the draft but never the raw signing secret…
@@ -133,7 +139,7 @@ describe('WebhooksListView', () => {
 
     await wrapper.find('input[name="eventName"]').setValue('user.created')
     // targetUrl and secret left empty
-    await wrapper.find('form.create').trigger('submit')
+    await wrapper.find('form.webhooks__form').trigger('submit')
     await flushPromises()
 
     expect(createMock).not.toHaveBeenCalled()
@@ -144,7 +150,7 @@ describe('WebhooksListView', () => {
     const wrapper = mount(WebhooksListView)
     await flushPromises()
 
-    await wrapper.findAll('button.link').find((b) => b.text() === 'Deaktivieren')!.trigger('click')
+    await wrapper.findAll('button.is-ghost').find((b) => b.text() === 'Deaktivieren')!.trigger('click')
     await flushPromises()
 
     expect(setActiveMock).toHaveBeenCalledWith('w1', false)
@@ -152,7 +158,7 @@ describe('WebhooksListView', () => {
 
   it('deletes after confirmation and runs the after-delete hook', async () => {
     contextRef.value = ctx(['*'])
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     const seen: unknown[] = []
     registerHook('webhooks.after-delete', (h) => {
       seen.push(h.payload)
@@ -160,7 +166,7 @@ describe('WebhooksListView', () => {
     const wrapper = mount(WebhooksListView)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMock).toHaveBeenCalledWith('w1')
@@ -169,11 +175,11 @@ describe('WebhooksListView', () => {
 
   it('does not delete when the confirm dialog is dismissed', async () => {
     contextRef.value = ctx(['*'])
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    confirmMock.mockResolvedValue(false)
     const wrapper = mount(WebhooksListView)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMock).not.toHaveBeenCalled()
@@ -188,7 +194,7 @@ describe('WebhooksListView', () => {
     await wrapper.find('input[name="eventName"]').setValue('user.created')
     await wrapper.find('input[name="targetUrl"]').setValue('https://x.example.de')
     await wrapper.find('input[name="secret"]').setValue('topsecret')
-    await wrapper.find('form.create').trigger('submit')
+    await wrapper.find('form.webhooks__form').trigger('submit')
     await flushPromises()
 
     expect(createMock).not.toHaveBeenCalled()

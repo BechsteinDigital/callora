@@ -1,99 +1,96 @@
 <template>
-  <section class="tenants">
-    <header class="head">
-      <h1>Mandanten</h1>
-      <div class="head-actions">
+  <CalPage>
+    <CalPageHeader title="Mandanten" description="Die abrechnenden Einheiten der Plattform.">
+      <template #actions>
         <ExtensionSlot name="tenants.list.toolbar" />
-      </div>
-    </header>
+      </template>
+    </CalPageHeader>
 
-    <form v-if="canCreate" class="create" @submit.prevent="create">
-      <input
-        v-model="newKey"
-        name="tenantKey"
-        class="create-input"
-        placeholder="Mandanten-Schlüssel…"
-      />
-      <input
-        v-model="newDisplayName"
-        name="displayName"
-        class="create-input"
-        placeholder="Anzeigename…"
-      />
-      <BaseButton type="submit" :disabled="creating || !newKey.trim() || !newDisplayName.trim()">
-        {{ creating ? 'Legt an…' : 'Anlegen' }}
-      </BaseButton>
-    </form>
+    <CalCard v-if="canCreate" class="tenants__create" title="Mandant anlegen">
+      <form class="tenants__form" @submit.prevent="create">
+        <CalField v-slot="{ id }" label="Schlüssel" hint="technisch, unveränderlich">
+          <CalInput :id="id" v-model="newKey" name="tenantKey" placeholder="acme-gmbh" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Anzeigename">
+          <CalInput :id="id" v-model="newDisplayName" name="displayName" placeholder="ACME GmbH" />
+        </CalField>
+        <CalButton
+          type="submit"
+          variant="primary"
+          :icon="Plus"
+          :loading="creating"
+          :disabled="!newKey.trim() || !newDisplayName.trim()"
+        >
+          Anlegen
+        </CalButton>
+      </form>
+    </CalCard>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-else-if="loading">Lädt…</p>
+    <CalCard flush>
+      <CalDataTable
+        :columns="columns"
+        :rows="tenants"
+        row-key="tenantKey"
+        :loading="loading"
+        :error="error"
+        :empty-icon="Building2"
+        empty-title="Keine Mandanten vorhanden."
+        empty-description="Ein Mandant bündelt Workspaces zu einer abrechnenden Einheit."
+      >
+        <template #cell-isActive="{ row }">
+          <CalBadge :tone="row.isActive ? 'success' : 'warning'" dot>
+            {{ row.isActive ? 'Aktiv' : 'Suspendiert' }}
+          </CalBadge>
+        </template>
 
-    <table v-else class="grid">
-      <thead>
-        <tr>
-          <th>Schlüssel</th>
-          <th>Name</th>
-          <th>Status</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="t in tenants" :key="t.tenantKey">
-          <td class="mono">{{ t.tenantKey }}</td>
-          <td>{{ t.displayName }}</td>
-          <td>
-            <span class="badge" :class="t.isActive ? 'badge-active' : 'badge-inactive'">
-              {{ t.isActive ? 'Aktiv' : 'Suspendiert' }}
-            </span>
-          </td>
-          <td class="actions">
-            <button
-              v-if="canUpdate && t.isActive"
-              type="button"
-              class="link"
-              :disabled="busyKey === t.tenantKey"
-              @click="suspend(t)"
+        <template #cell-actions="{ row }">
+          <div class="tenants__actions">
+            <CalButton
+              v-if="canUpdate"
+              variant="ghost"
+              size="sm"
+              :disabled="busyKey === row.tenantKey"
+              @click="row.isActive ? suspend(row) : activate(row)"
             >
-              Suspendieren
-            </button>
-            <button
-              v-else-if="canUpdate"
-              type="button"
-              class="link"
-              :disabled="busyKey === t.tenantKey"
-              @click="activate(t)"
-            >
-              Aktivieren
-            </button>
-            <button
+              {{ row.isActive ? 'Suspendieren' : 'Aktivieren' }}
+            </CalButton>
+            <CalButton
               v-if="canDelete"
-              type="button"
-              class="link-danger"
-              :disabled="busyKey === t.tenantKey"
-              @click="remove(t)"
+              variant="danger-ghost"
+              size="sm"
+              :disabled="busyKey === row.tenantKey"
+              @click="remove(row)"
             >
               Löschen
-            </button>
-            <ExtensionSlot name="tenants.list.row-actions" :ctx="t" />
-          </td>
-        </tr>
-        <tr v-if="!tenants.length">
-          <td colspan="4" class="empty">Keine Mandanten vorhanden.</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+            </CalButton>
+            <ExtensionSlot name="tenants.list.row-actions" :ctx="row" />
+          </div>
+        </template>
+      </CalDataTable>
+    </CalCard>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { Building2, Plus } from 'lucide-vue-next'
 import { tenantsApi, type Tenant } from './tenantsApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
-import BaseButton from '@/core/ui/BaseButton.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalDataTable from '@/core/ui/CalDataTable.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import type { DataTableColumn } from '@/core/ui/dataTable'
+import { confirm } from '@/core/feedback/confirm'
+import { toast } from '@/core/feedback/toasts'
 
 const tenants = ref<Tenant[]>([])
 const loading = ref(true)
@@ -107,6 +104,13 @@ const ctx = useAuthStore().context
 const canCreate = computed(() => hasPermission(ctx.value, 'tenant.create'))
 const canUpdate = computed(() => hasPermission(ctx.value, 'tenant.update'))
 const canDelete = computed(() => hasPermission(ctx.value, 'tenant.delete'))
+
+const columns: readonly DataTableColumn[] = [
+  { key: 'tenantKey', label: 'Schlüssel', mono: true },
+  { key: 'displayName', label: 'Name' },
+  { key: 'isActive', label: 'Status', width: '150px' },
+  { key: 'actions', label: '', align: 'end', width: '250px' },
+]
 
 // Resolve the tenants service through the override registry: a plugin may replace it.
 const api = useService('tenantsApi', tenantsApi)
@@ -142,6 +146,7 @@ async function create(): Promise<void> {
     newKey.value = ''
     newDisplayName.value = ''
     await runHook('tenants.after-create', { tenantKey })
+    toast.success(`Mandant „${displayName}“ angelegt.`)
     await load()
   } catch (e) {
     error.value = (e as Error).message
@@ -154,6 +159,7 @@ async function statusAction(
   verb: string,
   tenant: Tenant,
   action: () => Promise<void>,
+  successMessage: string,
 ): Promise<void> {
   error.value = null
   const before = await runHook(`tenants.before-${verb}`, { tenantKey: tenant.tenantKey })
@@ -165,6 +171,7 @@ async function statusAction(
   try {
     await action()
     await runHook(`tenants.after-${verb}`, { tenantKey: tenant.tenantKey })
+    toast.success(successMessage)
     await load()
   } catch (e) {
     error.value = (e as Error).message
@@ -174,131 +181,65 @@ async function statusAction(
 }
 
 function activate(tenant: Tenant): Promise<void> {
-  return statusAction('activate', tenant, () => api.activate(tenant.tenantKey))
+  return statusAction(
+    'activate',
+    tenant,
+    () => api.activate(tenant.tenantKey),
+    `Mandant „${tenant.displayName}“ aktiviert.`,
+  )
 }
 
 function suspend(tenant: Tenant): Promise<void> {
-  return statusAction('suspend', tenant, () => api.suspend(tenant.tenantKey))
+  return statusAction(
+    'suspend',
+    tenant,
+    () => api.suspend(tenant.tenantKey),
+    `Mandant „${tenant.displayName}“ suspendiert.`,
+  )
 }
 
-function remove(tenant: Tenant): Promise<void> {
-  if (!window.confirm(`Mandant „${tenant.displayName}“ löschen?`)) {
-    return Promise.resolve()
+async function remove(tenant: Tenant): Promise<void> {
+  const confirmed = await confirm({
+    title: `Mandant „${tenant.displayName}“ löschen?`,
+    description: 'Die Zuordnung der Workspaces zu diesem Mandanten geht verloren.',
+    confirmLabel: 'Löschen',
+    tone: 'danger',
+  })
+  if (!confirmed) {
+    return
   }
-  return statusAction('delete', tenant, () => api.remove(tenant.tenantKey))
+  await statusAction(
+    'delete',
+    tenant,
+    () => api.remove(tenant.tenantKey),
+    `Mandant „${tenant.displayName}“ gelöscht.`,
+  )
 }
 
 onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.tenants {
-  padding: calc(var(--cal-space) * 3);
+.tenants__create {
+  margin-bottom: var(--cal-space-4);
 }
 
-.head {
+.tenants__form {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: calc(var(--cal-space) * 2);
+  align-items: flex-end;
+  gap: var(--cal-space-3);
+  flex-wrap: wrap;
 }
 
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--cal-space);
-}
-
-.create {
-  display: flex;
-  gap: var(--cal-space);
-  margin-bottom: calc(var(--cal-space) * 2);
-}
-
-.create-input {
+.tenants__form > :deep(.cal-field) {
   flex: 1;
-  max-width: 260px;
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
+  min-width: 200px;
 }
 
-.grid {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.grid th,
-.grid td {
-  text-align: left;
-  padding: var(--cal-space);
-  border-bottom: 1px solid var(--cal-color-surface);
-}
-
-.grid th {
-  color: var(--cal-color-muted);
-  font-weight: 600;
-}
-
-.mono {
-  font-family: var(--cal-font-mono, monospace);
-  color: var(--cal-color-muted);
-}
-
-.badge {
-  font-size: 0.75em;
-  border-radius: var(--cal-radius);
-  padding: 0 calc(var(--cal-space) * 0.75);
-}
-
-.badge-active {
-  color: var(--cal-color-accent);
-  border: 1px solid var(--cal-color-accent);
-}
-
-.badge-inactive {
-  color: var(--cal-color-muted);
-  border: 1px solid var(--cal-color-muted);
-}
-
-.actions {
+.tenants__actions {
   display: flex;
-  gap: calc(var(--cal-space) * 1.5);
   align-items: center;
-}
-
-.link {
-  background: none;
-  border: 0;
-  color: var(--cal-color-accent);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.link-danger {
-  background: none;
-  border: 0;
-  color: var(--cal-color-danger);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.link:disabled,
-.link-danger:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
+  justify-content: flex-end;
+  gap: var(--cal-space-1);
 }
 </style>

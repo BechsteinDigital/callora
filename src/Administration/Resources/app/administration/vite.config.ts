@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [vue()],
   base: '/admin/',
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  // Dart Sass deprecated its legacy JS API; the modern compiler is also the
+  // faster one, and it keeps the build output free of deprecation noise.
+  css: { preprocessorOptions: { scss: { api: 'modern-compiler' } } },
   build: {
     outDir: fileURLToPath(new URL('../../../wwwroot/admin', import.meta.url)),
     emptyOutDir: true,

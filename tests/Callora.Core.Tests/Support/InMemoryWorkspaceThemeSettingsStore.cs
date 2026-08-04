@@ -6,7 +6,9 @@ internal sealed class InMemoryWorkspaceThemeSettingsStore : IWorkspaceThemeSetti
 {
     private readonly Dictionary<string, WorkspaceThemeSettingDefinitionSnapshot[]> _definitionsByPlugin =
         new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, WorkspaceThemeSettingValueSnapshot[]> _valuesByWorkspacePlugin =
+    // Keyed workspace::surface::plugin — the empty surface segment is the
+    // workspace level, mirroring the EF store's empty surface_key.
+    private readonly Dictionary<string, WorkspaceThemeSettingValueSnapshot[]> _valuesByLevel =
         new(StringComparer.OrdinalIgnoreCase);
 
     public Task<IReadOnlyList<WorkspaceThemeSettingDefinitionSnapshot>> ListDefinitionsAsync(
@@ -56,14 +58,14 @@ internal sealed class InMemoryWorkspaceThemeSettingsStore : IWorkspaceThemeSetti
         return Task.FromResult<IReadOnlyList<WorkspaceThemeSettingDefinitionSnapshot>>(snapshots);
     }
 
-    public Task<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>> ListWorkspaceValuesAsync(
+    public Task<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>> ListValuesAsync(
         string workspaceKey,
+        string? surfaceKey,
         string pluginId,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var key = $"{workspaceKey.Trim()}::{pluginId.Trim()}";
-        if (!_valuesByWorkspacePlugin.TryGetValue(key, out var values))
+        if (!_valuesByLevel.TryGetValue(LevelKey(workspaceKey, surfaceKey, pluginId), out var values))
         {
             return Task.FromResult<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>>(Array.Empty<WorkspaceThemeSettingValueSnapshot>());
         }
@@ -71,14 +73,16 @@ internal sealed class InMemoryWorkspaceThemeSettingsStore : IWorkspaceThemeSetti
         return Task.FromResult<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>>(values);
     }
 
-    public Task<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>> ReplaceWorkspaceValuesAsync(
+    public Task<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>> ReplaceValuesAsync(
         string workspaceKey,
+        string? surfaceKey,
         string pluginId,
         IReadOnlyDictionary<string, string?> valuesByKey,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var normalizedWorkspaceKey = workspaceKey.Trim();
+        var normalizedSurfaceKey = NormalizeSurfaceKey(surfaceKey);
         var normalizedPluginId = pluginId.Trim();
         var nowUtc = DateTimeOffset.UtcNow;
 
@@ -86,15 +90,22 @@ internal sealed class InMemoryWorkspaceThemeSettingsStore : IWorkspaceThemeSetti
             .Where(x => !string.IsNullOrWhiteSpace(x.Key) && !string.IsNullOrWhiteSpace(x.Value))
             .Select(x => new WorkspaceThemeSettingValueSnapshot(
                 normalizedWorkspaceKey,
+                normalizedSurfaceKey,
                 normalizedPluginId,
                 x.Key.Trim(),
                 x.Value!,
                 nowUtc))
             .ToArray();
 
-        _valuesByWorkspacePlugin[$"{normalizedWorkspaceKey}::{normalizedPluginId}"] = snapshots;
+        _valuesByLevel[LevelKey(normalizedWorkspaceKey, normalizedSurfaceKey, normalizedPluginId)] = snapshots;
         return Task.FromResult<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>>(snapshots);
     }
+
+    private static string NormalizeSurfaceKey(string? surfaceKey) =>
+        string.IsNullOrWhiteSpace(surfaceKey) ? string.Empty : surfaceKey.Trim();
+
+    private static string LevelKey(string workspaceKey, string? surfaceKey, string pluginId) =>
+        $"{workspaceKey.Trim()}::{NormalizeSurfaceKey(surfaceKey)}::{pluginId.Trim()}";
 
     public Task ClearPluginDefinitionsAsync(
         string pluginId,
@@ -107,9 +118,9 @@ internal sealed class InMemoryWorkspaceThemeSettingsStore : IWorkspaceThemeSetti
             _definitionsByPlugin.Remove(key);
         }
 
-        foreach (var key in _valuesByWorkspacePlugin.Keys.Where(x => x.EndsWith($"::{normalizedPluginId}", StringComparison.OrdinalIgnoreCase)).ToArray())
+        foreach (var key in _valuesByLevel.Keys.Where(x => x.EndsWith($"::{normalizedPluginId}", StringComparison.OrdinalIgnoreCase)).ToArray())
         {
-            _valuesByWorkspacePlugin.Remove(key);
+            _valuesByLevel.Remove(key);
         }
 
         return Task.CompletedTask;

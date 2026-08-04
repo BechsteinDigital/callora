@@ -22,6 +22,15 @@ vi.mock('./tenantsApi', () => ({
     remove: removeMock,
   },
 }))
+
+// The confirm dialog is a promise-based store now, not window.confirm — mock it so
+// each test can decide what the operator answers.
+const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }))
+vi.mock('@/core/feedback/confirm', () => ({ confirm: confirmMock }))
+
+beforeEach(() => {
+  confirmMock.mockReset().mockResolvedValue(true)
+})
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: contextRef }) }))
 
 function ctx(permissions: string[]): AdminContext {
@@ -62,10 +71,10 @@ describe('TenantsListView', () => {
     expect(text).toContain('Aktiv')
     expect(text).toContain('Suspendiert')
     // Create form present, one Suspendieren (active row) + one Aktivieren (inactive row).
-    expect(wrapper.find('form.create').exists()).toBe(true)
+    expect(wrapper.find('form.tenants__form').exists()).toBe(true)
     expect(text).toContain('Suspendieren')
     expect(text).toContain('Aktivieren')
-    expect(wrapper.findAll('.link-danger')).toHaveLength(2)
+    expect(wrapper.findAll('.is-danger-ghost')).toHaveLength(2)
   })
 
   it('hides create form and management actions without the tenant permissions', async () => {
@@ -73,10 +82,10 @@ describe('TenantsListView', () => {
     const wrapper = mount(TenantsListView)
     await flushPromises()
 
-    expect(wrapper.find('form.create').exists()).toBe(false)
+    expect(wrapper.find('form.tenants__form').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('Suspendieren')
     expect(wrapper.text()).not.toContain('Aktivieren')
-    expect(wrapper.findAll('.link-danger')).toHaveLength(0)
+    expect(wrapper.findAll('.is-danger-ghost')).toHaveLength(0)
   })
 
   it('creates a tenant from the inline form and reloads', async () => {
@@ -86,7 +95,7 @@ describe('TenantsListView', () => {
 
     await wrapper.find('input[name="tenantKey"]').setValue('initech')
     await wrapper.find('input[name="displayName"]').setValue('Initech')
-    await wrapper.find('form.create').trigger('submit')
+    await wrapper.find('form.tenants__form').trigger('submit')
     await flushPromises()
 
     expect(createMock).toHaveBeenCalledWith('initech', 'Initech')
@@ -98,7 +107,7 @@ describe('TenantsListView', () => {
     const wrapper = mount(TenantsListView)
     await flushPromises()
 
-    const suspend = wrapper.findAll('button.link').find((b) => b.text() === 'Suspendieren')
+    const suspend = wrapper.findAll('button.is-ghost').find((b) => b.text() === 'Suspendieren')
     await suspend!.trigger('click')
     await flushPromises()
 
@@ -110,7 +119,7 @@ describe('TenantsListView', () => {
     const wrapper = mount(TenantsListView)
     await flushPromises()
 
-    const activate = wrapper.findAll('button.link').find((b) => b.text() === 'Aktivieren')
+    const activate = wrapper.findAll('button.is-ghost').find((b) => b.text() === 'Aktivieren')
     await activate!.trigger('click')
     await flushPromises()
 
@@ -119,19 +128,18 @@ describe('TenantsListView', () => {
 
   it('deletes only after confirmation', async () => {
     contextRef.value = ctx(['*'])
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    confirmMock.mockResolvedValue(false)
     const wrapper = mount(TenantsListView)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
     expect(removeMock).not.toHaveBeenCalled()
 
-    confirmSpy.mockReturnValue(true)
-    await wrapper.find('.link-danger').trigger('click')
+    confirmMock.mockResolvedValue(true)
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
     expect(removeMock).toHaveBeenCalledWith('acme')
 
-    confirmSpy.mockRestore()
   })
 })

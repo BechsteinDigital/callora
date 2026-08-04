@@ -161,7 +161,7 @@ describe('PluginsListView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="installId"]').setValue('gamma')
-    await wrapper.find('form.install').trigger('submit.prevent')
+    await wrapper.find('form.plugins__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(installLocalMock).toHaveBeenCalledWith('gamma', true)
@@ -176,7 +176,7 @@ describe('PluginsListView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="installId"]').setValue('gamma')
-    await wrapper.find('form.install').trigger('submit.prevent')
+    await wrapper.find('form.plugins__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(installLocalMock).toHaveBeenCalledWith('gamma', false)
@@ -189,7 +189,7 @@ describe('PluginsListView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="installId"]').setValue('gamma')
-    await wrapper.find('form.install').trigger('submit.prevent')
+    await wrapper.find('form.plugins__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(installLocalMock).not.toHaveBeenCalled()

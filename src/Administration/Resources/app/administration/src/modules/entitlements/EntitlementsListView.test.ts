@@ -69,8 +69,8 @@ describe('EntitlementsListView', () => {
     const wrapper = mount(EntitlementsListView)
     await flushPromises()
 
-    expect(wrapper.find('form.grant').exists()).toBe(false)
-    expect(wrapper.find('button.link').exists()).toBe(false)
+    expect(wrapper.find('form.entitlements__form').exists()).toBe(false)
+    expect(wrapper.find('button.is-ghost').exists()).toBe(false)
   })
 
   it('grants a plugin for a tenant scope from the form (empty workspace → null)', async () => {
@@ -80,7 +80,7 @@ describe('EntitlementsListView', () => {
 
     await wrapper.find('input[name="pluginId"]').setValue('new.plugin')
     await wrapper.find('input[name="tenantKey"]').setValue('tenant-a')
-    await wrapper.find('form.grant').trigger('submit')
+    await wrapper.find('form.entitlements__form').trigger('submit')
     await flushPromises()
 
     expect(setMock).toHaveBeenCalledWith({
@@ -97,7 +97,7 @@ describe('EntitlementsListView', () => {
     const wrapper = mount(EntitlementsListView)
     await flushPromises()
 
-    await wrapper.find('form.grant').trigger('submit')
+    await wrapper.find('form.entitlements__form').trigger('submit')
     await flushPromises()
 
     expect(setMock).not.toHaveBeenCalled()
@@ -109,7 +109,7 @@ describe('EntitlementsListView', () => {
     const wrapper = mount(EntitlementsListView)
     await flushPromises()
 
-    await wrapper.find('button.link').trigger('click') // "Entziehen"
+    await wrapper.find('button.is-ghost').trigger('click') // "Entziehen"
     await flushPromises()
 
     expect(setMock).toHaveBeenCalledWith({
@@ -126,7 +126,7 @@ describe('EntitlementsListView', () => {
     const wrapper = mount(EntitlementsListView)
     await flushPromises()
 
-    await wrapper.find('button.link').trigger('click') // "Erteilen"
+    await wrapper.find('button.is-ghost').trigger('click') // "Erteilen"
     await flushPromises()
 
     expect(setMock).toHaveBeenCalledWith({
@@ -144,7 +144,7 @@ describe('EntitlementsListView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="pluginId"]').setValue('new.plugin')
-    await wrapper.find('form.grant').trigger('submit')
+    await wrapper.find('form.entitlements__form').trigger('submit')
     await flushPromises()
 
     expect(setMock).not.toHaveBeenCalled()

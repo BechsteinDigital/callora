@@ -19,6 +19,19 @@ vi.mock('./systemConfigApi', () => ({
   systemConfigApi: { listDefinitions: listMock, effective: effectiveMock, saveValues: saveMock },
 }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: contextRef }) }))
+// The workspace scope reads the shell's active workspace; this suite exercises
+// the platform scope, so the context is stubbed as "no workspace resolved".
+vi.mock('@/core/workspace/workspaceContext', async () => {
+  const { computed, ref } = await import('vue')
+  const activeWorkspace = ref('')
+  return {
+    useWorkspaceContext: () => ({
+      activeWorkspace: computed(() => activeWorkspace.value),
+      ensure: () => Promise.resolve(),
+    }),
+  }
+})
+vi.mock('@/modules/tenants/tenantsApi', () => ({ tenantsApi: { list: vi.fn().mockResolvedValue([]) } }))
 
 function ctx(permissions: string[]): AdminContext {
   return {
@@ -27,9 +40,11 @@ function ctx(permissions: string[]): AdminContext {
     email: null,
     roles: [],
     permissions,
-    scope: null,
+    scope: 'platform',
     workspaceKey: null,
-    isOperator: false,
+    // Operators see all three scopes and start on the platform level — the view
+    // these assertions describe.
+    isOperator: true,
   }
 }
 
@@ -95,7 +110,7 @@ describe('SystemConfigView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="greeting"]').setValue('42')
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).toHaveBeenCalledWith('acme', 'global', null, { greeting: 42 })
@@ -107,7 +122,7 @@ describe('SystemConfigView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="apiKey"]').setValue('s3cr3t')
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).toHaveBeenCalledWith('acme', 'global', null, { apiKey: 's3cr3t' })
@@ -118,7 +133,7 @@ describe('SystemConfigView', () => {
     const wrapper = mount(SystemConfigView)
     await flushPromises()
 
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).not.toHaveBeenCalled()
@@ -132,7 +147,7 @@ describe('SystemConfigView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="greeting"]').setValue('hi')
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).not.toHaveBeenCalled()
@@ -148,7 +163,7 @@ describe('SystemConfigView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="greeting"]').setValue('hi')
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).toHaveBeenCalledWith('acme', 'global', null, expect.objectContaining({ injected: true }))
@@ -162,7 +177,7 @@ describe('SystemConfigView', () => {
     await wrapper.find('input[name="greeting"]').setValue('foo')
     await wrapper.find('select[name="plugin"]').setValue('beta')
     await flushPromises()
-    expect(effectiveMock).toHaveBeenLastCalledWith('beta')
+    expect(effectiveMock).toHaveBeenLastCalledWith('beta', { tenantKey: undefined, workspaceKey: undefined })
 
     // Switching back must not carry the previous plugin's entry over.
     await wrapper.find('select[name="plugin"]').setValue('acme')

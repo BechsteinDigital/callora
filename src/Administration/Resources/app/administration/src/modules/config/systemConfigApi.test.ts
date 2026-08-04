@@ -38,8 +38,15 @@ describe('systemConfigApi', () => {
   it('includes the workspace key when given', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(respond({ pluginId: 'acme', workspaceKey: 'ws1', valuesByKey: {} }))
     globalThis.fetch = fetchMock
-    await systemConfigApi.effective('acme', 'ws1')
+    await systemConfigApi.effective('acme', { workspaceKey: 'ws1' })
     expect(fetchMock.mock.calls[0][0]).toContain('workspaceKey=ws1')
+  })
+
+  it('includes the tenant key when asking for the tenant view', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(respond({ pluginId: 'acme', tenantKey: 't1', valuesByKey: {} }))
+    globalThis.fetch = fetchMock
+    await systemConfigApi.effective('acme', { tenantKey: 't1' })
+    expect(fetchMock.mock.calls[0][0]).toContain('tenantKey=t1')
   })
 
   it('puts values with the scope envelope', async () => {

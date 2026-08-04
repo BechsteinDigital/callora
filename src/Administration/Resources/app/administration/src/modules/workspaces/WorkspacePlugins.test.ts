@@ -103,6 +103,6 @@ describe('WorkspacePlugins', () => {
       wrapper.get<HTMLButtonElement>('[data-testid="plugin-assignment-videoconference"]')
         .element.disabled,
     ).toBe(true)
-    expect(wrapper.text()).toContain('Zuerst global aktivieren')
+    expect(wrapper.text()).toContain('global aktiviert werden')
   })
 })

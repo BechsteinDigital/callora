@@ -1,44 +1,81 @@
 <template>
-  <section class="detail">
-    <h1>{{ isEdit ? 'Rolle bearbeiten' : 'Rolle anlegen' }}</h1>
-    <p v-if="error" class="error">{{ error }}</p>
+  <CalPage narrow>
+    <CalPageHeader
+      :title="isEdit ? 'Rolle bearbeiten' : 'Rolle anlegen'"
+      description="Wählen Sie die Rechte, die diese Rolle gewährt."
+      back-to="/roles"
+      back-label="Alle Rollen"
+    />
 
-    <form class="form" @submit.prevent="save">
-      <label>Name
-        <BaseInput v-model="roleName" name="role" :disabled="isEdit" />
-      </label>
+    <CalAlert v-if="error" class="detail__error" tone="danger">{{ error }}</CalAlert>
 
-      <fieldset class="perms">
-        <legend>Rechte</legend>
-        <div v-for="group in grouped" :key="group.function" class="group">
-          <h3>{{ group.function }}</h3>
-          <label v-for="p in group.permissions" :key="p.permissionKey" class="perm">
-            <input type="checkbox" :value="p.permissionKey" v-model="selected" />
-            {{ p.action }}
-          </label>
+    <form @submit.prevent="save">
+      <CalCard title="Rolle">
+        <CalField v-slot="{ id }" label="Name" required :description="isEdit ? 'Nicht änderbar.' : undefined">
+          <CalInput :id="id" v-model="roleName" name="role" :disabled="isEdit" />
+        </CalField>
+      </CalCard>
+
+      <CalCard
+        class="detail__perms"
+        title="Rechte"
+        :description="`${selected.length} von ${permissions.length} ausgewählt`"
+      >
+        <div v-if="grouped.length" class="perms">
+          <section v-for="group in grouped" :key="group.function" class="perms__group">
+            <div class="perms__head">
+              <h3 class="perms__title">{{ group.function }}</h3>
+              <CalButton variant="ghost" size="sm" @click="toggleGroup(group)">
+                {{ isGroupFull(group) ? 'Keine' : 'Alle' }}
+              </CalButton>
+            </div>
+            <div class="perms__items">
+              <CalCheckbox
+                v-for="p in group.permissions"
+                :key="p.permissionKey"
+                :model-value="selected.includes(p.permissionKey)"
+                @update:model-value="togglePermission(p.permissionKey, $event)"
+              >
+                {{ p.action }}
+              </CalCheckbox>
+            </div>
+          </section>
         </div>
-        <p v-if="!grouped.length" class="hint">Keine Rechte verfügbar.</p>
-      </fieldset>
+        <CalEmptyState v-else compact title="Keine Rechte verfügbar." />
 
-      <ExtensionSlot name="roles.detail.fields" :ctx="{ role: editRole ?? roleName }" />
+        <ExtensionSlot name="roles.detail.fields" :ctx="{ role: editRole ?? roleName }" />
 
-      <div class="buttons">
-        <BaseButton type="submit" :disabled="saving">{{ isEdit ? 'Speichern' : 'Anlegen' }}</BaseButton>
-        <RouterLink class="cancel" to="/roles">Abbrechen</RouterLink>
-      </div>
+        <template #footer>
+          <div class="buttons">
+            <CalButton variant="ghost" to="/roles">Abbrechen</CalButton>
+            <CalButton type="submit" variant="primary" :loading="saving">
+              {{ isEdit ? 'Speichern' : 'Anlegen' }}
+            </CalButton>
+          </div>
+        </template>
+      </CalCard>
     </form>
-  </section>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { rolesApi, type Permission } from './rolesApi'
-import BaseButton from '@/core/ui/BaseButton.vue'
-import BaseInput from '@/core/ui/BaseInput.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalCheckbox from '@/core/ui/CalCheckbox.vue'
+import CalEmptyState from '@/core/ui/CalEmptyState.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import type { PermissionGroup } from './permissionGroup'
+import { toast } from '@/core/feedback/toasts'
 
 const route = useRoute()
 const router = useRouter()
@@ -55,7 +92,7 @@ const saving = ref(false)
 const api = useService('rolesApi', rolesApi)
 
 // All available permissions grouped by their function for the checkbox matrix.
-const grouped = computed(() => {
+const grouped = computed<PermissionGroup[]>(() => {
   const map = new Map<string, Permission[]>()
   for (const p of permissions.value) {
     const list = map.get(p.function) ?? []
@@ -64,6 +101,25 @@ const grouped = computed(() => {
   }
   return [...map.entries()].map(([fn, perms]) => ({ function: fn, permissions: perms }))
 })
+
+function togglePermission(key: string, checked: boolean): void {
+  selected.value = checked ? [...selected.value, key] : selected.value.filter((k) => k !== key)
+}
+
+function isGroupFull(group: PermissionGroup): boolean {
+  return group.permissions.every((p) => selected.value.includes(p.permissionKey))
+}
+
+// Whole-function toggling: a role for one subsystem usually wants all of its
+// actions, and ticking six boxes by hand is where mistakes creep in.
+function toggleGroup(group: PermissionGroup): void {
+  const keys = group.permissions.map((p) => p.permissionKey)
+  if (isGroupFull(group)) {
+    selected.value = selected.value.filter((k) => !keys.includes(k))
+    return
+  }
+  selected.value = [...new Set([...selected.value, ...keys])]
+}
 
 async function load(): Promise<void> {
   try {
@@ -105,6 +161,7 @@ async function save(): Promise<void> {
   try {
     await api.upsert(name, draft.permissions)
     await runHook('roles.after-save', { role: name })
+    toast.success(isEdit.value ? `Rolle „${name}“ gespeichert.` : `Rolle „${name}“ angelegt.`)
     router.push('/roles')
   } catch (e) {
     error.value = (e as Error).message
@@ -117,72 +174,45 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.detail {
-  padding: calc(var(--cal-space) * 3);
-  max-width: 560px;
+.detail__error {
+  margin-bottom: var(--cal-space-4);
 }
 
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--cal-space) * 2);
-  margin-top: calc(var(--cal-space) * 2);
-}
-
-.form > label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--cal-color-muted);
-  max-width: 320px;
+.detail__perms {
+  margin-top: var(--cal-space-4);
 }
 
 .perms {
-  border: 1px solid var(--cal-color-surface);
-  border-radius: var(--cal-radius);
-  padding: calc(var(--cal-space) * 1.5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cal-space-5);
 }
 
-.perms legend {
-  color: var(--cal-color-muted);
-  padding: 0 var(--cal-space);
+.perms__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cal-space-2);
+  margin-bottom: var(--cal-space-2);
+  padding-bottom: var(--cal-space-1);
+  border-bottom: 1px solid var(--cal-border-subtle);
 }
 
-.group {
-  margin-bottom: calc(var(--cal-space) * 1.5);
-}
-
-.group h3 {
-  margin: 0 0 var(--cal-space);
-  font-size: 0.9em;
+.perms__title {
+  font-size: var(--cal-text-md);
+  font-weight: var(--cal-weight-semibold);
   text-transform: capitalize;
 }
 
-.perm {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-right: calc(var(--cal-space) * 2);
-  color: var(--cal-color-text);
+.perms__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cal-space-2) var(--cal-space-5);
 }
 
 .buttons {
   display: flex;
   align-items: center;
-  gap: calc(var(--cal-space) * 2);
-}
-
-.cancel {
-  color: var(--cal-color-muted);
-  text-decoration: none;
-}
-
-.hint,
-.error {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
+  gap: var(--cal-space-2);
 }
 </style>

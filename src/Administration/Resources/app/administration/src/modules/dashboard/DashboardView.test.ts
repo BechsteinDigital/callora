@@ -19,6 +19,10 @@ vi.mock('@/modules/plugins/pluginsApi', () => ({
 }))
 vi.mock('@/modules/jobs/jobsApi', () => ({ jobsApi: { list: jobsListMock } }))
 
+// The KPI tiles link to the list behind each figure, so RouterLink needs a stub —
+// this suite mounts the view without installing a router.
+const global = { stubs: { RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } } }
+
 function setContext(over: Partial<AdminContext>): void {
   useAuthStore().context.value = {
     userId: 'root',
@@ -44,7 +48,7 @@ beforeEach(() => {
 describe('DashboardView', () => {
   it('shows all KPI cards with counts for a super admin', async () => {
     setContext({ permissions: ['*'] })
-    const wrapper = mount(DashboardView)
+    const wrapper = mount(DashboardView, { global })
     await flushPromises()
 
     expect(wrapper.findAll('.kpi')).toHaveLength(4)
@@ -56,7 +60,7 @@ describe('DashboardView', () => {
 
   it('shows only the metrics the caller may read and fetches nothing else', async () => {
     setContext({ permissions: ['user.read'], isOperator: false })
-    const wrapper = mount(DashboardView)
+    const wrapper = mount(DashboardView, { global })
     await flushPromises()
 
     const cards = wrapper.findAll('.kpi')
@@ -70,15 +74,15 @@ describe('DashboardView', () => {
   it('renders an em dash when a metric fails to load', async () => {
     setContext({ permissions: ['user.read'] })
     usersListMock.mockRejectedValueOnce(new Error('boom'))
-    const wrapper = mount(DashboardView)
+    const wrapper = mount(DashboardView, { global })
     await flushPromises()
 
-    expect(wrapper.find('.kpi-value').text()).toBe('—')
+    expect(wrapper.find(".cal-stat__value").text()).toBe('—')
   })
 
   it('still renders the identity panel from the context', async () => {
     setContext({ permissions: [], roles: ['superadmin'] })
-    const wrapper = mount(DashboardView)
+    const wrapper = mount(DashboardView, { global })
     await flushPromises()
 
     expect(wrapper.findAll('.kpi')).toHaveLength(0) // no readable metrics
@@ -99,7 +103,7 @@ describe('DashboardView', () => {
       workspaceKey: 'sales-de',
       isOperator: false,
     })
-    const wrapper = mount(DashboardView)
+    const wrapper = mount(DashboardView, { global })
     await flushPromises()
 
     expect(wrapper.text()).toContain('sales-de')

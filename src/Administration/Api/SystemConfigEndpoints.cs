@@ -26,11 +26,22 @@ public static class SystemConfigEndpoints
         group.MapGet("/effective", async (
                 SystemConfigResolver resolver,
                 ISystemConfigStore store,
+                HttpContext httpContext,
                 string pluginId,
+                string? tenantKey,
                 string? workspaceKey,
                 CancellationToken cancellationToken) =>
             {
-                var values = await resolver.ResolveAsync(pluginId, tenantKey: null, workspaceKey, cancellationToken);
+                // Reading the tenant view is operator-only, mirroring the write
+                // path: a workspace-bound admin must not learn what other
+                // workspaces of that tenant inherit.
+                if (!string.IsNullOrWhiteSpace(tenantKey) &&
+                    !WorkspaceScopeEvaluator.IsOperator(httpContext.User))
+                {
+                    return Results.Forbid();
+                }
+
+                var values = await resolver.ResolveAsync(pluginId, tenantKey, workspaceKey, cancellationToken);
 
                 // Secrets are write-only through the API: internal consumers
                 // (mail, plugins) resolve plaintext, clients read "***".
@@ -46,7 +57,9 @@ public static class SystemConfigEndpoints
                         : pair.Value,
                     StringComparer.OrdinalIgnoreCase);
 
-                return Results.Ok(new { pluginId, workspaceKey, valuesByKey });
+                // The scope travels back so a client can tell which view it is
+                // looking at — the same payload means different things per scope.
+                return Results.Ok(new { pluginId, tenantKey, workspaceKey, valuesByKey });
             })
             .RequirePermission(BackendPermissionKeys.ConfigRead)
             .RequireWorkspaceScope();

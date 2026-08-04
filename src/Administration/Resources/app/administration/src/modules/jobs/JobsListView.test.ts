@@ -59,7 +59,8 @@ describe('JobsListView', () => {
     const wrapper = mount(JobsListView)
     await flushPromises()
 
-    await wrapper.find('button.link').trigger('click')
+    // The refresh action is the only button on the page (the limit is a <select>).
+    await wrapper.find('button').trigger('click')
     await flushPromises()
 
     expect(listMock).toHaveBeenCalledTimes(2)

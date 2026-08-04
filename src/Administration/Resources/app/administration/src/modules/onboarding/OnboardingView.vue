@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ArrowRight, Check } from 'lucide-vue-next'
 import { workspacesApi } from '@/modules/workspaces/workspacesApi'
 import { useOnboarding } from './onboarding'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalIcon from '@/core/ui/CalIcon.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import { toast } from '@/core/feedback/toasts'
 
 const router = useRouter()
 const { steps, completedCount, isComplete, loadStatus } = useOnboarding()
@@ -10,6 +20,8 @@ const { steps, completedCount, isComplete, loadStatus } = useOnboarding()
 const busy = ref(false)
 const error = ref<string | null>(null)
 const workspace = reactive({ workspaceKey: '', displayName: '', workspaceType: 'voice' })
+
+const progress = computed(() => (steps.value.length ? (completedCount.value / steps.value.length) * 100 : 0))
 
 async function createWorkspace(): Promise<void> {
   const key = workspace.workspaceKey.trim()
@@ -27,6 +39,7 @@ async function createWorkspace(): Promise<void> {
       publicBaseUrl: null,
     })
     Object.assign(workspace, { workspaceKey: '', displayName: '', workspaceType: 'voice' })
+    toast.success(`Workspace „${key}“ angelegt.`)
     await loadStatus()
   } catch (err) {
     error.value = (err as Error).message
@@ -39,130 +52,165 @@ onMounted(() => void loadStatus())
 </script>
 
 <template>
-  <section class="onboarding">
-    <header>
-      <h1>Erste Schritte</h1>
-      <p class="lead">
-        Willkommen bei Callora. Diese Schritte bringen deine Instanz in Betrieb — du kannst
-        jederzeit überspringen und später fortsetzen.
-      </p>
-      <div class="progress">{{ completedCount }} / {{ steps.length }} erledigt</div>
-    </header>
+  <CalPage narrow>
+    <CalPageHeader
+      title="Erste Schritte"
+      description="Diese Schritte bringen Ihre Instanz in Betrieb. Sie können jederzeit überspringen und später fortsetzen."
+    />
 
-    <ol class="steps">
-      <li v-for="step in steps" :key="step.key" class="step" :class="{ done: step.done }">
-        <div class="step-head">
-          <span class="badge" :class="{ done: step.done }">{{ step.done ? '✓' : '•' }}</span>
-          <div>
-            <div class="step-label">{{ step.label }}</div>
-            <div class="step-desc">{{ step.description }}</div>
+    <div class="onboarding__progress">
+      <div class="onboarding__bar" role="progressbar" :aria-valuenow="completedCount" :aria-valuemax="steps.length">
+        <div class="onboarding__bar-fill" :style="{ width: `${progress}%` }" />
+      </div>
+      <span class="onboarding__count">{{ completedCount }} von {{ steps.length }} erledigt</span>
+    </div>
+
+    <ol class="onboarding__steps">
+      <li v-for="(step, index) in steps" :key="step.key">
+        <CalCard class="onboarding__step" :class="{ 'is-done': step.done }">
+          <div class="onboarding__step-head">
+            <span class="onboarding__marker" :class="{ 'is-done': step.done }">
+              <CalIcon v-if="step.done" :icon="Check" size="sm" />
+              <template v-else>{{ index + 1 }}</template>
+            </span>
+            <div class="onboarding__step-copy">
+              <p class="onboarding__step-label">{{ step.label }}</p>
+              <p class="onboarding__step-desc">{{ step.description }}</p>
+            </div>
           </div>
-        </div>
 
-        <div v-if="step.key === 'workspace' && !step.done" class="step-body">
-          <p v-if="error" class="error">{{ error }}</p>
-          <form class="ws-form" @submit.prevent="createWorkspace">
-            <label>Workspace-Key<input v-model="workspace.workspaceKey" placeholder="z. B. hauptkanal" /></label>
-            <label>Anzeigename<input v-model="workspace.displayName" placeholder="Hauptkanal" /></label>
-            <label>Typ<input v-model="workspace.workspaceType" placeholder="voice" /></label>
-            <button type="submit" :disabled="busy">Workspace anlegen</button>
-          </form>
-        </div>
-        <div v-else-if="!step.done" class="step-body">
-          <RouterLink class="action" :to="step.to">Öffnen</RouterLink>
-        </div>
+          <div v-if="step.key === 'workspace' && !step.done" class="onboarding__step-body">
+            <CalAlert v-if="error" class="onboarding__error" tone="danger">{{ error }}</CalAlert>
+            <form class="onboarding__form" @submit.prevent="createWorkspace">
+              <CalField v-slot="{ id }" label="Workspace-Key" required>
+                <CalInput :id="id" v-model="workspace.workspaceKey" name="workspaceKey" placeholder="hauptkanal" />
+              </CalField>
+              <CalField v-slot="{ id }" label="Anzeigename" required>
+                <CalInput :id="id" v-model="workspace.displayName" name="displayName" placeholder="Hauptkanal" />
+              </CalField>
+              <CalField v-slot="{ id }" label="Typ">
+                <CalInput :id="id" v-model="workspace.workspaceType" name="workspaceType" placeholder="voice" />
+              </CalField>
+              <CalButton type="submit" variant="primary" :loading="busy">Workspace anlegen</CalButton>
+            </form>
+          </div>
+
+          <div v-else-if="!step.done" class="onboarding__step-body">
+            <CalButton :to="step.to" :trailing-icon="ArrowRight">Öffnen</CalButton>
+          </div>
+        </CalCard>
       </li>
     </ol>
 
-    <footer>
-      <RouterLink class="action" to="/">{{ isComplete ? 'Zum Dashboard' : 'Später fortsetzen' }}</RouterLink>
-    </footer>
-  </section>
+    <div class="onboarding__footer">
+      <CalButton :variant="isComplete ? 'primary' : 'ghost'" to="/" :trailing-icon="ArrowRight">
+        {{ isComplete ? 'Zum Dashboard' : 'Später fortsetzen' }}
+      </CalButton>
+    </div>
+  </CalPage>
 </template>
 
 <style scoped lang="scss">
-.onboarding {
-  padding: calc(var(--cal-space) * 2);
-  max-width: 46rem;
+.onboarding__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space-3);
+  margin-bottom: var(--cal-space-6);
 }
 
-.lead {
-  color: var(--cal-color-text-muted);
-  max-width: 60ch;
+.onboarding__bar {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--cal-radius-full);
+  background: var(--cal-neutral-subtle);
+  overflow: hidden;
 }
 
-.progress {
-  margin-top: var(--cal-space);
-  font-weight: 600;
+.onboarding__bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cal-accent);
+  transition: width var(--cal-duration-slow) var(--cal-ease-out);
 }
 
-.steps {
-  list-style: none;
-  padding: 0;
-  margin: calc(var(--cal-space) * 2) 0;
+.onboarding__count {
+  font-size: var(--cal-text-md);
+  color: var(--cal-text-muted);
+  white-space: nowrap;
+}
+
+.onboarding__steps {
   display: flex;
   flex-direction: column;
-  gap: var(--cal-space);
+  gap: var(--cal-space-3);
 }
 
-.step {
-  border: 1px solid var(--cal-color-surface);
-  border-radius: 8px;
-  padding: calc(var(--cal-space) * 1.5);
+.onboarding__step.is-done {
+  opacity: 0.72;
 }
 
-.step-head {
+.onboarding__step-head {
   display: flex;
-  gap: var(--cal-space);
   align-items: flex-start;
+  gap: var(--cal-space-3);
 }
 
-.badge {
-  display: inline-flex;
+.onboarding__marker {
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background: var(--cal-color-surface);
-  font-weight: 700;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: var(--cal-radius-full);
+  background: var(--cal-neutral-subtle);
+  color: var(--cal-text-secondary);
+  font-size: var(--cal-text-sm);
+  font-weight: var(--cal-weight-semibold);
 }
 
-.badge.done {
-  background: var(--cal-color-success, #2e7d32);
+.onboarding__marker.is-done {
+  background: var(--cal-success);
   color: #fff;
 }
 
-.step-desc {
-  color: var(--cal-color-text-muted);
-  font-size: 0.9rem;
+.onboarding__step-copy {
+  min-width: 0;
 }
 
-.step-body {
-  margin-top: var(--cal-space);
-  padding-left: calc(1.5rem + var(--cal-space));
+.onboarding__step-label {
+  font-size: var(--cal-text-base);
+  font-weight: var(--cal-weight-medium);
 }
 
-.ws-form {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr) auto;
-  gap: 0.5rem;
-  align-items: end;
+.onboarding__step-desc {
+  font-size: var(--cal-text-md);
+  color: var(--cal-text-muted);
+  line-height: var(--cal-leading-normal);
 }
 
-.ws-form label {
+.onboarding__step-body {
+  margin-top: var(--cal-space-4);
+  padding-left: calc(24px + var(--cal-space-3));
+}
+
+.onboarding__error {
+  margin-bottom: var(--cal-space-3);
+}
+
+.onboarding__form {
   display: flex;
-  flex-direction: column;
-  font-size: 0.85rem;
-  gap: 0.15rem;
+  align-items: flex-end;
+  gap: var(--cal-space-3);
+  flex-wrap: wrap;
 }
 
-.action {
-  display: inline-block;
-  color: var(--cal-color-text);
+.onboarding__form > :deep(.cal-field) {
+  flex: 1;
+  min-width: 160px;
 }
 
-.error {
-  color: var(--cal-color-danger, #c0392b);
+.onboarding__footer {
+  margin-top: var(--cal-space-6);
 }
 </style>

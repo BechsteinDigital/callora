@@ -532,6 +532,14 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(180)")
                         .HasColumnName("setting_key");
 
+                    b.Property<string>("SurfaceKey")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasDefaultValue("")
+                        .HasColumnName("surface_key");
+
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at_utc");
@@ -551,7 +559,7 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PluginId", "SettingKey");
 
-                    b.HasIndex("WorkspaceKey", "PluginId", "SettingKey")
+                    b.HasIndex("WorkspaceKey", "SurfaceKey", "PluginId", "SettingKey")
                         .IsUnique();
 
                     b.ToTable("workspace_theme_setting_values", (string)null);

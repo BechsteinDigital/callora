@@ -20,6 +20,15 @@ vi.mock('./workspacesApi', () => ({
   },
 }))
 
+// The confirm dialog is a promise-based store now, not window.confirm — mock it so
+// each test can decide what the operator answers.
+const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }))
+vi.mock('@/core/feedback/confirm', () => ({ confirm: confirmMock }))
+
+beforeEach(() => {
+  confirmMock.mockReset().mockResolvedValue(true)
+})
+
 function surface(over: Partial<WorkspaceSurface>): WorkspaceSurface {
   return {
     id: '00000000-0000-0000-0000-000000000001',
@@ -71,8 +80,8 @@ describe('WorkspaceSurfaces', () => {
     const wrapper = mountSurfaces(false)
     await flushPromises()
 
-    expect(wrapper.find('form.surface-form').exists()).toBe(false)
-    expect(wrapper.find('.link-danger').exists()).toBe(false)
+    expect(wrapper.find('form.surfaces__form').exists()).toBe(false)
+    expect(wrapper.find('.is-danger-ghost').exists()).toBe(false)
   })
 
   it('creates a surface from the form and reloads', async () => {
@@ -83,7 +92,7 @@ describe('WorkspaceSurfaces', () => {
     await wrapper.find('input[name="surfaceDisplayName"]').setValue('Portal')
     await wrapper.find('select[name="surfaceAccessMode"]').setValue('Public')
     await wrapper.find('input[name="surfaceHost"]').setValue('portal.example.de')
-    await wrapper.find('form.surface-form').trigger('submit')
+    await wrapper.find('form.surfaces__form').trigger('submit')
     await flushPromises()
 
     expect(upsertSurfaceMock).toHaveBeenCalledTimes(1)
@@ -106,7 +115,7 @@ describe('WorkspaceSurfaces', () => {
     // Only a display name, no key.
     await wrapper.find('input[name="surfaceDisplayName"]').setValue('Portal')
     await wrapper.find('input[name="surfaceKey"]').setValue('')
-    await wrapper.find('form.surface-form').trigger('submit')
+    await wrapper.find('form.surfaces__form').trigger('submit')
     await flushPromises()
 
     expect(upsertSurfaceMock).not.toHaveBeenCalled()
@@ -117,12 +126,12 @@ describe('WorkspaceSurfaces', () => {
     await flushPromises()
 
     // Enter edit mode from the row action.
-    await wrapper.findAll('button.link').find((b) => b.text() === 'Bearbeiten')!.trigger('click')
+    await wrapper.findAll('button.is-ghost').find((b) => b.text() === 'Bearbeiten')!.trigger('click')
     // The key becomes read-only in edit mode.
     expect((wrapper.find('input[name="surfaceKey"]').element as HTMLInputElement).disabled).toBe(true)
 
     await wrapper.find('input[name="surfaceDisplayName"]').setValue('Renamed')
-    await wrapper.find('form.surface-form').trigger('submit')
+    await wrapper.find('form.surfaces__form').trigger('submit')
     await flushPromises()
 
     const [ws, key, body] = upsertSurfaceMock.mock.calls[0]
@@ -141,7 +150,7 @@ describe('WorkspaceSurfaces', () => {
 
     await wrapper.find('input[name="surfaceKey"]').setValue('portal')
     await wrapper.find('input[name="surfaceDisplayName"]').setValue('Portal')
-    await wrapper.find('form.surface-form').trigger('submit')
+    await wrapper.find('form.surfaces__form').trigger('submit')
     await flushPromises()
 
     expect(upsertSurfaceMock).not.toHaveBeenCalled()
@@ -149,7 +158,7 @@ describe('WorkspaceSurfaces', () => {
   })
 
   it('removes a surface after confirmation and runs the after-remove hook', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     const seen: unknown[] = []
     registerHook('workspaces.surface.after-remove', (h) => {
       seen.push(h.payload)
@@ -157,7 +166,7 @@ describe('WorkspaceSurfaces', () => {
     const wrapper = mountSurfaces(true)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeSurfaceMock).toHaveBeenCalledWith('acme', 'default')
@@ -165,11 +174,11 @@ describe('WorkspaceSurfaces', () => {
   })
 
   it('does not remove when the confirm dialog is dismissed', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    confirmMock.mockResolvedValue(false)
     const wrapper = mountSurfaces(true)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeSurfaceMock).not.toHaveBeenCalled()
