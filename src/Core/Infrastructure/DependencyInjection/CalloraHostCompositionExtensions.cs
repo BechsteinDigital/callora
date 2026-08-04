@@ -200,6 +200,7 @@ public static class CalloraHostCompositionExtensions
             static sp => sp.GetRequiredService<Callora.Core.Application.Plugins.PluginAvailabilityEvaluator>());
         builder.Services.AddScoped<WorkspaceUiChainResolver>();
         builder.Services.AddScoped<WorkspacePublicThemeResolver>();
+        builder.Services.AddScoped<SurfaceThemeService>();
         builder.Services.AddScoped<Callora.Core.Application.Configuration.ISystemConfigStore, EfSystemConfigStore>();
         builder.Services.AddScoped<Callora.Core.Application.Configuration.SystemConfigResolver>();
         builder.Services.AddScoped<Callora.Core.Infrastructure.Configuration.RegistryConfigSchemaSyncService>();

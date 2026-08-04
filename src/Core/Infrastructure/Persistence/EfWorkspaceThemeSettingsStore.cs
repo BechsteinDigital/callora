@@ -104,8 +104,9 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
         return entities.Select(ToDefinitionSnapshot).ToArray();
     }
 
-    public async Task<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>> ListWorkspaceValuesAsync(
+    public async Task<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>> ListValuesAsync(
         string workspaceKey,
+        string? surfaceKey,
         string pluginId,
         CancellationToken cancellationToken = default)
     {
@@ -113,14 +114,19 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
 
         var normalizedWorkspaceKey = workspaceKey.Trim();
+        var normalizedSurfaceKey = NormalizeSurfaceKey(surfaceKey);
         var normalizedPluginId = pluginId.Trim();
 
         return await dbContext.WorkspaceThemeSettingValues
             .AsNoTracking()
-            .Where(x => x.WorkspaceKey == normalizedWorkspaceKey && x.PluginId == normalizedPluginId)
+            .Where(x =>
+                x.WorkspaceKey == normalizedWorkspaceKey &&
+                x.SurfaceKey == normalizedSurfaceKey &&
+                x.PluginId == normalizedPluginId)
             .OrderBy(x => x.SettingKey)
             .Select(x => new WorkspaceThemeSettingValueSnapshot(
                 x.WorkspaceKey,
+                x.SurfaceKey,
                 x.PluginId,
                 x.SettingKey,
                 x.ValueJson,
@@ -129,8 +135,9 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
             .ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>> ReplaceWorkspaceValuesAsync(
+    public async Task<IReadOnlyList<WorkspaceThemeSettingValueSnapshot>> ReplaceValuesAsync(
         string workspaceKey,
+        string? surfaceKey,
         string pluginId,
         IReadOnlyDictionary<string, string?> valuesByKey,
         CancellationToken cancellationToken = default)
@@ -140,11 +147,15 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
         ArgumentNullException.ThrowIfNull(valuesByKey);
 
         var normalizedWorkspaceKey = workspaceKey.Trim();
+        var normalizedSurfaceKey = NormalizeSurfaceKey(surfaceKey);
         var normalizedPluginId = pluginId.Trim();
         var nowUtc = DateTimeOffset.UtcNow;
 
         var existingRows = await dbContext.WorkspaceThemeSettingValues
-            .Where(x => x.WorkspaceKey == normalizedWorkspaceKey && x.PluginId == normalizedPluginId)
+            .Where(x =>
+                x.WorkspaceKey == normalizedWorkspaceKey &&
+                x.SurfaceKey == normalizedSurfaceKey &&
+                x.PluginId == normalizedPluginId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -192,6 +203,7 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
             {
                 Id = Guid.NewGuid(),
                 WorkspaceKey = normalizedWorkspaceKey,
+                SurfaceKey = normalizedSurfaceKey,
                 PluginId = normalizedPluginId,
                 SettingKey = key,
                 ValueJson = valueJson,
@@ -200,7 +212,8 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
         }
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return await ListWorkspaceValuesAsync(normalizedWorkspaceKey, normalizedPluginId, cancellationToken).ConfigureAwait(false);
+        return await ListValuesAsync(normalizedWorkspaceKey, normalizedSurfaceKey, normalizedPluginId, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public async Task ClearPluginDefinitionsAsync(
@@ -219,6 +232,13 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
             .ExecuteDeleteAsync(cancellationToken)
             .ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// The workspace level is stored as an empty surface key, never null — see
+    /// <see cref="WorkspaceThemeSettingValue.SurfaceKey"/> for why.
+    /// </summary>
+    private static string NormalizeSurfaceKey(string? surfaceKey) =>
+        string.IsNullOrWhiteSpace(surfaceKey) ? string.Empty : surfaceKey.Trim();
 
     private static WorkspaceThemeSettingDefinitionSnapshot ToDefinitionSnapshot(WorkspaceThemeSettingDefinition definition)
     {

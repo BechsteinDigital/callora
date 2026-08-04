@@ -21,16 +21,18 @@
             <code>{{ plugin.pluginId }}</code>
           </div>
           <div class="ws-plugins__states">
-            <CalBadge :tone="plugin.isGloballyActive ? 'success' : 'neutral'" dot>
-              {{ plugin.isGloballyActive ? 'Global aktiv' : 'Global inaktiv' }}
+            <CalBadge :tone="statusOf(plugin).tone" dot>{{ statusOf(plugin).label }}</CalBadge>
+            <!-- The two decisions behind the summary. They normally agree; when
+                 they do not, the summary says "Unvollständig" and these show
+                 which half is missing. -->
+            <CalBadge :tone="plugin.isEntitled ? 'neutral' : 'neutral'" variant="outline">
+              {{ plugin.isEntitled ? 'berechtigt' : 'nicht berechtigt' }}
             </CalBadge>
-            <CalBadge :tone="plugin.isAssigned ? 'accent' : 'neutral'" variant="outline">
-              {{ plugin.isAssigned ? 'Zugewiesen' : 'Nicht zugewiesen' }}
+            <CalBadge tone="neutral" variant="outline">
+              {{ plugin.isActive ? 'aktiviert' : 'nicht aktiviert' }}
             </CalBadge>
           </div>
-          <p v-if="!plugin.isGloballyActive && !plugin.isAssigned" class="ws-plugins__hint">
-            Zuerst global aktivieren.
-          </p>
+          <p class="ws-plugins__hint">{{ statusOf(plugin).detail }}</p>
         </div>
 
         <CalButton
@@ -52,6 +54,7 @@ import { onMounted, ref } from 'vue'
 import { Puzzle } from 'lucide-vue-next'
 import { useService } from '@/core/extensions/services'
 import { workspacesApi, type WorkspacePluginAssignment } from './workspacesApi'
+import { describeAssignment } from './pluginAssignmentStatus'
 import CalAlert from '@/core/ui/CalAlert.vue'
 import CalBadge from '@/core/ui/CalBadge.vue'
 import CalButton from '@/core/ui/CalButton.vue'
@@ -65,6 +68,10 @@ const plugins = ref<WorkspacePluginAssignment[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const busyPluginId = ref<string | null>(null)
+
+// Derived per row rather than precomputed: the list is short, and a plain
+// function keeps the mapping testable on its own.
+const statusOf = describeAssignment
 
 async function load(): Promise<void> {
   loading.value = true

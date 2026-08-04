@@ -4,6 +4,23 @@ Callora.Administration.Api.Admin.Integrations.IntegrationsController.Create(Call
 Callora.Administration.Api.Admin.Integrations.IntegrationsController.IntegrationsController() -> void
 Callora.Administration.Api.Admin.Integrations.IntegrationsController.List(Callora.Core.Application.Integrations.IIntegrationCredentialStore! store, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
 Callora.Administration.Api.Admin.Integrations.IntegrationsController.Revoke(System.Guid id, Callora.Core.Application.Integrations.IIntegrationCredentialStore! store, Callora.Core.Application.Audit.IHostAuditStore! auditStore, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest
+Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.IsAssigned.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.IsAssigned.init -> void
+Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.SetWorkspacePluginAssignmentApiRequest() -> void
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.DisplayName.get -> string!
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsActive.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsAssigned.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsEntitled.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsGloballyActive.get -> bool
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.PluginId.get -> string!
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.WorkspacePluginAssignmentApiResponse(string! pluginId, string! displayName, bool isGloballyActive, bool isEntitled, bool isActive, bool isAssigned) -> void
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.List(string! workspaceKey, Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService! service, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.SetAssignment(string! workspaceKey, string! pluginId, Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest! request, Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService! service, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.WorkspacePluginsController() -> void
+Callora.Administration.Api.AdminContextEndpoints
 Callora.Administration.Api.BackendUserApiResponse
 Callora.Administration.Api.BackendUserApiResponse.<Clone>$() -> Callora.Administration.Api.BackendUserApiResponse!
 Callora.Administration.Api.BackendUserApiResponse.BackendUserApiResponse(string! ExternalId, string? Email, string? DisplayName, bool HasPassword, string? PasswordHashAlgorithm, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
@@ -62,6 +79,26 @@ Callora.Administration.Api.CreateWebhookSubscriptionApiRequest.TargetUrl.init ->
 Callora.Administration.Api.CreateWebhookSubscriptionApiRequest.WorkspaceKey.get -> string?
 Callora.Administration.Api.CreateWebhookSubscriptionApiRequest.WorkspaceKey.init -> void
 Callora.Administration.Api.CustomFieldEndpoints
+Callora.Administration.Api.EntitlementApiResponse
+Callora.Administration.Api.EntitlementApiResponse.<Clone>$() -> Callora.Administration.Api.EntitlementApiResponse!
+Callora.Administration.Api.EntitlementApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.EntitlementApiResponse.CreatedAtUtc.init -> void
+Callora.Administration.Api.EntitlementApiResponse.Deconstruct(out string! PluginId, out string? WorkspaceKey, out string? TenantKey, out bool IsEntitled, out string! Source, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.EntitlementApiResponse.EntitlementApiResponse(string! PluginId, string? WorkspaceKey, string? TenantKey, bool IsEntitled, string! Source, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.EntitlementApiResponse.Equals(Callora.Administration.Api.EntitlementApiResponse? other) -> bool
+Callora.Administration.Api.EntitlementApiResponse.IsEntitled.get -> bool
+Callora.Administration.Api.EntitlementApiResponse.IsEntitled.init -> void
+Callora.Administration.Api.EntitlementApiResponse.PluginId.get -> string!
+Callora.Administration.Api.EntitlementApiResponse.PluginId.init -> void
+Callora.Administration.Api.EntitlementApiResponse.Source.get -> string!
+Callora.Administration.Api.EntitlementApiResponse.Source.init -> void
+Callora.Administration.Api.EntitlementApiResponse.TenantKey.get -> string?
+Callora.Administration.Api.EntitlementApiResponse.TenantKey.init -> void
+Callora.Administration.Api.EntitlementApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.EntitlementApiResponse.UpdatedAtUtc.init -> void
+Callora.Administration.Api.EntitlementApiResponse.WorkspaceKey.get -> string?
+Callora.Administration.Api.EntitlementApiResponse.WorkspaceKey.init -> void
+Callora.Administration.Api.EntitlementManagementEndpoints
 Callora.Administration.Api.EntitlementSyncEndpoints
 Callora.Administration.Api.FeatureEndpoints
 Callora.Administration.Api.FeatureFlagApiResponse
@@ -261,6 +298,43 @@ Callora.Administration.Api.PluginLifecycleRequest.RequestedBy.get -> string?
 Callora.Administration.Api.PluginLifecycleRequest.RequestedBy.init -> void
 Callora.Administration.Api.PluginLifecycleRequest.WorkspaceKey.get -> string?
 Callora.Administration.Api.PluginLifecycleRequest.WorkspaceKey.init -> void
+Callora.Administration.Api.PluginPublicHttpEndpoints
+Callora.Administration.Api.PluginPublicHttpRouteMatch
+Callora.Administration.Api.PluginPublicHttpRouteMatch.<Clone>$() -> Callora.Administration.Api.PluginPublicHttpRouteMatch!
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Contributor.get -> Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor!
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Contributor.init -> void
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Deconstruct(out Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor! Contributor, out Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration! Route, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Equals(Callora.Administration.Api.PluginPublicHttpRouteMatch? other) -> bool
+Callora.Administration.Api.PluginPublicHttpRouteMatch.PluginPublicHttpRouteMatch(Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor! Contributor, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration! Route, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Route.get -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration!
+Callora.Administration.Api.PluginPublicHttpRouteMatch.Route.init -> void
+Callora.Administration.Api.PluginPublicHttpRouteMatch.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Administration.Api.PluginPublicHttpRouteMatch.RouteValues.init -> void
+Callora.Administration.Api.PluginPublicHttpRouteMatcher
+Callora.Administration.Api.PluginSignatureStatusApiResponse
+Callora.Administration.Api.PluginSignatureStatusApiResponse.<Clone>$() -> Callora.Administration.Api.PluginSignatureStatusApiResponse!
+Callora.Administration.Api.PluginSignatureStatusApiResponse.Deconstruct(out string! PluginId, out string! State, out string? SignerFingerprint) -> void
+Callora.Administration.Api.PluginSignatureStatusApiResponse.Equals(Callora.Administration.Api.PluginSignatureStatusApiResponse? other) -> bool
+Callora.Administration.Api.PluginSignatureStatusApiResponse.PluginId.get -> string!
+Callora.Administration.Api.PluginSignatureStatusApiResponse.PluginId.init -> void
+Callora.Administration.Api.PluginSignatureStatusApiResponse.PluginSignatureStatusApiResponse(string! PluginId, string! State, string? SignerFingerprint) -> void
+Callora.Administration.Api.PluginSignatureStatusApiResponse.SignerFingerprint.get -> string?
+Callora.Administration.Api.PluginSignatureStatusApiResponse.SignerFingerprint.init -> void
+Callora.Administration.Api.PluginSignatureStatusApiResponse.State.get -> string!
+Callora.Administration.Api.PluginSignatureStatusApiResponse.State.init -> void
+Callora.Administration.Api.PluginWebSocketEndpoints
+Callora.Administration.Api.PluginWebSocketRouteMatch
+Callora.Administration.Api.PluginWebSocketRouteMatch.<Clone>$() -> Callora.Administration.Api.PluginWebSocketRouteMatch!
+Callora.Administration.Api.PluginWebSocketRouteMatch.Contributor.get -> Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor!
+Callora.Administration.Api.PluginWebSocketRouteMatch.Contributor.init -> void
+Callora.Administration.Api.PluginWebSocketRouteMatch.Deconstruct(out Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor! Contributor, out Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration! Route, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginWebSocketRouteMatch.Equals(Callora.Administration.Api.PluginWebSocketRouteMatch? other) -> bool
+Callora.Administration.Api.PluginWebSocketRouteMatch.PluginWebSocketRouteMatch(Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor! Contributor, Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration! Route, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginWebSocketRouteMatch.Route.get -> Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration!
+Callora.Administration.Api.PluginWebSocketRouteMatch.Route.init -> void
+Callora.Administration.Api.PluginWebSocketRouteMatch.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Administration.Api.PluginWebSocketRouteMatch.RouteValues.init -> void
+Callora.Administration.Api.PluginWebSocketRouteMatcher
 Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse
 Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse.<Clone>$() -> Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse!
 Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse.Deconstruct(out string! WorkspaceKey, out string! PluginId, out bool IsEntitled, out string? TenantKey) -> void
@@ -327,6 +401,116 @@ Callora.Administration.Api.RbacUserUpsertApiRequest.Equals(Callora.Administratio
 Callora.Administration.Api.RbacUserUpsertApiRequest.RbacUserUpsertApiRequest(string! Role) -> void
 Callora.Administration.Api.RbacUserUpsertApiRequest.Role.get -> string!
 Callora.Administration.Api.RbacUserUpsertApiRequest.Role.init -> void
+Callora.Administration.Api.SetEntitlementApiRequest
+Callora.Administration.Api.SetEntitlementApiRequest.<Clone>$() -> Callora.Administration.Api.SetEntitlementApiRequest!
+Callora.Administration.Api.SetEntitlementApiRequest.Deconstruct(out string! PluginId, out string? WorkspaceKey, out string? TenantKey, out bool IsEntitled) -> void
+Callora.Administration.Api.SetEntitlementApiRequest.Equals(Callora.Administration.Api.SetEntitlementApiRequest? other) -> bool
+Callora.Administration.Api.SetEntitlementApiRequest.IsEntitled.get -> bool
+Callora.Administration.Api.SetEntitlementApiRequest.IsEntitled.init -> void
+Callora.Administration.Api.SetEntitlementApiRequest.PluginId.get -> string!
+Callora.Administration.Api.SetEntitlementApiRequest.PluginId.init -> void
+Callora.Administration.Api.SetEntitlementApiRequest.SetEntitlementApiRequest(string! PluginId, string? WorkspaceKey, string? TenantKey, bool IsEntitled) -> void
+Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.get -> string?
+Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.init -> void
+Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.get -> string?
+Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.init -> void
+Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest
+Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.<Clone>$() -> Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest!
+Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Deconstruct(out string! Policy) -> void
+Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Equals(Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? other) -> bool
+Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Policy.get -> string!
+Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Policy.init -> void
+Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.SetSurfaceAccessPolicyApiRequest(string! Policy) -> void
+Callora.Administration.Api.SurfaceApiResponse
+Callora.Administration.Api.SurfaceApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceApiResponse!
+Callora.Administration.Api.SurfaceApiResponse.AccessMode.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.AccessMode.init -> void
+Callora.Administration.Api.SurfaceApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.SurfaceApiResponse.CreatedAtUtc.init -> void
+Callora.Administration.Api.SurfaceApiResponse.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string! AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.SurfaceApiResponse.DisplayName.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.DisplayName.init -> void
+Callora.Administration.Api.SurfaceApiResponse.Equals(Callora.Administration.Api.SurfaceApiResponse? other) -> bool
+Callora.Administration.Api.SurfaceApiResponse.Id.get -> System.Guid
+Callora.Administration.Api.SurfaceApiResponse.Id.init -> void
+Callora.Administration.Api.SurfaceApiResponse.IsActive.get -> bool
+Callora.Administration.Api.SurfaceApiResponse.IsActive.init -> void
+Callora.Administration.Api.SurfaceApiResponse.Locale.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.Locale.init -> void
+Callora.Administration.Api.SurfaceApiResponse.PublicBaseUrl.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.PublicBaseUrl.init -> void
+Callora.Administration.Api.SurfaceApiResponse.PublicHost.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.PublicHost.init -> void
+Callora.Administration.Api.SurfaceApiResponse.PublicPathPrefix.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.PublicPathPrefix.init -> void
+Callora.Administration.Api.SurfaceApiResponse.SurfaceApiResponse(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string! AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.SurfaceApiResponse.SurfaceKey.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.SurfaceKey.init -> void
+Callora.Administration.Api.SurfaceApiResponse.SurfaceType.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.SurfaceType.init -> void
+Callora.Administration.Api.SurfaceApiResponse.TemplatePluginId.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.TemplatePluginId.init -> void
+Callora.Administration.Api.SurfaceApiResponse.TemplateVersion.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.TemplateVersion.init -> void
+Callora.Administration.Api.SurfaceApiResponse.ThemePluginId.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.ThemePluginId.init -> void
+Callora.Administration.Api.SurfaceApiResponse.ThemeVersion.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.ThemeVersion.init -> void
+Callora.Administration.Api.SurfaceApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.SurfaceApiResponse.UpdatedAtUtc.init -> void
+Callora.Administration.Api.SurfaceApiResponse.WorkspaceKey.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.WorkspaceKey.init -> void
+Callora.Administration.Api.SurfaceEndpoints
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceThemeAssignmentApiResponse!
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.Deconstruct(out string! WorkspaceKey, out string! SurfaceKey, out string? ThemePluginId, out string? ThemeVersion, out bool InheritedFromWorkspace) -> void
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.Equals(Callora.Administration.Api.SurfaceThemeAssignmentApiResponse? other) -> bool
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.InheritedFromWorkspace.get -> bool
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.InheritedFromWorkspace.init -> void
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.SurfaceKey.get -> string!
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.SurfaceKey.init -> void
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.SurfaceThemeAssignmentApiResponse(string! WorkspaceKey, string! SurfaceKey, string? ThemePluginId, string? ThemeVersion, bool InheritedFromWorkspace) -> void
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.ThemePluginId.get -> string?
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.ThemePluginId.init -> void
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.ThemeVersion.get -> string?
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.ThemeVersion.init -> void
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.WorkspaceKey.get -> string!
+Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.WorkspaceKey.init -> void
+Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest
+Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.<Clone>$() -> Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest!
+Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.Deconstruct(out string! ThemePluginId, out string! ThemeVersion) -> void
+Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.Equals(Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest? other) -> bool
+Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.SurfaceThemeAssignmentUpsertApiRequest(string! ThemePluginId, string! ThemeVersion) -> void
+Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.ThemePluginId.get -> string!
+Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.ThemePluginId.init -> void
+Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.ThemeVersion.get -> string!
+Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.ThemeVersion.init -> void
+Callora.Administration.Api.SurfaceThemeEndpoints
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceThemeSettingsApiResponse!
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.Deconstruct(out string! WorkspaceKey, out string! SurfaceKey, out bool HasAssignedTheme, out string? ThemePluginId, out string? ThemeVersion, out bool InheritedFromWorkspace, out bool InheritsWorkspaceValues, out System.Collections.Generic.IReadOnlyList<Callora.Administration.Api.WorkspaceThemeSettingDefinitionApiResponse!>! Fields, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! ValuesByKey, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! InheritedValuesByKey) -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.Equals(Callora.Administration.Api.SurfaceThemeSettingsApiResponse? other) -> bool
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.Fields.get -> System.Collections.Generic.IReadOnlyList<Callora.Administration.Api.WorkspaceThemeSettingDefinitionApiResponse!>!
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.Fields.init -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.HasAssignedTheme.get -> bool
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.HasAssignedTheme.init -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.InheritedFromWorkspace.get -> bool
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.InheritedFromWorkspace.init -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.InheritedValuesByKey.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.InheritedValuesByKey.init -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.InheritsWorkspaceValues.get -> bool
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.InheritsWorkspaceValues.init -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.SurfaceKey.get -> string!
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.SurfaceKey.init -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.SurfaceThemeSettingsApiResponse(string! WorkspaceKey, string! SurfaceKey, bool HasAssignedTheme, string? ThemePluginId, string? ThemeVersion, bool InheritedFromWorkspace, bool InheritsWorkspaceValues, System.Collections.Generic.IReadOnlyList<Callora.Administration.Api.WorkspaceThemeSettingDefinitionApiResponse!>! Fields, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! ValuesByKey, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! InheritedValuesByKey) -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.ThemePluginId.get -> string?
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.ThemePluginId.init -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.ThemeVersion.get -> string?
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.ThemeVersion.init -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.ValuesByKey.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.ValuesByKey.init -> void
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.WorkspaceKey.get -> string!
+Callora.Administration.Api.SurfaceThemeSettingsApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.SystemConfigEndpoints
 Callora.Administration.Api.TenantApiResponse
 Callora.Administration.Api.TenantApiResponse.<Clone>$() -> Callora.Administration.Api.TenantApiResponse!
@@ -474,6 +658,35 @@ Callora.Administration.Api.UpsertFlowApiRequest.Priority.init -> void
 Callora.Administration.Api.UpsertFlowApiRequest.TriggerEvent.get -> string!
 Callora.Administration.Api.UpsertFlowApiRequest.TriggerEvent.init -> void
 Callora.Administration.Api.UpsertFlowApiRequest.UpsertFlowApiRequest(string! Name, string! TriggerEvent, System.Text.Json.JsonElement? Conditions, System.Text.Json.JsonElement? Actions, bool IsActive = true, int Priority = 100) -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest
+Callora.Administration.Api.UpsertSurfaceApiRequest.<Clone>$() -> Callora.Administration.Api.UpsertSurfaceApiRequest!
+Callora.Administration.Api.UpsertSurfaceApiRequest.AccessMode.get -> string!
+Callora.Administration.Api.UpsertSurfaceApiRequest.AccessMode.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.Deconstruct(out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string! AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive) -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.DisplayName.get -> string!
+Callora.Administration.Api.UpsertSurfaceApiRequest.DisplayName.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.Equals(Callora.Administration.Api.UpsertSurfaceApiRequest? other) -> bool
+Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.get -> bool
+Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.Locale.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.Locale.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicBaseUrl.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicBaseUrl.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicHost.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicHost.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicPathPrefix.get -> string!
+Callora.Administration.Api.UpsertSurfaceApiRequest.PublicPathPrefix.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.SurfaceType.get -> string!
+Callora.Administration.Api.UpsertSurfaceApiRequest.SurfaceType.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.TemplatePluginId.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.TemplatePluginId.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.TemplateVersion.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.TemplateVersion.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.ThemePluginId.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.ThemePluginId.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.ThemeVersion.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.ThemeVersion.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.UpsertSurfaceApiRequest(string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string! AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive) -> void
 Callora.Administration.Api.UpsertSystemConfigValuesApiRequest
 Callora.Administration.Api.UpsertSystemConfigValuesApiRequest.<Clone>$() -> Callora.Administration.Api.UpsertSystemConfigValuesApiRequest!
 Callora.Administration.Api.UpsertSystemConfigValuesApiRequest.Deconstruct(out string! PluginId, out string! Scope, out string? ScopeKey, out System.Collections.Generic.Dictionary<string!, System.Text.Json.JsonElement?>? ValuesByKey) -> void
@@ -553,6 +766,8 @@ Callora.Administration.Api.WorkspaceApiResponse.PublicHost.get -> string?
 Callora.Administration.Api.WorkspaceApiResponse.PublicHost.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.PublicPathPrefix.get -> string!
 Callora.Administration.Api.WorkspaceApiResponse.PublicPathPrefix.init -> void
+Callora.Administration.Api.WorkspaceApiResponse.SurfaceAccessPolicy.get -> string!
+Callora.Administration.Api.WorkspaceApiResponse.SurfaceAccessPolicy.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.TenantIsActive.get -> bool
 Callora.Administration.Api.WorkspaceApiResponse.TenantIsActive.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.TenantKey.get -> string!
@@ -567,21 +782,7 @@ Callora.Administration.Api.WorkspaceApiResponse.ThemeVersion.get -> string?
 Callora.Administration.Api.WorkspaceApiResponse.ThemeVersion.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
 Callora.Administration.Api.WorkspaceApiResponse.UpdatedAtUtc.init -> void
-Callora.Administration.Api.WorkspaceApiResponse.SurfaceAccessPolicy.get -> string!
-Callora.Administration.Api.WorkspaceApiResponse.SurfaceAccessPolicy.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.WorkspaceApiResponse(string! TenantKey, string! WorkspaceKey, string! DisplayName, string! WorkspaceType, bool IsActive, bool TenantIsActive, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string? ThemePluginId, string? ThemeVersion, string? ThemeAssignedBy, System.DateTimeOffset? ThemeAssignedAtUtc, string! SurfaceAccessPolicy, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.<Clone>$() -> Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest!
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Deconstruct(out string! Policy) -> void
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Equals(Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? other) -> bool
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Policy.get -> string!
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Policy.init -> void
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.SetSurfaceAccessPolicyApiRequest(string! Policy) -> void
-override Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Equals(object? obj) -> bool
-override Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.GetHashCode() -> int
-override Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.ToString() -> string!
-static Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.operator !=(Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? left, Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? right) -> bool
-static Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.operator ==(Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? left, Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? right) -> bool
 Callora.Administration.Api.WorkspaceApiResponse.WorkspaceKey.get -> string!
 Callora.Administration.Api.WorkspaceApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.WorkspaceType.get -> string!
@@ -685,6 +886,9 @@ override Callora.Administration.Api.CreateTenantApiRequest.ToString() -> string!
 override Callora.Administration.Api.CreateWebhookSubscriptionApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.CreateWebhookSubscriptionApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.CreateWebhookSubscriptionApiRequest.ToString() -> string!
+override Callora.Administration.Api.EntitlementApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.EntitlementApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.EntitlementApiResponse.ToString() -> string!
 override Callora.Administration.Api.FeatureFlagApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.FeatureFlagApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.FeatureFlagApiResponse.ToString() -> string!
@@ -724,6 +928,15 @@ override Callora.Administration.Api.PluginLifecycleApiResponse.ToString() -> str
 override Callora.Administration.Api.PluginLifecycleRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.PluginLifecycleRequest.GetHashCode() -> int
 override Callora.Administration.Api.PluginLifecycleRequest.ToString() -> string!
+override Callora.Administration.Api.PluginPublicHttpRouteMatch.Equals(object? obj) -> bool
+override Callora.Administration.Api.PluginPublicHttpRouteMatch.GetHashCode() -> int
+override Callora.Administration.Api.PluginPublicHttpRouteMatch.ToString() -> string!
+override Callora.Administration.Api.PluginSignatureStatusApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.PluginSignatureStatusApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.PluginSignatureStatusApiResponse.ToString() -> string!
+override Callora.Administration.Api.PluginWebSocketRouteMatch.Equals(object? obj) -> bool
+override Callora.Administration.Api.PluginWebSocketRouteMatch.GetHashCode() -> int
+override Callora.Administration.Api.PluginWebSocketRouteMatch.ToString() -> string!
 override Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse.ToString() -> string!
@@ -745,6 +958,24 @@ override Callora.Administration.Api.RbacUserApiResponse.ToString() -> string!
 override Callora.Administration.Api.RbacUserUpsertApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.RbacUserUpsertApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.RbacUserUpsertApiRequest.ToString() -> string!
+override Callora.Administration.Api.SetEntitlementApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.SetEntitlementApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.SetEntitlementApiRequest.ToString() -> string!
+override Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.ToString() -> string!
+override Callora.Administration.Api.SurfaceApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.SurfaceApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.SurfaceApiResponse.ToString() -> string!
+override Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.ToString() -> string!
+override Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.ToString() -> string!
+override Callora.Administration.Api.SurfaceThemeSettingsApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.SurfaceThemeSettingsApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.SurfaceThemeSettingsApiResponse.ToString() -> string!
 override Callora.Administration.Api.TenantApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.TenantApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.TenantApiResponse.ToString() -> string!
@@ -775,6 +1006,9 @@ override Callora.Administration.Api.UpsertCustomFieldValuesApiRequest.ToString()
 override Callora.Administration.Api.UpsertFlowApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.UpsertFlowApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.UpsertFlowApiRequest.ToString() -> string!
+override Callora.Administration.Api.UpsertSurfaceApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.UpsertSurfaceApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.UpsertSurfaceApiRequest.ToString() -> string!
 override Callora.Administration.Api.UpsertSystemConfigValuesApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.UpsertSystemConfigValuesApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.UpsertSystemConfigValuesApiRequest.ToString() -> string!
@@ -808,6 +1042,7 @@ override Callora.Administration.Api.WorkspaceThemeSettingDefinitionApiResponse.T
 override Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.ToString() -> string!
+static Callora.Administration.Api.AdminContextEndpoints.MapAdminContextEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.BackendUserApiResponse.operator !=(Callora.Administration.Api.BackendUserApiResponse? left, Callora.Administration.Api.BackendUserApiResponse? right) -> bool
 static Callora.Administration.Api.BackendUserApiResponse.operator ==(Callora.Administration.Api.BackendUserApiResponse? left, Callora.Administration.Api.BackendUserApiResponse? right) -> bool
 static Callora.Administration.Api.BusinessEventEndpoints.MapBusinessEventEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
@@ -818,6 +1053,9 @@ static Callora.Administration.Api.CreateTenantApiRequest.operator ==(Callora.Adm
 static Callora.Administration.Api.CreateWebhookSubscriptionApiRequest.operator !=(Callora.Administration.Api.CreateWebhookSubscriptionApiRequest? left, Callora.Administration.Api.CreateWebhookSubscriptionApiRequest? right) -> bool
 static Callora.Administration.Api.CreateWebhookSubscriptionApiRequest.operator ==(Callora.Administration.Api.CreateWebhookSubscriptionApiRequest? left, Callora.Administration.Api.CreateWebhookSubscriptionApiRequest? right) -> bool
 static Callora.Administration.Api.CustomFieldEndpoints.MapCustomFieldEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.EntitlementApiResponse.operator !=(Callora.Administration.Api.EntitlementApiResponse? left, Callora.Administration.Api.EntitlementApiResponse? right) -> bool
+static Callora.Administration.Api.EntitlementApiResponse.operator ==(Callora.Administration.Api.EntitlementApiResponse? left, Callora.Administration.Api.EntitlementApiResponse? right) -> bool
+static Callora.Administration.Api.EntitlementManagementEndpoints.MapEntitlementManagementEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.EntitlementSyncEndpoints.MapEntitlementSyncEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.FeatureEndpoints.MapFeatureEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.FeatureFlagApiResponse.operator !=(Callora.Administration.Api.FeatureFlagApiResponse? left, Callora.Administration.Api.FeatureFlagApiResponse? right) -> bool
@@ -854,6 +1092,16 @@ static Callora.Administration.Api.PluginLifecycleApiResponse.operator !=(Callora
 static Callora.Administration.Api.PluginLifecycleApiResponse.operator ==(Callora.Administration.Api.PluginLifecycleApiResponse? left, Callora.Administration.Api.PluginLifecycleApiResponse? right) -> bool
 static Callora.Administration.Api.PluginLifecycleRequest.operator !=(Callora.Administration.Api.PluginLifecycleRequest? left, Callora.Administration.Api.PluginLifecycleRequest? right) -> bool
 static Callora.Administration.Api.PluginLifecycleRequest.operator ==(Callora.Administration.Api.PluginLifecycleRequest? left, Callora.Administration.Api.PluginLifecycleRequest? right) -> bool
+static Callora.Administration.Api.PluginPublicHttpEndpoints.MapPluginPublicHttpEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.PluginPublicHttpRouteMatch.operator !=(Callora.Administration.Api.PluginPublicHttpRouteMatch? left, Callora.Administration.Api.PluginPublicHttpRouteMatch? right) -> bool
+static Callora.Administration.Api.PluginPublicHttpRouteMatch.operator ==(Callora.Administration.Api.PluginPublicHttpRouteMatch? left, Callora.Administration.Api.PluginPublicHttpRouteMatch? right) -> bool
+static Callora.Administration.Api.PluginPublicHttpRouteMatcher.FindMatch(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor!>! contributors, string! pluginId, string! httpMethod, string! routePath) -> Callora.Administration.Api.PluginPublicHttpRouteMatch?
+static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator !=(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool
+static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator ==(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool
+static Callora.Administration.Api.PluginWebSocketEndpoints.MapPluginWebSocketEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.PluginWebSocketRouteMatch.operator !=(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool
+static Callora.Administration.Api.PluginWebSocketRouteMatch.operator ==(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool
+static Callora.Administration.Api.PluginWebSocketRouteMatcher.FindMatch(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor!>! contributors, string! pluginId, string! routePath) -> Callora.Administration.Api.PluginWebSocketRouteMatch?
 static Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse.operator !=(Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse? left, Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse? right) -> bool
 static Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse.operator ==(Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse? left, Callora.Administration.Api.PluginWorkspaceEntitlementApiResponse? right) -> bool
 static Callora.Administration.Api.RbacEndpoints.MapRbacEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
@@ -869,6 +1117,20 @@ static Callora.Administration.Api.RbacUserApiResponse.operator !=(Callora.Admini
 static Callora.Administration.Api.RbacUserApiResponse.operator ==(Callora.Administration.Api.RbacUserApiResponse? left, Callora.Administration.Api.RbacUserApiResponse? right) -> bool
 static Callora.Administration.Api.RbacUserUpsertApiRequest.operator !=(Callora.Administration.Api.RbacUserUpsertApiRequest? left, Callora.Administration.Api.RbacUserUpsertApiRequest? right) -> bool
 static Callora.Administration.Api.RbacUserUpsertApiRequest.operator ==(Callora.Administration.Api.RbacUserUpsertApiRequest? left, Callora.Administration.Api.RbacUserUpsertApiRequest? right) -> bool
+static Callora.Administration.Api.SetEntitlementApiRequest.operator !=(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
+static Callora.Administration.Api.SetEntitlementApiRequest.operator ==(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
+static Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.operator !=(Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? left, Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? right) -> bool
+static Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.operator ==(Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? left, Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? right) -> bool
+static Callora.Administration.Api.SurfaceApiResponse.operator !=(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceApiResponse.operator ==(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceEndpoints.MapSurfaceEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.operator !=(Callora.Administration.Api.SurfaceThemeAssignmentApiResponse? left, Callora.Administration.Api.SurfaceThemeAssignmentApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.operator ==(Callora.Administration.Api.SurfaceThemeAssignmentApiResponse? left, Callora.Administration.Api.SurfaceThemeAssignmentApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.operator !=(Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest? left, Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest? right) -> bool
+static Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.operator ==(Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest? left, Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest? right) -> bool
+static Callora.Administration.Api.SurfaceThemeEndpoints.MapSurfaceThemeEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
+static Callora.Administration.Api.SurfaceThemeSettingsApiResponse.operator !=(Callora.Administration.Api.SurfaceThemeSettingsApiResponse? left, Callora.Administration.Api.SurfaceThemeSettingsApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceThemeSettingsApiResponse.operator ==(Callora.Administration.Api.SurfaceThemeSettingsApiResponse? left, Callora.Administration.Api.SurfaceThemeSettingsApiResponse? right) -> bool
 static Callora.Administration.Api.SystemConfigEndpoints.MapSystemConfigEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.TenantApiResponse.operator !=(Callora.Administration.Api.TenantApiResponse? left, Callora.Administration.Api.TenantApiResponse? right) -> bool
 static Callora.Administration.Api.TenantApiResponse.operator ==(Callora.Administration.Api.TenantApiResponse? left, Callora.Administration.Api.TenantApiResponse? right) -> bool
@@ -892,6 +1154,8 @@ static Callora.Administration.Api.UpsertCustomFieldValuesApiRequest.operator !=(
 static Callora.Administration.Api.UpsertCustomFieldValuesApiRequest.operator ==(Callora.Administration.Api.UpsertCustomFieldValuesApiRequest? left, Callora.Administration.Api.UpsertCustomFieldValuesApiRequest? right) -> bool
 static Callora.Administration.Api.UpsertFlowApiRequest.operator !=(Callora.Administration.Api.UpsertFlowApiRequest? left, Callora.Administration.Api.UpsertFlowApiRequest? right) -> bool
 static Callora.Administration.Api.UpsertFlowApiRequest.operator ==(Callora.Administration.Api.UpsertFlowApiRequest? left, Callora.Administration.Api.UpsertFlowApiRequest? right) -> bool
+static Callora.Administration.Api.UpsertSurfaceApiRequest.operator !=(Callora.Administration.Api.UpsertSurfaceApiRequest? left, Callora.Administration.Api.UpsertSurfaceApiRequest? right) -> bool
+static Callora.Administration.Api.UpsertSurfaceApiRequest.operator ==(Callora.Administration.Api.UpsertSurfaceApiRequest? left, Callora.Administration.Api.UpsertSurfaceApiRequest? right) -> bool
 static Callora.Administration.Api.UpsertSystemConfigValuesApiRequest.operator !=(Callora.Administration.Api.UpsertSystemConfigValuesApiRequest? left, Callora.Administration.Api.UpsertSystemConfigValuesApiRequest? right) -> bool
 static Callora.Administration.Api.UpsertSystemConfigValuesApiRequest.operator ==(Callora.Administration.Api.UpsertSystemConfigValuesApiRequest? left, Callora.Administration.Api.UpsertSystemConfigValuesApiRequest? right) -> bool
 static Callora.Administration.Api.UpsertWorkspaceApiRequest.operator !=(Callora.Administration.Api.UpsertWorkspaceApiRequest? left, Callora.Administration.Api.UpsertWorkspaceApiRequest? right) -> bool
@@ -918,203 +1182,5 @@ static Callora.Administration.Api.WorkspaceThemeSettingDefinitionApiResponse.ope
 static Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.operator !=(Callora.Administration.Api.WorkspaceThemeSettingsApiResponse? left, Callora.Administration.Api.WorkspaceThemeSettingsApiResponse? right) -> bool
 static Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.operator ==(Callora.Administration.Api.WorkspaceThemeSettingsApiResponse? left, Callora.Administration.Api.WorkspaceThemeSettingsApiResponse? right) -> bool
 static Callora.Administration.CalloraAdministrationExtensions.AddCalloraAdministration(this Microsoft.AspNetCore.Builder.WebApplicationBuilder! builder) -> Microsoft.AspNetCore.Builder.WebApplicationBuilder!
-static Callora.Administration.CalloraAdministrationExtensions.MapCalloraAdministration(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
-Callora.Administration.Api.AdminContextEndpoints
-static Callora.Administration.Api.AdminContextEndpoints.MapAdminContextEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.CalloraAdministrationExtensions.MapAdminSpaFallback(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
-Callora.Administration.Api.PluginSignatureStatusApiResponse
-Callora.Administration.Api.PluginSignatureStatusApiResponse.<Clone>$() -> Callora.Administration.Api.PluginSignatureStatusApiResponse!
-Callora.Administration.Api.PluginSignatureStatusApiResponse.Deconstruct(out string! PluginId, out string! State, out string? SignerFingerprint) -> void
-Callora.Administration.Api.PluginSignatureStatusApiResponse.Equals(Callora.Administration.Api.PluginSignatureStatusApiResponse? other) -> bool
-Callora.Administration.Api.PluginSignatureStatusApiResponse.PluginId.get -> string!
-Callora.Administration.Api.PluginSignatureStatusApiResponse.PluginId.init -> void
-Callora.Administration.Api.PluginSignatureStatusApiResponse.PluginSignatureStatusApiResponse(string! PluginId, string! State, string? SignerFingerprint) -> void
-Callora.Administration.Api.PluginSignatureStatusApiResponse.SignerFingerprint.get -> string?
-Callora.Administration.Api.PluginSignatureStatusApiResponse.SignerFingerprint.init -> void
-Callora.Administration.Api.PluginSignatureStatusApiResponse.State.get -> string!
-Callora.Administration.Api.PluginSignatureStatusApiResponse.State.init -> void
-override Callora.Administration.Api.PluginSignatureStatusApiResponse.Equals(object? obj) -> bool
-override Callora.Administration.Api.PluginSignatureStatusApiResponse.GetHashCode() -> int
-override Callora.Administration.Api.PluginSignatureStatusApiResponse.ToString() -> string!
-static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator !=(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool
-static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator ==(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool
-Callora.Administration.Api.SurfaceApiResponse
-Callora.Administration.Api.SurfaceApiResponse.AccessMode.get -> string!
-Callora.Administration.Api.SurfaceApiResponse.AccessMode.init -> void
-Callora.Administration.Api.SurfaceApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceApiResponse!
-Callora.Administration.Api.SurfaceApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
-Callora.Administration.Api.SurfaceApiResponse.CreatedAtUtc.init -> void
-Callora.Administration.Api.SurfaceApiResponse.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string! AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
-Callora.Administration.Api.SurfaceApiResponse.DisplayName.get -> string!
-Callora.Administration.Api.SurfaceApiResponse.DisplayName.init -> void
-Callora.Administration.Api.SurfaceApiResponse.Equals(Callora.Administration.Api.SurfaceApiResponse? other) -> bool
-Callora.Administration.Api.SurfaceApiResponse.Id.get -> System.Guid
-Callora.Administration.Api.SurfaceApiResponse.Id.init -> void
-Callora.Administration.Api.SurfaceApiResponse.IsActive.get -> bool
-Callora.Administration.Api.SurfaceApiResponse.IsActive.init -> void
-Callora.Administration.Api.SurfaceApiResponse.Locale.get -> string?
-Callora.Administration.Api.SurfaceApiResponse.Locale.init -> void
-Callora.Administration.Api.SurfaceApiResponse.PublicBaseUrl.get -> string?
-Callora.Administration.Api.SurfaceApiResponse.PublicBaseUrl.init -> void
-Callora.Administration.Api.SurfaceApiResponse.PublicHost.get -> string?
-Callora.Administration.Api.SurfaceApiResponse.PublicHost.init -> void
-Callora.Administration.Api.SurfaceApiResponse.PublicPathPrefix.get -> string!
-Callora.Administration.Api.SurfaceApiResponse.PublicPathPrefix.init -> void
-Callora.Administration.Api.SurfaceApiResponse.SurfaceApiResponse(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string! AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
-Callora.Administration.Api.SurfaceApiResponse.SurfaceKey.get -> string!
-Callora.Administration.Api.SurfaceApiResponse.SurfaceKey.init -> void
-Callora.Administration.Api.SurfaceApiResponse.SurfaceType.get -> string!
-Callora.Administration.Api.SurfaceApiResponse.SurfaceType.init -> void
-Callora.Administration.Api.SurfaceApiResponse.TemplatePluginId.get -> string?
-Callora.Administration.Api.SurfaceApiResponse.TemplatePluginId.init -> void
-Callora.Administration.Api.SurfaceApiResponse.TemplateVersion.get -> string?
-Callora.Administration.Api.SurfaceApiResponse.TemplateVersion.init -> void
-Callora.Administration.Api.SurfaceApiResponse.ThemePluginId.get -> string?
-Callora.Administration.Api.SurfaceApiResponse.ThemePluginId.init -> void
-Callora.Administration.Api.SurfaceApiResponse.ThemeVersion.get -> string?
-Callora.Administration.Api.SurfaceApiResponse.ThemeVersion.init -> void
-Callora.Administration.Api.SurfaceApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
-Callora.Administration.Api.SurfaceApiResponse.UpdatedAtUtc.init -> void
-Callora.Administration.Api.SurfaceApiResponse.WorkspaceKey.get -> string!
-Callora.Administration.Api.SurfaceApiResponse.WorkspaceKey.init -> void
-Callora.Administration.Api.SurfaceEndpoints
-Callora.Administration.Api.UpsertSurfaceApiRequest
-Callora.Administration.Api.UpsertSurfaceApiRequest.AccessMode.get -> string!
-Callora.Administration.Api.UpsertSurfaceApiRequest.AccessMode.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.<Clone>$() -> Callora.Administration.Api.UpsertSurfaceApiRequest!
-Callora.Administration.Api.UpsertSurfaceApiRequest.Deconstruct(out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string! AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive) -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.DisplayName.get -> string!
-Callora.Administration.Api.UpsertSurfaceApiRequest.DisplayName.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.Equals(Callora.Administration.Api.UpsertSurfaceApiRequest? other) -> bool
-Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.get -> bool
-Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.Locale.get -> string?
-Callora.Administration.Api.UpsertSurfaceApiRequest.Locale.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.PublicBaseUrl.get -> string?
-Callora.Administration.Api.UpsertSurfaceApiRequest.PublicBaseUrl.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.PublicHost.get -> string?
-Callora.Administration.Api.UpsertSurfaceApiRequest.PublicHost.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.PublicPathPrefix.get -> string!
-Callora.Administration.Api.UpsertSurfaceApiRequest.PublicPathPrefix.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.SurfaceType.get -> string!
-Callora.Administration.Api.UpsertSurfaceApiRequest.SurfaceType.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.TemplatePluginId.get -> string?
-Callora.Administration.Api.UpsertSurfaceApiRequest.TemplatePluginId.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.TemplateVersion.get -> string?
-Callora.Administration.Api.UpsertSurfaceApiRequest.TemplateVersion.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.ThemePluginId.get -> string?
-Callora.Administration.Api.UpsertSurfaceApiRequest.ThemePluginId.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.ThemeVersion.get -> string?
-Callora.Administration.Api.UpsertSurfaceApiRequest.ThemeVersion.init -> void
-Callora.Administration.Api.UpsertSurfaceApiRequest.UpsertSurfaceApiRequest(string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string! AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive) -> void
-override Callora.Administration.Api.SurfaceApiResponse.Equals(object? obj) -> bool
-override Callora.Administration.Api.SurfaceApiResponse.GetHashCode() -> int
-override Callora.Administration.Api.SurfaceApiResponse.ToString() -> string!
-override Callora.Administration.Api.UpsertSurfaceApiRequest.Equals(object? obj) -> bool
-override Callora.Administration.Api.UpsertSurfaceApiRequest.GetHashCode() -> int
-override Callora.Administration.Api.UpsertSurfaceApiRequest.ToString() -> string!
-static Callora.Administration.Api.SurfaceApiResponse.operator !=(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
-static Callora.Administration.Api.SurfaceApiResponse.operator ==(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
-static Callora.Administration.Api.SurfaceEndpoints.MapSurfaceEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
-static Callora.Administration.Api.UpsertSurfaceApiRequest.operator !=(Callora.Administration.Api.UpsertSurfaceApiRequest? left, Callora.Administration.Api.UpsertSurfaceApiRequest? right) -> bool
-static Callora.Administration.Api.UpsertSurfaceApiRequest.operator ==(Callora.Administration.Api.UpsertSurfaceApiRequest? left, Callora.Administration.Api.UpsertSurfaceApiRequest? right) -> bool
-Callora.Administration.Api.EntitlementApiResponse
-Callora.Administration.Api.EntitlementApiResponse.<Clone>$() -> Callora.Administration.Api.EntitlementApiResponse!
-Callora.Administration.Api.EntitlementApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
-Callora.Administration.Api.EntitlementApiResponse.CreatedAtUtc.init -> void
-Callora.Administration.Api.EntitlementApiResponse.Deconstruct(out string! PluginId, out string? WorkspaceKey, out string? TenantKey, out bool IsEntitled, out string! Source, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
-Callora.Administration.Api.EntitlementApiResponse.EntitlementApiResponse(string! PluginId, string? WorkspaceKey, string? TenantKey, bool IsEntitled, string! Source, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
-Callora.Administration.Api.EntitlementApiResponse.Equals(Callora.Administration.Api.EntitlementApiResponse? other) -> bool
-Callora.Administration.Api.EntitlementApiResponse.IsEntitled.get -> bool
-Callora.Administration.Api.EntitlementApiResponse.IsEntitled.init -> void
-Callora.Administration.Api.EntitlementApiResponse.PluginId.get -> string!
-Callora.Administration.Api.EntitlementApiResponse.PluginId.init -> void
-Callora.Administration.Api.EntitlementApiResponse.Source.get -> string!
-Callora.Administration.Api.EntitlementApiResponse.Source.init -> void
-Callora.Administration.Api.EntitlementApiResponse.TenantKey.get -> string?
-Callora.Administration.Api.EntitlementApiResponse.TenantKey.init -> void
-Callora.Administration.Api.EntitlementApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
-Callora.Administration.Api.EntitlementApiResponse.UpdatedAtUtc.init -> void
-Callora.Administration.Api.EntitlementApiResponse.WorkspaceKey.get -> string?
-Callora.Administration.Api.EntitlementApiResponse.WorkspaceKey.init -> void
-Callora.Administration.Api.EntitlementManagementEndpoints
-Callora.Administration.Api.SetEntitlementApiRequest
-Callora.Administration.Api.SetEntitlementApiRequest.<Clone>$() -> Callora.Administration.Api.SetEntitlementApiRequest!
-Callora.Administration.Api.SetEntitlementApiRequest.Deconstruct(out string! PluginId, out string? WorkspaceKey, out string? TenantKey, out bool IsEntitled) -> void
-Callora.Administration.Api.SetEntitlementApiRequest.Equals(Callora.Administration.Api.SetEntitlementApiRequest? other) -> bool
-Callora.Administration.Api.SetEntitlementApiRequest.IsEntitled.get -> bool
-Callora.Administration.Api.SetEntitlementApiRequest.IsEntitled.init -> void
-Callora.Administration.Api.SetEntitlementApiRequest.PluginId.get -> string!
-Callora.Administration.Api.SetEntitlementApiRequest.PluginId.init -> void
-Callora.Administration.Api.SetEntitlementApiRequest.SetEntitlementApiRequest(string! PluginId, string? WorkspaceKey, string? TenantKey, bool IsEntitled) -> void
-Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.get -> string?
-Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.init -> void
-Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.get -> string?
-Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.init -> void
-override Callora.Administration.Api.EntitlementApiResponse.Equals(object? obj) -> bool
-override Callora.Administration.Api.EntitlementApiResponse.GetHashCode() -> int
-override Callora.Administration.Api.EntitlementApiResponse.ToString() -> string!
-override Callora.Administration.Api.SetEntitlementApiRequest.Equals(object? obj) -> bool
-override Callora.Administration.Api.SetEntitlementApiRequest.GetHashCode() -> int
-override Callora.Administration.Api.SetEntitlementApiRequest.ToString() -> string!
-static Callora.Administration.Api.EntitlementApiResponse.operator !=(Callora.Administration.Api.EntitlementApiResponse? left, Callora.Administration.Api.EntitlementApiResponse? right) -> bool
-static Callora.Administration.Api.EntitlementApiResponse.operator ==(Callora.Administration.Api.EntitlementApiResponse? left, Callora.Administration.Api.EntitlementApiResponse? right) -> bool
-static Callora.Administration.Api.EntitlementManagementEndpoints.MapEntitlementManagementEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
-static Callora.Administration.Api.SetEntitlementApiRequest.operator !=(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
-static Callora.Administration.Api.SetEntitlementApiRequest.operator ==(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
-Callora.Administration.Api.PluginWebSocketEndpoints
-static Callora.Administration.Api.PluginWebSocketEndpoints.MapPluginWebSocketEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
-Callora.Administration.Api.PluginWebSocketRouteMatcher
-static Callora.Administration.Api.PluginWebSocketRouteMatcher.FindMatch(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor!>! contributors, string! pluginId, string! routePath) -> Callora.Administration.Api.PluginWebSocketRouteMatch?
-Callora.Administration.Api.PluginWebSocketRouteMatch
-Callora.Administration.Api.PluginWebSocketRouteMatch.<Clone>$() -> Callora.Administration.Api.PluginWebSocketRouteMatch!
-Callora.Administration.Api.PluginWebSocketRouteMatch.Contributor.get -> Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor!
-Callora.Administration.Api.PluginWebSocketRouteMatch.Contributor.init -> void
-Callora.Administration.Api.PluginWebSocketRouteMatch.Deconstruct(out Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor! Contributor, out Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration! Route, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
-Callora.Administration.Api.PluginWebSocketRouteMatch.Equals(Callora.Administration.Api.PluginWebSocketRouteMatch? other) -> bool
-Callora.Administration.Api.PluginWebSocketRouteMatch.PluginWebSocketRouteMatch(Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor! Contributor, Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration! Route, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
-Callora.Administration.Api.PluginWebSocketRouteMatch.Route.get -> Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration!
-Callora.Administration.Api.PluginWebSocketRouteMatch.Route.init -> void
-Callora.Administration.Api.PluginWebSocketRouteMatch.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
-Callora.Administration.Api.PluginWebSocketRouteMatch.RouteValues.init -> void
-override Callora.Administration.Api.PluginWebSocketRouteMatch.Equals(object? obj) -> bool
-override Callora.Administration.Api.PluginWebSocketRouteMatch.GetHashCode() -> int
-override Callora.Administration.Api.PluginWebSocketRouteMatch.ToString() -> string!
-static Callora.Administration.Api.PluginWebSocketRouteMatch.operator !=(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool
-static Callora.Administration.Api.PluginWebSocketRouteMatch.operator ==(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool
-Callora.Administration.Api.PluginPublicHttpEndpoints
-Callora.Administration.Api.PluginPublicHttpRouteMatch
-Callora.Administration.Api.PluginPublicHttpRouteMatch.<Clone>$() -> Callora.Administration.Api.PluginPublicHttpRouteMatch!
-Callora.Administration.Api.PluginPublicHttpRouteMatch.Contributor.get -> Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor!
-Callora.Administration.Api.PluginPublicHttpRouteMatch.Contributor.init -> void
-Callora.Administration.Api.PluginPublicHttpRouteMatch.Deconstruct(out Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor! Contributor, out Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration! Route, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
-Callora.Administration.Api.PluginPublicHttpRouteMatch.Equals(Callora.Administration.Api.PluginPublicHttpRouteMatch? other) -> bool
-Callora.Administration.Api.PluginPublicHttpRouteMatcher
-Callora.Administration.Api.PluginPublicHttpRouteMatch.PluginPublicHttpRouteMatch(Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor! Contributor, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration! Route, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
-Callora.Administration.Api.PluginPublicHttpRouteMatch.Route.get -> Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration!
-Callora.Administration.Api.PluginPublicHttpRouteMatch.Route.init -> void
-Callora.Administration.Api.PluginPublicHttpRouteMatch.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
-Callora.Administration.Api.PluginPublicHttpRouteMatch.RouteValues.init -> void
-override Callora.Administration.Api.PluginPublicHttpRouteMatch.Equals(object? obj) -> bool
-override Callora.Administration.Api.PluginPublicHttpRouteMatch.GetHashCode() -> int
-override Callora.Administration.Api.PluginPublicHttpRouteMatch.ToString() -> string!
-static Callora.Administration.Api.PluginPublicHttpEndpoints.MapPluginPublicHttpEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
-static Callora.Administration.Api.PluginPublicHttpRouteMatcher.FindMatch(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor!>! contributors, string! pluginId, string! httpMethod, string! routePath) -> Callora.Administration.Api.PluginPublicHttpRouteMatch?
-static Callora.Administration.Api.PluginPublicHttpRouteMatch.operator !=(Callora.Administration.Api.PluginPublicHttpRouteMatch? left, Callora.Administration.Api.PluginPublicHttpRouteMatch? right) -> bool
-static Callora.Administration.Api.PluginPublicHttpRouteMatch.operator ==(Callora.Administration.Api.PluginPublicHttpRouteMatch? left, Callora.Administration.Api.PluginPublicHttpRouteMatch? right) -> bool
-Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest
-Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.IsAssigned.get -> bool
-Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.IsAssigned.init -> void
-Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.SetWorkspacePluginAssignmentApiRequest() -> void
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.DisplayName.get -> string!
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsActive.get -> bool
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsAssigned.get -> bool
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsEntitled.get -> bool
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.IsGloballyActive.get -> bool
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.PluginId.get -> string!
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginAssignmentApiResponse.WorkspacePluginAssignmentApiResponse(string! pluginId, string! displayName, bool isGloballyActive, bool isEntitled, bool isActive, bool isAssigned) -> void
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.List(string! workspaceKey, Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService! service, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.SetAssignment(string! workspaceKey, string! pluginId, Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest! request, Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService! service, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
-Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.WorkspacePluginsController() -> void
+static Callora.Administration.CalloraAdministrationExtensions.MapCalloraAdministration(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
