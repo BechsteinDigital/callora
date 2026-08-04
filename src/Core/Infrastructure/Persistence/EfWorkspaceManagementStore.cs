@@ -76,7 +76,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         string displayName,
         string workspaceType,
         bool isActive,
-        string? publicBaseUrl = null,
+        string? defaultSurfaceBaseUrl = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tenantKey);
@@ -88,7 +88,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         var normalizedWorkspaceKey = workspaceKey.Trim();
         var normalizedDisplayName = displayName.Trim();
         var normalizedWorkspaceType = workspaceType.Trim();
-        if (!WorkspacePublicUrlNormalizer.TryNormalize(publicBaseUrl, out var publicUrl, out _))
+        if (!WorkspacePublicUrlNormalizer.TryNormalize(defaultSurfaceBaseUrl, out var publicUrl, out _))
         {
             return new WorkspaceUpsertResult(WorkspaceUpsertStatus.InvalidPublicUrl);
         }
@@ -116,9 +116,6 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
                 DisplayName = normalizedDisplayName,
                 WorkspaceType = normalizedWorkspaceType,
                 IsActive = isActive,
-                PublicBaseUrl = publicUrl.PublicBaseUrl,
-                PublicHost = publicUrl.PublicHost,
-                PublicPathPrefix = publicUrl.PublicPathPrefix,
                 CreatedAtUtc = nowUtc,
                 UpdatedAtUtc = nowUtc
             };
@@ -130,15 +127,12 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             workspace.DisplayName = normalizedDisplayName;
             workspace.WorkspaceType = normalizedWorkspaceType;
             workspace.IsActive = isActive;
-            workspace.PublicBaseUrl = publicUrl.PublicBaseUrl;
-            workspace.PublicHost = publicUrl.PublicHost;
-            workspace.PublicPathPrefix = publicUrl.PublicPathPrefix;
             workspace.UpdatedAtUtc = nowUtc;
         }
 
-        // Keep the workspace's "default" surface in sync with its public route so
-        // surface-based resolution matches (anti-drift until the columns move onto
-        // surfaces entirely, ADR-014 §14).
+        // Every workspace has a "default" surface — it is the one way into the data
+        // until an operator adds more. The route given here configures THAT surface;
+        // the workspace itself carries no address (ADR-014 §5).
         var defaultSurface = await dbContext.WorkspaceSurfaces
             .SingleOrDefaultAsync(
                 x => x.WorkspaceId == workspace.Id && x.SurfaceKey == "default",
@@ -159,9 +153,13 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             dbContext.WorkspaceSurfaces.Add(defaultSurface);
         }
 
-        defaultSurface.PublicBaseUrl = publicUrl.PublicBaseUrl;
-        defaultSurface.PublicHost = publicUrl.PublicHost;
-        defaultSurface.PublicPathPrefix = publicUrl.PublicPathPrefix;
+        if (!string.IsNullOrWhiteSpace(defaultSurfaceBaseUrl))
+        {
+            defaultSurface.PublicBaseUrl = publicUrl.PublicBaseUrl;
+            defaultSurface.PublicHost = publicUrl.PublicHost;
+            defaultSurface.PublicPathPrefix = publicUrl.PublicPathPrefix;
+        }
+
         defaultSurface.IsActive = isActive;
         defaultSurface.UpdatedAtUtc = nowUtc;
 
@@ -331,29 +329,6 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         return true;
     }
 
-    public async Task<WorkspaceSnapshot?> SetSurfaceAccessPolicyAsync(
-        string workspaceKey,
-        SurfaceAccessPolicy policy,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
-
-        var normalizedWorkspaceKey = workspaceKey.Trim();
-        var workspace = await dbContext.Workspaces
-            .Include(x => x.Tenant)
-            .SingleOrDefaultAsync(x => x.WorkspaceKey == normalizedWorkspaceKey, cancellationToken)
-            .ConfigureAwait(false);
-        if (workspace is null)
-        {
-            return null;
-        }
-
-        workspace.SurfaceAccessPolicy = policy;
-        workspace.UpdatedAtUtc = DateTimeOffset.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return ToSnapshot(workspace, workspace.Tenant);
-    }
 
     public async Task<IReadOnlyList<WorkspaceMemberSnapshot>> ListMembersAsync(
         string workspaceKey,
@@ -501,18 +476,12 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             workspace.WorkspaceType,
             workspace.IsActive,
             tenant.IsActive,
-            workspace.PublicBaseUrl,
-            workspace.PublicHost,
-            workspace.PublicPathPrefix,
             workspace.ThemePluginId,
             workspace.ThemeVersion,
             workspace.ThemeAssignedBy,
             workspace.ThemeAssignedAtUtc,
             workspace.CreatedAtUtc,
-            workspace.UpdatedAtUtc)
-        {
-            SurfaceAccessPolicy = workspace.SurfaceAccessPolicy
-        };
+            workspace.UpdatedAtUtc);
     }
 
     private static WorkspaceSurfaceSnapshot ToSurfaceSnapshot(WorkspaceSurface surface)
@@ -549,17 +518,11 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             x.WorkspaceType,
             x.IsActive,
             x.Tenant.IsActive,
-            x.PublicBaseUrl,
-            x.PublicHost,
-            x.PublicPathPrefix,
             x.ThemePluginId,
             x.ThemeVersion,
             x.ThemeAssignedBy,
             x.ThemeAssignedAtUtc,
             x.CreatedAtUtc,
-            x.UpdatedAtUtc)
-        {
-            SurfaceAccessPolicy = x.SurfaceAccessPolicy
-        };
+            x.UpdatedAtUtc);
     }
 }

@@ -17,15 +17,6 @@ public sealed class WorkspaceEntityTypeConfiguration : IEntityTypeConfiguration<
         builder.Property(x => x.DisplayName).HasMaxLength(300).IsRequired();
         builder.Property(x => x.WorkspaceType).HasMaxLength(100).IsRequired();
         builder.Property(x => x.IsActive).IsRequired();
-        builder.Property(x => x.PublicBaseUrl).HasColumnName("public_base_url").HasMaxLength(2048);
-        builder.Property(x => x.PublicHost).HasColumnName("public_host").HasMaxLength(500);
-        builder.Property(x => x.PublicPathPrefix).HasColumnName("public_path_prefix").HasMaxLength(500).IsRequired();
-        builder.Property(x => x.SurfaceAccessPolicy)
-            .HasColumnName("surface_access_policy")
-            .HasConversion<string>()
-            .HasMaxLength(40)
-            .HasDefaultValue(SurfaceAccessPolicy.Public)
-            .IsRequired();
         builder.Property(x => x.ThemePluginId).HasColumnName("theme_plugin_id").HasMaxLength(200);
         builder.Property(x => x.ThemeVersion).HasColumnName("theme_version").HasMaxLength(80);
         builder.Property(x => x.ThemeAssignedBy).HasColumnName("theme_assigned_by").HasMaxLength(200);

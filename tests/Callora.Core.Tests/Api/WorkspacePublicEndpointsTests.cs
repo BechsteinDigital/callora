@@ -95,7 +95,7 @@ public sealed class WorkspacePublicEndpointsTests
             displayName: "Workspace Root",
             workspaceType: "voice",
             isActive: true,
-            publicBaseUrl: "localhost");
+            defaultSurfaceBaseUrl: "localhost");
 
         var client = app.GetTestClient();
         var request = new HttpRequestMessage(HttpMethod.Get, "/");
@@ -120,7 +120,7 @@ public sealed class WorkspacePublicEndpointsTests
             displayName: "Workspace Root",
             workspaceType: "voice",
             isActive: true,
-            publicBaseUrl: "localhost");
+            defaultSurfaceBaseUrl: "localhost");
 
         var client = app.GetTestClient();
         var request = new HttpRequestMessage(HttpMethod.Get, "/login");
@@ -331,42 +331,14 @@ public sealed class WorkspacePublicEndpointsTests
     }
 
     [Fact]
-    public async Task UiChain_AuthenticatedWorkspace_AnonymousCaller_ReturnsNotFound()
-    {
-        await using var app = await CreateAppAsync();
-        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
-        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
-
-        var client = app.GetTestClient();
-        var response = await client.GetAsync("/workspace/public/ui-chain?workspaceKey=workspace-public");
-
-        // Indistinguishable from a non-existent workspace — no inventory leak.
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task UiChain_AuthenticatedWorkspace_AuthenticatedCaller_ReturnsChain()
-    {
-        await using var app = await CreateAppAsync(authenticate: true);
-        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
-        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
-
-        var client = app.GetTestClient();
-        var response = await client.GetAsync("/workspace/public/ui-chain?workspaceKey=workspace-public");
-        var content = await response.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("\"chain\":[\"dialer\",\"voip\"]", content, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public async Task UiChain_PublicSurface_AnonymousCaller_InAuthenticatedWorkspace_ReturnsChain()
     {
         // The workspace is Authenticated but the named surface is Public: the per-surface
         // gate must let the anonymous caller through, matching /surface/render.
         await using var app = await CreateAppAsync();
         var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
-        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
+        // The access mode lives on the surface now, not on the workspace.
+        store.SetSurface("workspace-public", SurfaceAccessMode.Authenticated);
         await SeedSurfaceAsync(app, "workspace-public", "site", SurfaceAccessMode.Public);
 
         var client = app.GetTestClient();
@@ -384,7 +356,8 @@ public sealed class WorkspacePublicEndpointsTests
         // A Mixed surface has public routes, so its chain must load anonymously.
         await using var app = await CreateAppAsync();
         var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
-        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
+        // The access mode lives on the surface now, not on the workspace.
+        store.SetSurface("workspace-public", SurfaceAccessMode.Authenticated);
         await SeedSurfaceAsync(app, "workspace-public", "shop", SurfaceAccessMode.Mixed);
 
         var client = app.GetTestClient();
@@ -427,13 +400,13 @@ public sealed class WorkspacePublicEndpointsTests
     }
 
     [Fact]
-    public async Task UiChain_UnknownSurfaceKey_FallsBackToWorkspaceGate()
+    public async Task UiChain_UnknownSurfaceKey_FallsBackToTheDefaultSurfaceGate()
     {
-        // The surface does not exist, so the gate falls back to the workspace-wide policy:
-        // an Authenticated workspace 404s the anonymous caller even with a surfaceKey.
+        // The named surface does not exist, so the gate falls back to the entrance
+        // such a caller came through — the default surface. Its Authenticated mode
+        // 404s the anonymous caller.
         await using var app = await CreateAppAsync();
-        var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
-        _ = await store.SetSurfaceAccessPolicyAsync("workspace-public", SurfaceAccessPolicy.Authenticated);
+        await SeedSurfaceAsync(app, "workspace-public", "default", SurfaceAccessMode.Authenticated);
 
         var client = app.GetTestClient();
         var response = await client.GetAsync(
@@ -480,12 +453,33 @@ public sealed class WorkspacePublicEndpointsTests
             displayName: "Workspace Public",
             workspaceType: "voice",
             isActive: true,
-            publicBaseUrl: "localhost/dialer");
+            defaultSurfaceBaseUrl: "localhost/dialer");
+
+        // Every workspace has a default surface — it carries the route and decides
+        // the access mode when no surface is named. Without it the ui-chain gate
+        // fails closed, as it does in production.
+        var surfaceStore = new InMemoryWorkspaceSurfaceStore();
+        _ = await surfaceStore.UpsertAsync(
+            "workspace-public",
+            new WorkspaceSurfaceInput(
+                SurfaceKey: "default",
+                DisplayName: "Workspace Public",
+                SurfaceType: "spa",
+                PublicBaseUrl: "localhost/dialer",
+                PublicHost: "localhost",
+                PublicPathPrefix: "/dialer",
+                AccessMode: SurfaceAccessMode.Mixed,
+                Locale: null,
+                TemplatePluginId: null,
+                TemplateVersion: null,
+                ThemePluginId: null,
+                ThemeVersion: null,
+                IsActive: true));
 
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddSingleton<IWorkspaceManagementStore>(workspaceStore);
-        builder.Services.AddSingleton<IWorkspaceSurfaceStore>(new InMemoryWorkspaceSurfaceStore());
+        builder.Services.AddSingleton<IWorkspaceSurfaceStore>(surfaceStore);
         builder.Services.AddSingleton(new BackendHostOptions
         {
             DefaultTenantKey = "tenant-a",

@@ -73,7 +73,7 @@ public sealed class SurfaceRenderEndpointsTests
     {
         var store = new InMemoryWorkspaceManagementStore();
         store.AddTenant("tenant-a");
-        _ = await store.UpsertAsync("tenant-a", "acme", "Acme", "spa", isActive: true, publicBaseUrl: "https://acme.example.de");
+        _ = await store.UpsertAsync("tenant-a", "acme", "Acme", "spa", isActive: true, defaultSurfaceBaseUrl: "https://acme.example.de");
         _ = await store.UpsertThemeAssignmentAsync("acme", "acme.brand-theme", "1.0.0", assignedBy: "op");
 
         var settings = new InMemoryWorkspaceThemeSettingsStore();
@@ -250,7 +250,7 @@ public sealed class SurfaceRenderEndpointsTests
     {
         var store = new InMemoryWorkspaceManagementStore();
         store.AddTenant("tenant-a");
-        _ = await store.UpsertAsync("tenant-a", "acme", "Acme", "spa", isActive: true, publicBaseUrl: "https://acme.example.de");
+        _ = await store.UpsertAsync("tenant-a", "acme", "Acme", "spa", isActive: true, defaultSurfaceBaseUrl: "https://acme.example.de");
         return store;
     }
 

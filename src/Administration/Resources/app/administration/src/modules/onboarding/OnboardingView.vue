@@ -36,7 +36,7 @@ async function createWorkspace(): Promise<void> {
       displayName: workspace.displayName.trim(),
       workspaceType: workspace.workspaceType.trim() || 'voice',
       isActive: true,
-      publicBaseUrl: null,
+      defaultSurfaceBaseUrl: null,
     })
     Object.assign(workspace, { workspaceKey: '', displayName: '', workspaceType: 'voice' })
     toast.success(`Workspace „${key}“ angelegt.`)

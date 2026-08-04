@@ -9,9 +9,8 @@ export interface Workspace {
   workspaceType: string
   isActive: boolean
   tenantIsActive: boolean
-  publicBaseUrl: string | null
-  publicHost: string | null
-  publicPathPrefix: string
+  // No route here: an address belongs to a surface (ADR-014 §5). The theme is the
+  // default its surfaces inherit.
   themePluginId: string | null
   themeVersion: string | null
   themeAssignedBy: string | null
@@ -26,7 +25,9 @@ export interface WorkspaceUpsert {
   displayName: string
   workspaceType: string
   isActive: boolean
-  publicBaseUrl: string | null
+  // Convenience for the common one-surface case: configures the route of the
+  // workspace's "default" surface. Further routes are managed per surface.
+  defaultSurfaceBaseUrl: string | null
 }
 
 // Mirrors WorkspaceMemberApiResponse. The role is a workspace-scoped role name

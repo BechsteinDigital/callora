@@ -414,13 +414,6 @@ Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.get -> string?
 Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.init -> void
 Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.get -> string?
 Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.init -> void
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.<Clone>$() -> Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest!
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Deconstruct(out string! Policy) -> void
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Equals(Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? other) -> bool
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Policy.get -> string!
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Policy.init -> void
-Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.SetSurfaceAccessPolicyApiRequest(string! Policy) -> void
 Callora.Administration.Api.SurfaceApiResponse
 Callora.Administration.Api.SurfaceApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceApiResponse!
 Callora.Administration.Api.SurfaceApiResponse.AccessMode.get -> string!
@@ -702,17 +695,17 @@ Callora.Administration.Api.UpsertSystemConfigValuesApiRequest.ValuesByKey.get ->
 Callora.Administration.Api.UpsertSystemConfigValuesApiRequest.ValuesByKey.init -> void
 Callora.Administration.Api.UpsertWorkspaceApiRequest
 Callora.Administration.Api.UpsertWorkspaceApiRequest.<Clone>$() -> Callora.Administration.Api.UpsertWorkspaceApiRequest!
-Callora.Administration.Api.UpsertWorkspaceApiRequest.Deconstruct(out string? TenantKey, out string! DisplayName, out string! WorkspaceType, out bool IsActive, out string? PublicBaseUrl) -> void
+Callora.Administration.Api.UpsertWorkspaceApiRequest.Deconstruct(out string? TenantKey, out string! DisplayName, out string! WorkspaceType, out bool IsActive, out string? DefaultSurfaceBaseUrl) -> void
+Callora.Administration.Api.UpsertWorkspaceApiRequest.DefaultSurfaceBaseUrl.get -> string?
+Callora.Administration.Api.UpsertWorkspaceApiRequest.DefaultSurfaceBaseUrl.init -> void
 Callora.Administration.Api.UpsertWorkspaceApiRequest.DisplayName.get -> string!
 Callora.Administration.Api.UpsertWorkspaceApiRequest.DisplayName.init -> void
 Callora.Administration.Api.UpsertWorkspaceApiRequest.Equals(Callora.Administration.Api.UpsertWorkspaceApiRequest? other) -> bool
 Callora.Administration.Api.UpsertWorkspaceApiRequest.IsActive.get -> bool
 Callora.Administration.Api.UpsertWorkspaceApiRequest.IsActive.init -> void
-Callora.Administration.Api.UpsertWorkspaceApiRequest.PublicBaseUrl.get -> string?
-Callora.Administration.Api.UpsertWorkspaceApiRequest.PublicBaseUrl.init -> void
 Callora.Administration.Api.UpsertWorkspaceApiRequest.TenantKey.get -> string?
 Callora.Administration.Api.UpsertWorkspaceApiRequest.TenantKey.init -> void
-Callora.Administration.Api.UpsertWorkspaceApiRequest.UpsertWorkspaceApiRequest(string? TenantKey, string! DisplayName, string! WorkspaceType, bool IsActive, string? PublicBaseUrl = null) -> void
+Callora.Administration.Api.UpsertWorkspaceApiRequest.UpsertWorkspaceApiRequest(string? TenantKey, string! DisplayName, string! WorkspaceType, bool IsActive, string? DefaultSurfaceBaseUrl = null) -> void
 Callora.Administration.Api.UpsertWorkspaceApiRequest.WorkspaceType.get -> string!
 Callora.Administration.Api.UpsertWorkspaceApiRequest.WorkspaceType.init -> void
 Callora.Administration.Api.UpsertWorkspaceMemberApiRequest
@@ -754,20 +747,12 @@ Callora.Administration.Api.WorkspaceApiResponse
 Callora.Administration.Api.WorkspaceApiResponse.<Clone>$() -> Callora.Administration.Api.WorkspaceApiResponse!
 Callora.Administration.Api.WorkspaceApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Administration.Api.WorkspaceApiResponse.CreatedAtUtc.init -> void
-Callora.Administration.Api.WorkspaceApiResponse.Deconstruct(out string! TenantKey, out string! WorkspaceKey, out string! DisplayName, out string! WorkspaceType, out bool IsActive, out bool TenantIsActive, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string? ThemePluginId, out string? ThemeVersion, out string? ThemeAssignedBy, out System.DateTimeOffset? ThemeAssignedAtUtc, out string! SurfaceAccessPolicy, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.WorkspaceApiResponse.Deconstruct(out string! TenantKey, out string! WorkspaceKey, out string! DisplayName, out string! WorkspaceType, out bool IsActive, out bool TenantIsActive, out string? ThemePluginId, out string? ThemeVersion, out string? ThemeAssignedBy, out System.DateTimeOffset? ThemeAssignedAtUtc, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Administration.Api.WorkspaceApiResponse.DisplayName.get -> string!
 Callora.Administration.Api.WorkspaceApiResponse.DisplayName.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.Equals(Callora.Administration.Api.WorkspaceApiResponse? other) -> bool
 Callora.Administration.Api.WorkspaceApiResponse.IsActive.get -> bool
 Callora.Administration.Api.WorkspaceApiResponse.IsActive.init -> void
-Callora.Administration.Api.WorkspaceApiResponse.PublicBaseUrl.get -> string?
-Callora.Administration.Api.WorkspaceApiResponse.PublicBaseUrl.init -> void
-Callora.Administration.Api.WorkspaceApiResponse.PublicHost.get -> string?
-Callora.Administration.Api.WorkspaceApiResponse.PublicHost.init -> void
-Callora.Administration.Api.WorkspaceApiResponse.PublicPathPrefix.get -> string!
-Callora.Administration.Api.WorkspaceApiResponse.PublicPathPrefix.init -> void
-Callora.Administration.Api.WorkspaceApiResponse.SurfaceAccessPolicy.get -> string!
-Callora.Administration.Api.WorkspaceApiResponse.SurfaceAccessPolicy.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.TenantIsActive.get -> bool
 Callora.Administration.Api.WorkspaceApiResponse.TenantIsActive.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.TenantKey.get -> string!
@@ -782,7 +767,7 @@ Callora.Administration.Api.WorkspaceApiResponse.ThemeVersion.get -> string?
 Callora.Administration.Api.WorkspaceApiResponse.ThemeVersion.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
 Callora.Administration.Api.WorkspaceApiResponse.UpdatedAtUtc.init -> void
-Callora.Administration.Api.WorkspaceApiResponse.WorkspaceApiResponse(string! TenantKey, string! WorkspaceKey, string! DisplayName, string! WorkspaceType, bool IsActive, bool TenantIsActive, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string? ThemePluginId, string? ThemeVersion, string? ThemeAssignedBy, System.DateTimeOffset? ThemeAssignedAtUtc, string! SurfaceAccessPolicy, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.WorkspaceApiResponse.WorkspaceApiResponse(string! TenantKey, string! WorkspaceKey, string! DisplayName, string! WorkspaceType, bool IsActive, bool TenantIsActive, string? ThemePluginId, string? ThemeVersion, string? ThemeAssignedBy, System.DateTimeOffset? ThemeAssignedAtUtc, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Administration.Api.WorkspaceApiResponse.WorkspaceKey.get -> string!
 Callora.Administration.Api.WorkspaceApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.WorkspaceApiResponse.WorkspaceType.get -> string!
@@ -961,9 +946,6 @@ override Callora.Administration.Api.RbacUserUpsertApiRequest.ToString() -> strin
 override Callora.Administration.Api.SetEntitlementApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.SetEntitlementApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.SetEntitlementApiRequest.ToString() -> string!
-override Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.Equals(object? obj) -> bool
-override Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.GetHashCode() -> int
-override Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.ToString() -> string!
 override Callora.Administration.Api.SurfaceApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.SurfaceApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.SurfaceApiResponse.ToString() -> string!
@@ -1119,8 +1101,6 @@ static Callora.Administration.Api.RbacUserUpsertApiRequest.operator !=(Callora.A
 static Callora.Administration.Api.RbacUserUpsertApiRequest.operator ==(Callora.Administration.Api.RbacUserUpsertApiRequest? left, Callora.Administration.Api.RbacUserUpsertApiRequest? right) -> bool
 static Callora.Administration.Api.SetEntitlementApiRequest.operator !=(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
 static Callora.Administration.Api.SetEntitlementApiRequest.operator ==(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
-static Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.operator !=(Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? left, Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? right) -> bool
-static Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest.operator ==(Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? left, Callora.Administration.Api.SetSurfaceAccessPolicyApiRequest? right) -> bool
 static Callora.Administration.Api.SurfaceApiResponse.operator !=(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
 static Callora.Administration.Api.SurfaceApiResponse.operator ==(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
 static Callora.Administration.Api.SurfaceEndpoints.MapSurfaceEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!

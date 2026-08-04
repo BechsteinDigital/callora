@@ -55,8 +55,11 @@ public sealed class WorkspaceEndpointsTests
     }
 
     [Fact]
-    public async Task SetSurfaceAccessPolicy_ValidPersists_InvalidRejected()
+    public async Task SurfaceAccessPolicy_IsNoLongerAWorkspaceWideSetting()
     {
+        // The access mode belongs to a surface (ADR-014 §6.1): one workspace can
+        // expose a public portal and an authenticated desk at the same time, so a
+        // workspace-wide policy cannot express it.
         await using var app = await CreateAppAsync();
 
         var client = app.GetTestClient();
@@ -65,31 +68,9 @@ public sealed class WorkspaceEndpointsTests
             "/api/workspaces/workspace-a",
             new UpsertWorkspaceApiRequest("tenant-a", "Workspace A", "team", true));
 
-        // A valid policy is accepted and reflected in the workspace response.
-        var set = await client.PutAsJsonAsync(
-            "/api/workspaces/workspace-a/surface-access-policy",
-            new SetSurfaceAccessPolicyApiRequest("Authenticated"));
-        Assert.Equal(HttpStatusCode.OK, set.StatusCode);
-        var body = await set.Content.ReadFromJsonAsync<WorkspaceApiResponse>();
-        Assert.Equal("Authenticated", body!.SurfaceAccessPolicy);
-
-        // An unknown policy value is a 400, not a silent default.
-        var invalid = await client.PutAsJsonAsync(
-            "/api/workspaces/workspace-a/surface-access-policy",
-            new SetSurfaceAccessPolicyApiRequest("bogus"));
-        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
-    }
-
-    [Fact]
-    public async Task SetSurfaceAccessPolicy_UnknownWorkspace_ReturnsNotFound()
-    {
-        await using var app = await CreateAppAsync();
-
-        var client = app.GetTestClient();
-        client.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
         var response = await client.PutAsJsonAsync(
-            "/api/workspaces/ghost/surface-access-policy",
-            new SetSurfaceAccessPolicyApiRequest("Public"));
+            "/api/workspaces/workspace-a/surface-access-policy",
+            new { policy = "Authenticated" });
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -127,7 +108,16 @@ public sealed class WorkspaceEndpointsTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<WorkspaceApiResponse>();
         Assert.NotNull(payload);
-        Assert.Equal("tenant-a", payload!.TenantKey);
+        Assert.Equal("workspace-x", payload!.WorkspaceKey);
+
+        // The response carries no route: an address belongs to a surface, and the
+        // URL passed here configures the workspace's default surface instead.
+        // Where it lands is asserted against the real store in
+        // WorkspaceSurfaceResolutionIntegrationTests.
+        Assert.DoesNotContain(
+            "publicPathPrefix",
+            await response.Content.ReadAsStringAsync(),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -172,14 +162,17 @@ public sealed class WorkspaceEndpointsTests
                 DisplayName: "Workspace Public",
                 WorkspaceType: "team",
                 IsActive: true,
-                PublicBaseUrl: "localhost/dialer"));
+                DefaultSurfaceBaseUrl: "localhost/dialer"));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<WorkspaceApiResponse>();
         Assert.NotNull(payload);
-        Assert.Equal("localhost/dialer", payload!.PublicBaseUrl);
-        Assert.Equal("localhost", payload.PublicHost);
-        Assert.Equal("/dialer", payload.PublicPathPrefix);
+        // No route on the workspace response: the URL configured its default
+        // surface. WorkspaceSurfaceResolutionIntegrationTests asserts where it lands.
+        Assert.DoesNotContain(
+            "publicPathPrefix",
+            await response.Content.ReadAsStringAsync(),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -196,7 +189,7 @@ public sealed class WorkspaceEndpointsTests
                 DisplayName: "Workspace Invalid",
                 WorkspaceType: "team",
                 IsActive: true,
-                PublicBaseUrl: "://invalid"));
+                DefaultSurfaceBaseUrl: "://invalid"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

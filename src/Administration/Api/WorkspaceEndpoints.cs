@@ -79,7 +79,7 @@ public static class WorkspaceEndpoints
                     request.DisplayName,
                     request.WorkspaceType,
                     request.IsActive,
-                    request.PublicBaseUrl,
+                    request.DefaultSurfaceBaseUrl,
                     cancellationToken)
                 .ConfigureAwait(false);
 
@@ -254,40 +254,6 @@ public static class WorkspaceEndpoints
         }).WithName("Workspaces_Members_Delete")
             .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
 
-        group.MapPut("/{workspaceKey}/surface-access-policy", async (
-            string workspaceKey,
-            SetSurfaceAccessPolicyApiRequest request,
-            BackendHostOptions hostOptions,
-            IWorkspaceManagementStore workspaceStore,
-            CancellationToken cancellationToken) =>
-        {
-            if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
-            {
-                return ApiProblems.BadRequest("Workspace host default tenant key is not configured.");
-            }
-
-            if (!Enum.TryParse<SurfaceAccessPolicy>(request.Policy, ignoreCase: true, out var policy) ||
-                !Enum.IsDefined(policy))
-            {
-                return ApiProblems.BadRequest(
-                    $"Unknown surface access policy '{request.Policy}'. Expected 'Public' or 'Authenticated'.");
-            }
-
-            var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
-            if (workspace is null ||
-                !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))
-            {
-                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
-            }
-
-            var updated = await workspaceStore
-                .SetSurfaceAccessPolicyAsync(workspaceKey, policy, cancellationToken)
-                .ConfigureAwait(false);
-            return updated is null
-                ? ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.")
-                : Results.Ok(ToResponse(updated));
-        }).WithName("Workspaces_SetSurfaceAccessPolicy")
-            .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
     }
 
     private static WorkspaceApiResponse ToResponse(WorkspaceSnapshot workspace)
@@ -299,14 +265,10 @@ public static class WorkspaceEndpoints
             workspace.WorkspaceType,
             workspace.IsActive,
             workspace.TenantIsActive,
-            workspace.PublicBaseUrl,
-            workspace.PublicHost,
-            workspace.PublicPathPrefix,
             workspace.ThemePluginId,
             workspace.ThemeVersion,
             workspace.ThemeAssignedBy,
             workspace.ThemeAssignedAtUtc,
-            workspace.SurfaceAccessPolicy.ToString(),
             workspace.CreatedAtUtc,
             workspace.UpdatedAtUtc);
     }
