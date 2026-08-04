@@ -10,11 +10,18 @@ public sealed class WorkspaceThemeSettingValueEntityTypeConfiguration : IEntityT
     {
         builder.ToTable("workspace_theme_setting_values");
         builder.HasKey(x => x.Id);
-        builder.HasIndex(x => new { x.WorkspaceKey, x.PluginId, x.SettingKey }).IsUnique();
+        // The surface key is part of the identity: one row per level, with the
+        // empty key standing for the workspace level.
+        builder.HasIndex(x => new { x.WorkspaceKey, x.SurfaceKey, x.PluginId, x.SettingKey }).IsUnique();
         builder.HasIndex(x => new { x.PluginId, x.SettingKey });
 
         builder.Property(x => x.Id).HasColumnName("id");
         builder.Property(x => x.WorkspaceKey).HasColumnName("workspace_key").HasMaxLength(120).IsRequired();
+        builder.Property(x => x.SurfaceKey)
+            .HasColumnName("surface_key")
+            .HasMaxLength(120)
+            .IsRequired()
+            .HasDefaultValue(string.Empty);
         builder.Property(x => x.PluginId).HasColumnName("plugin_id").HasMaxLength(200).IsRequired();
         builder.Property(x => x.SettingKey).HasColumnName("setting_key").HasMaxLength(180).IsRequired();
         builder.Property(x => x.ValueJson).HasColumnName("value_json").IsRequired();

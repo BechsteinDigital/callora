@@ -105,8 +105,9 @@ public sealed class SurfaceRenderEndpointsTests
                     OptionsJson: null,
                     IsActive: true),
             ]);
-        _ = await settings.ReplaceWorkspaceValuesAsync(
+        _ = await settings.ReplaceValuesAsync(
             "acme",
+            surfaceKey: null,
             "acme.brand-theme",
             new Dictionary<string, string?> { ["primaryColor"] = "#e4002b" });
 

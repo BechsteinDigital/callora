@@ -15,6 +15,12 @@
           <span class="surfaces__location">{{ row.publicHost || '—' }}{{ row.publicPathPrefix }}</span>
         </template>
 
+        <template #cell-theme="{ row }">
+          <CalBadge :tone="row.themePluginId ? 'accent' : 'neutral'" variant="outline">
+            {{ row.themePluginId ? row.themePluginId : 'vom Workspace' }}
+          </CalBadge>
+        </template>
+
         <template #cell-accessMode="{ row }">
           <CalBadge :tone="row.accessMode === 'Public' ? 'warning' : 'neutral'">{{ row.accessMode }}</CalBadge>
         </template>
@@ -27,6 +33,7 @@
 
         <template #cell-actions="{ row }">
           <div class="surfaces__actions">
+            <CalButton variant="ghost" size="sm" :icon="Palette" @click="openTheme(row)">Design</CalButton>
             <CalButton
               v-if="canManage"
               variant="ghost"
@@ -98,12 +105,21 @@
         </div>
       </template>
     </CalCard>
+
+    <SurfaceThemeDialog
+      v-if="themeSurfaceKey"
+      v-model:open="themeDialogOpen"
+      :workspace-key="workspaceKey"
+      :surface-key="themeSurfaceKey"
+      :can-manage="canManage"
+      @changed="load"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Layers } from 'lucide-vue-next'
+import { Layers, Palette } from 'lucide-vue-next'
 import { workspacesApi, SURFACE_ACCESS_MODES, type WorkspaceSurface } from './workspacesApi'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
@@ -117,6 +133,7 @@ import CalInput from '@/core/ui/CalInput.vue'
 import CalSelect from '@/core/ui/CalSelect.vue'
 import CalSwitch from '@/core/ui/CalSwitch.vue'
 import type { DataTableColumn } from '@/core/ui/dataTable'
+import SurfaceThemeDialog from '@/modules/themes/SurfaceThemeDialog.vue'
 import { confirm } from '@/core/feedback/confirm'
 import { toast } from '@/core/feedback/toasts'
 
@@ -130,14 +147,25 @@ const error = ref<string | null>(null)
 const busyKey = ref<string | null>(null)
 const saving = ref(false)
 
+// The design editor is a dialog rather than a route: it belongs to one row and
+// the operator returns to the list right after.
+const themeDialogOpen = ref(false)
+const themeSurfaceKey = ref<string | null>(null)
+
+function openTheme(surface: WorkspaceSurface): void {
+  themeSurfaceKey.value = surface.surfaceKey
+  themeDialogOpen.value = true
+}
+
 const columns: readonly DataTableColumn[] = [
   { key: 'surfaceKey', label: 'Schlüssel', mono: true },
   { key: 'displayName', label: 'Name' },
   { key: 'surfaceType', label: 'Typ', width: '100px' },
   { key: 'accessMode', label: 'Zugang', width: '140px' },
   { key: 'location', label: 'Host / Pfad' },
+  { key: 'theme', label: 'Design', width: '170px' },
   { key: 'isActive', label: 'Aktiv', width: '110px' },
-  { key: 'actions', label: '', align: 'end', width: '210px' },
+  { key: 'actions', label: '', align: 'end', width: '290px' },
 ]
 
 // null = create mode; otherwise the surface key currently being edited.

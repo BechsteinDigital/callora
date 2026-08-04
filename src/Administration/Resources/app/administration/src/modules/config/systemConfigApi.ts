@@ -17,11 +17,19 @@ export interface ConfigDefinition {
 }
 
 // The /effective response: each value is raw JSON text; secrets read back as
-// the JSON string "***" (never the plaintext).
+// the JSON string "***" (never the plaintext). The scope is echoed back so a
+// caller can tell which view the values belong to.
 export interface EffectiveConfig {
   pluginId: string
+  tenantKey: string | null
   workspaceKey: string | null
   valuesByKey: Record<string, string>
+}
+
+/** Which scope a read or write addresses. A global scope carries no key. */
+export interface ConfigScopeSelection {
+  scope: string
+  scopeKey: string | null
 }
 
 export const SECRET_FIELD_TYPE = 'secret'
@@ -40,12 +48,17 @@ export const systemConfigApi = {
     return (await unwrap(await apiFetch(`${basePath}/definitions${suffix}`))).json()
   },
 
-  // Resolved values (workspace > tenant > global > default). Omit workspaceKey for
-  // the global/default view.
-  async effective(pluginId: string, workspaceKey?: string): Promise<EffectiveConfig> {
+  // Resolved values (workspace > tenant > global > default). Passing a scope
+  // narrows the view: omit both keys for the global/default view, pass tenantKey
+  // for what a tenant inherits, and workspaceKey for one workspace's effective
+  // values. Reading a tenant view is operator-only on the server.
+  async effective(pluginId: string, scope: { tenantKey?: string; workspaceKey?: string } = {}): Promise<EffectiveConfig> {
     const params = new URLSearchParams({ pluginId })
-    if (workspaceKey) {
-      params.set('workspaceKey', workspaceKey)
+    if (scope.tenantKey) {
+      params.set('tenantKey', scope.tenantKey)
+    }
+    if (scope.workspaceKey) {
+      params.set('workspaceKey', scope.workspaceKey)
     }
     return (await unwrap(await apiFetch(`${basePath}/effective?${params.toString()}`))).json()
   },

@@ -98,8 +98,12 @@ public static class SurfaceRenderEndpoints
         IReadOnlyDictionary<string, string>? effectiveTheme = null;
         if (themeResolver is not null)
         {
+            // Resolved for THIS surface: its own theme and values win over the
+            // workspace's. Previously only the workspace values were read, so a
+            // surface with its own theme rendered that theme's identity with the
+            // workspace theme's values.
             var theme = await themeResolver
-                .ResolveAsync(surface.WorkspaceKey, cancellationToken)
+                .ResolveForSurfaceAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
                 .ConfigureAwait(false);
             effectiveTheme = theme?.ValuesByKey;
         }
