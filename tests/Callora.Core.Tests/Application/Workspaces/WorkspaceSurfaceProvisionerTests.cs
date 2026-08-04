@@ -11,8 +11,7 @@ public sealed class WorkspaceSurfaceProvisionerTests
     [Fact]
     public async Task Ensure_RootWorkspace_CreatesPluginOwnedSurfaceAtSuffix()
     {
-        var workspaceStore = await CreateWorkspaceStoreAsync("https://meet.example.test");
-        var surfaceStore = new InMemoryWorkspaceSurfaceStore();
+        var (workspaceStore, surfaceStore) = await CreateStoresAsync("https://meet.example.test");
         var service = new WorkspaceSurfaceProvisioner(workspaceStore, surfaceStore);
 
         var location = await service.EnsureAsync("acme", Definition());
@@ -29,8 +28,7 @@ public sealed class WorkspaceSurfaceProvisionerTests
     [Fact]
     public async Task Ensure_PrefixedWorkspace_AppendsSurfaceSuffix()
     {
-        var workspaceStore = await CreateWorkspaceStoreAsync("https://example.test/acme");
-        var surfaceStore = new InMemoryWorkspaceSurfaceStore();
+        var (workspaceStore, surfaceStore) = await CreateStoresAsync("https://example.test/acme");
         var service = new WorkspaceSurfaceProvisioner(workspaceStore, surfaceStore);
 
         var location = await service.EnsureAsync("acme", Definition());
@@ -43,8 +41,7 @@ public sealed class WorkspaceSurfaceProvisionerTests
     [Fact]
     public async Task Ensure_ExistingSurface_PreservesOperatorThemeAndLocale()
     {
-        var workspaceStore = await CreateWorkspaceStoreAsync("https://example.test/acme");
-        var surfaceStore = new InMemoryWorkspaceSurfaceStore();
+        var (workspaceStore, surfaceStore) = await CreateStoresAsync("https://example.test/acme");
         _ = await surfaceStore.UpsertAsync(
             "acme",
             new WorkspaceSurfaceInput(
@@ -96,8 +93,12 @@ public sealed class WorkspaceSurfaceProvisionerTests
             "videoconference",
             "0.1.0");
 
-    private static async Task<InMemoryWorkspaceManagementStore> CreateWorkspaceStoreAsync(
-        string publicBaseUrl)
+    /// <summary>
+    /// A workspace plus the "default" surface carrying its route — the state the
+    /// real upsert leaves behind. Plugin surfaces route below that surface.
+    /// </summary>
+    private static async Task<(InMemoryWorkspaceManagementStore Workspaces, InMemoryWorkspaceSurfaceStore Surfaces)>
+        CreateStoresAsync(string publicBaseUrl)
     {
         var store = new InMemoryWorkspaceManagementStore();
         store.AddTenant("tenant-a");
@@ -108,6 +109,26 @@ public sealed class WorkspaceSurfaceProvisionerTests
             "standard",
             isActive: true,
             publicBaseUrl);
-        return store;
+
+        var uri = new Uri(publicBaseUrl);
+        var surfaces = new InMemoryWorkspaceSurfaceStore();
+        _ = await surfaces.UpsertAsync(
+            "acme",
+            new WorkspaceSurfaceInput(
+                "default",
+                "Acme",
+                "spa",
+                publicBaseUrl,
+                uri.Host,
+                uri.AbsolutePath.TrimEnd('/') is { Length: > 0 } path ? path : "/",
+                SurfaceAccessMode.Mixed,
+                null,
+                null,
+                null,
+                null,
+                null,
+                true));
+
+        return (store, surfaces);
     }
 }

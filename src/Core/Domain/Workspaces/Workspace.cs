@@ -1,5 +1,10 @@
 namespace Callora.Core.Domain.Workspaces;
 
+/// <summary>
+/// A workspace is the data container: which plugins are active, whose data lives
+/// here, who may work in it. It has no address of its own — every way *into* the
+/// data is a <see cref="WorkspaceSurface"/> (ADR-014 §5).
+/// </summary>
 public sealed class Workspace
 {
     public Guid Id { get; set; }
@@ -14,14 +19,12 @@ public sealed class Workspace
 
     public bool IsActive { get; set; }
 
-    public string? PublicBaseUrl { get; set; }
-
-    public string? PublicHost { get; set; }
-
-    public string PublicPathPrefix { get; set; } = "/";
-
-    public SurfaceAccessPolicy SurfaceAccessPolicy { get; set; } = SurfaceAccessPolicy.Public;
-
+    /// <summary>
+    /// Default theme for the workspace's surfaces. A surface without a theme of
+    /// its own renders with this one; assigning a theme to a surface overrides it
+    /// for that surface only. This is a default, not an appearance of the
+    /// workspace itself — the workspace is never rendered.
+    /// </summary>
     public string? ThemePluginId { get; set; }
 
     public string? ThemeVersion { get; set; }

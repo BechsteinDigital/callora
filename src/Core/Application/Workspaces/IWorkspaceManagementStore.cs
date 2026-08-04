@@ -1,5 +1,3 @@
-using Callora.Core.Domain.Workspaces;
-
 namespace Callora.Core.Application.Workspaces;
 
 public interface IWorkspaceManagementStore
@@ -16,13 +14,19 @@ public interface IWorkspaceManagementStore
         string workspaceKey,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Creates or updates a workspace and ensures it has a "default" surface.
+    /// <paramref name="defaultSurfaceBaseUrl"/> is a convenience for the common
+    /// one-surface case: it configures the route of that default surface. The
+    /// workspace itself has no address — every route lives on a surface.
+    /// </summary>
     Task<WorkspaceUpsertResult> UpsertAsync(
         string tenantKey,
         string workspaceKey,
         string displayName,
         string workspaceType,
         bool isActive,
-        string? publicBaseUrl = null,
+        string? defaultSurfaceBaseUrl = null,
         CancellationToken cancellationToken = default);
 
     Task<WorkspaceSnapshot?> ResolveByPublicRouteAsync(
@@ -62,15 +66,6 @@ public interface IWorkspaceManagementStore
 
     Task<bool> ClearThemeAssignmentAsync(
         string workspaceKey,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Sets the workspace's surface access policy. Returns the updated snapshot, or null
-    /// when the workspace does not exist.
-    /// </summary>
-    Task<WorkspaceSnapshot?> SetSurfaceAccessPolicyAsync(
-        string workspaceKey,
-        SurfaceAccessPolicy policy,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<WorkspaceMemberSnapshot>> ListMembersAsync(

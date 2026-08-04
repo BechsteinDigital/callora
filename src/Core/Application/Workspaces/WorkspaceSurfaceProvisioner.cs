@@ -7,6 +7,9 @@ internal sealed class WorkspaceSurfaceProvisioner(
     IWorkspaceManagementStore workspaceStore,
     IWorkspaceSurfaceStore surfaceStore) : IWorkspaceSurfaceProvisioner
 {
+    /// <summary>The surface every workspace has; plugin surfaces route below it.</summary>
+    private const string DefaultSurfaceKey = "default";
+
     public async Task<PluginSurfaceLocation?> EnsureAsync(
         string workspaceKey,
         PluginSurfaceDefinition definition,
@@ -28,19 +31,25 @@ internal sealed class WorkspaceSurfaceProvisioner(
         var existing = await surfaceStore
             .GetAsync(normalizedWorkspaceKey, definition.SurfaceKey.Trim(), cancellationToken)
             .ConfigureAwait(false);
+
+        // A plugin surface hangs below the workspace's standard entrance — the
+        // "default" surface. The workspace itself has no route (ADR-014 §5).
+        var defaultSurface = await surfaceStore
+            .GetAsync(normalizedWorkspaceKey, DefaultSurfaceKey, cancellationToken)
+            .ConfigureAwait(false);
         var publicPath = ComposePublicPath(
-            workspace.PublicPathPrefix,
+            defaultSurface?.PublicPathPrefix ?? "/",
             definition.PublicPathSuffix);
         var publicUrl = ComposePublicUrl(
-            workspace.PublicBaseUrl,
-            workspace.PublicHost,
+            defaultSurface?.PublicBaseUrl,
+            defaultSurface?.PublicHost,
             publicPath);
         var input = new WorkspaceSurfaceInput(
             definition.SurfaceKey.Trim(),
             definition.DisplayName.Trim(),
             definition.SurfaceType.Trim(),
             publicUrl,
-            workspace.PublicHost,
+            defaultSurface?.PublicHost,
             publicPath,
             ToDomainAccessMode(definition.AccessMode),
             existing?.Locale,
@@ -81,9 +90,9 @@ internal sealed class WorkspaceSurfaceProvisioner(
         }
     }
 
-    private static string ComposePublicPath(string workspacePrefix, string suffix)
+    private static string ComposePublicPath(string basePrefix, string suffix)
     {
-        var prefix = NormalizePath(workspacePrefix);
+        var prefix = NormalizePath(basePrefix);
         var normalizedSuffix = NormalizePath(suffix);
         if (normalizedSuffix == "/")
         {
@@ -96,15 +105,15 @@ internal sealed class WorkspaceSurfaceProvisioner(
     }
 
     private static string ComposePublicUrl(
-        string? workspacePublicBaseUrl,
+        string? baseUrl,
         string? publicHost,
         string publicPath)
     {
-        if (!string.IsNullOrWhiteSpace(workspacePublicBaseUrl))
+        if (!string.IsNullOrWhiteSpace(baseUrl))
         {
-            var candidate = workspacePublicBaseUrl.Contains("://", StringComparison.Ordinal)
-                ? workspacePublicBaseUrl
-                : $"https://{workspacePublicBaseUrl}";
+            var candidate = baseUrl.Contains("://", StringComparison.Ordinal)
+                ? baseUrl
+                : $"https://{baseUrl}";
             if (Uri.TryCreate(candidate, UriKind.Absolute, out var uri))
             {
                 return new UriBuilder(uri)

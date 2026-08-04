@@ -32,9 +32,6 @@ const existing: Workspace = {
   workspaceType: 'standard',
   isActive: true,
   tenantIsActive: true,
-  publicBaseUrl: 'https://acme.test',
-  publicHost: 'acme.test',
-  publicPathPrefix: '/',
   themePluginId: null,
   themeVersion: null,
   themeAssignedBy: null,
@@ -68,7 +65,7 @@ describe('WorkspaceDetailView', () => {
       displayName: 'Acme',
       workspaceType: 'standard',
       isActive: true,
-      publicBaseUrl: null,
+      defaultSurfaceBaseUrl: null,
     })
     expect(pushMock).toHaveBeenCalledWith('/workspaces')
   })
@@ -84,7 +81,11 @@ describe('WorkspaceDetailView', () => {
     const keyInput = wrapper.find('input[name="workspaceKey"]').element as HTMLInputElement
     expect(keyInput.value).toBe('acme')
     expect(keyInput.disabled).toBe(true)
-    expect(wrapper.text()).toContain('acme.test') // read-only public host in meta block
+    // The route is no longer shown here — it belongs to the surfaces tab.
+    expect(wrapper.text()).not.toContain('acme.test')
+    expect(
+      (wrapper.find('input[name="defaultSurfaceBaseUrl"]').element as HTMLInputElement).disabled,
+    ).toBe(true)
 
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
@@ -92,7 +93,7 @@ describe('WorkspaceDetailView', () => {
       displayName: 'Acme',
       workspaceType: 'standard',
       isActive: true,
-      publicBaseUrl: 'https://acme.test',
+      defaultSurfaceBaseUrl: null,
     })
   })
 

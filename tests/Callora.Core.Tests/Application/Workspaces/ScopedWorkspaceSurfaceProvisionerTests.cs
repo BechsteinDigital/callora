@@ -1,3 +1,4 @@
+using Callora.Core.Domain.Workspaces;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Application.Workspaces.Contracts;
 using Callora.Core.Tests.Support;
@@ -21,6 +22,24 @@ public sealed class ScopedWorkspaceSurfaceProvisionerTests
             isActive: true,
             "https://example.test/acme");
         var surfaceStore = new InMemoryWorkspaceSurfaceStore();
+        // The workspace's route lives on its default surface (ADR-014 §5); plugin
+        // surfaces route below it.
+        _ = await surfaceStore.UpsertAsync(
+            "acme",
+            new WorkspaceSurfaceInput(
+                "default",
+                "Acme",
+                "spa",
+                "https://example.test/acme",
+                "example.test",
+                "/acme",
+                SurfaceAccessMode.Mixed,
+                null,
+                null,
+                null,
+                null,
+                null,
+                true));
         var services = new ServiceCollection()
             .AddScoped(_ => new WorkspaceSurfaceProvisioner(workspaceStore, surfaceStore))
             .AddSingleton<IWorkspaceSurfaceProvisioner, ScopedWorkspaceSurfaceProvisioner>()

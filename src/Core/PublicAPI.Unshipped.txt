@@ -2700,8 +2700,7 @@ Callora.Core.Application.Workspaces.IWorkspaceManagementStore.RemoveAsync(string
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore.RemoveMemberAsync(string! workspaceKey, string! userExternalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult!>!
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore.ResolveByPublicRouteAsync(string! requestHost, string! requestPath, string? tenantKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSnapshot?>!
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore.ResolveSurfaceByPublicRouteAsync(string! requestHost, string! requestPath, string? tenantKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
-Callora.Core.Application.Workspaces.IWorkspaceManagementStore.SetSurfaceAccessPolicyAsync(string! workspaceKey, Callora.Core.Domain.Workspaces.SurfaceAccessPolicy policy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSnapshot?>!
-Callora.Core.Application.Workspaces.IWorkspaceManagementStore.UpsertAsync(string! tenantKey, string! workspaceKey, string! displayName, string! workspaceType, bool isActive, string? publicBaseUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceUpsertResult!>!
+Callora.Core.Application.Workspaces.IWorkspaceManagementStore.UpsertAsync(string! tenantKey, string! workspaceKey, string! displayName, string! workspaceType, bool isActive, string? defaultSurfaceBaseUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceUpsertResult!>!
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore.UpsertMemberAsync(string! workspaceKey, string! userExternalId, string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult!>!
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore.UpsertThemeAssignmentAsync(string! workspaceKey, string! themePluginId, string! themeVersion, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot?>!
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore
@@ -2754,7 +2753,6 @@ Callora.Core.Application.Workspaces.WorkspaceMemberUpsertStatus
 Callora.Core.Application.Workspaces.WorkspaceMemberUpsertStatus.Ok = 0 -> Callora.Core.Application.Workspaces.WorkspaceMemberUpsertStatus
 Callora.Core.Application.Workspaces.WorkspaceMemberUpsertStatus.UserNotFound = 2 -> Callora.Core.Application.Workspaces.WorkspaceMemberUpsertStatus
 Callora.Core.Application.Workspaces.WorkspaceMemberUpsertStatus.WorkspaceNotFound = 1 -> Callora.Core.Application.Workspaces.WorkspaceMemberUpsertStatus
-Callora.Core.Application.Workspaces.WorkspacePublicRouteMatcher
 Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor
 Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor.<Clone>$() -> Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor!
 Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor.Deconstruct(out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix) -> void
@@ -2771,20 +2769,12 @@ Callora.Core.Application.Workspaces.WorkspaceSnapshot
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.<Clone>$() -> Callora.Core.Application.Workspaces.WorkspaceSnapshot!
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.CreatedAtUtc.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.Deconstruct(out string! TenantKey, out string! WorkspaceKey, out string! DisplayName, out string! WorkspaceType, out bool IsActive, out bool TenantIsActive, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string? ThemePluginId, out string? ThemeVersion, out string? ThemeAssignedBy, out System.DateTimeOffset? ThemeAssignedAtUtc, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Workspaces.WorkspaceSnapshot.Deconstruct(out string! TenantKey, out string! WorkspaceKey, out string! DisplayName, out string! WorkspaceType, out bool IsActive, out bool TenantIsActive, out string? ThemePluginId, out string? ThemeVersion, out string? ThemeAssignedBy, out System.DateTimeOffset? ThemeAssignedAtUtc, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.DisplayName.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.DisplayName.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.Equals(Callora.Core.Application.Workspaces.WorkspaceSnapshot? other) -> bool
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.IsActive.get -> bool
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.IsActive.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.PublicBaseUrl.get -> string?
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.PublicBaseUrl.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.PublicHost.get -> string?
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.PublicHost.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.PublicPathPrefix.get -> string!
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.PublicPathPrefix.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.SurfaceAccessPolicy.get -> Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.SurfaceAccessPolicy.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.TenantIsActive.get -> bool
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.TenantIsActive.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.TenantKey.get -> string!
@@ -2801,7 +2791,7 @@ Callora.Core.Application.Workspaces.WorkspaceSnapshot.UpdatedAtUtc.get -> System
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.UpdatedAtUtc.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.WorkspaceKey.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.WorkspaceKey.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSnapshot.WorkspaceSnapshot(string! TenantKey, string! WorkspaceKey, string! DisplayName, string! WorkspaceType, bool IsActive, bool TenantIsActive, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string? ThemePluginId, string? ThemeVersion, string? ThemeAssignedBy, System.DateTimeOffset? ThemeAssignedAtUtc, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Workspaces.WorkspaceSnapshot.WorkspaceSnapshot(string! TenantKey, string! WorkspaceKey, string! DisplayName, string! WorkspaceType, bool IsActive, bool TenantIsActive, string? ThemePluginId, string? ThemeVersion, string? ThemeAssignedBy, System.DateTimeOffset? ThemeAssignedAtUtc, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.WorkspaceType.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.WorkspaceType.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput
@@ -3441,14 +3431,6 @@ Callora.Core.Domain.Workspaces.Workspace.IsActive.get -> bool
 Callora.Core.Domain.Workspaces.Workspace.IsActive.set -> void
 Callora.Core.Domain.Workspaces.Workspace.Memberships.get -> System.Collections.Generic.ICollection<Callora.Core.Domain.Workspaces.WorkspaceMembership!>!
 Callora.Core.Domain.Workspaces.Workspace.Memberships.set -> void
-Callora.Core.Domain.Workspaces.Workspace.PublicBaseUrl.get -> string?
-Callora.Core.Domain.Workspaces.Workspace.PublicBaseUrl.set -> void
-Callora.Core.Domain.Workspaces.Workspace.PublicHost.get -> string?
-Callora.Core.Domain.Workspaces.Workspace.PublicHost.set -> void
-Callora.Core.Domain.Workspaces.Workspace.PublicPathPrefix.get -> string!
-Callora.Core.Domain.Workspaces.Workspace.PublicPathPrefix.set -> void
-Callora.Core.Domain.Workspaces.Workspace.SurfaceAccessPolicy.get -> Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
-Callora.Core.Domain.Workspaces.Workspace.SurfaceAccessPolicy.set -> void
 Callora.Core.Domain.Workspaces.Workspace.Surfaces.get -> System.Collections.Generic.ICollection<Callora.Core.Domain.Workspaces.WorkspaceSurface!>!
 Callora.Core.Domain.Workspaces.Workspace.Surfaces.set -> void
 Callora.Core.Domain.Workspaces.Workspace.Tenant.get -> Callora.Core.Domain.Tenants.Tenant!
@@ -3885,8 +3867,7 @@ Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.RemoveAsync(s
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.RemoveMemberAsync(string! workspaceKey, string! userExternalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult!>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.ResolveByPublicRouteAsync(string! requestHost, string! requestPath, string? tenantKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.ResolveSurfaceByPublicRouteAsync(string! requestHost, string! requestPath, string? tenantKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
-Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.SetSurfaceAccessPolicyAsync(string! workspaceKey, Callora.Core.Domain.Workspaces.SurfaceAccessPolicy policy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSnapshot?>!
-Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.UpsertAsync(string! tenantKey, string! workspaceKey, string! displayName, string! workspaceType, bool isActive, string? publicBaseUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceUpsertResult!>!
+Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.UpsertAsync(string! tenantKey, string! workspaceKey, string! displayName, string! workspaceType, bool isActive, string? defaultSurfaceBaseUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceUpsertResult!>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.UpsertMemberAsync(string! workspaceKey, string! userExternalId, string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult!>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.UpsertThemeAssignmentAsync(string! workspaceKey, string! themePluginId, string! themeVersion, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationReader
@@ -5052,7 +5033,6 @@ static Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot.operator !=(C
 static Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot.operator ==(Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot? left, Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot? right) -> bool
 static Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult.operator !=(Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult? left, Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult? right) -> bool
 static Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult.operator ==(Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult? left, Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult? right) -> bool
-static Callora.Core.Application.Workspaces.WorkspacePublicRouteMatcher.ResolveBest(System.Collections.Generic.IEnumerable<Callora.Core.Application.Workspaces.WorkspaceSnapshot!>! candidates, string! requestHost, string! requestPath) -> Callora.Core.Application.Workspaces.WorkspaceSnapshot?
 static Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor.operator !=(Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor? left, Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor? right) -> bool
 static Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor.operator ==(Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor? left, Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor? right) -> bool
 static Callora.Core.Application.Workspaces.WorkspacePublicUrlNormalizer.TryNormalize(string? rawPublicBaseUrl, out Callora.Core.Application.Workspaces.WorkspacePublicUrlDescriptor! descriptor, out string? errorMessage) -> bool
