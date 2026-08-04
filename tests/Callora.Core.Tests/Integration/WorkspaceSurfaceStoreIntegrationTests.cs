@@ -103,40 +103,12 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
         Assert.Null(result);
     }
 
-    [SkippableFact]
-    public async Task BackfillSql_CreatesDefaultSurfaceMirroringWorkspace()
-    {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
-        var options = Options();
-
-        await using var context = new HostPersistenceDbContext(options);
-        await context.Database.EnsureCreatedAsync();
-        await SeedWorkspaceAsync(context, "workspace-b", host: "b.example.de", themePluginId: "b.theme");
-
-        // Same backfill statement the AddWorkspaceSurfaces migration runs.
-        await context.Database.ExecuteSqlRawAsync(
-            """
-            INSERT INTO workspace_surfaces (
-                "Id", workspace_id, surface_key, display_name, surface_type,
-                public_base_url, public_host, public_path_prefix, access_mode, locale,
-                template_plugin_id, template_version,
-                theme_plugin_id, theme_version, theme_assigned_by, theme_assigned_at_utc,
-                is_active, created_at_utc, updated_at_utc)
-            SELECT
-                gen_random_uuid(), w."Id", 'default', w."DisplayName", 'spa',
-                w.public_base_url, w.public_host, w.public_path_prefix, 'Mixed', NULL,
-                NULL, NULL,
-                w.theme_plugin_id, w.theme_version, w.theme_assigned_by, w.theme_assigned_at_utc,
-                w."IsActive", now(), now()
-            FROM workspaces w;
-            """);
-
-        var surface = await new EfWorkspaceSurfaceStore(context).GetAsync("workspace-b", "default");
-        Assert.NotNull(surface);
-        Assert.Equal("b.example.de", surface!.PublicHost);
-        Assert.Equal("b.theme", surface.ThemePluginId);
-        Assert.Equal(SurfaceAccessMode.Mixed, surface.AccessMode);
-    }
+    // The former BackfillSql_CreatesDefaultSurfaceMirroringWorkspace test exercised the
+    // AddWorkspaceSurfaces backfill against the live schema. That backfill copied the
+    // workspace's route onto its default surface — columns that no longer exist since
+    // the route moved to surfaces entirely. The migration stays in history and still
+    // runs correctly for old databases at its own schema version; asserting it against
+    // the current schema would test a state that cannot occur.
 
     private DbContextOptions<HostPersistenceDbContext> Options() =>
         new DbContextOptionsBuilder<HostPersistenceDbContext>()
@@ -146,7 +118,6 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
     private static async Task SeedWorkspaceAsync(
         HostPersistenceDbContext context,
         string workspaceKey,
-        string? host = null,
         string? themePluginId = null)
     {
         var nowUtc = DateTimeOffset.UtcNow;
@@ -168,8 +139,6 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
             DisplayName = "Workspace",
             WorkspaceType = "team",
             IsActive = true,
-            PublicHost = host,
-            PublicPathPrefix = "/",
             ThemePluginId = themePluginId,
             CreatedAtUtc = nowUtc,
             UpdatedAtUtc = nowUtc,

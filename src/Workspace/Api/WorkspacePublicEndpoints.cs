@@ -8,6 +8,9 @@ namespace Callora.Workspace.Api;
 
 public static class WorkspacePublicEndpoints
 {
+    /// <summary>The surface every workspace has — the entrance used when none is named.</summary>
+    private const string DefaultSurfaceKey = "default";
+
     private static readonly string[] ReservedPrefixes =
     [
         "api",
@@ -66,8 +69,17 @@ public static class WorkspacePublicEndpoints
                             cancellationToken)
                         .ConfigureAwait(false);
 
+                    var surface = await ResolveSurfaceFromRequestAsync(
+                            httpHost: requestHost,
+                            requestPath,
+                            hostOptions,
+                            workspaceStore,
+                            cancellationToken)
+                        .ConfigureAwait(false);
+
                     var payload = CreateBootstrapPayload(
                         workspace,
+                        surface,
                         requestPath,
                         hostOptions);
                     var payloadJson = JsonSerializer.Serialize(payload);
@@ -103,6 +115,15 @@ public static class WorkspacePublicEndpoints
                         return Results.NotFound();
                     }
 
+                    // The route belongs to the surface that served this request.
+                    var surface = await ResolveSurfaceFromRequestAsync(
+                            httpHost: requestHost,
+                            requestPath,
+                            hostOptions,
+                            workspaceStore,
+                            cancellationToken)
+                        .ConfigureAwait(false);
+
                     return Results.Ok(new
                     {
                         workspace = new
@@ -111,11 +132,16 @@ public static class WorkspacePublicEndpoints
                             name = workspace.DisplayName,
                             type = workspace.WorkspaceType
                         },
+                        surface = surface is null ? null : new
+                        {
+                            key = surface.SurfaceKey,
+                            accessMode = surface.AccessMode.ToString()
+                        },
                         route = new
                         {
-                            workspace.PublicBaseUrl,
-                            workspace.PublicHost,
-                            workspace.PublicPathPrefix
+                            PublicBaseUrl = surface?.PublicBaseUrl,
+                            PublicHost = surface?.PublicHost,
+                            PublicPathPrefix = surface?.PublicPathPrefix ?? "/"
                         }
                     });
                 })
@@ -147,23 +173,25 @@ public static class WorkspacePublicEndpoints
                         return Results.NotFound();
                     }
 
-                    // The access gate is per-surface when a surfaceKey is supplied, matching
-                    // /surface/render (ADR-014 §6.1): a Mixed surface has public routes, so its
-                    // chain loads anonymously even inside an otherwise Authenticated workspace.
-                    // Only an Authenticated surface requires a caller identity. Without a
-                    // surfaceKey — or when the named surface is unknown — it falls back to the
-                    // workspace-wide SurfaceAccessPolicy (backwards compatible).
-                    var requiresAuth = workspace!.SurfaceAccessPolicy == SurfaceAccessPolicy.Authenticated;
-                    if (!string.IsNullOrWhiteSpace(surfaceKey))
-                    {
-                        var surface = await surfaceStore
-                            .GetAsync(normalizedKey, surfaceKey.Trim(), cancellationToken)
-                            .ConfigureAwait(false);
-                        if (surface is not null)
-                        {
-                            requiresAuth = surface.AccessMode == SurfaceAccessMode.Authenticated;
-                        }
-                    }
+                    // The access gate is per surface (ADR-014 §6.1): a Mixed surface has
+                    // public routes, so its chain loads anonymously; only an Authenticated
+                    // surface requires a caller identity. Without a surfaceKey — or when the
+                    // named surface is unknown — the workspace's "default" surface decides,
+                    // because that is the entrance such a caller came through.
+                    var gateSurfaceKey = string.IsNullOrWhiteSpace(surfaceKey)
+                        ? DefaultSurfaceKey
+                        : surfaceKey.Trim();
+                    var gateSurface = await surfaceStore
+                        .GetAsync(normalizedKey, gateSurfaceKey, cancellationToken)
+                        .ConfigureAwait(false);
+                    gateSurface ??= await surfaceStore
+                        .GetAsync(normalizedKey, DefaultSurfaceKey, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    // Fail closed: a workspace whose entrance cannot be determined does not
+                    // expose its plugin inventory.
+                    var requiresAuth = gateSurface is null ||
+                        gateSurface.AccessMode == SurfaceAccessMode.Authenticated;
 
                     // An Authenticated surface (or workspace) does not expose its plugin
                     // inventory to an anonymous caller: it 404s exactly like a non-existent one,
@@ -256,7 +284,14 @@ public static class WorkspacePublicEndpoints
 
                     var query = ToSingleValueQueryDictionary(httpContext.Request.Query);
                     query["returnUrl"] = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl;
-                    var workspaceLoginPath = BuildWorkspaceLoginPath(workspace.PublicPathPrefix);
+                    var loginSurface = await ResolveSurfaceFromRequestAsync(
+                            httpHost: ResolveForwardedHost(httpContext),
+                            NormalizePath(returnUrl),
+                            hostOptions,
+                            workspaceStore,
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                    var workspaceLoginPath = BuildWorkspaceLoginPath(loginSurface?.PublicPathPrefix ?? "/");
 
                     var redirectUrl = BuildRedirectUrl(
                         hostOptions.WorkspaceShellBaseUrl,
@@ -485,6 +520,31 @@ public static class WorkspacePublicEndpoints
         return IsWorkspaceVisibleInTenant(workspace, tenantKey) ? workspace : null;
     }
 
+    /// <summary>
+    /// The surface that serves this request. Public routing resolves per surface
+    /// (ADR-014 §5) — the workspace itself has no address, so anything that needs
+    /// a route (bootstrap payload, login redirect) asks here.
+    /// </summary>
+    private static async Task<WorkspaceSurfaceSnapshot?> ResolveSurfaceFromRequestAsync(
+        string? httpHost,
+        string requestPath,
+        BackendHostOptions hostOptions,
+        IWorkspaceManagementStore workspaceStore,
+        CancellationToken cancellationToken)
+    {
+        var tenantKey = string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey)
+            ? null
+            : hostOptions.DefaultTenantKey.Trim();
+
+        var requestHost = string.IsNullOrWhiteSpace(httpHost)
+            ? string.Empty
+            : httpHost.Trim().ToLowerInvariant();
+
+        return await workspaceStore
+            .ResolveSurfaceByPublicRouteAsync(requestHost, requestPath, tenantKey, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     private static bool IsWorkspaceVisibleInTenant(WorkspaceSnapshot? workspace, string? tenantKey)
     {
         if (workspace is null || !workspace.IsActive || !workspace.TenantIsActive)
@@ -655,8 +715,11 @@ public static class WorkspacePublicEndpoints
         return path;
     }
 
+    // The workspace names the data container, the surface carries the route it is
+    // reached through — the payload needs both.
     private static object CreateBootstrapPayload(
         WorkspaceSnapshot? workspace,
+        WorkspaceSurfaceSnapshot? surface,
         string requestPath,
         BackendHostOptions hostOptions)
     {
@@ -670,6 +733,7 @@ public static class WorkspacePublicEndpoints
                     name = "Workspace",
                     type = "base"
                 },
+                surface = (object?)null,
                 route = new
                 {
                     publicBaseUrl = hostOptions.WorkspaceShellBaseUrl,
@@ -686,10 +750,15 @@ public static class WorkspacePublicEndpoints
                 name = workspace.DisplayName,
                 type = workspace.WorkspaceType
             },
+            surface = surface is null ? null : new
+            {
+                key = surface.SurfaceKey,
+                accessMode = surface.AccessMode.ToString()
+            },
             route = new
             {
-                publicBaseUrl = workspace.PublicBaseUrl ?? hostOptions.WorkspaceShellBaseUrl,
-                publicPathPrefix = workspace.PublicPathPrefix
+                publicBaseUrl = surface?.PublicBaseUrl ?? hostOptions.WorkspaceShellBaseUrl,
+                publicPathPrefix = surface?.PublicPathPrefix ?? requestPath
             }
         };
     }
