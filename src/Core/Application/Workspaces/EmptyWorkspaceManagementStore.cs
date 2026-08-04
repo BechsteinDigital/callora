@@ -88,12 +88,6 @@ internal sealed class EmptyWorkspaceManagementStore : IWorkspaceManagementStore
         CancellationToken cancellationToken = default) =>
         Task.FromResult(false);
 
-    public Task<WorkspaceSnapshot?> SetSurfaceAccessPolicyAsync(
-        string workspaceKey,
-        Domain.Workspaces.SurfaceAccessPolicy policy,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult<WorkspaceSnapshot?>(null);
-
     public Task<IReadOnlyList<WorkspaceMemberSnapshot>> ListMembersAsync(
         string workspaceKey,
         CancellationToken cancellationToken = default) =>

@@ -3417,9 +3417,6 @@ Callora.Core.Domain.Workspaces.SurfaceAccessMode
 Callora.Core.Domain.Workspaces.SurfaceAccessMode.Authenticated = 1 -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
 Callora.Core.Domain.Workspaces.SurfaceAccessMode.Mixed = 2 -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
 Callora.Core.Domain.Workspaces.SurfaceAccessMode.Public = 0 -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
-Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
-Callora.Core.Domain.Workspaces.SurfaceAccessPolicy.Authenticated = 1 -> Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
-Callora.Core.Domain.Workspaces.SurfaceAccessPolicy.Public = 0 -> Callora.Core.Domain.Workspaces.SurfaceAccessPolicy
 Callora.Core.Domain.Workspaces.Workspace
 Callora.Core.Domain.Workspaces.Workspace.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Domain.Workspaces.Workspace.CreatedAtUtc.set -> void
