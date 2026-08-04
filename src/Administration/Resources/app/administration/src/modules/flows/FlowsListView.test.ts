@@ -23,6 +23,15 @@ vi.mock('./flowsApi', () => ({
 vi.mock('@/modules/workspaces/workspacesApi', () => ({ workspacesApi: { list: vi.fn().mockResolvedValue([]) } }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: contextRef }) }))
 
+// The confirm dialog is a promise-based store now, not window.confirm — mock it so
+// each test can decide what the operator answers.
+const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }))
+vi.mock('@/core/feedback/confirm', () => ({ confirm: confirmMock }))
+
+beforeEach(() => {
+  confirmMock.mockReset().mockResolvedValue(true)
+})
+
 function ctx(permissions: string[]): AdminContext {
   return {
     userId: 'u',
@@ -83,8 +92,8 @@ describe('FlowsListView', () => {
     const wrapper = mount(FlowsListView)
     await flushPromises()
 
-    expect(wrapper.find('form.flow-form').exists()).toBe(false)
-    expect(wrapper.find('.link-danger').exists()).toBe(false)
+    expect(wrapper.find('form.flows__form').exists()).toBe(false)
+    expect(wrapper.find('.is-danger-ghost').exists()).toBe(false)
   })
 
   it('creates a flow with parsed JSON (empty conditions → null, default actions → [])', async () => {
@@ -94,7 +103,7 @@ describe('FlowsListView', () => {
 
     await wrapper.find('input[name="flowName"]').setValue('New flow')
     await wrapper.find('input[name="flowTrigger"]').setValue('call.ended')
-    await wrapper.find('form.flow-form').trigger('submit')
+    await wrapper.find('form.flows__form').trigger('submit')
     await flushPromises()
 
     expect(createMock).toHaveBeenCalledTimes(1)
@@ -119,7 +128,7 @@ describe('FlowsListView', () => {
     await wrapper.find('input[name="flowName"]').setValue('New flow')
     await wrapper.find('input[name="flowTrigger"]').setValue('call.ended')
     await wrapper.find('textarea[name="flowConditions"]').setValue('{ not json')
-    await wrapper.find('form.flow-form').trigger('submit')
+    await wrapper.find('form.flows__form').trigger('submit')
     await flushPromises()
 
     expect(createMock).not.toHaveBeenCalled()
@@ -132,11 +141,11 @@ describe('FlowsListView', () => {
     const wrapper = mount(FlowsListView)
     await flushPromises()
 
-    await wrapper.findAll('button.link').find((b) => b.text() === 'Bearbeiten')!.trigger('click')
+    await wrapper.findAll('button.is-ghost').find((b) => b.text() === 'Bearbeiten')!.trigger('click')
     expect((wrapper.find('input[name="flowName"]').element as HTMLInputElement).value).toBe('Route to queue')
 
     await wrapper.find('input[name="flowName"]').setValue('Renamed')
-    await wrapper.find('form.flow-form').trigger('submit')
+    await wrapper.find('form.flows__form').trigger('submit')
     await flushPromises()
 
     const [ws, id, input] = updateMock.mock.calls[0]
@@ -148,20 +157,19 @@ describe('FlowsListView', () => {
 
   it('deletes a flow only after confirmation', async () => {
     contextRef.value = ctx(['*'])
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    confirmMock.mockResolvedValue(false)
     const wrapper = mount(FlowsListView)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
     expect(removeMock).not.toHaveBeenCalled()
 
-    confirmSpy.mockReturnValue(true)
-    await wrapper.find('.link-danger').trigger('click')
+    confirmMock.mockResolvedValue(true)
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
     expect(removeMock).toHaveBeenCalledWith('workspace-a', 'f1')
 
-    confirmSpy.mockRestore()
   })
 
   it('aborts save when a before-save hook cancels', async () => {
@@ -172,7 +180,7 @@ describe('FlowsListView', () => {
 
     await wrapper.find('input[name="flowName"]').setValue('New flow')
     await wrapper.find('input[name="flowTrigger"]').setValue('call.ended')
-    await wrapper.find('form.flow-form').trigger('submit')
+    await wrapper.find('form.flows__form').trigger('submit')
     await flushPromises()
 
     expect(createMock).not.toHaveBeenCalled()

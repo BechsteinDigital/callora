@@ -1,70 +1,109 @@
 <template>
-  <section class="config">
-    <header class="head">
-      <h1>Konfiguration</h1>
-      <div class="head-actions">
+  <CalPage narrow>
+    <CalPageHeader title="Konfiguration" description="Einstellungen der installierten Plugins auf Plattform-Ebene.">
+      <template #actions>
         <ExtensionSlot name="config.toolbar" />
-      </div>
-    </header>
+      </template>
+    </CalPageHeader>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="notice" class="notice">{{ notice }}</p>
-    <p v-if="loading">Lädt…</p>
+    <CalAlert v-if="error" class="config__message" tone="danger">{{ error }}</CalAlert>
+    <CalAlert v-if="notice" class="config__message" tone="success" dismissible @dismiss="notice = null">
+      {{ notice }}
+    </CalAlert>
+
+    <CalCard v-if="loading">
+      <div class="config__skeletons">
+        <CalSkeleton v-for="n in 4" :key="n" height="36px" />
+      </div>
+    </CalCard>
 
     <template v-else-if="plugins.length">
-      <label class="plugin-select">Plugin
-        <select v-model="selectedPlugin" name="plugin" class="select" @change="onPluginChange">
-          <option v-for="p in plugins" :key="p" :value="p">{{ p }}</option>
-        </select>
-      </label>
+      <CalCard class="config__picker">
+        <CalField v-slot="{ id }" label="Plugin" horizontal>
+          <CalSelect :id="id" v-model="selectedPlugin" name="plugin" @update:model-value="onPluginChange">
+            <option v-for="p in plugins" :key="p" :value="p">{{ p }}</option>
+          </CalSelect>
+        </CalField>
+      </CalCard>
 
-      <p class="legend">
-        Werte als JSON (<code>42</code>, <code>true</code>, <code>"Text"</code>). Reiner Text wird als Zeichenkette
-        gespeichert. Leere Felder bleiben unverändert. Bereich: <strong>global</strong>.
-      </p>
+      <CalCard
+        title="Werte"
+        description="Als JSON eingeben (42, true, &quot;Text&quot;); reiner Text wird als Zeichenkette gespeichert. Leere Felder bleiben unverändert."
+      >
+        <form class="config__fields" @submit.prevent="save">
+          <CalField
+            v-for="def in fields"
+            :key="def.configKey"
+            v-slot="{ id }"
+            :label="def.label"
+            :hint="def.groupName || undefined"
+            :description="def.description || undefined"
+          >
+            <CalInput
+              :id="id"
+              v-model="inputs[def.configKey]"
+              :name="def.configKey"
+              :type="isSecretField(def.fieldType) ? 'password' : 'text'"
+              :placeholder="isSecretField(def.fieldType) ? '•••• zum Ändern' : 'leer = unverändert'"
+              :disabled="!canEdit"
+            >
+              <template #suffix>
+                <span class="config__current" :title="`Aktuell: ${effectiveDisplay(def)}`">
+                  {{ effectiveDisplay(def) }}
+                </span>
+              </template>
+            </CalInput>
+          </CalField>
 
-      <form class="fields" @submit.prevent="save">
-        <div v-for="def in fields" :key="def.configKey" class="field">
-          <label :for="`cfg-${def.configKey}`">
-            {{ def.label }}
-            <span v-if="def.groupName" class="group">{{ def.groupName }}</span>
-          </label>
-          <p v-if="def.description" class="desc">{{ def.description }}</p>
-          <p class="current">Aktuell: <span class="mono">{{ effectiveDisplay(def) }}</span></p>
-          <input
-            :id="`cfg-${def.configKey}`"
-            v-model="inputs[def.configKey]"
-            :name="def.configKey"
-            :type="isSecretField(def.fieldType) ? 'password' : 'text'"
-            :placeholder="isSecretField(def.fieldType) ? '•••• zum Ändern' : 'leer = unverändert'"
-            class="input"
-            :disabled="!canEdit"
-          />
-        </div>
+          <ExtensionSlot name="config.fields" :ctx="{ pluginId: selectedPlugin }" />
 
-        <ExtensionSlot name="config.fields" :ctx="{ pluginId: selectedPlugin }" />
+          <CalEmptyState v-if="!fields.length" compact title="Dieses Plugin hat keine Konfigurationsfelder." />
+        </form>
 
-        <div v-if="canEdit" class="buttons">
-          <BaseButton type="submit" :disabled="saving">{{ saving ? 'Speichert…' : 'Speichern' }}</BaseButton>
-        </div>
-        <p v-if="!fields.length" class="empty">Dieses Plugin hat keine Konfigurationsfelder.</p>
-      </form>
+        <template v-if="canEdit && fields.length" #footer>
+          <div class="buttons">
+            <CalButton variant="primary" :loading="saving" @click="save">Speichern</CalButton>
+          </div>
+        </template>
+      </CalCard>
     </template>
 
-    <p v-else class="empty">Keine konfigurierbaren Plugins.</p>
-  </section>
+    <CalCard v-else>
+      <CalEmptyState
+        :icon="Settings"
+        title="Keine Konfiguration vorhanden."
+        description="Sobald ein installiertes Plugin Konfigurationsfelder beiträgt, erscheinen sie hier."
+      />
+    </CalCard>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { systemConfigApi, isSecretField, ConfigScope, type ConfigDefinition, type EffectiveConfig } from './systemConfigApi'
+import { Settings } from 'lucide-vue-next'
+import {
+  systemConfigApi,
+  isSecretField,
+  ConfigScope,
+  type ConfigDefinition,
+  type EffectiveConfig,
+} from './systemConfigApi'
 import { coerceInputToJsonValue, displayJsonValue } from './configValues'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
-import BaseButton from '@/core/ui/BaseButton.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalEmptyState from '@/core/ui/CalEmptyState.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import CalSelect from '@/core/ui/CalSelect.vue'
+import CalSkeleton from '@/core/ui/CalSkeleton.vue'
 
 const definitions = ref<ConfigDefinition[]>([])
 const effective = ref<EffectiveConfig | null>(null)
@@ -193,116 +232,40 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.config {
-  padding: calc(var(--cal-space) * 3);
-  max-width: 560px;
+.config__message {
+  margin-bottom: var(--cal-space-4);
 }
 
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: calc(var(--cal-space) * 2);
+.config__picker {
+  margin-bottom: var(--cal-space-4);
 }
 
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--cal-space);
-}
-
-.plugin-select {
+.config__skeletons {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  color: var(--cal-color-muted);
-  margin-bottom: calc(var(--cal-space) * 1.5);
+  gap: var(--cal-space-4);
 }
 
-.select {
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
-}
-
-.legend {
-  font-size: 0.85em;
-  color: var(--cal-color-muted);
-  margin-bottom: calc(var(--cal-space) * 2);
-}
-
-.legend code {
-  font-family: var(--cal-font-mono, monospace);
-}
-
-.fields {
+.config__fields {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--cal-space) * 2);
+  gap: var(--cal-space-5);
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.field label {
-  color: var(--cal-color-text);
-  font-weight: 600;
-}
-
-.group {
-  font-size: 0.75em;
-  font-weight: 400;
-  color: var(--cal-color-muted);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  padding: 0 calc(var(--cal-space) * 0.75);
-  margin-left: var(--cal-space);
-}
-
-.desc {
-  font-size: 0.85em;
-  color: var(--cal-color-muted);
-  margin: 0;
-}
-
-.current {
-  font-size: 0.85em;
-  color: var(--cal-color-muted);
-  margin: 0;
-}
-
-.mono {
-  font-family: var(--cal-font-mono, monospace);
-}
-
-.input {
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
+/* The effective value sits inside the field so the operator sees what they are
+   about to overwrite, without a separate line per setting. */
+.config__current {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--cal-font-mono);
+  font-size: var(--cal-text-xs);
 }
 
 .buttons {
-  margin-top: var(--cal-space);
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
-}
-
-.notice {
-  color: var(--cal-color-accent);
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space-2);
 }
 </style>

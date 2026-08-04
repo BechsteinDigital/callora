@@ -15,6 +15,15 @@ const { listMock, removeMock, contextRef } = vi.hoisted(() => ({
 vi.mock('./workspacesApi', () => ({ workspacesApi: { list: listMock, remove: removeMock } }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: contextRef }) }))
 
+// The confirm dialog is a promise-based store now, not window.confirm — mock it so
+// each test can decide what the operator answers.
+const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }))
+vi.mock('@/core/feedback/confirm', () => ({ confirm: confirmMock }))
+
+beforeEach(() => {
+  confirmMock.mockReset().mockResolvedValue(true)
+})
+
 const RouterLinkStub = { name: 'RouterLink', props: ['to'], template: '<a><slot /></a>' }
 const mountOptions = { global: { stubs: { RouterLink: RouterLinkStub } } }
 
@@ -69,7 +78,7 @@ describe('WorkspacesListView', () => {
     expect(text).toContain('Acme')
     expect(text).toContain('Aktiv')
     expect(text).toContain('Neu anlegen')
-    expect(wrapper.findAll('.link-danger')).toHaveLength(1)
+    expect(wrapper.findAll('.is-danger-ghost')).toHaveLength(1)
   })
 
   it('hides manage/delete without the permissions', async () => {
@@ -78,16 +87,16 @@ describe('WorkspacesListView', () => {
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('Neu anlegen')
-    expect(wrapper.findAll('.link-danger')).toHaveLength(0)
+    expect(wrapper.findAll('.is-danger-ghost')).toHaveLength(0)
   })
 
   it('deletes after confirmation and reloads', async () => {
     contextRef.value = ctx(['workspace.delete'])
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     const wrapper = mount(WorkspacesListView, mountOptions)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMock).toHaveBeenCalledWith('acme')
@@ -96,11 +105,11 @@ describe('WorkspacesListView', () => {
 
   it('does not delete when the confirm dialog is dismissed', async () => {
     contextRef.value = ctx(['workspace.delete'])
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    confirmMock.mockResolvedValue(false)
     const wrapper = mount(WorkspacesListView, mountOptions)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMock).not.toHaveBeenCalled()
@@ -108,7 +117,7 @@ describe('WorkspacesListView', () => {
 
   it('runs the after-delete hook with the workspace key on success', async () => {
     contextRef.value = ctx(['workspace.delete'])
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     const seen: unknown[] = []
     registerHook('workspaces.after-delete', (h) => {
       seen.push(h.payload)
@@ -116,7 +125,7 @@ describe('WorkspacesListView', () => {
     const wrapper = mount(WorkspacesListView, mountOptions)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(seen).toEqual([{ workspaceKey: 'acme' }])
@@ -124,12 +133,12 @@ describe('WorkspacesListView', () => {
 
   it('aborts delete when a before-delete hook cancels', async () => {
     contextRef.value = ctx(['workspace.delete'])
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     registerHook('workspaces.before-delete', (h) => h.cancel('geschützt'))
     const wrapper = mount(WorkspacesListView, mountOptions)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMock).not.toHaveBeenCalled()

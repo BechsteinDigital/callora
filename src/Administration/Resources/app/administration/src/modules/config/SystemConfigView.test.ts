@@ -95,7 +95,7 @@ describe('SystemConfigView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="greeting"]').setValue('42')
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).toHaveBeenCalledWith('acme', 'global', null, { greeting: 42 })
@@ -107,7 +107,7 @@ describe('SystemConfigView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="apiKey"]').setValue('s3cr3t')
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).toHaveBeenCalledWith('acme', 'global', null, { apiKey: 's3cr3t' })
@@ -118,7 +118,7 @@ describe('SystemConfigView', () => {
     const wrapper = mount(SystemConfigView)
     await flushPromises()
 
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).not.toHaveBeenCalled()
@@ -132,7 +132,7 @@ describe('SystemConfigView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="greeting"]').setValue('hi')
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).not.toHaveBeenCalled()
@@ -148,7 +148,7 @@ describe('SystemConfigView', () => {
     await flushPromises()
 
     await wrapper.find('input[name="greeting"]').setValue('hi')
-    await wrapper.find('form.fields').trigger('submit.prevent')
+    await wrapper.find('form.config__fields').trigger('submit.prevent')
     await flushPromises()
 
     expect(saveMock).toHaveBeenCalledWith('acme', 'global', null, expect.objectContaining({ injected: true }))

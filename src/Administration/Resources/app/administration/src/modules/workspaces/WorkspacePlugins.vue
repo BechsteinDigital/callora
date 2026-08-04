@@ -1,57 +1,63 @@
 <template>
-  <section class="plugins">
-    <div class="heading">
-      <div>
-        <h2>Plugins</h2>
-        <p>Plugins für diesen Workspace freischalten und aktivieren.</p>
-      </div>
+  <div class="ws-plugins">
+    <CalAlert v-if="error" class="ws-plugins__error" tone="danger">{{ error }}</CalAlert>
+
+    <div v-if="loading" class="ws-plugins__list">
+      <CalSkeleton v-for="n in 3" :key="n" height="64px" />
     </div>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="loading">Lädt…</p>
+    <CalEmptyState
+      v-else-if="!plugins.length"
+      :icon="Puzzle"
+      title="Keine installierten Plugins vorhanden."
+      description="Installieren Sie zuerst ein Plugin unter „Plugins“."
+    />
 
-    <div v-else class="plugin-list">
-      <article v-for="plugin in plugins" :key="plugin.pluginId" class="plugin-card">
-        <div class="plugin-copy">
-          <strong>{{ plugin.displayName }}</strong>
-          <code>{{ plugin.pluginId }}</code>
-          <div class="states">
-            <span class="badge" :class="plugin.isGloballyActive ? 'positive' : 'neutral'">
-              {{ plugin.isGloballyActive ? 'Global aktiv' : 'Global inaktiv' }}
-            </span>
-            <span class="badge" :class="plugin.isAssigned ? 'positive' : 'neutral'">
-              {{ plugin.isAssigned ? 'Zugewiesen' : 'Nicht zugewiesen' }}
-            </span>
+    <div v-else class="ws-plugins__list">
+      <article v-for="plugin in plugins" :key="plugin.pluginId" class="ws-plugins__item">
+        <div class="ws-plugins__copy">
+          <div class="ws-plugins__title">
+            <strong>{{ plugin.displayName }}</strong>
+            <code>{{ plugin.pluginId }}</code>
           </div>
-          <small v-if="!plugin.isGloballyActive && !plugin.isAssigned">
+          <div class="ws-plugins__states">
+            <CalBadge :tone="plugin.isGloballyActive ? 'success' : 'neutral'" dot>
+              {{ plugin.isGloballyActive ? 'Global aktiv' : 'Global inaktiv' }}
+            </CalBadge>
+            <CalBadge :tone="plugin.isAssigned ? 'accent' : 'neutral'" variant="outline">
+              {{ plugin.isAssigned ? 'Zugewiesen' : 'Nicht zugewiesen' }}
+            </CalBadge>
+          </div>
+          <p v-if="!plugin.isGloballyActive && !plugin.isAssigned" class="ws-plugins__hint">
             Zuerst global aktivieren.
-          </small>
+          </p>
         </div>
 
-        <BaseButton
+        <CalButton
           v-if="canManage"
-          type="button"
+          :variant="plugin.isAssigned ? 'danger-ghost' : 'secondary'"
           :data-testid="`plugin-assignment-${plugin.pluginId}`"
           :disabled="busyPluginId === plugin.pluginId || (!plugin.isGloballyActive && !plugin.isAssigned)"
           @click="setAssignment(plugin)"
         >
           {{ plugin.isAssigned ? 'Entfernen' : 'Zuweisen' }}
-        </BaseButton>
+        </CalButton>
       </article>
-
-      <p v-if="plugins.length === 0" class="empty">Keine installierten Plugins vorhanden.</p>
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import BaseButton from '@/core/ui/BaseButton.vue'
+import { Puzzle } from 'lucide-vue-next'
 import { useService } from '@/core/extensions/services'
-import {
-  workspacesApi,
-  type WorkspacePluginAssignment,
-} from './workspacesApi'
+import { workspacesApi, type WorkspacePluginAssignment } from './workspacesApi'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalEmptyState from '@/core/ui/CalEmptyState.vue'
+import CalSkeleton from '@/core/ui/CalSkeleton.vue'
+import { toast } from '@/core/feedback/toasts'
 
 const props = defineProps<{ workspaceKey: string; canManage: boolean }>()
 const api = useService('workspacesApi', workspacesApi)
@@ -79,15 +85,16 @@ async function setAssignment(plugin: WorkspacePluginAssignment): Promise<void> {
   busyPluginId.value = plugin.pluginId
   error.value = null
   try {
-    const updated = await api.setPluginAssignment(
-      props.workspaceKey,
-      plugin.pluginId,
-      !plugin.isAssigned,
-    )
+    const updated = await api.setPluginAssignment(props.workspaceKey, plugin.pluginId, !plugin.isAssigned)
     const index = plugins.value.findIndex((item) => item.pluginId === plugin.pluginId)
     if (index >= 0) {
       plugins.value[index] = updated
     }
+    toast.success(
+      updated.isAssigned
+        ? `„${plugin.displayName}“ diesem Workspace zugewiesen.`
+        : `„${plugin.displayName}“ aus diesem Workspace entfernt.`,
+    )
   } catch (e) {
     error.value = (e as Error).message
   } finally {
@@ -99,73 +106,55 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.plugins {
-  margin-top: calc(var(--cal-space) * 3);
+.ws-plugins__error {
+  margin-bottom: var(--cal-space-4);
 }
 
-.heading h2 {
-  margin: 0;
-  font-size: 1.1em;
+.ws-plugins__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cal-space-2);
 }
 
-.heading p {
-  margin: 4px 0 var(--cal-space);
-  color: var(--cal-color-muted);
-}
-
-.plugin-list {
-  display: grid;
-  gap: var(--cal-space);
-}
-
-.plugin-card {
+.ws-plugins__item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: calc(var(--cal-space) * 2);
-  padding: calc(var(--cal-space) * 1.5);
-  border: 1px solid var(--cal-color-surface);
-  border-radius: var(--cal-radius);
+  gap: var(--cal-space-4);
+  padding: var(--cal-space-4);
+  background: var(--cal-surface);
+  border: 1px solid var(--cal-border);
+  border-radius: var(--cal-radius-lg);
 }
 
-.plugin-copy {
+.ws-plugins__copy {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--cal-space-2);
   min-width: 0;
 }
 
-.plugin-copy code,
-.plugin-copy small {
-  color: var(--cal-color-muted);
-}
-
-.states {
+.ws-plugins__title {
   display: flex;
+  align-items: baseline;
+  gap: var(--cal-space-2);
   flex-wrap: wrap;
-  gap: calc(var(--cal-space) * 0.75);
 }
 
-.badge {
-  padding: 1px calc(var(--cal-space) * 0.75);
-  border: 1px solid currentColor;
-  border-radius: var(--cal-radius);
-  font-size: 0.75em;
+.ws-plugins__title code {
+  color: var(--cal-text-muted);
+  font-size: var(--cal-text-sm);
 }
 
-.positive {
-  color: var(--cal-color-accent);
+.ws-plugins__states {
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space-2);
+  flex-wrap: wrap;
 }
 
-.neutral {
-  color: var(--cal-color-muted);
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
+.ws-plugins__hint {
+  font-size: var(--cal-text-sm);
+  color: var(--cal-text-muted);
 }
 </style>

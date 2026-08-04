@@ -19,6 +19,15 @@ vi.mock('./workspacesApi', () => ({
   },
 }))
 
+// The confirm dialog is a promise-based store now, not window.confirm — mock it so
+// each test can decide what the operator answers.
+const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }))
+vi.mock('@/core/feedback/confirm', () => ({ confirm: confirmMock }))
+
+beforeEach(() => {
+  confirmMock.mockReset().mockResolvedValue(true)
+})
+
 function member(over: Partial<WorkspaceMember>): WorkspaceMember {
   return {
     workspaceKey: 'acme',
@@ -61,8 +70,8 @@ describe('WorkspaceMembers', () => {
     const wrapper = mountMembers(false)
     await flushPromises()
 
-    expect(wrapper.find('form.add').exists()).toBe(false)
-    expect(wrapper.find('.link-danger').exists()).toBe(false)
+    expect(wrapper.find('form.members__form').exists()).toBe(false)
+    expect(wrapper.find('.is-danger-ghost').exists()).toBe(false)
   })
 
   it('loads and appends the next page via the cursor', async () => {
@@ -88,7 +97,7 @@ describe('WorkspaceMembers', () => {
   })
 
   it('resets to the first page after a mutation (no accumulated leak)', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     listMembersMock
       .mockResolvedValueOnce(page([member({ userId: 'alice' })], 'cursor-1', 2))
       .mockResolvedValueOnce(page([member({ userId: 'bob', displayName: 'Bob' })], null, 2))
@@ -100,7 +109,7 @@ describe('WorkspaceMembers', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('Bob') // page 2 accumulated
 
-    await wrapper.find('.link-danger').trigger('click') // remove → reload from page 1
+    await wrapper.find('.is-danger-ghost').trigger('click') // remove → reload from page 1
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('Bob') // accumulated page dropped on reload
@@ -135,7 +144,7 @@ describe('WorkspaceMembers', () => {
 
     await wrapper.find('input[name="memberUserId"]').setValue('bob')
     await wrapper.find('input[name="memberRole"]').setValue('support')
-    await wrapper.find('form.add').trigger('submit.prevent')
+    await wrapper.find('form.members__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(upsertMemberMock).toHaveBeenCalledWith('acme', 'bob', 'support')
@@ -148,7 +157,7 @@ describe('WorkspaceMembers', () => {
 
     await wrapper.find('input[name="memberUserId"]').setValue('bob')
     // role left empty
-    await wrapper.find('form.add').trigger('submit.prevent')
+    await wrapper.find('form.members__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(upsertMemberMock).not.toHaveBeenCalled()
@@ -163,7 +172,7 @@ describe('WorkspaceMembers', () => {
 
     await wrapper.find('input[name="memberUserId"]').setValue('bob')
     await wrapper.find('input[name="memberRole"]').setValue('support')
-    await wrapper.find('form.add').trigger('submit.prevent')
+    await wrapper.find('form.members__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(upsertMemberMock).toHaveBeenCalledWith('acme', 'bob', 'viewer')
@@ -176,7 +185,7 @@ describe('WorkspaceMembers', () => {
 
     await wrapper.find('input[name="memberUserId"]').setValue('bob')
     await wrapper.find('input[name="memberRole"]').setValue('support')
-    await wrapper.find('form.add').trigger('submit.prevent')
+    await wrapper.find('form.members__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(upsertMemberMock).not.toHaveBeenCalled()
@@ -184,7 +193,7 @@ describe('WorkspaceMembers', () => {
   })
 
   it('removes a member after confirmation and runs the after-remove hook', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     const seen: unknown[] = []
     registerHook('workspaces.member.after-remove', (h) => {
       seen.push(h.payload)
@@ -192,7 +201,7 @@ describe('WorkspaceMembers', () => {
     const wrapper = mountMembers(true)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMemberMock).toHaveBeenCalledWith('acme', 'alice')
@@ -200,12 +209,12 @@ describe('WorkspaceMembers', () => {
   })
 
   it('aborts remove when a before-remove hook cancels', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     registerHook('workspaces.member.before-remove', (h) => h.cancel('geschützt'))
     const wrapper = mountMembers(true)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMemberMock).not.toHaveBeenCalled()
@@ -213,11 +222,11 @@ describe('WorkspaceMembers', () => {
   })
 
   it('does not remove when the confirm dialog is dismissed', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    confirmMock.mockResolvedValue(false)
     const wrapper = mountMembers(true)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMemberMock).not.toHaveBeenCalled()

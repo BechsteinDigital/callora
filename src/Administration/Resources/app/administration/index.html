@@ -3,7 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
     <title>Callora Administration</title>
+    <script>
+      // Applies the stored colour-scheme choice before the first paint. Without
+      // it the page renders in the system scheme and visibly snaps over once the
+      // SPA boots. Deliberately inline, tiny and failure-tolerant.
+      ;(function () {
+        try {
+          var pref = localStorage.getItem('callora.admin.theme')
+          if (pref === 'light' || pref === 'dark') {
+            document.documentElement.setAttribute('data-theme', pref)
+          }
+        } catch (e) {
+          /* storage unavailable — the media query decides */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

@@ -1,114 +1,124 @@
 <template>
-  <section class="surfaces">
-    <h2>Surfaces</h2>
+  <div class="surfaces">
+    <CalCard flush>
+      <CalDataTable
+        :columns="columns"
+        :rows="surfaces"
+        row-key="surfaceKey"
+        :loading="loading"
+        :error="error"
+        :empty-icon="Layers"
+        empty-title="Keine Surfaces."
+        empty-description="Der öffentliche Zugang läuft über die default-Surface."
+      >
+        <template #cell-location="{ row }">
+          <span class="surfaces__location">{{ row.publicHost || '—' }}{{ row.publicPathPrefix }}</span>
+        </template>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-else-if="loading">Lädt…</p>
+        <template #cell-accessMode="{ row }">
+          <CalBadge :tone="row.accessMode === 'Public' ? 'warning' : 'neutral'">{{ row.accessMode }}</CalBadge>
+        </template>
 
-    <table v-else class="grid">
-      <thead>
-        <tr>
-          <th>Schlüssel</th>
-          <th>Name</th>
-          <th>Typ</th>
-          <th>Zugang</th>
-          <th>Host / Pfad</th>
-          <th>Aktiv</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="s in surfaces" :key="s.surfaceKey">
-          <td class="mono">{{ s.surfaceKey }}</td>
-          <td>{{ s.displayName }}</td>
-          <td>{{ s.surfaceType }}</td>
-          <td>{{ s.accessMode }}</td>
-          <td class="mono">{{ s.publicHost || '—' }}{{ s.publicPathPrefix }}</td>
-          <td>
-            <span class="badge" :class="s.isActive ? 'badge-active' : 'badge-inactive'">
-              {{ s.isActive ? 'Aktiv' : 'Inaktiv' }}
-            </span>
-          </td>
-          <td class="actions">
-            <button
+        <template #cell-isActive="{ row }">
+          <CalBadge :tone="row.isActive ? 'success' : 'neutral'" dot>
+            {{ row.isActive ? 'Aktiv' : 'Inaktiv' }}
+          </CalBadge>
+        </template>
+
+        <template #cell-actions="{ row }">
+          <div class="surfaces__actions">
+            <CalButton
               v-if="canManage"
-              type="button"
-              class="link"
-              :disabled="busyKey === s.surfaceKey"
-              @click="startEdit(s)"
+              variant="ghost"
+              size="sm"
+              :disabled="busyKey === row.surfaceKey"
+              @click="startEdit(row)"
             >
               Bearbeiten
-            </button>
-            <button
+            </CalButton>
+            <CalButton
               v-if="canManage"
-              type="button"
-              class="link-danger"
-              :disabled="busyKey === s.surfaceKey"
-              @click="remove(s)"
+              variant="danger-ghost"
+              size="sm"
+              :disabled="busyKey === row.surfaceKey"
+              @click="remove(row)"
             >
               Löschen
-            </button>
-            <ExtensionSlot name="workspaces.surfaces.row-actions" :ctx="s" />
-          </td>
-        </tr>
-        <tr v-if="!surfaces.length">
-          <td colspan="7" class="empty">Keine Surfaces. Der öffentliche Zugang läuft über die default-Surface.</td>
-        </tr>
-      </tbody>
-    </table>
+            </CalButton>
+            <ExtensionSlot name="workspaces.surfaces.row-actions" :ctx="row" />
+          </div>
+        </template>
+      </CalDataTable>
+    </CalCard>
 
-    <form v-if="canManage" class="surface-form" @submit.prevent="save">
-      <h3>{{ editingKey ? `Surface „${editingKey}“ bearbeiten` : 'Surface anlegen' }}</h3>
-      <div class="fields">
-        <label>Schlüssel
-          <BaseInput v-model="formKey" name="surfaceKey" :disabled="editingKey !== null" />
-        </label>
-        <label>Anzeigename
-          <BaseInput v-model="formDisplayName" name="surfaceDisplayName" />
-        </label>
-        <label>Typ
-          <BaseInput v-model="formType" name="surfaceType" />
-        </label>
-        <label>Zugang
-          <select v-model="formAccessMode" name="surfaceAccessMode" class="select">
+    <CalCard
+      v-if="canManage"
+      class="surfaces__editor"
+      :title="editingKey ? `Surface „${editingKey}“ bearbeiten` : 'Surface anlegen'"
+      description="Eine Surface ist ein Zugang zum Workspace — eigener Host, Pfad und Zugangsmodus."
+    >
+      <form class="surfaces__form" @submit.prevent="save">
+        <CalField v-slot="{ id }" label="Schlüssel" required :description="editingKey ? 'Nicht änderbar.' : undefined">
+          <CalInput :id="id" v-model="formKey" name="surfaceKey" :disabled="editingKey !== null" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Anzeigename" required>
+          <CalInput :id="id" v-model="formDisplayName" name="surfaceDisplayName" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Typ" required>
+          <CalInput :id="id" v-model="formType" name="surfaceType" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Zugang">
+          <CalSelect :id="id" v-model="formAccessMode" name="surfaceAccessMode">
             <option v-for="mode in accessModes" :key="mode" :value="mode">{{ mode }}</option>
-          </select>
-        </label>
-        <label>Öffentlicher Host <span class="hint">(optional)</span>
-          <BaseInput v-model="formHost" name="surfaceHost" />
-        </label>
-        <label>Pfad-Präfix
-          <BaseInput v-model="formPathPrefix" name="surfacePathPrefix" />
-        </label>
-        <label>Basis-URL <span class="hint">(optional)</span>
-          <BaseInput v-model="formBaseUrl" type="url" name="surfaceBaseUrl" />
-        </label>
-        <label>Locale <span class="hint">(optional)</span>
-          <BaseInput v-model="formLocale" name="surfaceLocale" />
-        </label>
-        <label class="check">
-          <input type="checkbox" v-model="formActive" name="surfaceActive" />
-          Aktiv
-        </label>
-      </div>
-      <div class="buttons">
-        <BaseButton type="submit" :disabled="saving || !canSubmit">
-          {{ editingKey ? 'Speichern' : 'Anlegen' }}
-        </BaseButton>
-        <button v-if="editingKey" type="button" class="link" @click="resetForm">Abbrechen</button>
-      </div>
-    </form>
-  </section>
+          </CalSelect>
+        </CalField>
+        <CalField v-slot="{ id }" label="Öffentlicher Host" hint="optional">
+          <CalInput :id="id" v-model="formHost" name="surfaceHost" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Pfad-Präfix" required>
+          <CalInput :id="id" v-model="formPathPrefix" name="surfacePathPrefix" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Basis-URL" hint="optional">
+          <CalInput :id="id" v-model="formBaseUrl" type="url" name="surfaceBaseUrl" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Locale" hint="optional">
+          <CalInput :id="id" v-model="formLocale" name="surfaceLocale" />
+        </CalField>
+        <CalField label="Zustand">
+          <CalSwitch v-model="formActive" name="surfaceActive">Aktiv</CalSwitch>
+        </CalField>
+      </form>
+
+      <template #footer>
+        <div class="buttons">
+          <CalButton v-if="editingKey" variant="ghost" @click="resetForm">Abbrechen</CalButton>
+          <CalButton variant="primary" :loading="saving" :disabled="!canSubmit" @click="save">
+            {{ editingKey ? 'Speichern' : 'Anlegen' }}
+          </CalButton>
+        </div>
+      </template>
+    </CalCard>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { Layers } from 'lucide-vue-next'
 import { workspacesApi, SURFACE_ACCESS_MODES, type WorkspaceSurface } from './workspacesApi'
-import BaseButton from '@/core/ui/BaseButton.vue'
-import BaseInput from '@/core/ui/BaseInput.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalDataTable from '@/core/ui/CalDataTable.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalSelect from '@/core/ui/CalSelect.vue'
+import CalSwitch from '@/core/ui/CalSwitch.vue'
+import type { DataTableColumn } from '@/core/ui/dataTable'
+import { confirm } from '@/core/feedback/confirm'
+import { toast } from '@/core/feedback/toasts'
 
 const props = defineProps<{ workspaceKey: string; canManage: boolean }>()
 
@@ -119,6 +129,16 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const busyKey = ref<string | null>(null)
 const saving = ref(false)
+
+const columns: readonly DataTableColumn[] = [
+  { key: 'surfaceKey', label: 'Schlüssel', mono: true },
+  { key: 'displayName', label: 'Name' },
+  { key: 'surfaceType', label: 'Typ', width: '100px' },
+  { key: 'accessMode', label: 'Zugang', width: '140px' },
+  { key: 'location', label: 'Host / Pfad' },
+  { key: 'isActive', label: 'Aktiv', width: '110px' },
+  { key: 'actions', label: '', align: 'end', width: '210px' },
+]
 
 // null = create mode; otherwise the surface key currently being edited.
 const editingKey = ref<string | null>(null)
@@ -253,6 +273,7 @@ async function save(): Promise<void> {
       isActive: draft.isActive,
     })
     await runHook('workspaces.surface.after-save', { workspaceKey: props.workspaceKey, surfaceKey: key })
+    toast.success(draft.isEdit ? `Surface „${key}“ gespeichert.` : `Surface „${key}“ angelegt.`)
     resetForm()
     await load()
   } catch (e) {
@@ -266,7 +287,13 @@ async function remove(surface: WorkspaceSurface): Promise<void> {
   if (busyKey.value === surface.surfaceKey) {
     return
   }
-  if (!window.confirm(`Surface „${surface.surfaceKey}“ löschen?`)) {
+  const confirmed = await confirm({
+    title: `Surface „${surface.surfaceKey}“ löschen?`,
+    description: `Der Zugang über ${surface.publicHost || ''}${surface.publicPathPrefix} steht danach nicht mehr zur Verfügung.`,
+    confirmLabel: 'Löschen',
+    tone: 'danger',
+  })
+  if (!confirmed) {
     return
   }
   error.value = null
@@ -285,6 +312,7 @@ async function remove(surface: WorkspaceSurface): Promise<void> {
       workspaceKey: props.workspaceKey,
       surfaceKey: surface.surfaceKey,
     })
+    toast.success(`Surface „${surface.surfaceKey}“ gelöscht.`)
     // If the edited surface was the one removed, drop the stale edit state.
     if (editingKey.value === surface.surfaceKey) {
       resetForm()
@@ -301,135 +329,31 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.surfaces {
-  margin-top: calc(var(--cal-space) * 3);
+.surfaces__location {
+  font-family: var(--cal-font-mono);
+  font-size: var(--cal-text-sm);
 }
 
-.surfaces h2 {
-  font-size: 1.1em;
-  margin-bottom: var(--cal-space);
-}
-
-.grid {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.grid th,
-.grid td {
-  text-align: left;
-  padding: var(--cal-space);
-  border-bottom: 1px solid var(--cal-color-surface);
-}
-
-.grid th {
-  color: var(--cal-color-muted);
-  font-weight: 600;
-}
-
-.mono {
-  font-family: var(--cal-font-mono, monospace);
-}
-
-.badge {
-  font-size: 0.75em;
-  border-radius: var(--cal-radius);
-  padding: 0 calc(var(--cal-space) * 0.75);
-}
-
-.badge-active {
-  color: var(--cal-color-accent);
-  border: 1px solid var(--cal-color-accent);
-}
-
-.badge-inactive {
-  color: var(--cal-color-muted);
-  border: 1px solid var(--cal-color-muted);
-}
-
-.actions {
+.surfaces__actions {
   display: flex;
-  gap: calc(var(--cal-space) * 1.5);
   align-items: center;
+  justify-content: flex-end;
+  gap: var(--cal-space-1);
 }
 
-.link {
-  background: none;
-  border: 0;
-  color: var(--cal-color-accent);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
+.surfaces__editor {
+  margin-top: var(--cal-space-4);
 }
 
-.link-danger {
-  background: none;
-  border: 0;
-  color: var(--cal-color-danger);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.link:disabled,
-.link-danger:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.surface-form {
-  margin-top: calc(var(--cal-space) * 2);
-}
-
-.surface-form h3 {
-  font-size: 1em;
-  margin-bottom: var(--cal-space);
-}
-
-.fields {
+.surfaces__form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--cal-space) calc(var(--cal-space) * 2);
-}
-
-.fields label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--cal-color-muted);
-}
-
-.fields label.check {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--cal-space);
-}
-
-.select {
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
-}
-
-.hint {
-  font-size: 0.85em;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--cal-space-4);
 }
 
 .buttons {
   display: flex;
   align-items: center;
-  gap: calc(var(--cal-space) * 2);
-  margin-top: calc(var(--cal-space) * 1.5);
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
+  gap: var(--cal-space-2);
 }
 </style>

@@ -51,7 +51,7 @@ describe('RolesListView', () => {
     expect(text).toContain('System') // badge on superadmin
     expect(text).toContain('alle (*)')
     // superadmin is read-only, support is editable → exactly one delete action.
-    expect(wrapper.findAll('.link-danger')).toHaveLength(1)
+    expect(wrapper.findAll('.is-danger-ghost')).toHaveLength(1)
   })
 
   it('hides manage actions without role.update', async () => {
@@ -60,6 +60,6 @@ describe('RolesListView', () => {
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('Neu anlegen')
-    expect(wrapper.findAll('.link-danger')).toHaveLength(0)
+    expect(wrapper.findAll('.is-danger-ghost')).toHaveLength(0)
   })
 })

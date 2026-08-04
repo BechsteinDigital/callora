@@ -1,66 +1,102 @@
 <template>
-  <section class="detail">
-    <h1>{{ isEdit ? 'Workspace bearbeiten' : 'Workspace anlegen' }}</h1>
+  <CalPage narrow>
+    <CalPageHeader
+      :title="isEdit ? (loaded?.displayName ?? 'Workspace bearbeiten') : 'Workspace anlegen'"
+      :description="isEdit ? 'Stammdaten, Mitglieder, Plugins und Surfaces dieses Arbeitsbereichs.' : undefined"
+      back-to="/workspaces"
+      back-label="Alle Workspaces"
+    >
+      <template v-if="isEdit && loaded" #title-suffix>
+        <CalBadge :tone="loaded.isActive ? 'success' : 'neutral'" dot>
+          {{ loaded.isActive ? 'Aktiv' : 'Inaktiv' }}
+        </CalBadge>
+      </template>
+    </CalPageHeader>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <CalAlert v-if="error" class="detail__error" tone="danger">{{ error }}</CalAlert>
 
-    <form class="form" @submit.prevent="save">
-      <label>Schlüssel
-        <BaseInput v-model="workspaceKey" name="workspaceKey" :disabled="isEdit" />
-      </label>
-      <label>Anzeigename
-        <BaseInput v-model="displayName" name="displayName" />
-      </label>
-      <label>Typ
-        <BaseInput v-model="workspaceType" name="workspaceType" />
-      </label>
-      <label>Öffentliche Basis-URL
-        <span class="hint">(optional)</span>
-        <BaseInput v-model="publicBaseUrl" type="url" name="publicBaseUrl" />
-      </label>
-      <label class="check">
-        <input type="checkbox" v-model="isActive" name="isActive" />
-        Aktiv
-      </label>
+    <form @submit.prevent="save">
+      <CalCard title="Stammdaten">
+        <div class="detail__fields">
+          <CalField v-slot="{ id }" label="Schlüssel" required :description="isEdit ? 'Nicht änderbar.' : undefined">
+            <CalInput :id="id" v-model="workspaceKey" name="workspaceKey" :disabled="isEdit" />
+          </CalField>
 
-      <ExtensionSlot name="workspaces.detail.fields" :ctx="{ workspaceKey: workspaceKey || null }" />
+          <CalField v-slot="{ id }" label="Anzeigename" required>
+            <CalInput :id="id" v-model="displayName" name="displayName" />
+          </CalField>
 
-      <dl v-if="isEdit && loaded" class="meta">
-        <div><dt>Tenant</dt><dd class="mono">{{ loaded.tenantKey }}</dd></div>
-        <div v-if="loaded.publicHost"><dt>Öffentlicher Host</dt><dd class="mono">{{ loaded.publicHost }}</dd></div>
-        <div><dt>Pfad-Präfix</dt><dd class="mono">{{ loaded.publicPathPrefix }}</dd></div>
-      </dl>
+          <CalField v-slot="{ id }" label="Typ" required>
+            <CalInput :id="id" v-model="workspaceType" name="workspaceType" />
+          </CalField>
 
-      <div class="buttons">
-        <BaseButton type="submit" :disabled="saving || !canSubmit">{{ isEdit ? 'Speichern' : 'Anlegen' }}</BaseButton>
-        <RouterLink class="cancel" to="/workspaces">Abbrechen</RouterLink>
-      </div>
+          <CalField v-slot="{ id }" label="Öffentliche Basis-URL" hint="optional">
+            <CalInput :id="id" v-model="publicBaseUrl" type="url" name="publicBaseUrl" :icon="Globe" />
+          </CalField>
+
+          <CalField label="Zustand">
+            <CalSwitch v-model="isActive" name="isActive">Aktiv</CalSwitch>
+          </CalField>
+
+          <ExtensionSlot name="workspaces.detail.fields" :ctx="{ workspaceKey: workspaceKey || null }" />
+        </div>
+
+        <CalDescriptionList v-if="isEdit && loaded" class="detail__meta" :items="metaItems" />
+
+        <template #footer>
+          <div class="buttons">
+            <CalButton variant="ghost" to="/workspaces">Abbrechen</CalButton>
+            <CalButton type="submit" variant="primary" :loading="saving" :disabled="!canSubmit">
+              {{ isEdit ? 'Speichern' : 'Anlegen' }}
+            </CalButton>
+          </div>
+        </template>
+      </CalCard>
     </form>
 
-    <WorkspaceMembers v-if="isEdit && loaded" :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
-    <WorkspacePlugins
-      v-if="isEdit && loaded"
-      :workspace-key="loaded.workspaceKey"
-      :can-manage="canManagePlugins"
-    />
-    <WorkspaceSurfaces v-if="isEdit && loaded" :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
-  </section>
+    <!-- The three related lists are tabbed rather than stacked: they are peers,
+         and stacking them buried Surfaces below two long tables. -->
+    <CalTabs v-if="isEdit && loaded" v-model="activeTab" class="detail__tabs" :tabs="tabs">
+      <template #members>
+        <WorkspaceMembers :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
+      </template>
+      <template #plugins>
+        <WorkspacePlugins :workspace-key="loaded.workspaceKey" :can-manage="canManagePlugins" />
+      </template>
+      <template #surfaces>
+        <WorkspaceSurfaces :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
+      </template>
+    </CalTabs>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { Globe, Layers, Puzzle, Users } from 'lucide-vue-next'
 import { workspacesApi, type Workspace } from './workspacesApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
-import BaseButton from '@/core/ui/BaseButton.vue'
-import BaseInput from '@/core/ui/BaseInput.vue'
 import WorkspaceMembers from './WorkspaceMembers.vue'
 import WorkspacePlugins from './WorkspacePlugins.vue'
 import WorkspaceSurfaces from './WorkspaceSurfaces.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalDescriptionList from '@/core/ui/CalDescriptionList.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import CalSwitch from '@/core/ui/CalSwitch.vue'
+import CalTabs from '@/core/ui/CalTabs.vue'
+import type { DescriptionItem } from '@/core/ui/descriptionList'
+import type { TabItem } from '@/core/ui/tabs'
+import { toast } from '@/core/feedback/toasts'
 
 const route = useRoute()
 const router = useRouter()
@@ -75,6 +111,13 @@ const isActive = ref(true)
 const loaded = ref<Workspace | null>(null)
 const error = ref<string | null>(null)
 const saving = ref(false)
+const activeTab = ref('members')
+
+const tabs: readonly TabItem[] = [
+  { value: 'members', label: 'Mitglieder', icon: Users },
+  { value: 'plugins', label: 'Plugins', icon: Puzzle },
+  { value: 'surfaces', label: 'Surfaces', icon: Layers },
+]
 
 // Member add/remove goes through the PUT/DELETE member routes, gated on
 // workspace.update — same key that guards the workspace upsert. UI-only.
@@ -86,6 +129,19 @@ const canManagePlugins = computed(() => hasPermission(ctx.value, 'plugin.execute
 const canSubmit = computed(
   () => workspaceKey.value.trim() !== '' && displayName.value.trim() !== '' && workspaceType.value.trim() !== '',
 )
+
+const metaItems = computed<DescriptionItem[]>(() => {
+  const workspace = loaded.value
+  if (!workspace) {
+    return []
+  }
+  const items: DescriptionItem[] = [{ term: 'Mandant', value: workspace.tenantKey, mono: true }]
+  if (workspace.publicHost) {
+    items.push({ term: 'Öffentlicher Host', value: workspace.publicHost, mono: true })
+  }
+  items.push({ term: 'Pfad-Präfix', value: workspace.publicPathPrefix, mono: true })
+  return items
+})
 
 // Resolve the workspaces service through the override registry: a plugin may replace it.
 const api = useService('workspacesApi', workspacesApi)
@@ -150,6 +206,7 @@ async function save(): Promise<void> {
       publicBaseUrl: draft.publicBaseUrl,
     })
     await runHook('workspaces.after-save', { workspaceKey: key })
+    toast.success(isEdit.value ? `Workspace „${key}“ gespeichert.` : `Workspace „${key}“ angelegt.`)
     router.push('/workspaces')
   } catch (e) {
     error.value = (e as Error).message
@@ -162,75 +219,29 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.detail {
-  padding: calc(var(--cal-space) * 3);
-  max-width: 920px;
+.detail__error {
+  margin-bottom: var(--cal-space-4);
 }
 
-.form {
+.detail__fields {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--cal-space) * 1.5);
-  margin-top: calc(var(--cal-space) * 2);
-  max-width: 460px;
+  gap: var(--cal-space-5);
 }
 
-.form label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--cal-color-muted);
+.detail__meta {
+  margin-top: var(--cal-space-5);
+  padding-top: var(--cal-space-4);
+  border-top: 1px solid var(--cal-border-subtle);
 }
 
-.form label.check {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--cal-space);
-}
-
-.hint {
-  font-size: 0.85em;
-}
-
-.meta {
-  margin: 0;
-  padding: var(--cal-space) 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.meta div {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--cal-space);
-}
-
-.meta dt {
-  color: var(--cal-color-muted);
-}
-
-.meta dd {
-  margin: 0;
-}
-
-.mono {
-  font-family: var(--cal-font-mono, monospace);
+.detail__tabs {
+  margin-top: var(--cal-space-6);
 }
 
 .buttons {
   display: flex;
   align-items: center;
-  gap: calc(var(--cal-space) * 2);
-  margin-top: var(--cal-space);
-}
-
-.cancel {
-  color: var(--cal-color-muted);
-  text-decoration: none;
-}
-
-.error {
-  color: var(--cal-color-danger);
+  gap: var(--cal-space-2);
 }
 </style>

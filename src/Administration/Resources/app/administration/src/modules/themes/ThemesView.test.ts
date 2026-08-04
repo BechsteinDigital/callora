@@ -28,6 +28,11 @@ vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: contex
 // The settings editor has its own test; stub it so the assignment tests stay focused.
 vi.mock('./ThemeSettings.vue', () => ({ default: { name: 'ThemeSettings', template: '<div />' } }))
 
+// The confirm dialog is a promise-based store now, not window.confirm — mock it so
+// each test can decide what the operator answers.
+const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }))
+vi.mock('@/core/feedback/confirm', () => ({ confirm: confirmMock }))
+
 function ctx(permissions: string[]): AdminContext {
   return {
     userId: 'u',
@@ -74,6 +79,7 @@ beforeEach(() => {
   listDefsMock.mockReset().mockResolvedValue([def({})])
   getAssignmentMock.mockReset().mockResolvedValue(null)
   assignMock.mockReset().mockResolvedValue(assignment({}))
+  confirmMock.mockReset().mockResolvedValue(true)
   clearMock.mockReset().mockResolvedValue(undefined)
   resetHooks()
   resetServices()
@@ -104,8 +110,8 @@ describe('ThemesView', () => {
     const wrapper = mount(ThemesView)
     await flushPromises()
 
-    expect(wrapper.find('form.assign').exists()).toBe(false)
-    expect(wrapper.find('.link-danger').exists()).toBe(false)
+    expect(wrapper.find('form.themes__form').exists()).toBe(false)
+    expect(wrapper.find('.is-danger-ghost').exists()).toBe(false)
   })
 
   it('assigns the selected theme definition', async () => {
@@ -118,7 +124,7 @@ describe('ThemesView', () => {
     await flushPromises()
 
     await wrapper.find('select[name="themeDefinition"]').setValue('1')
-    await wrapper.find('form.assign').trigger('submit')
+    await wrapper.find('form.themes__form').trigger('submit')
     await flushPromises()
 
     expect(assignMock).toHaveBeenCalledWith('workspace-a', 'b.theme', '3.0.0')
@@ -127,11 +133,11 @@ describe('ThemesView', () => {
   it('clears the assignment after confirmation', async () => {
     contextRef.value = ctx(['*'])
     getAssignmentMock.mockResolvedValueOnce(assignment({}))
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     const wrapper = mount(ThemesView)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(clearMock).toHaveBeenCalledWith('workspace-a')
@@ -143,7 +149,7 @@ describe('ThemesView', () => {
     const wrapper = mount(ThemesView)
     await flushPromises()
 
-    await wrapper.find('form.assign').trigger('submit')
+    await wrapper.find('form.themes__form').trigger('submit')
     await flushPromises()
 
     expect(assignMock).not.toHaveBeenCalled()
