@@ -1,45 +1,56 @@
 <template>
-  <section class="theme-settings">
-    <h2>Theme-Einstellungen</h2>
+  <CalCard title="Theme-Einstellungen" description="Werte, die das zugewiesene Theme zur Anpassung anbietet.">
+    <CalAlert v-if="error" class="settings__message" tone="danger">{{ error }}</CalAlert>
+    <CalAlert v-if="notice" class="settings__message" tone="success" dismissible @dismiss="notice = null">
+      {{ notice }}
+    </CalAlert>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="notice" class="notice">{{ notice }}</p>
-    <p v-if="loading">Lädt…</p>
+    <div v-if="loading" class="settings__skeletons">
+      <CalSkeleton v-for="n in 3" :key="n" height="36px" />
+    </div>
 
-    <template v-else>
-      <p v-if="!activeFields.length" class="empty">Dieses Theme stellt keine Einstellungen bereit.</p>
+    <CalEmptyState v-else-if="!activeFields.length" compact title="Dieses Theme stellt keine Einstellungen bereit." />
 
-      <form v-else class="fields" @submit.prevent="save">
-        <label v-for="field in activeFields" :key="field.settingKey" class="field">
-          <span class="label">
-            {{ field.label }}
-            <span v-if="field.groupName" class="group">· {{ field.groupName }}</span>
-          </span>
-          <span v-if="field.description" class="desc">{{ field.description }}</span>
-          <BaseInput
-            v-model="inputs[field.settingKey]"
-            :name="`theme-setting-${field.settingKey}`"
-            :placeholder="displayJsonValue(field.defaultValueJson) || '(Default)'"
-            :disabled="!canManage"
-          />
-        </label>
+    <form v-else class="settings__fields" @submit.prevent="save">
+      <CalField
+        v-for="field in activeFields"
+        :key="field.settingKey"
+        v-slot="{ id }"
+        :label="field.label"
+        :hint="field.groupName || undefined"
+        :description="field.description || undefined"
+      >
+        <CalInput
+          :id="id"
+          v-model="inputs[field.settingKey]"
+          :name="`theme-setting-${field.settingKey}`"
+          :placeholder="displayJsonValue(field.defaultValueJson) || '(Default)'"
+          :disabled="!canManage"
+        />
+      </CalField>
+    </form>
 
-        <div v-if="canManage" class="buttons">
-          <BaseButton type="submit" :disabled="saving">{{ saving ? 'Speichert…' : 'Speichern' }}</BaseButton>
-        </div>
-      </form>
+    <template v-if="canManage && activeFields.length" #footer>
+      <div class="buttons">
+        <CalButton variant="primary" :loading="saving" @click="save">Speichern</CalButton>
+      </div>
     </template>
-  </section>
+  </CalCard>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { themesApi, type ThemeSettingDefinition } from './themesApi'
 import { coerceInputToJsonValue, displayJsonValue } from './themesValues'
-import BaseButton from '@/core/ui/BaseButton.vue'
-import BaseInput from '@/core/ui/BaseInput.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalEmptyState from '@/core/ui/CalEmptyState.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalSkeleton from '@/core/ui/CalSkeleton.vue'
 
 const props = defineProps<{ workspaceKey: string; canManage: boolean }>()
 
@@ -52,9 +63,7 @@ const error = ref<string | null>(null)
 const notice = ref<string | null>(null)
 const saving = ref(false)
 
-const activeFields = computed(() =>
-  fields.value.filter((f) => f.isActive).sort((a, b) => a.sortOrder - b.sortOrder),
-)
+const activeFields = computed(() => fields.value.filter((f) => f.isActive).sort((a, b) => a.sortOrder - b.sortOrder))
 
 function hydrate(defs: ThemeSettingDefinition[], valuesByKey: Record<string, string>): void {
   fields.value = defs
@@ -116,55 +125,20 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.theme-settings {
-  margin-top: calc(var(--cal-space) * 3);
+.settings__message {
+  margin-bottom: var(--cal-space-4);
 }
 
-.theme-settings h2 {
-  font-size: 1.1em;
-  margin-bottom: var(--cal-space);
-}
-
-.fields {
+.settings__skeletons,
+.settings__fields {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--cal-space) * 1.5);
-  max-width: 460px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.label {
-  color: var(--cal-color-text);
-}
-
-.group {
-  color: var(--cal-color-muted);
-  font-size: 0.85em;
-}
-
-.desc {
-  color: var(--cal-color-muted);
-  font-size: 0.85em;
+  gap: var(--cal-space-4);
 }
 
 .buttons {
-  margin-top: var(--cal-space);
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
-}
-
-.notice {
-  color: var(--cal-color-accent);
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space-2);
 }
 </style>

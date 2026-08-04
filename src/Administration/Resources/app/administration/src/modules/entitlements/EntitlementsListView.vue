@@ -1,80 +1,94 @@
 <template>
-  <section class="entitlements">
-    <header class="head">
-      <h1>Berechtigungen</h1>
-      <div class="head-actions">
+  <CalPage>
+    <CalPageHeader title="Berechtigungen" description="Welche Plugins in welchem Bereich genutzt werden dürfen.">
+      <template #actions>
         <ExtensionSlot name="entitlements.list.toolbar" />
-      </div>
-    </header>
+      </template>
+    </CalPageHeader>
 
-    <p class="intro">
-      Steuert, welche Plugins in einem Bereich genutzt werden dürfen. Ohne Eintrag gilt die
-      Standard-Berechtigung. Ein Workspace-Eintrag sticht einen Tenant-Eintrag, dieser die Plattform.
-    </p>
+    <CalAlert class="entitlements__intro" tone="info" title="So wird ausgewertet">
+      Ohne Eintrag gilt die Standard-Berechtigung des Plugins. Ein Workspace-Eintrag sticht einen
+      Mandanten-Eintrag, dieser die Plattform-Ebene.
+    </CalAlert>
 
-    <form v-if="canManage" class="grant" @submit.prevent="grant">
-      <input v-model="form.pluginId" name="pluginId" class="grant-input" placeholder="Plugin-ID" />
-      <input v-model="form.tenantKey" name="tenantKey" class="grant-input" placeholder="Tenant (optional)" />
-      <input v-model="form.workspaceKey" name="workspaceKey" class="grant-input" placeholder="Workspace (optional)" />
-      <BaseButton type="submit" :disabled="granting || !form.pluginId.trim()">
-        {{ granting ? 'Erteilt…' : 'Erteilen' }}
-      </BaseButton>
-    </form>
+    <CalCard v-if="canManage" class="entitlements__grant" title="Berechtigung erteilen">
+      <form class="entitlements__form" @submit.prevent="grant">
+        <CalField v-slot="{ id }" label="Plugin-ID">
+          <CalInput :id="id" v-model="form.pluginId" name="pluginId" placeholder="communication" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Mandant" hint="optional">
+          <CalInput :id="id" v-model="form.tenantKey" name="tenantKey" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Workspace" hint="optional">
+          <CalInput :id="id" v-model="form.workspaceKey" name="workspaceKey" />
+        </CalField>
+        <CalButton type="submit" variant="primary" :loading="granting" :disabled="!form.pluginId.trim()">
+          Erteilen
+        </CalButton>
+      </form>
+    </CalCard>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-else-if="loading">Lädt…</p>
+    <CalCard flush>
+      <CalDataTable
+        :columns="columns"
+        :rows="entitlements"
+        :row-key="rowKey"
+        :loading="loading"
+        :error="error"
+        :empty-icon="KeyRound"
+        empty-title="Keine Berechtigungseinträge."
+        empty-description="Es gilt überall die Standard-Berechtigung der jeweiligen Plugins."
+      >
+        <template #cell-scope="{ row }">{{ scopeLabel(row) }}</template>
 
-    <table v-else class="grid">
-      <thead>
-        <tr>
-          <th>Plugin</th>
-          <th>Bereich</th>
-          <th>Status</th>
-          <th>Quelle</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="e in entitlements" :key="rowKey(e)">
-          <td class="mono">{{ e.pluginId }}</td>
-          <td>{{ scopeLabel(e) }}</td>
-          <td>
-            <span class="badge" :class="e.isEntitled ? 'badge-active' : 'badge-inactive'">
-              {{ e.isEntitled ? 'Berechtigt' : 'Gesperrt' }}
-            </span>
-          </td>
-          <td class="mono">{{ e.source }}</td>
-          <td class="actions">
-            <button
+        <template #cell-isEntitled="{ row }">
+          <CalBadge :tone="row.isEntitled ? 'success' : 'danger'" dot>
+            {{ row.isEntitled ? 'Berechtigt' : 'Gesperrt' }}
+          </CalBadge>
+        </template>
+
+        <template #cell-actions="{ row }">
+          <div class="entitlements__actions">
+            <!-- Both directions are the same reversible switch, so neither gets
+                 the destructive treatment. -->
+            <CalButton
               v-if="canManage"
-              type="button"
-              class="link"
-              :disabled="busyKey === rowKey(e)"
-              @click="toggle(e)"
+              variant="ghost"
+              size="sm"
+              :disabled="busyKey === rowKey(row)"
+              @click="toggle(row)"
             >
-              {{ e.isEntitled ? 'Entziehen' : 'Erteilen' }}
-            </button>
-            <ExtensionSlot name="entitlements.list.row-actions" :ctx="e" />
-          </td>
-        </tr>
-        <tr v-if="!entitlements.length">
-          <td colspan="5" class="empty">Keine Berechtigungseinträge — es gilt die Standard-Berechtigung.</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+              {{ row.isEntitled ? 'Entziehen' : 'Erteilen' }}
+            </CalButton>
+            <ExtensionSlot name="entitlements.list.row-actions" :ctx="row" />
+          </div>
+        </template>
+      </CalDataTable>
+    </CalCard>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { KeyRound } from 'lucide-vue-next'
 import { entitlementsApi, type Entitlement, type SetEntitlementInput } from './entitlementsApi'
 import { scopeLabel } from './entitlementsFormat'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
-import BaseButton from '@/core/ui/BaseButton.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalDataTable from '@/core/ui/CalDataTable.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import type { DataTableColumn } from '@/core/ui/dataTable'
+import { toast } from '@/core/feedback/toasts'
 
 const entitlements = ref<Entitlement[]>([])
 const loading = ref(true)
@@ -86,6 +100,14 @@ const form = reactive({ pluginId: '', tenantKey: '', workspaceKey: '' })
 
 const ctx = useAuthStore().context
 const canManage = computed(() => hasPermission(ctx.value, 'plugin.execute'))
+
+const columns: readonly DataTableColumn[] = [
+  { key: 'pluginId', label: 'Plugin', mono: true },
+  { key: 'scope', label: 'Bereich' },
+  { key: 'isEntitled', label: 'Status', width: '140px' },
+  { key: 'source', label: 'Quelle', mono: true, width: '140px' },
+  { key: 'actions', label: '', align: 'end', width: '140px' },
+]
 
 // Resolve the entitlements service through the override registry: a plugin may replace it.
 const api = useService('entitlementsApi', entitlementsApi)
@@ -141,6 +163,7 @@ async function grant(): Promise<void> {
       form.pluginId = ''
       form.tenantKey = ''
       form.workspaceKey = ''
+      toast.success(`Berechtigung für „${pluginId}“ erteilt.`)
       await load()
     }
   } catch (e) {
@@ -165,6 +188,11 @@ async function toggle(entitlement: Entitlement): Promise<void> {
   busyKey.value = key
   try {
     if (await setEntitlement(entitlement.isEntitled ? 'revoke' : 'grant', input)) {
+      toast.success(
+        entitlement.isEntitled
+          ? `Berechtigung für „${entitlement.pluginId}“ entzogen.`
+          : `Berechtigung für „${entitlement.pluginId}“ erteilt.`,
+      )
       await load()
     }
   } catch (e) {
@@ -178,110 +206,30 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.entitlements {
-  padding: calc(var(--cal-space) * 3);
+.entitlements__intro {
+  margin-bottom: var(--cal-space-4);
 }
 
-.head {
+.entitlements__grant {
+  margin-bottom: var(--cal-space-4);
+}
+
+.entitlements__form {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--cal-space);
-}
-
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--cal-space);
-}
-
-.intro {
-  color: var(--cal-color-muted);
-  margin-bottom: calc(var(--cal-space) * 2);
-  max-width: 640px;
-}
-
-.grant {
-  display: flex;
-  gap: var(--cal-space);
-  align-items: center;
+  align-items: flex-end;
+  gap: var(--cal-space-3);
   flex-wrap: wrap;
-  margin-bottom: calc(var(--cal-space) * 2);
 }
 
-.grant-input {
+.entitlements__form > :deep(.cal-field) {
   flex: 1;
-  min-width: 160px;
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
+  min-width: 180px;
 }
 
-.grid {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.grid th,
-.grid td {
-  text-align: left;
-  padding: var(--cal-space);
-  border-bottom: 1px solid var(--cal-color-surface);
-}
-
-.grid th {
-  color: var(--cal-color-muted);
-  font-weight: 600;
-}
-
-.mono {
-  font-family: var(--cal-font-mono, monospace);
-  color: var(--cal-color-muted);
-}
-
-.badge {
-  font-size: 0.75em;
-  border-radius: var(--cal-radius);
-  padding: 0 calc(var(--cal-space) * 0.75);
-  border: 1px solid currentColor;
-}
-
-.badge-active {
-  color: var(--cal-color-accent);
-}
-
-.badge-inactive {
-  color: var(--cal-color-danger);
-}
-
-.actions {
+.entitlements__actions {
   display: flex;
-  gap: calc(var(--cal-space) * 1.5);
   align-items: center;
-}
-
-.link {
-  background: none;
-  border: 0;
-  color: var(--cal-color-accent);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.link:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
+  justify-content: flex-end;
+  gap: var(--cal-space-1);
 }
 </style>

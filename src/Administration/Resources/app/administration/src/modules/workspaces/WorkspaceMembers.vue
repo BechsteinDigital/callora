@@ -1,65 +1,87 @@
 <template>
-  <section class="members">
-    <h2>Mitglieder</h2>
+  <div class="members">
+    <CalCard flush>
+      <CalDataTable
+        :columns="columns"
+        :rows="members"
+        row-key="userId"
+        :loading="loading"
+        :error="error"
+        :empty-icon="Users"
+        empty-title="Keine Mitglieder."
+        empty-description="Weisen Sie unten einen Benutzer mit einer Rolle zu."
+      >
+        <template #cell-displayName="{ row }">
+          <span class="members__name">
+            {{ row.displayName || row.userId }}
+            <span v-if="row.displayName" class="members__id">{{ row.userId }}</span>
+          </span>
+        </template>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-else-if="loading">Lädt…</p>
+        <template #cell-role="{ row }">
+          <CalBadge tone="neutral">{{ row.role }}</CalBadge>
+        </template>
 
-    <table v-else class="grid">
-      <thead>
-        <tr>
-          <th>Benutzer</th>
-          <th>Rolle</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="m in members" :key="m.userId">
-          <td>
-            {{ m.displayName || m.userId }}
-            <span v-if="m.displayName" class="sub mono">{{ m.userId }}</span>
-          </td>
-          <td>{{ m.role }}</td>
-          <td class="actions">
-            <button
+        <template #cell-actions="{ row }">
+          <div class="members__actions">
+            <CalButton
               v-if="canManage"
-              type="button"
-              class="link-danger"
-              :disabled="busyUserId === m.userId"
-              @click="remove(m)"
+              variant="danger-ghost"
+              size="sm"
+              :disabled="busyUserId === row.userId"
+              @click="remove(row)"
             >
               Entfernen
-            </button>
-            <ExtensionSlot name="workspaces.members.row-actions" :ctx="m" />
-          </td>
-        </tr>
-        <tr v-if="!members.length">
-          <td colspan="3" class="empty">Keine Mitglieder.</td>
-        </tr>
-      </tbody>
-    </table>
+            </CalButton>
+            <ExtensionSlot name="workspaces.members.row-actions" :ctx="row" />
+          </div>
+        </template>
+      </CalDataTable>
 
-    <div v-if="!loading && nextCursor" class="more">
-      <button type="button" class="link" :disabled="loadingMore" @click="loadMore">
-        {{ loadingMore ? 'Lädt…' : `Mehr laden (${members.length}${total ? ` von ${total}` : ''})` }}
-      </button>
-    </div>
+      <template v-if="!loading && nextCursor" #footer>
+        <CalButton :loading="loadingMore" @click="loadMore">
+          Mehr laden ({{ members.length }}{{ total ? ` von ${total}` : '' }})
+        </CalButton>
+      </template>
+    </CalCard>
 
-    <form v-if="canManage" class="add" @submit.prevent="add">
-      <input v-model="userId" name="memberUserId" class="add-input" placeholder="Benutzer-Login" />
-      <input v-model="role" name="memberRole" class="add-input" placeholder="Rolle" />
-      <BaseButton type="submit" :disabled="adding || !userId.trim() || !role.trim()">Zuweisen</BaseButton>
-    </form>
-  </section>
+    <CalCard v-if="canManage" class="members__add" title="Mitglied zuweisen">
+      <form class="members__form" @submit.prevent="add">
+        <CalField v-slot="{ id }" label="Benutzer-Login">
+          <CalInput :id="id" v-model="userId" name="memberUserId" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Rolle">
+          <CalInput :id="id" v-model="role" name="memberRole" />
+        </CalField>
+        <CalButton
+          type="submit"
+          variant="primary"
+          :loading="adding"
+          :disabled="!userId.trim() || !role.trim()"
+        >
+          Zuweisen
+        </CalButton>
+      </form>
+    </CalCard>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { Users } from 'lucide-vue-next'
 import { workspacesApi, type WorkspaceMember } from './workspacesApi'
-import BaseButton from '@/core/ui/BaseButton.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalDataTable from '@/core/ui/CalDataTable.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import type { DataTableColumn } from '@/core/ui/dataTable'
+import { confirm } from '@/core/feedback/confirm'
+import { toast } from '@/core/feedback/toasts'
 
 const props = defineProps<{ workspaceKey: string; canManage: boolean }>()
 
@@ -73,6 +95,12 @@ const userId = ref('')
 const role = ref('')
 const adding = ref(false)
 const busyUserId = ref<string | null>(null)
+
+const columns: readonly DataTableColumn[] = [
+  { key: 'displayName', label: 'Benutzer' },
+  { key: 'role', label: 'Rolle', width: '200px' },
+  { key: 'actions', label: '', align: 'end', width: '140px' },
+]
 
 // Resolve the workspaces service through the override registry: a plugin may replace it.
 const api = useService('workspacesApi', workspacesApi)
@@ -136,6 +164,7 @@ async function add(): Promise<void> {
   try {
     await api.upsertMember(props.workspaceKey, draft.userId, draft.role)
     await runHook('workspaces.member.after-save', { workspaceKey: props.workspaceKey, userId: id })
+    toast.success(`„${id}“ als „${roleName}“ zugewiesen.`)
     userId.value = ''
     role.value = ''
     await load()
@@ -152,7 +181,13 @@ async function remove(member: WorkspaceMember): Promise<void> {
   if (busyUserId.value === member.userId) {
     return
   }
-  if (!window.confirm(`Mitglied „${member.userId}“ aus dem Workspace entfernen?`)) {
+  const confirmed = await confirm({
+    title: `Mitglied „${member.userId}“ entfernen?`,
+    description: 'Der Zugriff auf diesen Workspace endet sofort. Das Konto selbst bleibt bestehen.',
+    confirmLabel: 'Entfernen',
+    tone: 'danger',
+  })
+  if (!confirmed) {
     return
   }
   error.value = null
@@ -168,6 +203,7 @@ async function remove(member: WorkspaceMember): Promise<void> {
   try {
     await api.removeMember(props.workspaceKey, member.userId)
     await runHook('workspaces.member.after-remove', { workspaceKey: props.workspaceKey, userId: member.userId })
+    toast.success(`„${member.userId}“ entfernt.`)
     await load()
   } catch (e) {
     error.value = (e as Error).message
@@ -180,92 +216,39 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.members {
-  margin-top: calc(var(--cal-space) * 3);
-}
-
-.members h2 {
-  font-size: 1.1em;
-  margin-bottom: var(--cal-space);
-}
-
-.grid {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.grid th,
-.grid td {
-  text-align: left;
-  padding: var(--cal-space);
-  border-bottom: 1px solid var(--cal-color-surface);
-}
-
-.grid th {
-  color: var(--cal-color-muted);
-  font-weight: 600;
-}
-
-.sub {
-  display: block;
-  font-size: 0.8em;
-  color: var(--cal-color-muted);
-}
-
-.mono {
-  font-family: var(--cal-font-mono, monospace);
-}
-
-.actions {
+.members__name {
   display: flex;
-  gap: calc(var(--cal-space) * 1.5);
+  flex-direction: column;
+  gap: 1px;
+}
+
+.members__id {
+  font-family: var(--cal-font-mono);
+  font-size: var(--cal-text-sm);
+  font-weight: var(--cal-weight-normal);
+  color: var(--cal-text-muted);
+}
+
+.members__actions {
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
+  gap: var(--cal-space-1);
 }
 
-.link-danger {
-  background: none;
-  border: 0;
-  color: var(--cal-color-danger);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
+.members__add {
+  margin-top: var(--cal-space-4);
 }
 
-.more {
-  margin-top: var(--cal-space);
-}
-
-.link {
-  background: none;
-  border: 0;
-  color: var(--cal-color-accent);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.add {
+.members__form {
   display: flex;
-  gap: var(--cal-space);
-  margin-top: calc(var(--cal-space) * 1.5);
+  align-items: flex-end;
+  gap: var(--cal-space-3);
+  flex-wrap: wrap;
 }
 
-.add-input {
+.members__form > :deep(.cal-field) {
   flex: 1;
-  max-width: 220px;
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
+  min-width: 200px;
 }
 </style>

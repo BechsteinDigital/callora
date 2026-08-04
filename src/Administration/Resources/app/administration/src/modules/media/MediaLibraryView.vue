@@ -1,73 +1,105 @@
 <template>
-  <section class="media">
-    <header class="head">
-      <h1>Medien</h1>
-      <div class="head-actions">
+  <CalPage>
+    <CalPageHeader title="Medien" description="Dateien des aktiven Workspaces.">
+      <template #actions>
         <ExtensionSlot name="media.toolbar" />
+      </template>
+    </CalPageHeader>
+
+    <CalAlert v-if="error" class="media__message" tone="danger">{{ error }}</CalAlert>
+    <CalAlert v-if="notice" class="media__message" tone="success" dismissible @dismiss="notice = null">
+      {{ notice }}
+    </CalAlert>
+
+    <CalCard v-if="canManage && activeWorkspace" class="media__upload" title="Hochladen">
+      <form class="media__form" @submit.prevent="upload">
+        <CalField v-slot="{ id }" label="Datei" :description="`Erlaubt: ${acceptTypes}`">
+          <input :id="id" ref="fileInput" type="file" name="file" :accept="acceptTypes" class="media__file" @change="onFileChange" />
+        </CalField>
+        <CalField v-slot="{ id }" label="Ordner" hint="optional">
+          <CalInput :id="id" v-model="folder" name="folder" :icon="Folder" />
+        </CalField>
+        <CalButton type="submit" variant="primary" :icon="Upload" :loading="uploading" :disabled="!selectedFile">
+          Hochladen
+        </CalButton>
+      </form>
+    </CalCard>
+
+    <CalCard v-if="loading" class="media__state">
+      <div class="media__skeletons">
+        <CalSkeleton v-for="n in 4" :key="n" height="150px" />
       </div>
-    </header>
+    </CalCard>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="notice" class="notice">{{ notice }}</p>
-
-    <form v-if="canManage && activeWorkspace" class="upload" @submit.prevent="upload">
-      <input
-        ref="fileInput"
-        type="file"
-        name="file"
-        :accept="acceptTypes"
-        class="file"
-        @change="onFileChange"
+    <CalCard v-else-if="!activeWorkspace">
+      <CalEmptyState
+        :icon="Boxes"
+        title="Kein Workspace ausgewählt."
+        description="Wählen Sie oben rechts einen Workspace, um dessen Medien zu sehen."
       />
-      <input v-model="folder" name="folder" class="folder" placeholder="Ordner (optional)" />
-      <BaseButton type="submit" :disabled="uploading || !selectedFile">
-        {{ uploading ? 'Lädt hoch…' : 'Hochladen' }}
-      </BaseButton>
-    </form>
+    </CalCard>
 
-    <p v-if="loading">Lädt…</p>
-    <p v-else-if="!activeWorkspace" class="empty">Kein Workspace ausgewählt.</p>
+    <CalCard v-else-if="!items.length">
+      <CalEmptyState
+        :icon="Image"
+        title="Keine Medien vorhanden."
+        description="Laden Sie Bilder oder Audiodateien hoch, um sie in Surfaces und Flows zu verwenden."
+      />
+    </CalCard>
 
-    <ul v-else class="grid">
-      <li v-for="item in items" :key="item.id" class="card">
-        <div class="preview">
-          <img v-if="isImageType(item.contentType)" :src="contentUrl(item)" :alt="item.fileName" class="thumb" />
-          <audio v-else-if="isAudioType(item.contentType)" :src="contentUrl(item)" controls class="audio" />
-          <span v-else class="file-icon">Datei</span>
+    <ul v-else class="media__grid">
+      <li v-for="item in items" :key="item.id" class="media__item">
+        <div class="media__preview">
+          <img v-if="isImageType(item.contentType)" :src="contentUrl(item)" :alt="item.fileName" class="media__thumb" />
+          <audio v-else-if="isAudioType(item.contentType)" :src="contentUrl(item)" controls class="media__audio" />
+          <CalIcon v-else class="media__file-icon" :icon="FileText" size="xl" />
         </div>
-        <div class="meta">
-          <a :href="contentUrl(item)" target="_blank" rel="noopener" class="name">{{ item.fileName }}</a>
-          <span class="sub">{{ item.contentType }} · {{ formatBytes(item.sizeBytes) }} · {{ item.folder }}</span>
+        <div class="media__meta">
+          <a :href="contentUrl(item)" target="_blank" rel="noopener" class="media__name" :title="item.fileName">
+            {{ item.fileName }}
+          </a>
+          <span class="media__sub">{{ formatBytes(item.sizeBytes) }} · {{ item.folder }}</span>
         </div>
-        <div class="card-actions">
-          <button
+        <div class="media__actions">
+          <CalButton
             v-if="canManage"
-            type="button"
-            class="link-danger"
+            variant="danger-ghost"
+            size="sm"
             :disabled="busyId === item.id"
             @click="remove(item)"
           >
             Löschen
-          </button>
+          </CalButton>
           <ExtensionSlot name="media.item-actions" :ctx="item" />
         </div>
       </li>
-      <li v-if="!items.length" class="empty">Keine Medien vorhanden.</li>
     </ul>
-  </section>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { Boxes, FileText, Folder, Image, Upload } from 'lucide-vue-next'
 import { mediaApi, MEDIA_ALLOWED_CONTENT_TYPES, MEDIA_MAX_SIZE_BYTES, type MediaItem } from './mediaApi'
 import { formatBytes, isImageType, isAudioType } from './mediaFormat'
 import { useWorkspaceContext } from '@/core/workspace/workspaceContext'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
-import BaseButton from '@/core/ui/BaseButton.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalEmptyState from '@/core/ui/CalEmptyState.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalIcon from '@/core/ui/CalIcon.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import CalSkeleton from '@/core/ui/CalSkeleton.vue'
+import { confirm } from '@/core/feedback/confirm'
+import { toast } from '@/core/feedback/toasts'
 
 const ctx = useAuthStore().context
 const canManage = computed(() => hasPermission(ctx.value, 'media.manage'))
@@ -176,7 +208,13 @@ async function remove(item: MediaItem): Promise<void> {
   if (busyId.value === item.id) {
     return
   }
-  if (!window.confirm(`Datei „${item.fileName}“ löschen?`)) {
+  const confirmed = await confirm({
+    title: `Datei „${item.fileName}“ löschen?`,
+    description: 'Verweise aus Surfaces oder Flows auf diese Datei laufen danach ins Leere.',
+    confirmLabel: 'Löschen',
+    tone: 'danger',
+  })
+  if (!confirmed) {
     return
   }
   error.value = null
@@ -190,6 +228,7 @@ async function remove(item: MediaItem): Promise<void> {
   try {
     await api.remove(activeWorkspace.value, item.id)
     await runHook('media.after-delete', { workspaceKey: activeWorkspace.value, id: item.id })
+    toast.success(`„${item.fileName}“ gelöscht.`)
     await loadMedia()
   } catch (e) {
     error.value = (e as Error).message
@@ -219,127 +258,118 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.media {
-  padding: calc(var(--cal-space) * 3);
+.media__message {
+  margin-bottom: var(--cal-space-4);
 }
 
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: calc(var(--cal-space) * 2);
+.media__upload {
+  margin-bottom: var(--cal-space-4);
 }
 
-.head-actions {
+.media__form {
   display: flex;
-  align-items: center;
-  gap: var(--cal-space);
-}
-
-.upload {
-  display: flex;
-  gap: var(--cal-space);
-  align-items: center;
-  margin-bottom: calc(var(--cal-space) * 2);
+  align-items: flex-end;
+  gap: var(--cal-space-4);
   flex-wrap: wrap;
 }
 
-.folder {
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
+.media__form > :deep(.cal-field) {
+  flex: 1;
+  min-width: 220px;
+}
+
+.media__file {
+  font-size: var(--cal-text-md);
+  color: var(--cal-text-secondary);
+}
+
+.media__file::file-selector-button {
+  margin-right: var(--cal-space-3);
+  padding: var(--cal-space-1) var(--cal-space-3);
+  border: 1px solid var(--cal-border);
+  border-radius: var(--cal-radius-sm);
+  background: var(--cal-surface-raised);
+  color: var(--cal-text);
   font: inherit;
+  cursor: pointer;
 }
 
-.grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.media__state {
+  margin-bottom: var(--cal-space-4);
+}
+
+.media__skeletons {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: calc(var(--cal-space) * 2);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--cal-space-4);
 }
 
-.card {
-  border: 1px solid var(--cal-color-surface);
-  border-radius: var(--cal-radius);
-  padding: var(--cal-space);
+.media__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--cal-space-4);
+}
+
+.media__item {
   display: flex;
   flex-direction: column;
-  gap: var(--cal-space);
+  background: var(--cal-surface);
+  border: 1px solid var(--cal-border);
+  border-radius: var(--cal-radius-lg);
+  overflow: hidden;
+  transition: border-color var(--cal-duration-fast) var(--cal-ease);
 }
 
-.preview {
+.media__item:hover {
+  border-color: var(--cal-border-strong);
+}
+
+.media__preview {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
-  background: var(--cal-color-surface);
-  border-radius: var(--cal-radius);
+  height: 140px;
+  background: var(--cal-surface-inset);
+  color: var(--cal-text-muted);
+  overflow: hidden;
 }
 
-.thumb {
-  max-width: 100%;
-  max-height: 160px;
-  object-fit: contain;
-}
-
-.audio {
+.media__thumb {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.file-icon {
-  color: var(--cal-color-muted);
+.media__audio {
+  width: 90%;
 }
 
-.meta {
+.media__meta {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: var(--cal-space-3) var(--cal-space-3) var(--cal-space-2);
+  min-width: 0;
 }
 
-.name {
-  color: var(--cal-color-accent);
-  text-decoration: none;
-  word-break: break-all;
+.media__name {
+  font-size: var(--cal-text-md);
+  font-weight: var(--cal-weight-medium);
+  color: var(--cal-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.sub {
-  font-size: 0.8em;
-  color: var(--cal-color-muted);
+.media__sub {
+  font-size: var(--cal-text-sm);
+  color: var(--cal-text-muted);
 }
 
-.card-actions {
+.media__actions {
   display: flex;
-  gap: calc(var(--cal-space) * 1.5);
   align-items: center;
-}
-
-.link-danger {
-  background: none;
-  border: 0;
-  color: var(--cal-color-danger);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.link-danger:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
-}
-
-.notice {
-  color: var(--cal-color-accent);
+  gap: var(--cal-space-1);
+  padding: 0 var(--cal-space-2) var(--cal-space-2);
 }
 </style>
