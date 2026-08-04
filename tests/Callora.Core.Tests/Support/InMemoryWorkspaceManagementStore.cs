@@ -12,6 +12,11 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
     private readonly ConcurrentDictionary<string, bool> _tenants = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, SurfaceOverlay> _surfaceOverlays = new(StringComparer.OrdinalIgnoreCase);
 
+    // The route of each workspace's "default" surface. The workspace itself has no
+    // address (ADR-014 §5), so public resolution matches against these.
+    private readonly ConcurrentDictionary<string, SurfaceRoute> _defaultSurfaceRoutes =
+        new(StringComparer.OrdinalIgnoreCase);
+
     public Task<IReadOnlyList<WorkspaceSnapshot>> ListAsync(
         string? tenantKey = null,
         CancellationToken cancellationToken = default)
@@ -67,7 +72,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         string displayName,
         string workspaceType,
         bool isActive,
-        string? publicBaseUrl = null,
+        string? defaultSurfaceBaseUrl = null,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -82,7 +87,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             return Task.FromResult(new WorkspaceUpsertResult(WorkspaceUpsertStatus.TenantNotFound));
         }
 
-        if (!WorkspacePublicUrlNormalizer.TryNormalize(publicBaseUrl, out var publicUrl, out _))
+        if (!WorkspacePublicUrlNormalizer.TryNormalize(defaultSurfaceBaseUrl, out var publicUrl, out _))
         {
             return Task.FromResult(new WorkspaceUpsertResult(WorkspaceUpsertStatus.InvalidPublicUrl));
         }
@@ -97,9 +102,6 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             workspaceType.Trim(),
             isActive,
             tenantIsActive,
-            publicUrl.PublicBaseUrl,
-            publicUrl.PublicHost,
-            publicUrl.PublicPathPrefix,
             existed ? existing!.ThemePluginId : null,
             existed ? existing!.ThemeVersion : null,
             existed ? existing!.ThemeAssignedBy : null,
@@ -107,6 +109,15 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             existed ? existing!.CreatedAtUtc : nowUtc,
             nowUtc);
         _workspaces[normalizedWorkspaceKey] = workspace;
+        if (!string.IsNullOrWhiteSpace(defaultSurfaceBaseUrl) ||
+            !_defaultSurfaceRoutes.ContainsKey(normalizedWorkspaceKey))
+        {
+            _defaultSurfaceRoutes[normalizedWorkspaceKey] = new SurfaceRoute(
+                publicUrl.PublicBaseUrl,
+                publicUrl.PublicHost,
+                publicUrl.PublicPathPrefix);
+        }
+
         _members.TryAdd(normalizedWorkspaceKey, new ConcurrentDictionary<string, WorkspaceMemberSnapshot>(StringComparer.OrdinalIgnoreCase));
         return Task.FromResult(new WorkspaceUpsertResult(WorkspaceUpsertStatus.Ok, workspace));
     }
@@ -118,16 +129,8 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-
-        var candidates = _workspaces.Values.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(tenantKey))
-        {
-            var normalizedTenantKey = tenantKey.Trim();
-            candidates = candidates.Where(x => string.Equals(x.TenantKey, normalizedTenantKey, StringComparison.OrdinalIgnoreCase));
-        }
-
-        var resolved = WorkspacePublicRouteMatcher.ResolveBest(candidates, requestHost, requestPath);
-        return Task.FromResult(resolved);
+        var match = MatchDefaultSurface(requestHost, requestPath, tenantKey);
+        return Task.FromResult(match?.Workspace);
     }
 
     public Task<WorkspaceSurfaceSnapshot?> ResolveSurfaceByPublicRouteAsync(
@@ -137,29 +140,18 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-
-        var candidates = _workspaces.Values.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(tenantKey))
-        {
-            var normalizedTenantKey = tenantKey.Trim();
-            candidates = candidates.Where(x => string.Equals(x.TenantKey, normalizedTenantKey, StringComparison.OrdinalIgnoreCase));
-        }
-
-        var workspace = WorkspacePublicRouteMatcher.ResolveBest(candidates, requestHost, requestPath);
-        if (workspace is null)
+        var match = MatchDefaultSurface(requestHost, requestPath, tenantKey);
+        if (match is null)
         {
             return Task.FromResult<WorkspaceSurfaceSnapshot?>(null);
         }
 
-        // This fake models one surface per workspace (its public route). A per-surface
-        // overlay lets a test pin the surface's own AccessMode/SurfaceKey/Locale; without
-        // one, AccessMode derives from the workspace access policy so existing seeds keep
-        // their behaviour.
+        var workspace = match.Value.Workspace;
+        var route = match.Value.Route;
+
+        // This fake models one surface per workspace. A per-surface overlay lets a
+        // test pin AccessMode/SurfaceKey/Locale; without one the surface is public.
         _surfaceOverlays.TryGetValue(workspace.WorkspaceKey, out var overlay);
-        var accessMode = overlay?.AccessMode ??
-            (workspace.SurfaceAccessPolicy == SurfaceAccessPolicy.Authenticated
-                ? SurfaceAccessMode.Authenticated
-                : SurfaceAccessMode.Public);
 
         var snapshot = new WorkspaceSurfaceSnapshot(
             Guid.NewGuid(),
@@ -167,23 +159,80 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             overlay?.SurfaceKey ?? "default",
             workspace.DisplayName,
             "spa",
-            workspace.PublicBaseUrl,
-            workspace.PublicHost,
-            workspace.PublicPathPrefix,
-            accessMode,
+            route.PublicBaseUrl,
+            route.PublicHost,
+            route.PublicPathPrefix,
+            overlay?.AccessMode ?? SurfaceAccessMode.Public,
             overlay?.Locale,
             null,
             null,
             workspace.ThemePluginId,
             workspace.ThemeVersion,
-            workspace.IsActive,
-            workspace.CreatedAtUtc,
-            workspace.UpdatedAtUtc)
+            IsActive: true,
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow)
         {
-            TenantKey = workspace.TenantKey
+            TenantKey = workspace.TenantKey,
         };
+
         return Task.FromResult<WorkspaceSurfaceSnapshot?>(snapshot);
     }
+
+    /// <summary>
+    /// Best-matching default surface for a request, mirroring the EF store's
+    /// host/path scoring.
+    /// </summary>
+    private (WorkspaceSnapshot Workspace, SurfaceRoute Route)? MatchDefaultSurface(
+        string requestHost,
+        string requestPath,
+        string? tenantKey)
+    {
+        var normalizedHost = (requestHost ?? string.Empty).Trim().ToLowerInvariant();
+        var normalizedPath = string.IsNullOrWhiteSpace(requestPath) ? "/" : requestPath.Trim();
+
+        (WorkspaceSnapshot Workspace, SurfaceRoute Route)? best = null;
+        var bestScore = int.MinValue;
+
+        foreach (var workspace in _workspaces.Values)
+        {
+            if (!string.IsNullOrWhiteSpace(tenantKey) &&
+                !string.Equals(workspace.TenantKey, tenantKey.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (!workspace.IsActive || !workspace.TenantIsActive)
+            {
+                continue;
+            }
+
+            if (!_defaultSurfaceRoutes.TryGetValue(workspace.WorkspaceKey, out var route))
+            {
+                continue;
+            }
+
+            if (!PublicRouteMatching.HostMatches(route.PublicHost, normalizedHost) ||
+                !PublicRouteMatching.PathMatches(route.PublicPathPrefix, normalizedPath))
+            {
+                continue;
+            }
+
+            var score = PublicRouteMatching.Score(route.PublicHost, route.PublicPathPrefix);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = (workspace, route);
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>Route of a workspace's default surface.</summary>
+    private readonly record struct SurfaceRoute(
+        string? PublicBaseUrl,
+        string? PublicHost,
+        string PublicPathPrefix);
 
     public Task<bool> RemoveAsync(
         string workspaceKey,
@@ -258,21 +307,6 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         return Task.FromResult(true);
     }
 
-    public Task<WorkspaceSnapshot?> SetSurfaceAccessPolicyAsync(
-        string workspaceKey,
-        SurfaceAccessPolicy policy,
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        if (string.IsNullOrWhiteSpace(workspaceKey) || !_workspaces.TryGetValue(workspaceKey.Trim(), out var workspace))
-        {
-            return Task.FromResult<WorkspaceSnapshot?>(null);
-        }
-
-        var updated = workspace with { SurfaceAccessPolicy = policy, UpdatedAtUtc = DateTimeOffset.UtcNow };
-        _workspaces[updated.WorkspaceKey] = updated;
-        return Task.FromResult<WorkspaceSnapshot?>(updated);
-    }
 
     public Task<IReadOnlyList<WorkspaceMemberSnapshot>> ListMembersAsync(
         string workspaceKey,

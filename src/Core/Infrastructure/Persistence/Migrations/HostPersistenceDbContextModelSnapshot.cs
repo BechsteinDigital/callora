@@ -1197,30 +1197,6 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("PublicBaseUrl")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)")
-                        .HasColumnName("public_base_url");
-
-                    b.Property<string>("PublicHost")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("public_host");
-
-                    b.Property<string>("PublicPathPrefix")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("public_path_prefix");
-
-                    b.Property<string>("SurfaceAccessPolicy")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasDefaultValue("Public")
-                        .HasColumnName("surface_access_policy");
-
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 

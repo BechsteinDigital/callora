@@ -30,8 +30,22 @@
             <CalInput :id="id" v-model="workspaceType" name="workspaceType" />
           </CalField>
 
-          <CalField v-slot="{ id }" label="Öffentliche Basis-URL" hint="optional">
-            <CalInput :id="id" v-model="publicBaseUrl" type="url" name="publicBaseUrl" :icon="Globe" />
+          <CalField
+            v-slot="{ id }"
+            label="Öffentliche Basis-URL"
+            hint="optional"
+            :description="isEdit
+              ? 'Wird im Reiter „Surfaces“ je Zugang gepflegt.'
+              : 'Richtet den Standard-Zugang („default“-Surface) ein. Weitere Zugänge legen Sie danach unter „Surfaces“ an.'"
+          >
+            <CalInput
+              :id="id"
+              v-model="defaultSurfaceBaseUrl"
+              type="url"
+              name="defaultSurfaceBaseUrl"
+              :icon="Globe"
+              :disabled="isEdit"
+            />
           </CalField>
 
           <CalField label="Zustand">
@@ -106,7 +120,7 @@ const isEdit = computed(() => routeKey.value !== null)
 const workspaceKey = ref('')
 const displayName = ref('')
 const workspaceType = ref('')
-const publicBaseUrl = ref('')
+const defaultSurfaceBaseUrl = ref('')
 const isActive = ref(true)
 const loaded = ref<Workspace | null>(null)
 const error = ref<string | null>(null)
@@ -136,10 +150,6 @@ const metaItems = computed<DescriptionItem[]>(() => {
     return []
   }
   const items: DescriptionItem[] = [{ term: 'Mandant', value: workspace.tenantKey, mono: true }]
-  if (workspace.publicHost) {
-    items.push({ term: 'Öffentlicher Host', value: workspace.publicHost, mono: true })
-  }
-  items.push({ term: 'Pfad-Präfix', value: workspace.publicPathPrefix, mono: true })
   return items
 })
 
@@ -156,7 +166,7 @@ async function load(): Promise<void> {
     workspaceKey.value = workspace.workspaceKey
     displayName.value = workspace.displayName
     workspaceType.value = workspace.workspaceType
-    publicBaseUrl.value = workspace.publicBaseUrl ?? ''
+    
     isActive.value = workspace.isActive
   } catch (e) {
     error.value = (e as Error).message
@@ -171,7 +181,7 @@ interface WorkspaceSaveDraft {
   displayName: string
   workspaceType: string
   isActive: boolean
-  publicBaseUrl: string | null
+  defaultSurfaceBaseUrl: string | null
 }
 
 async function save(): Promise<void> {
@@ -188,7 +198,7 @@ async function save(): Promise<void> {
     displayName: displayName.value,
     workspaceType: workspaceType.value,
     isActive: isActive.value,
-    publicBaseUrl: publicBaseUrl.value || null,
+    defaultSurfaceBaseUrl: defaultSurfaceBaseUrl.value || null,
   }
   const before = await runHook('workspaces.before-save', draft)
   if (before.canceled) {
@@ -203,7 +213,7 @@ async function save(): Promise<void> {
       displayName: draft.displayName,
       workspaceType: draft.workspaceType,
       isActive: draft.isActive,
-      publicBaseUrl: draft.publicBaseUrl,
+      defaultSurfaceBaseUrl: draft.defaultSurfaceBaseUrl,
     })
     await runHook('workspaces.after-save', { workspaceKey: key })
     toast.success(isEdit.value ? `Workspace „${key}“ gespeichert.` : `Workspace „${key}“ angelegt.`)

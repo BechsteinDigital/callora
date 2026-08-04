@@ -7,13 +7,9 @@ public sealed record WorkspaceApiResponse(
     string WorkspaceType,
     bool IsActive,
     bool TenantIsActive,
-    string? PublicBaseUrl,
-    string? PublicHost,
-    string PublicPathPrefix,
     string? ThemePluginId,
     string? ThemeVersion,
     string? ThemeAssignedBy,
     DateTimeOffset? ThemeAssignedAtUtc,
-    string SurfaceAccessPolicy,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc);

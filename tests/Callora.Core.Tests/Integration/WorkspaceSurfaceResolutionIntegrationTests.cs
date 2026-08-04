@@ -47,7 +47,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         var workspaceStore = new EfWorkspaceManagementStore(context);
 
         var upsert = await workspaceStore.UpsertAsync(
-            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, publicBaseUrl: "portal.example.de/app");
+            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "portal.example.de/app");
         Assert.Equal(WorkspaceUpsertStatus.Ok, upsert.Status);
 
         // Write-through created a default surface mirroring the public route.
@@ -74,7 +74,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         var surfaceStore = new EfWorkspaceSurfaceStore(context);
 
         _ = await workspaceStore.UpsertAsync(
-            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, publicBaseUrl: "primary.example.de");
+            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "primary.example.de");
 
         // A second access surface on the same workspace, different host.
         await surfaceStore.UpsertAsync("workspace-a", new WorkspaceSurfaceInput(
@@ -108,7 +108,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         var surfaceStore = new EfWorkspaceSurfaceStore(context);
 
         _ = await workspaceStore.UpsertAsync(
-            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, publicBaseUrl: "primary.example.de");
+            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "primary.example.de");
 
         await surfaceStore.UpsertAsync("workspace-a", new WorkspaceSurfaceInput(
             SurfaceKey: "partner",
@@ -151,7 +151,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         var surfaceStore = new EfWorkspaceSurfaceStore(context);
 
         _ = await workspaceStore.UpsertAsync(
-            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, publicBaseUrl: "primary.example.de");
+            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "primary.example.de");
 
         // An inactive surface on its own host must never be served.
         await surfaceStore.UpsertAsync("workspace-a", new WorkspaceSurfaceInput(
@@ -181,7 +181,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         var workspaceStore = new EfWorkspaceManagementStore(context);
 
         _ = await workspaceStore.UpsertAsync(
-            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, publicBaseUrl: "portal.example.de/app");
+            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "portal.example.de/app");
 
         // The workspace-level resolver keeps returning the owning workspace unchanged after
         // the helper extraction — the new surface resolver is purely additive.
@@ -202,9 +202,9 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         var workspaceStore = new EfWorkspaceManagementStore(context);
 
         _ = await workspaceStore.UpsertAsync(
-            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, publicBaseUrl: "first.example.de");
+            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "first.example.de");
         _ = await workspaceStore.UpsertAsync(
-            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, publicBaseUrl: "second.example.de/x");
+            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "second.example.de/x");
 
         var defaults = (await new EfWorkspaceSurfaceStore(context).ListAsync("workspace-a"))
             .Where(s => s.SurfaceKey == "default")

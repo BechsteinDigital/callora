@@ -28,7 +28,7 @@ describe('workspacesApi', () => {
       displayName: 'Acme',
       workspaceType: 'standard',
       isActive: true,
-      publicBaseUrl: null,
+      defaultSurfaceBaseUrl: null,
     })
     expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme')
     expect(fetchMock.mock.calls[0][1].method).toBe('PUT')
@@ -36,7 +36,7 @@ describe('workspacesApi', () => {
       displayName: 'Acme',
       workspaceType: 'standard',
       isActive: true,
-      publicBaseUrl: null,
+      defaultSurfaceBaseUrl: null,
     })
   })
 
@@ -51,7 +51,7 @@ describe('workspacesApi', () => {
   it('surfaces the RFC 9457 problem detail on error', async () => {
     globalThis.fetch = vi.fn().mockResolvedValueOnce(respond({ detail: 'Workspace public URL is invalid.' }, 400))
     await expect(
-      workspacesApi.upsert('acme', { displayName: 'A', workspaceType: 't', isActive: true, publicBaseUrl: 'bad' }),
+      workspacesApi.upsert('acme', { displayName: 'A', workspaceType: 't', isActive: true, defaultSurfaceBaseUrl: 'bad' }),
     ).rejects.toThrow('Workspace public URL is invalid.')
   })
 
