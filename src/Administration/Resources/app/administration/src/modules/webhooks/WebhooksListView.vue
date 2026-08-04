@@ -1,107 +1,124 @@
 <template>
-  <section class="webhooks">
-    <header class="head">
-      <h1>Webhooks</h1>
-      <div class="head-actions">
+  <CalPage wide>
+    <CalPageHeader title="Webhooks" description="Ereignisse der Plattform an externe Ziele zustellen.">
+      <template #actions>
         <ExtensionSlot name="webhooks.list.toolbar" />
-      </div>
-    </header>
+      </template>
+    </CalPageHeader>
 
-    <form v-if="canManage" class="create" @submit.prevent="create">
-      <div class="row">
-        <input v-model="form.eventName" name="eventName" class="create-input" placeholder="Event (z. B. workspace.created)" />
-        <input v-model="form.targetUrl" name="targetUrl" class="create-input wide" placeholder="Ziel-URL (https://…)" />
-      </div>
-      <div class="row">
-        <input
-          v-model="form.secret"
-          name="secret"
-          type="password"
-          class="create-input"
-          placeholder="Signatur-Secret"
-          autocomplete="new-password"
-        />
-        <input v-model="form.workspaceKey" name="workspaceKey" class="create-input" placeholder="Workspace (optional)" />
-        <label class="check">
-          <input type="checkbox" v-model="form.includeSensitiveData" name="includeSensitiveData" />
-          Sensible Daten senden
-        </label>
-        <BaseButton type="submit" :disabled="creating || !canSubmit">
-          {{ creating ? 'Legt an…' : 'Anlegen' }}
-        </BaseButton>
-      </div>
-    </form>
+    <CalCard
+      v-if="canManage"
+      class="webhooks__create"
+      title="Webhook anlegen"
+      description="Das Secret signiert jede Zustellung und wird danach nie wieder angezeigt."
+    >
+      <form class="webhooks__form" @submit.prevent="create">
+        <div class="webhooks__row">
+          <CalField v-slot="{ id }" label="Event">
+            <CalInput :id="id" v-model="form.eventName" name="eventName" placeholder="workspace.created" />
+          </CalField>
+          <CalField v-slot="{ id }" class="webhooks__grow" label="Ziel-URL">
+            <CalInput :id="id" v-model="form.targetUrl" name="targetUrl" placeholder="https://…" />
+          </CalField>
+        </div>
+        <div class="webhooks__row">
+          <CalField v-slot="{ id }" label="Signatur-Secret">
+            <CalInput
+              :id="id"
+              v-model="form.secret"
+              name="secret"
+              type="password"
+              autocomplete="new-password"
+              :icon="KeyRound"
+            />
+          </CalField>
+          <CalField v-slot="{ id }" label="Workspace" hint="optional">
+            <CalInput :id="id" v-model="form.workspaceKey" name="workspaceKey" />
+          </CalField>
+        </div>
+        <div class="webhooks__row is-actions">
+          <CalCheckbox v-model="form.includeSensitiveData" name="includeSensitiveData">
+            Sensible Daten senden
+          </CalCheckbox>
+          <CalButton type="submit" variant="primary" :icon="Plus" :loading="creating" :disabled="!canSubmit">
+            Anlegen
+          </CalButton>
+        </div>
+      </form>
+    </CalCard>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-else-if="loading">Lädt…</p>
+    <CalCard flush>
+      <CalDataTable
+        :columns="columns"
+        :rows="webhooks"
+        row-key="id"
+        :loading="loading"
+        :error="error"
+        :empty-icon="Webhook"
+        empty-title="Keine Webhooks."
+        empty-description="Legen Sie ein Abonnement an, um Ereignisse an ein externes System zu melden."
+      >
+        <template #cell-includeSensitiveData="{ row }">
+          <CalBadge :tone="row.includeSensitiveData ? 'warning' : 'neutral'">
+            {{ row.includeSensitiveData ? 'Ja' : 'Nein' }}
+          </CalBadge>
+        </template>
 
-    <table v-else class="grid">
-      <thead>
-        <tr>
-          <th>Event</th>
-          <th>Ziel-URL</th>
-          <th>Workspace</th>
-          <th>Sensibel</th>
-          <th>Status</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="w in webhooks" :key="w.id">
-          <td class="mono">{{ w.eventName }}</td>
-          <td class="url">{{ w.targetUrl }}</td>
-          <td class="mono">{{ w.workspaceKey ?? '—' }}</td>
-          <td>{{ w.includeSensitiveData ? 'Ja' : 'Nein' }}</td>
-          <td>
-            <span class="badge" :class="w.isActive ? 'badge-active' : 'badge-inactive'">
-              {{ w.isActive ? 'Aktiv' : 'Inaktiv' }}
-            </span>
-          </td>
-          <td class="actions">
-            <button
+        <template #cell-isActive="{ row }">
+          <CalBadge :tone="row.isActive ? 'success' : 'neutral'" dot>
+            {{ row.isActive ? 'Aktiv' : 'Inaktiv' }}
+          </CalBadge>
+        </template>
+
+        <template #cell-actions="{ row }">
+          <div class="webhooks__actions">
+            <CalButton v-if="canManage" variant="ghost" size="sm" :disabled="busyId === row.id" @click="toggle(row)">
+              {{ row.isActive ? 'Deaktivieren' : 'Aktivieren' }}
+            </CalButton>
+            <CalButton
               v-if="canManage"
-              type="button"
-              class="link"
-              :disabled="busyId === w.id"
-              @click="toggle(w)"
-            >
-              {{ w.isActive ? 'Deaktivieren' : 'Aktivieren' }}
-            </button>
-            <button
-              v-if="canManage"
-              type="button"
-              class="link-danger"
-              :disabled="busyId === w.id"
-              @click="remove(w)"
+              variant="danger-ghost"
+              size="sm"
+              :disabled="busyId === row.id"
+              @click="remove(row)"
             >
               Löschen
-            </button>
-            <ExtensionSlot name="webhooks.list.row-actions" :ctx="w" />
-          </td>
-        </tr>
-        <tr v-if="!webhooks.length">
-          <td colspan="6" class="empty">Keine Webhooks.</td>
-        </tr>
-      </tbody>
-    </table>
+            </CalButton>
+            <ExtensionSlot name="webhooks.list.row-actions" :ctx="row" />
+          </div>
+        </template>
+      </CalDataTable>
 
-    <div v-if="!loading && nextCursor" class="more">
-      <button type="button" class="link" :disabled="loadingMore" @click="loadMore">
-        {{ loadingMore ? 'Lädt…' : `Mehr laden (${webhooks.length}${total ? ` von ${total}` : ''})` }}
-      </button>
-    </div>
-  </section>
+      <template v-if="!loading && nextCursor" #footer>
+        <CalButton :loading="loadingMore" @click="loadMore">
+          Mehr laden ({{ webhooks.length }}{{ total ? ` von ${total}` : '' }})
+        </CalButton>
+      </template>
+    </CalCard>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { KeyRound, Plus, Webhook } from 'lucide-vue-next'
 import { webhooksApi, type WebhookSubscription } from './webhooksApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
-import BaseButton from '@/core/ui/BaseButton.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalCheckbox from '@/core/ui/CalCheckbox.vue'
+import CalDataTable from '@/core/ui/CalDataTable.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import type { DataTableColumn } from '@/core/ui/dataTable'
+import { confirm } from '@/core/feedback/confirm'
+import { toast } from '@/core/feedback/toasts'
 
 const webhooks = ref<WebhookSubscription[]>([])
 const loading = ref(true)
@@ -125,6 +142,15 @@ const canManage = computed(() => hasPermission(ctx.value, 'webhook.manage'))
 const canSubmit = computed(
   () => form.eventName.trim() !== '' && form.targetUrl.trim() !== '' && form.secret.trim() !== '',
 )
+
+const columns: readonly DataTableColumn[] = [
+  { key: 'eventName', label: 'Event', mono: true },
+  { key: 'targetUrl', label: 'Ziel-URL' },
+  { key: 'workspaceKey', label: 'Workspace', mono: true, width: '150px' },
+  { key: 'includeSensitiveData', label: 'Sensibel', width: '110px' },
+  { key: 'isActive', label: 'Status', width: '120px' },
+  { key: 'actions', label: '', align: 'end', width: '230px' },
+]
 
 // Resolve the webhooks service through the override registry: a plugin may replace it.
 const api = useService('webhooksApi', webhooksApi)
@@ -186,6 +212,7 @@ async function create(): Promise<void> {
   try {
     await api.create({ ...draft, secret: form.secret })
     await runHook('webhooks.after-create', { eventName: draft.eventName })
+    toast.success(`Webhook für „${draft.eventName}“ angelegt.`)
     form.eventName = ''
     form.targetUrl = ''
     form.secret = ''
@@ -207,6 +234,7 @@ async function toggle(webhook: WebhookSubscription): Promise<void> {
   busyId.value = webhook.id
   try {
     await api.setActive(webhook.id, !webhook.isActive)
+    toast.success(webhook.isActive ? 'Webhook deaktiviert.' : 'Webhook aktiviert.')
     await load()
   } catch (e) {
     error.value = (e as Error).message
@@ -219,7 +247,13 @@ async function remove(webhook: WebhookSubscription): Promise<void> {
   if (busyId.value === webhook.id) {
     return
   }
-  if (!window.confirm(`Webhook „${webhook.eventName}“ → ${webhook.targetUrl} löschen?`)) {
+  const confirmed = await confirm({
+    title: `Webhook „${webhook.eventName}“ löschen?`,
+    description: `Zustellungen an ${webhook.targetUrl} enden sofort.`,
+    confirmLabel: 'Löschen',
+    tone: 'danger',
+  })
+  if (!confirmed) {
     return
   }
   error.value = null
@@ -232,6 +266,7 @@ async function remove(webhook: WebhookSubscription): Promise<void> {
   try {
     await api.remove(webhook.id)
     await runHook('webhooks.after-delete', { id: webhook.id })
+    toast.success('Webhook gelöscht.')
     await load()
   } catch (e) {
     error.value = (e as Error).message
@@ -244,143 +279,41 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.webhooks {
-  padding: calc(var(--cal-space) * 3);
+.webhooks__create {
+  margin-bottom: var(--cal-space-4);
 }
 
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: calc(var(--cal-space) * 2);
-}
-
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--cal-space);
-}
-
-.create {
+.webhooks__form {
   display: flex;
   flex-direction: column;
-  gap: var(--cal-space);
-  margin-bottom: calc(var(--cal-space) * 2);
+  gap: var(--cal-space-4);
 }
 
-.create .row {
+.webhooks__row {
   display: flex;
-  gap: var(--cal-space);
-  align-items: center;
+  align-items: flex-end;
+  gap: var(--cal-space-4);
   flex-wrap: wrap;
 }
 
-.create-input {
+.webhooks__row > :deep(.cal-field) {
   flex: 1;
-  min-width: 180px;
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
+  min-width: 220px;
 }
 
-.create-input.wide {
-  flex: 2;
+.webhooks__grow {
+  flex: 2 !important;
 }
 
-.check {
-  display: flex;
-  align-items: center;
-  gap: var(--cal-space);
-  color: var(--cal-color-muted);
-  white-space: nowrap;
-}
-
-.grid {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.grid th,
-.grid td {
-  text-align: left;
-  padding: var(--cal-space);
-  border-bottom: 1px solid var(--cal-color-surface);
-}
-
-.grid th {
-  color: var(--cal-color-muted);
-  font-weight: 600;
-}
-
-.mono {
-  font-family: var(--cal-font-mono, monospace);
-  color: var(--cal-color-muted);
-}
-
-.url {
-  max-width: 320px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.badge {
-  font-size: 0.75em;
-  border-radius: var(--cal-radius);
-  padding: 0 calc(var(--cal-space) * 0.75);
-  border: 1px solid currentColor;
-}
-
-.badge-active {
-  color: var(--cal-color-accent);
-}
-
-.badge-inactive {
-  color: var(--cal-color-muted);
-}
-
-.actions {
-  display: flex;
-  gap: calc(var(--cal-space) * 1.5);
+.webhooks__row.is-actions {
+  justify-content: space-between;
   align-items: center;
 }
 
-.link {
-  background: none;
-  border: 0;
-  color: var(--cal-color-accent);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.link-danger {
-  background: none;
-  border: 0;
-  color: var(--cal-color-danger);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.link:disabled,
-.link-danger:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.more {
-  margin-top: var(--cal-space);
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
+.webhooks__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--cal-space-1);
 }
 </style>

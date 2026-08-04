@@ -1,118 +1,132 @@
 <template>
-  <section class="flows">
-    <header class="head">
-      <h1>Flows</h1>
-      <div class="head-actions">
+  <CalPage>
+    <CalPageHeader title="Flows" description="Regeln, die auf Ereignisse des aktiven Workspaces reagieren.">
+      <template #actions>
         <ExtensionSlot name="flows.list.toolbar" />
-      </div>
-    </header>
+      </template>
+    </CalPageHeader>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <CalCard v-if="!loading && !activeWorkspace">
+      <CalEmptyState
+        :icon="Boxes"
+        title="Kein Workspace ausgewählt."
+        description="Wählen Sie oben rechts einen Workspace, um dessen Flows zu sehen."
+      />
+    </CalCard>
 
-    <p v-if="loading">Lädt…</p>
-    <p v-else-if="!activeWorkspace" class="empty">Kein Workspace ausgewählt.</p>
+    <template v-else>
+      <CalCard flush>
+        <CalDataTable
+          :columns="columns"
+          :rows="flows"
+          row-key="id"
+          :loading="loading"
+          :error="error"
+          :empty-icon="Workflow"
+          empty-title="Keine Flows in diesem Workspace."
+          empty-description="Ein Flow verknüpft ein Ereignis mit Aktionen — etwa „Anruf beendet“ mit „Webhook senden“."
+        >
+          <template #cell-isActive="{ row }">
+            <CalBadge :tone="row.isActive ? 'success' : 'neutral'" dot>
+              {{ row.isActive ? 'Aktiv' : 'Inaktiv' }}
+            </CalBadge>
+          </template>
 
-    <div v-else class="body">
-      <table class="grid">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Trigger</th>
-            <th>Priorität</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="flow in flows" :key="flow.id">
-            <td>{{ flow.name }}</td>
-            <td class="mono">{{ flow.triggerEvent }}</td>
-            <td>{{ flow.priority }}</td>
-            <td>
-              <span class="badge" :class="flow.isActive ? 'badge-active' : 'badge-inactive'">
-                {{ flow.isActive ? 'Aktiv' : 'Inaktiv' }}
-              </span>
-            </td>
-            <td class="actions">
-              <button
-                v-if="canManage"
-                type="button"
-                class="link"
-                :disabled="busyId === flow.id"
-                @click="startEdit(flow)"
-              >
+          <template #cell-actions="{ row }">
+            <div class="flows__actions">
+              <CalButton v-if="canManage" variant="ghost" size="sm" :disabled="busyId === row.id" @click="startEdit(row)">
                 Bearbeiten
-              </button>
-              <button
+              </CalButton>
+              <CalButton
                 v-if="canManage"
-                type="button"
-                class="link-danger"
-                :disabled="busyId === flow.id"
-                @click="remove(flow)"
+                variant="danger-ghost"
+                size="sm"
+                :disabled="busyId === row.id"
+                @click="remove(row)"
               >
                 Löschen
-              </button>
-              <ExtensionSlot name="flows.list.row-actions" :ctx="flow" />
-            </td>
-          </tr>
-          <tr v-if="!flows.length">
-            <td colspan="5" class="empty">Keine Flows in diesem Workspace.</td>
-          </tr>
-        </tbody>
-      </table>
+              </CalButton>
+              <ExtensionSlot name="flows.list.row-actions" :ctx="row" />
+            </div>
+          </template>
+        </CalDataTable>
 
-      <div v-if="nextCursor" class="more">
-        <button type="button" class="link" :disabled="loadingMore" @click="loadMore">
-          {{ loadingMore ? 'Lädt…' : `Mehr laden (${flows.length}${total ? ` von ${total}` : ''})` }}
-        </button>
-      </div>
+        <template v-if="nextCursor" #footer>
+          <CalButton :loading="loadingMore" @click="loadMore">
+            Mehr laden ({{ flows.length }}{{ total ? ` von ${total}` : '' }})
+          </CalButton>
+        </template>
+      </CalCard>
 
-      <form v-if="canManage" class="flow-form" @submit.prevent="save">
-        <h3>{{ editingId ? 'Flow bearbeiten' : 'Flow anlegen' }}</h3>
-        <div class="fields">
-          <label>Name
-            <BaseInput v-model="form.name" name="flowName" />
-          </label>
-          <label>Trigger-Event
-            <BaseInput v-model="form.triggerEvent" name="flowTrigger" />
-          </label>
-          <label>Priorität
-            <input v-model.number="form.priority" type="number" name="flowPriority" class="num" />
-          </label>
-          <label class="check">
-            <input type="checkbox" v-model="form.isActive" name="flowActive" />
-            Aktiv
-          </label>
-        </div>
-        <label class="json">Bedingungen <span class="hint">(JSON, optional)</span>
-          <textarea v-model="form.conditionsText" name="flowConditions" class="code" rows="4" />
-        </label>
-        <label class="json">Aktionen <span class="hint">(JSON-Array)</span>
-          <textarea v-model="form.actionsText" name="flowActions" class="code" rows="4" />
-        </label>
-        <div class="buttons">
-          <BaseButton type="submit" :disabled="saving || !canSubmit">
-            {{ editingId ? 'Speichern' : 'Anlegen' }}
-          </BaseButton>
-          <button v-if="editingId" type="button" class="link" @click="resetForm">Abbrechen</button>
-        </div>
-      </form>
-    </div>
-  </section>
+      <CalCard
+        v-if="canManage"
+        class="flows__editor"
+        :title="editingId ? 'Flow bearbeiten' : 'Flow anlegen'"
+        description="Bedingungen und Aktionen werden als JSON hinterlegt."
+      >
+        <form class="flows__form" @submit.prevent="save">
+          <div class="flows__fields">
+            <CalField v-slot="{ id }" label="Name" required>
+              <CalInput :id="id" v-model="form.name" name="flowName" />
+            </CalField>
+            <CalField v-slot="{ id }" label="Trigger-Event" required>
+              <CalInput :id="id" v-model="form.triggerEvent" name="flowTrigger" placeholder="call.completed" />
+            </CalField>
+            <CalField v-slot="{ id }" label="Priorität" hint="kleiner = früher">
+              <CalInput :id="id" v-model="priorityText" type="number" name="flowPriority" />
+            </CalField>
+            <CalField label="Zustand">
+              <CalSwitch v-model="form.isActive" name="flowActive">Aktiv</CalSwitch>
+            </CalField>
+          </div>
+
+          <CalField v-slot="{ id }" label="Bedingungen" hint="JSON, optional">
+            <CalTextarea :id="id" v-model="form.conditionsText" name="flowConditions" mono :rows="4" />
+          </CalField>
+
+          <CalField v-slot="{ id }" label="Aktionen" hint="JSON-Array">
+            <CalTextarea :id="id" v-model="form.actionsText" name="flowActions" mono :rows="4" />
+          </CalField>
+        </form>
+
+        <template #footer>
+          <div class="buttons">
+            <CalButton v-if="editingId" variant="ghost" @click="resetForm">Abbrechen</CalButton>
+            <CalButton variant="primary" :loading="saving" :disabled="!canSubmit" @click="save">
+              {{ editingId ? 'Speichern' : 'Anlegen' }}
+            </CalButton>
+          </div>
+        </template>
+      </CalCard>
+    </template>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { Boxes, Workflow } from 'lucide-vue-next'
 import { flowsApi, type Flow, type UpsertFlowInput } from './flowsApi'
 import { parseJsonField, prettyJson } from './flowsFormat'
 import { useWorkspaceContext } from '@/core/workspace/workspaceContext'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
-import BaseButton from '@/core/ui/BaseButton.vue'
-import BaseInput from '@/core/ui/BaseInput.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalDataTable from '@/core/ui/CalDataTable.vue'
+import CalEmptyState from '@/core/ui/CalEmptyState.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import CalSwitch from '@/core/ui/CalSwitch.vue'
+import CalTextarea from '@/core/ui/CalTextarea.vue'
+import type { DataTableColumn } from '@/core/ui/dataTable'
+import { confirm } from '@/core/feedback/confirm'
+import { toast } from '@/core/feedback/toasts'
 
 const ctx = useAuthStore().context
 const canManage = computed(() => hasPermission(ctx.value, 'flow.manage'))
@@ -133,6 +147,14 @@ const nextCursor = ref<string | null>(null)
 const busyId = ref<string | null>(null)
 const saving = ref(false)
 
+const columns: readonly DataTableColumn[] = [
+  { key: 'name', label: 'Name' },
+  { key: 'triggerEvent', label: 'Trigger', mono: true },
+  { key: 'priority', label: 'Priorität', width: '110px' },
+  { key: 'isActive', label: 'Status', width: '120px' },
+  { key: 'actions', label: '', align: 'end', width: '210px' },
+]
+
 const editingId = ref<string | null>(null)
 const form = reactive({
   name: '',
@@ -141,6 +163,16 @@ const form = reactive({
   isActive: true,
   conditionsText: '',
   actionsText: '[]',
+})
+
+// CalInput speaks strings; the priority is a number in the payload. Bridging here
+// keeps the number-vs-text conversion in one place instead of in the template.
+const priorityText = computed({
+  get: () => String(form.priority),
+  set: (value: string) => {
+    const parsed = Number(value)
+    form.priority = Number.isFinite(parsed) ? parsed : 0
+  },
 })
 
 const canSubmit = computed(
@@ -226,7 +258,10 @@ async function save(): Promise<void> {
     return
   }
 
-  const before = await runHook('flows.before-save', { workspaceKey: activeWorkspace.value, isEdit: editingId.value !== null })
+  const before = await runHook('flows.before-save', {
+    workspaceKey: activeWorkspace.value,
+    isEdit: editingId.value !== null,
+  })
   if (before.canceled) {
     error.value = before.cancelReason ?? 'Speichern abgebrochen.'
     return
@@ -240,6 +275,7 @@ async function save(): Promise<void> {
       await api.create(activeWorkspace.value, input)
     }
     await runHook('flows.after-save', { workspaceKey: activeWorkspace.value, name: input.name })
+    toast.success(editingId.value ? `Flow „${input.name}“ gespeichert.` : `Flow „${input.name}“ angelegt.`)
     resetForm()
     await loadFlows()
   } catch (e) {
@@ -253,7 +289,13 @@ async function remove(flow: Flow): Promise<void> {
   if (busyId.value === flow.id) {
     return
   }
-  if (!window.confirm(`Flow „${flow.name}“ löschen?`)) {
+  const confirmed = await confirm({
+    title: `Flow „${flow.name}“ löschen?`,
+    description: `Auf „${flow.triggerEvent}“ wird danach nicht mehr reagiert.`,
+    confirmLabel: 'Löschen',
+    tone: 'danger',
+  })
+  if (!confirmed) {
     return
   }
   error.value = null
@@ -266,6 +308,7 @@ async function remove(flow: Flow): Promise<void> {
   try {
     await api.remove(activeWorkspace.value, flow.id)
     await runHook('flows.after-delete', { workspaceKey: activeWorkspace.value, id: flow.id })
+    toast.success(`Flow „${flow.name}“ gelöscht.`)
     if (editingId.value === flow.id) {
       resetForm()
     }
@@ -298,164 +341,32 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.flows {
-  padding: calc(var(--cal-space) * 3);
-}
-
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: calc(var(--cal-space) * 2);
-}
-
-.head-actions {
+.flows__actions {
   display: flex;
   align-items: center;
-  gap: var(--cal-space);
+  justify-content: flex-end;
+  gap: var(--cal-space-1);
 }
 
-.num {
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
+.flows__editor {
+  margin-top: var(--cal-space-4);
 }
 
-.grid {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.grid th,
-.grid td {
-  text-align: left;
-  padding: var(--cal-space);
-  border-bottom: 1px solid var(--cal-color-surface);
-}
-
-.grid th {
-  color: var(--cal-color-muted);
-  font-weight: 600;
-}
-
-.mono {
-  font-family: var(--cal-font-mono, monospace);
-  color: var(--cal-color-muted);
-}
-
-.badge {
-  font-size: 0.75em;
-  border-radius: var(--cal-radius);
-  padding: 0 calc(var(--cal-space) * 0.75);
-  border: 1px solid currentColor;
-}
-
-.badge-active {
-  color: var(--cal-color-accent);
-}
-
-.badge-inactive {
-  color: var(--cal-color-muted);
-}
-
-.actions {
-  display: flex;
-  gap: calc(var(--cal-space) * 1.5);
-  align-items: center;
-}
-
-.link {
-  background: none;
-  border: 0;
-  color: var(--cal-color-accent);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.link-danger {
-  background: none;
-  border: 0;
-  color: var(--cal-color-danger);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.link:disabled,
-.link-danger:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.more {
-  margin-top: var(--cal-space);
-}
-
-.flow-form {
-  margin-top: calc(var(--cal-space) * 3);
-  max-width: 640px;
-}
-
-.flow-form h3 {
-  font-size: 1em;
-  margin-bottom: var(--cal-space);
-}
-
-.fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--cal-space) calc(var(--cal-space) * 2);
-  margin-bottom: var(--cal-space);
-}
-
-.fields label,
-.json {
+.flows__form {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  color: var(--cal-color-muted);
+  gap: var(--cal-space-5);
 }
 
-.fields label.check {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--cal-space);
-}
-
-.json {
-  margin-bottom: var(--cal-space);
-}
-
-.code {
-  padding: var(--cal-space);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font-family: var(--cal-font-mono, monospace);
-  resize: vertical;
-}
-
-.hint {
-  font-size: 0.85em;
+.flows__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--cal-space-4);
 }
 
 .buttons {
   display: flex;
   align-items: center;
-  gap: calc(var(--cal-space) * 2);
-  margin-top: var(--cal-space);
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
+  gap: var(--cal-space-2);
 }
 </style>

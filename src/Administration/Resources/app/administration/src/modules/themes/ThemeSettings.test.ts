@@ -80,7 +80,7 @@ describe('ThemeSettings', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('keine Einstellungen')
-    expect(wrapper.find('form.fields').exists()).toBe(false)
+    expect(wrapper.find('form.settings__fields').exists()).toBe(false)
   })
 
   it('saves coerced, non-empty values', async () => {
@@ -95,7 +95,7 @@ describe('ThemeSettings', () => {
 
     await wrapper.find('input[name="theme-setting-primaryColor"]').setValue('#abcabc')
     await wrapper.find('input[name="theme-setting-maxItems"]').setValue('7')
-    await wrapper.find('form.fields').trigger('submit')
+    await wrapper.find('form.settings__fields').trigger('submit')
     await flushPromises()
 
     // Color stays a string, the numeric field is coerced to a JSON number.
@@ -108,7 +108,7 @@ describe('ThemeSettings', () => {
     await flushPromises()
 
     await wrapper.find('input[name="theme-setting-primaryColor"]').setValue('')
-    await wrapper.find('form.fields').trigger('submit')
+    await wrapper.find('form.settings__fields').trigger('submit')
     await flushPromises()
 
     expect(saveSettingsMock).toHaveBeenCalledWith('workspace-a', {})
@@ -127,7 +127,7 @@ describe('ThemeSettings', () => {
     const wrapper = mountSettings(true)
     await flushPromises()
 
-    await wrapper.find('form.fields').trigger('submit')
+    await wrapper.find('form.settings__fields').trigger('submit')
     await flushPromises()
 
     expect(saveSettingsMock).not.toHaveBeenCalled()

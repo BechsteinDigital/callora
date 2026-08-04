@@ -213,7 +213,7 @@ public static class ThemeEndpoints
                 .ListDefinitionsAsync(assignment.ThemePluginId, assignment.ThemeVersion, cancellationToken)
                 .ConfigureAwait(false);
             var values = await settingsStore
-                .ListWorkspaceValuesAsync(workspaceKey, assignment.ThemePluginId, cancellationToken)
+                .ListValuesAsync(workspaceKey, surfaceKey: null, assignment.ThemePluginId, cancellationToken)
                 .ConfigureAwait(false);
 
             return Results.Ok(new WorkspaceThemeSettingsApiResponse(
@@ -275,7 +275,7 @@ public static class ThemeEndpoints
             }
 
             var values = await settingsStore
-                .ReplaceWorkspaceValuesAsync(workspaceKey, assignment.ThemePluginId, normalizedInput, cancellationToken)
+                .ReplaceValuesAsync(workspaceKey, surfaceKey: null, assignment.ThemePluginId, normalizedInput, cancellationToken)
                 .ConfigureAwait(false);
 
             return Results.Ok(new WorkspaceThemeSettingsApiResponse(

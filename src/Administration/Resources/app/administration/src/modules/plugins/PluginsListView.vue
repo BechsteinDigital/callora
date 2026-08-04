@@ -1,131 +1,137 @@
 <template>
-  <section class="plugins">
-    <header class="head">
-      <h1>Plugins</h1>
-      <div class="head-actions">
+  <CalPage>
+    <CalPageHeader title="Plugins" description="Installierte Erweiterungen, ihr Zustand und ihre Signatur.">
+      <template #actions>
         <ExtensionSlot name="plugins.list.toolbar" />
-      </div>
-    </header>
+      </template>
+    </CalPageHeader>
 
-    <form v-if="canInstall" class="install" @submit.prevent="install">
-      <input
-        v-model="installId"
-        name="installId"
-        class="install-input"
-        placeholder="Plugin-Id aus lokalem Quellcode…"
-      />
-      <BaseButton type="submit" :disabled="installing || !installId.trim()">
-        {{ installing ? 'Installiere…' : 'Installieren' }}
-      </BaseButton>
-    </form>
+    <CalCard v-if="canInstall" class="plugins__install" title="Plugin installieren">
+      <form class="plugins__form" @submit.prevent="install">
+        <CalField v-slot="{ id }" label="Plugin-Id" description="Aus dem lokalen Quellverzeichnis.">
+          <CalInput :id="id" v-model="installId" name="installId" placeholder="communication" :icon="Package" />
+        </CalField>
+        <CalButton
+          type="submit"
+          variant="primary"
+          :icon="Download"
+          :loading="installing"
+          :disabled="!installId.trim()"
+        >
+          Installieren
+        </CalButton>
+      </form>
+    </CalCard>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="notice" class="notice">{{ notice }}</p>
-    <p v-if="loading">Lädt…</p>
+    <CalAlert v-if="notice" class="plugins__notice" tone="warning" dismissible @dismiss="notice = null">
+      {{ notice }}
+    </CalAlert>
 
-    <table v-else class="grid">
-      <thead>
-        <tr>
-          <th>Plugin</th>
-          <th>Id</th>
-          <th>Status</th>
-          <th>Signatur</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="p in plugins" :key="p.pluginId">
-          <td>{{ p.displayName }}</td>
-          <td class="mono">{{ p.pluginId }}</td>
-          <td>
-            <span class="badge" :class="isPluginActive(p.state) ? 'badge-active' : 'badge-inactive'">
-              {{ isPluginActive(p.state) ? 'Aktiv' : 'Inaktiv' }}
-            </span>
-          </td>
-          <td>
-            <span
-              v-if="signatureStates[p.pluginId]"
-              class="badge"
-              :class="signatureBadgeClass(signatureStates[p.pluginId])"
-              :title="signatureStates[p.pluginId]"
+    <CalCard flush>
+      <CalDataTable
+        :columns="columns"
+        :rows="plugins"
+        row-key="pluginId"
+        :loading="loading"
+        :error="error"
+        :empty-icon="Puzzle"
+        empty-title="Keine Plugins installiert."
+        empty-description="Erweiterungen bringen zusätzliche Funktionen — etwa Telefonie oder Videokonferenz."
+      >
+        <template #cell-state="{ row }">
+          <CalBadge :tone="isPluginActive(row.state) ? 'success' : 'neutral'" dot>
+            {{ isPluginActive(row.state) ? 'Aktiv' : 'Inaktiv' }}
+          </CalBadge>
+        </template>
+
+        <template #cell-signature="{ row }">
+          <CalBadge
+            v-if="signatureStates[row.pluginId]"
+            :tone="signatureTone(signatureStates[row.pluginId])"
+            variant="outline"
+            :title="signatureStates[row.pluginId]"
+          >
+            {{ signatureLabel(signatureStates[row.pluginId]) }}
+          </CalBadge>
+          <span v-else>—</span>
+        </template>
+
+        <template #cell-actions="{ row }">
+          <div class="plugins__actions">
+            <CalButton
+              v-if="canExecute"
+              variant="ghost"
+              size="sm"
+              :disabled="busyId === row.pluginId"
+              @click="isPluginActive(row.state) ? deactivate(row) : activate(row)"
             >
-              {{ signatureLabel(signatureStates[p.pluginId]) }}
-            </span>
-            <span v-else class="sig-unknown">—</span>
-          </td>
-          <td class="actions">
-            <button
-              v-if="canExecute && isPluginActive(p.state)"
-              type="button"
-              class="link"
-              :disabled="busyId === p.pluginId"
-              @click="deactivate(p)"
-            >
-              Deaktivieren
-            </button>
-            <button
-              v-else-if="canExecute"
-              type="button"
-              class="link"
-              :disabled="busyId === p.pluginId"
-              @click="activate(p)"
-            >
-              Aktivieren
-            </button>
-            <button
+              {{ isPluginActive(row.state) ? 'Deaktivieren' : 'Aktivieren' }}
+            </CalButton>
+            <CalButton
               v-if="canDelete"
-              type="button"
-              class="link-danger"
-              :disabled="busyId === p.pluginId"
-              @click="uninstall(p)"
+              variant="danger-ghost"
+              size="sm"
+              :disabled="busyId === row.pluginId"
+              @click="uninstall(row)"
             >
               Deinstallieren
-            </button>
-            <ExtensionSlot name="plugins.list.row-actions" :ctx="p" />
-          </td>
-        </tr>
-        <tr v-if="!plugins.length">
-          <td colspan="5" class="empty">Keine Plugins installiert.</td>
-        </tr>
-      </tbody>
-    </table>
+            </CalButton>
+            <ExtensionSlot name="plugins.list.row-actions" :ctx="row" />
+          </div>
+        </template>
+      </CalDataTable>
+    </CalCard>
 
-    <section v-if="uiLoadFailures.length || serviceConflicts.length" class="diagnostics">
-      <h2>Diagnose der Admin-Erweiterungen</h2>
-
-      <div v-if="uiLoadFailures.length" class="diag-block">
-        <h3>Fehlgeschlagene Plugin-UIs</h3>
-        <ul>
+    <CalCard
+      v-if="uiLoadFailures.length || serviceConflicts.length"
+      class="plugins__diagnostics"
+      title="Diagnose der Admin-Erweiterungen"
+      description="Beim Start dieser Oberfläche aufgetretene Auffälligkeiten."
+    >
+      <section v-if="uiLoadFailures.length" class="plugins__diag-block">
+        <h3 class="plugins__diag-title">Fehlgeschlagene Plugin-UIs</h3>
+        <ul class="plugins__diag-list">
           <li v-for="(r, i) in uiLoadFailures" :key="i">
-            <span class="mono">{{ r.pluginId }}</span> — {{ r.url }}<template v-if="r.detail">: {{ r.detail }}</template>
+            <code>{{ r.pluginId }}</code> — {{ r.url }}<template v-if="r.detail">: {{ r.detail }}</template>
           </li>
         </ul>
-      </div>
+      </section>
 
-      <div v-if="serviceConflicts.length" class="diag-block">
-        <h3>Service-Konflikte</h3>
-        <ul>
+      <section v-if="serviceConflicts.length" class="plugins__diag-block">
+        <h3 class="plugins__diag-title">Service-Konflikte</h3>
+        <ul class="plugins__diag-list">
           <li v-for="c in serviceConflicts" :key="c.key">
-            <span class="mono">{{ c.key }}</span> — aktiv:
-            <strong>{{ c.activePluginId ?? 'Host' }}</strong>, überschattet:
-            {{ c.shadowedPluginIds.map((p) => p ?? 'Host').join(', ') }}
+            <code>{{ c.key }}</code> — aktiv: <strong>{{ c.activePluginId ?? 'Host' }}</strong
+            >, überschattet: {{ c.shadowedPluginIds.map((p) => p ?? 'Host').join(', ') }}
           </li>
         </ul>
-      </div>
-    </section>
-  </section>
+      </section>
+    </CalCard>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { Download, Package, Puzzle } from 'lucide-vue-next'
 import { pluginsApi, isPluginActive, type PluginInstallation, type PluginLifecycleResult } from './pluginsApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
-import BaseButton from '@/core/ui/BaseButton.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService, getServiceConflicts } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
 import { getPluginUiLoadResults } from '@/core/extensions/loader'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalDataTable from '@/core/ui/CalDataTable.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import type { DataTableColumn } from '@/core/ui/dataTable'
+import { confirm } from '@/core/feedback/confirm'
+import { toast } from '@/core/feedback/toasts'
 
 const plugins = ref<PluginInstallation[]>([])
 const loading = ref(true)
@@ -142,6 +148,14 @@ const ctx = useAuthStore().context
 const canExecute = computed(() => hasPermission(ctx.value, 'plugin.execute'))
 const canDelete = computed(() => hasPermission(ctx.value, 'plugin.delete'))
 const canInstall = computed(() => hasPermission(ctx.value, 'plugin.create'))
+
+const columns: readonly DataTableColumn[] = [
+  { key: 'displayName', label: 'Plugin' },
+  { key: 'pluginId', label: 'Id', mono: true },
+  { key: 'state', label: 'Status', width: '120px' },
+  { key: 'signature', label: 'Signatur', width: '150px' },
+  { key: 'actions', label: '', align: 'end', width: '250px' },
+]
 
 // Resolve the plugins service through the override registry: a plugin may replace it.
 const api = useService('pluginsApi', pluginsApi)
@@ -184,11 +198,14 @@ function signatureLabel(state: string): string {
   return SIGNATURE_LABELS[state] ?? state
 }
 
-function signatureBadgeClass(state: string): string {
+// Only a trusted signature is reassuring; "unsigned" is a warning rather than a
+// failure (local development installs are legitimately unsigned), everything
+// else means the artefact cannot be trusted.
+function signatureTone(state: string): 'success' | 'warning' | 'danger' {
   if (state === 'signed-trusted') {
-    return 'badge-active'
+    return 'success'
   }
-  return state === 'unsigned' ? 'badge-inactive' : 'badge-danger'
+  return state === 'unsigned' ? 'warning' : 'danger'
 }
 
 // Shared runner for the state-changing actions: before/after hooks (a plugin may
@@ -197,6 +214,7 @@ async function lifecycleAction(
   verb: string,
   pluginId: string,
   action: () => Promise<PluginLifecycleResult>,
+  successMessage: string,
 ): Promise<void> {
   error.value = null
   notice.value = null
@@ -212,6 +230,7 @@ async function lifecycleAction(
       notice.value = result.warningMessage
     }
     await runHook(`plugins.after-${verb}`, { pluginId })
+    toast.success(successMessage)
     await load()
   } catch (e) {
     error.value = (e as Error).message
@@ -221,18 +240,24 @@ async function lifecycleAction(
 }
 
 function activate(p: PluginInstallation): Promise<void> {
-  return lifecycleAction('activate', p.pluginId, () => api.activate(p.pluginId))
+  return lifecycleAction('activate', p.pluginId, () => api.activate(p.pluginId), `„${p.displayName}“ aktiviert.`)
 }
 
 function deactivate(p: PluginInstallation): Promise<void> {
-  return lifecycleAction('deactivate', p.pluginId, () => api.deactivate(p.pluginId))
+  return lifecycleAction('deactivate', p.pluginId, () => api.deactivate(p.pluginId), `„${p.displayName}“ deaktiviert.`)
 }
 
-function uninstall(p: PluginInstallation): Promise<void> {
-  if (!window.confirm(`Plugin „${p.displayName}“ deinstallieren?`)) {
-    return Promise.resolve()
+async function uninstall(p: PluginInstallation): Promise<void> {
+  const confirmed = await confirm({
+    title: `Plugin „${p.displayName}“ deinstallieren?`,
+    description: 'Die vom Plugin bereitgestellten Funktionen stehen danach nicht mehr zur Verfügung.',
+    confirmLabel: 'Deinstallieren',
+    tone: 'danger',
+  })
+  if (!confirmed) {
+    return
   }
-  return lifecycleAction('uninstall', p.pluginId, () => api.uninstall(p.pluginId))
+  await lifecycleAction('uninstall', p.pluginId, () => api.uninstall(p.pluginId), `„${p.displayName}“ deinstalliert.`)
 }
 
 // A before-install hook may toggle buildIfNeeded or veto; the plugin id is the
@@ -263,6 +288,7 @@ async function install(): Promise<void> {
     }
     installId.value = ''
     await runHook('plugins.after-install', { pluginId })
+    toast.success(`Plugin „${pluginId}“ installiert.`)
     await load()
   } catch (e) {
     error.value = (e as Error).message
@@ -275,154 +301,57 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.plugins {
-  padding: calc(var(--cal-space) * 3);
+.plugins__install {
+  margin-bottom: var(--cal-space-4);
 }
 
-.head {
+.plugins__form {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: calc(var(--cal-space) * 2);
+  align-items: flex-end;
+  gap: var(--cal-space-3);
+  flex-wrap: wrap;
 }
 
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--cal-space);
-}
-
-.install {
-  display: flex;
-  gap: var(--cal-space);
-  margin-bottom: calc(var(--cal-space) * 2);
-}
-
-.install-input {
+.plugins__form > :deep(.cal-field) {
   flex: 1;
-  max-width: 360px;
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
+  max-width: 380px;
 }
 
-.grid {
-  width: 100%;
-  border-collapse: collapse;
+.plugins__notice {
+  margin-bottom: var(--cal-space-4);
 }
 
-.grid th,
-.grid td {
-  text-align: left;
-  padding: var(--cal-space);
-  border-bottom: 1px solid var(--cal-color-surface);
-}
-
-.grid th {
-  color: var(--cal-color-muted);
-  font-weight: 600;
-}
-
-.mono {
-  font-family: var(--cal-font-mono, monospace);
-  color: var(--cal-color-muted);
-}
-
-.badge {
-  font-size: 0.75em;
-  border-radius: var(--cal-radius);
-  padding: 0 calc(var(--cal-space) * 0.75);
-}
-
-.badge-active {
-  color: var(--cal-color-accent);
-  border: 1px solid var(--cal-color-accent);
-}
-
-.badge-inactive {
-  color: var(--cal-color-muted);
-  border: 1px solid var(--cal-color-muted);
-}
-
-.badge-danger {
-  color: var(--cal-color-danger);
-  border: 1px solid var(--cal-color-danger);
-}
-
-.sig-unknown {
-  color: var(--cal-color-muted);
-}
-
-.actions {
+.plugins__actions {
   display: flex;
-  gap: calc(var(--cal-space) * 1.5);
   align-items: center;
+  justify-content: flex-end;
+  gap: var(--cal-space-1);
 }
 
-.link {
-  background: none;
-  border: 0;
-  color: var(--cal-color-accent);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
+.plugins__diagnostics {
+  margin-top: var(--cal-space-6);
 }
 
-.link-danger {
-  background: none;
-  border: 0;
-  color: var(--cal-color-danger);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
+.plugins__diag-block + .plugins__diag-block {
+  margin-top: var(--cal-space-4);
 }
 
-.link:disabled,
-.link-danger:disabled {
-  opacity: 0.5;
-  cursor: default;
+.plugins__diag-title {
+  margin-bottom: var(--cal-space-2);
+  font-size: var(--cal-text-md);
+  font-weight: var(--cal-weight-semibold);
+  color: var(--cal-danger);
 }
 
-.empty {
-  color: var(--cal-color-muted);
+.plugins__diag-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cal-space-1);
+  font-size: var(--cal-text-md);
+  color: var(--cal-text-secondary);
 }
 
-.error {
-  color: var(--cal-color-danger);
-}
-
-.notice {
-  color: var(--cal-color-accent);
-}
-
-.diagnostics {
-  margin-top: calc(var(--cal-space) * 3);
-  border-top: 1px solid var(--cal-color-surface);
-  padding-top: calc(var(--cal-space) * 2);
-}
-
-.diagnostics h2 {
-  font-size: 1.05em;
-  margin-bottom: var(--cal-space);
-}
-
-.diag-block {
-  margin-bottom: calc(var(--cal-space) * 1.5);
-}
-
-.diag-block h3 {
-  font-size: 0.9em;
-  color: var(--cal-color-danger);
-  margin-bottom: 4px;
-}
-
-.diag-block ul {
-  margin: 0;
-  padding-left: calc(var(--cal-space) * 2);
-  color: var(--cal-color-muted);
-  font-size: 0.9em;
+.plugins__diag-list code {
+  color: var(--cal-text);
 }
 </style>

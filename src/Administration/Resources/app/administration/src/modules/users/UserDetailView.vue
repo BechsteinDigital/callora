@@ -1,52 +1,87 @@
 <template>
-  <section class="detail">
-    <h1>{{ isEdit ? 'Benutzer bearbeiten' : 'Benutzer anlegen' }}</h1>
+  <CalPage narrow>
+    <CalPageHeader
+      :title="isEdit ? 'Benutzer bearbeiten' : 'Benutzer anlegen'"
+      :description="isEdit ? 'Stammdaten, Passwort und Rollenzuweisung dieses Kontos.' : undefined"
+      back-to="/users"
+      back-label="Alle Benutzer"
+    />
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <CalAlert v-if="error" class="detail__error" tone="danger">{{ error }}</CalAlert>
 
-    <form class="form" @submit.prevent="save">
-      <label>Login
-        <BaseInput v-model="externalId" name="externalId" :disabled="isEdit" />
-      </label>
-      <label>E-Mail
-        <BaseInput v-model="email" type="email" name="email" />
-      </label>
-      <label>Anzeigename
-        <BaseInput v-model="displayName" name="displayName" />
-      </label>
-      <label>
-        Passwort
-        <span v-if="isEdit" class="hint">(leer lassen, um es beizubehalten)</span>
-        <BaseInput v-model="password" type="password" name="password" />
-      </label>
-      <label v-if="canAssignRole">Rolle
-        <select v-model="role" name="role" class="select">
-          <option value="">— keine —</option>
-          <option v-for="r in roles" :key="r.role" :value="r.role">{{ r.role }}</option>
-        </select>
-      </label>
+    <form @submit.prevent="save">
+      <CalCard title="Konto">
+        <div class="detail__fields">
+          <CalField v-slot="{ id }" label="Login" :description="isEdit ? 'Nicht änderbar.' : undefined" required>
+            <CalInput :id="id" v-model="externalId" name="externalId" :disabled="isEdit" />
+          </CalField>
 
-      <ExtensionSlot name="users.detail.fields" :ctx="{ userId: userId ?? externalId }" />
+          <CalField v-slot="{ id }" label="E-Mail">
+            <CalInput :id="id" v-model="email" type="email" name="email" />
+          </CalField>
 
-      <div class="buttons">
-        <BaseButton type="submit" :disabled="saving">{{ isEdit ? 'Speichern' : 'Anlegen' }}</BaseButton>
-        <RouterLink class="cancel" to="/users">Abbrechen</RouterLink>
-      </div>
+          <CalField v-slot="{ id }" label="Anzeigename">
+            <CalInput :id="id" v-model="displayName" name="displayName" />
+          </CalField>
+
+          <CalField
+            v-slot="{ id }"
+            label="Passwort"
+            :hint="isEdit ? 'optional' : undefined"
+            :description="isEdit ? 'Leer lassen, um das bestehende Passwort beizubehalten.' : undefined"
+          >
+            <CalInput
+              :id="id"
+              v-model="password"
+              type="password"
+              name="password"
+              autocomplete="new-password"
+              :icon="KeyRound"
+            />
+          </CalField>
+
+          <CalField v-if="canAssignRole" v-slot="{ id }" label="Rolle">
+            <CalSelect :id="id" v-model="role" name="role">
+              <option value="">— keine —</option>
+              <option v-for="r in roles" :key="r.role" :value="r.role">{{ r.role }}</option>
+            </CalSelect>
+          </CalField>
+
+          <ExtensionSlot name="users.detail.fields" :ctx="{ userId: userId ?? externalId }" />
+        </div>
+
+        <template #footer>
+          <div class="buttons">
+            <CalButton variant="ghost" to="/users">Abbrechen</CalButton>
+            <CalButton type="submit" variant="primary" :loading="saving">
+              {{ isEdit ? 'Speichern' : 'Anlegen' }}
+            </CalButton>
+          </div>
+        </template>
+      </CalCard>
     </form>
-  </section>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { KeyRound } from 'lucide-vue-next'
 import { usersApi, type Role } from './usersApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
-import BaseButton from '@/core/ui/BaseButton.vue'
-import BaseInput from '@/core/ui/BaseInput.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalAlert from '@/core/ui/CalAlert.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalField from '@/core/ui/CalField.vue'
+import CalInput from '@/core/ui/CalInput.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import CalSelect from '@/core/ui/CalSelect.vue'
+import { toast } from '@/core/feedback/toasts'
 
 const route = useRoute()
 const router = useRouter()
@@ -143,6 +178,7 @@ async function save(): Promise<void> {
       await api.assignRole(id, draft.role)
     }
     await runHook('users.after-save', { userId: id })
+    toast.success(isEdit.value ? `Benutzer „${id}“ gespeichert.` : `Benutzer „${id}“ angelegt.`)
     router.push('/users')
   } catch (e) {
     error.value = (e as Error).message
@@ -155,52 +191,19 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.detail {
-  padding: calc(var(--cal-space) * 3);
-  max-width: 420px;
+.detail__error {
+  margin-bottom: var(--cal-space-4);
 }
 
-.form {
+.detail__fields {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--cal-space) * 1.5);
-  margin-top: calc(var(--cal-space) * 2);
-}
-
-.form label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--cal-color-muted);
-}
-
-.hint {
-  font-size: 0.85em;
-}
-
-.select {
-  width: 100%;
-  padding: calc(var(--cal-space) * 1.25);
-  border: 1px solid var(--cal-color-muted);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-surface);
-  color: var(--cal-color-text);
-  font: inherit;
+  gap: var(--cal-space-5);
 }
 
 .buttons {
   display: flex;
   align-items: center;
-  gap: calc(var(--cal-space) * 2);
-  margin-top: var(--cal-space);
-}
-
-.cancel {
-  color: var(--cal-color-muted);
-  text-decoration: none;
-}
-
-.error {
-  color: var(--cal-color-danger);
+  gap: var(--cal-space-2);
 }
 </style>

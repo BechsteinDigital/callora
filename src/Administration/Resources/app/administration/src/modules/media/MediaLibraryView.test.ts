@@ -28,6 +28,15 @@ vi.mock('./mediaApi', () => ({
 vi.mock('@/modules/workspaces/workspacesApi', () => ({ workspacesApi: { list: listWorkspacesMock } }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: contextRef }) }))
 
+// The confirm dialog is a promise-based store now, not window.confirm — mock it so
+// each test can decide what the operator answers.
+const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }))
+vi.mock('@/core/feedback/confirm', () => ({ confirm: confirmMock }))
+
+beforeEach(() => {
+  confirmMock.mockReset().mockResolvedValue(true)
+})
+
 function ctx(permissions: string[], workspaceKey: string | null): AdminContext {
   return {
     userId: 'u',
@@ -100,8 +109,8 @@ describe('MediaLibraryView', () => {
     const wrapper = mount(MediaLibraryView)
     await flushPromises()
 
-    expect(wrapper.find('form.upload').exists()).toBe(false)
-    expect(wrapper.find('.link-danger').exists()).toBe(false)
+    expect(wrapper.find('form.media__form').exists()).toBe(false)
+    expect(wrapper.find('.is-danger-ghost').exists()).toBe(false)
   })
 
   it('uploads a selected file and reloads', async () => {
@@ -111,7 +120,7 @@ describe('MediaLibraryView', () => {
 
     const file = new File(['x'], 'logo.png', { type: 'image/png' })
     await selectFile(wrapper, file)
-    await wrapper.find('form.upload').trigger('submit.prevent')
+    await wrapper.find('form.media__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(uploadMock).toHaveBeenCalledWith('ws1', file, undefined)
@@ -124,7 +133,7 @@ describe('MediaLibraryView', () => {
     await flushPromises()
 
     await selectFile(wrapper, new File(['x'], 'notes.txt', { type: 'text/plain' }))
-    await wrapper.find('form.upload').trigger('submit.prevent')
+    await wrapper.find('form.media__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(uploadMock).not.toHaveBeenCalled()
@@ -138,7 +147,7 @@ describe('MediaLibraryView', () => {
     await flushPromises()
 
     await selectFile(wrapper, new File(['x'], 'logo.png', { type: 'image/png' }))
-    await wrapper.find('form.upload').trigger('submit.prevent')
+    await wrapper.find('form.media__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(uploadMock).not.toHaveBeenCalled()
@@ -147,11 +156,11 @@ describe('MediaLibraryView', () => {
 
   it('deletes an item after confirmation and reloads', async () => {
     contextRef.value = ctx(['media.read', 'media.manage'], 'ws1')
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     const wrapper = mount(MediaLibraryView)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMock).toHaveBeenCalledWith('ws1', 'm1')
@@ -160,11 +169,11 @@ describe('MediaLibraryView', () => {
 
   it('does not delete when confirmation is dismissed', async () => {
     contextRef.value = ctx(['media.read', 'media.manage'], 'ws1')
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    confirmMock.mockResolvedValue(false)
     const wrapper = mount(MediaLibraryView)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(removeMock).not.toHaveBeenCalled()
@@ -209,7 +218,7 @@ describe('MediaLibraryView', () => {
 
     const file = new File(['x'], 'logo.png', { type: 'image/png' })
     await selectFile(wrapper, file)
-    await wrapper.find('form.upload').trigger('submit.prevent')
+    await wrapper.find('form.media__form').trigger('submit.prevent')
     await flushPromises()
 
     expect(uploadMock).toHaveBeenCalledWith('ws1', file, 'overridden')
@@ -218,7 +227,7 @@ describe('MediaLibraryView', () => {
 
   it('runs the after-delete hook on a successful delete', async () => {
     contextRef.value = ctx(['media.read', 'media.manage'], 'ws1')
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    confirmMock.mockResolvedValue(true)
     const seen: unknown[] = []
     registerHook('media.after-delete', (h) => {
       seen.push(h.payload)
@@ -226,7 +235,7 @@ describe('MediaLibraryView', () => {
     const wrapper = mount(MediaLibraryView)
     await flushPromises()
 
-    await wrapper.find('.link-danger').trigger('click')
+    await wrapper.find('.is-danger-ghost').trigger('click')
     await flushPromises()
 
     expect(seen).toEqual([{ workspaceKey: 'ws1', id: 'm1' }])

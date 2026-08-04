@@ -53,7 +53,38 @@ export interface ThemeSettings {
   valuesByKey: Record<string, string>
 }
 
+// Mirrors SurfaceThemeAssignmentApiResponse. `inheritedFromWorkspace` is true
+// while the surface simply follows its workspace's theme.
+export interface SurfaceThemeAssignment {
+  workspaceKey: string
+  surfaceKey: string
+  themePluginId: string | null
+  themeVersion: string | null
+  inheritedFromWorkspace: boolean
+}
+
+// Mirrors SurfaceThemeSettingsApiResponse: the theme's fields, the values this
+// surface overrides, and what it would otherwise inherit from its workspace.
+export interface SurfaceThemeSettings {
+  workspaceKey: string
+  surfaceKey: string
+  hasAssignedTheme: boolean
+  themePluginId: string | null
+  themeVersion: string | null
+  inheritedFromWorkspace: boolean
+  // False when the surface runs a different theme than its workspace — the
+  // workspace values then belong to another theme and do not apply.
+  inheritsWorkspaceValues: boolean
+  fields: ThemeSettingDefinition[]
+  valuesByKey: Record<string, string>
+  inheritedValuesByKey: Record<string, string>
+}
+
 const basePath = '/api/themes'
+
+function surfacePath(workspaceKey: string, surfaceKey: string): string {
+  return `${basePath}/workspaces/${encodeURIComponent(workspaceKey)}/surfaces/${encodeURIComponent(surfaceKey)}`
+}
 
 export const themesApi = {
   // The pickable themes for a workspace surface (active workspace-scope definitions).
@@ -103,6 +134,52 @@ export const themesApi = {
           `${basePath}/workspaces/${encodeURIComponent(workspaceKey)}/settings`,
           jsonInit('PUT', { valuesByKey }),
         ),
+      )
+    ).json()
+  },
+
+  // ------------------------------------------------------------- Surface level
+
+  async getSurfaceAssignment(workspaceKey: string, surfaceKey: string): Promise<SurfaceThemeAssignment> {
+    return (await unwrap(await apiFetch(surfacePath(workspaceKey, surfaceKey)))).json()
+  },
+
+  // Pins the surface to its own theme, overriding the workspace.
+  async assignSurface(
+    workspaceKey: string,
+    surfaceKey: string,
+    themePluginId: string,
+    themeVersion: string,
+  ): Promise<SurfaceThemeAssignment> {
+    return (
+      await unwrap(
+        await apiFetch(surfacePath(workspaceKey, surfaceKey), jsonInit('PUT', { themePluginId, themeVersion })),
+      )
+    ).json()
+  },
+
+  // Drops the surface's own theme so it follows the workspace again. Its stored
+  // values go with it — they belong to the theme being detached.
+  async clearSurfaceAssignment(workspaceKey: string, surfaceKey: string): Promise<SurfaceThemeAssignment> {
+    return (
+      await unwrap(await apiFetch(surfacePath(workspaceKey, surfaceKey), { method: 'DELETE' }))
+    ).json()
+  },
+
+  async getSurfaceSettings(workspaceKey: string, surfaceKey: string): Promise<SurfaceThemeSettings> {
+    return (await unwrap(await apiFetch(`${surfacePath(workspaceKey, surfaceKey)}/settings`))).json()
+  },
+
+  // Replaces the surface's own values. An omitted key falls back to the
+  // workspace value, and from there to the theme default.
+  async saveSurfaceSettings(
+    workspaceKey: string,
+    surfaceKey: string,
+    valuesByKey: Record<string, unknown>,
+  ): Promise<SurfaceThemeSettings> {
+    return (
+      await unwrap(
+        await apiFetch(`${surfacePath(workspaceKey, surfaceKey)}/settings`, jsonInit('PUT', { valuesByKey })),
       )
     ).json()
   },

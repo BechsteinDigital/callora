@@ -1,57 +1,70 @@
 <template>
-  <section class="users">
-    <header class="head">
-      <h1>Benutzer</h1>
-      <div class="head-actions">
+  <CalPage>
+    <CalPageHeader title="Benutzer" description="Konten, die sich an der Administration anmelden dürfen.">
+      <template #actions>
         <ExtensionSlot name="users.list.toolbar" />
-        <RouterLink v-if="canCreate" class="new" to="/users/new">Neu anlegen</RouterLink>
-      </div>
-    </header>
+        <CalButton v-if="canCreate" variant="primary" :icon="Plus" to="/users/new">Neu anlegen</CalButton>
+      </template>
+    </CalPageHeader>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-else-if="loading">Lädt…</p>
+    <CalCard flush>
+      <CalDataTable
+        :columns="columns"
+        :rows="users"
+        row-key="externalId"
+        :loading="loading"
+        :error="error"
+        :empty-icon="Users"
+        empty-title="Keine Benutzer vorhanden."
+        empty-description="Legen Sie ein erstes Konto an, um die Administration freizugeben."
+      >
+        <template #cell-role="{ row }">
+          <CalBadge v-if="roleFor(row.externalId) !== '—'" tone="neutral">{{ roleFor(row.externalId) }}</CalBadge>
+          <span v-else>—</span>
+        </template>
 
-    <table v-else class="grid">
-      <thead>
-        <tr>
-          <th>Login</th>
-          <th>E-Mail</th>
-          <th>Name</th>
-          <th v-if="canReadRoles">Rolle</th>
-          <th>Passwort</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="u in users" :key="u.externalId">
-          <td>{{ u.externalId }}</td>
-          <td>{{ u.email ?? '—' }}</td>
-          <td>{{ u.displayName ?? '—' }}</td>
-          <td v-if="canReadRoles">{{ roleFor(u.externalId) }}</td>
-          <td>{{ u.hasPassword ? '✓' : '—' }}</td>
-          <td class="actions">
-            <RouterLink v-if="canUpdate" :to="`/users/${u.externalId}`">Bearbeiten</RouterLink>
-            <button v-if="canDelete" type="button" class="link-danger" @click="remove(u)">Löschen</button>
-            <ExtensionSlot name="users.list.row-actions" :ctx="u" />
-          </td>
-        </tr>
-        <tr v-if="!users.length">
-          <td :colspan="columnCount" class="empty">Keine Benutzer vorhanden.</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+        <template #cell-hasPassword="{ row }">
+          <CalBadge :tone="row.hasPassword ? 'success' : 'warning'" dot>
+            {{ row.hasPassword ? 'gesetzt' : 'fehlt' }}
+          </CalBadge>
+        </template>
+
+        <template #cell-actions="{ row }">
+          <div class="users__actions">
+            <CalButton v-if="canUpdate" variant="ghost" size="sm" :to="`/users/${row.externalId}`">
+              Bearbeiten
+            </CalButton>
+            <CalButton v-if="canDelete" variant="danger-ghost" size="sm" @click="remove(row)">Löschen</CalButton>
+            <ExtensionSlot name="users.list.row-actions" :ctx="row" />
+          </div>
+        </template>
+
+        <template v-if="canCreate" #empty-action>
+          <CalButton variant="primary" :icon="Plus" to="/users/new">Benutzer anlegen</CalButton>
+        </template>
+      </CalDataTable>
+    </CalCard>
+  </CalPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { Plus, Users } from 'lucide-vue-next'
 import { usersApi, type BackendUser } from './usersApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
+import CalBadge from '@/core/ui/CalBadge.vue'
+import CalButton from '@/core/ui/CalButton.vue'
+import CalCard from '@/core/ui/CalCard.vue'
+import CalDataTable from '@/core/ui/CalDataTable.vue'
+import CalPage from '@/core/ui/CalPage.vue'
+import CalPageHeader from '@/core/ui/CalPageHeader.vue'
+import type { DataTableColumn } from '@/core/ui/dataTable'
+import { confirm } from '@/core/feedback/confirm'
+import { toast } from '@/core/feedback/toasts'
 
 const users = ref<BackendUser[]>([])
 const roleAssignments = ref<Record<string, string>>({})
@@ -63,7 +76,17 @@ const canCreate = computed(() => hasPermission(ctx.value, 'user.create'))
 const canUpdate = computed(() => hasPermission(ctx.value, 'user.update'))
 const canDelete = computed(() => hasPermission(ctx.value, 'user.delete'))
 const canReadRoles = computed(() => hasPermission(ctx.value, 'role.read'))
-const columnCount = computed(() => (canReadRoles.value ? 6 : 5))
+
+// The role column disappears entirely for a caller without role.read, so header
+// and cells cannot disagree about what is shown.
+const columns = computed<DataTableColumn[]>(() => [
+  { key: 'externalId', label: 'Login' },
+  { key: 'email', label: 'E-Mail' },
+  { key: 'displayName', label: 'Name' },
+  { key: 'role', label: 'Rolle', hidden: !canReadRoles.value },
+  { key: 'hasPassword', label: 'Passwort', width: '130px' },
+  { key: 'actions', label: '', align: 'end', width: '210px' },
+])
 
 // Resolve the user service through the override registry: a plugin may replace it.
 const api = useService('usersApi', usersApi)
@@ -88,9 +111,12 @@ async function load(): Promise<void> {
 }
 
 async function remove(user: BackendUser): Promise<void> {
-  const confirmed = window.confirm(
-    `Benutzer „${user.externalId}“ löschen? Das anonymisiert auch den Audit-Trail (Art. 17).`,
-  )
+  const confirmed = await confirm({
+    title: `Benutzer „${user.externalId}“ löschen?`,
+    description: 'Das anonymisiert auch den Audit-Trail (Art. 17 DSGVO) und lässt sich nicht rückgängig machen.',
+    confirmLabel: 'Löschen',
+    tone: 'danger',
+  })
   if (!confirmed) {
     return
   }
@@ -102,6 +128,7 @@ async function remove(user: BackendUser): Promise<void> {
   try {
     await api.remove(user.externalId)
     await runHook('users.after-delete', { userId: user.externalId })
+    toast.success(`Benutzer „${user.externalId}“ gelöscht.`)
     await load()
   } catch (e) {
     error.value = (e as Error).message
@@ -112,72 +139,10 @@ onMounted(load)
 </script>
 
 <style scoped lang="scss">
-.users {
-  padding: calc(var(--cal-space) * 3);
-}
-
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: calc(var(--cal-space) * 2);
-}
-
-.head-actions {
+.users__actions {
   display: flex;
   align-items: center;
-  gap: var(--cal-space);
-}
-
-.new {
-  text-decoration: none;
-  padding: var(--cal-space) calc(var(--cal-space) * 1.5);
-  border-radius: var(--cal-radius);
-  background: var(--cal-color-accent);
-  color: #fff;
-}
-
-.grid {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.grid th,
-.grid td {
-  text-align: left;
-  padding: var(--cal-space);
-  border-bottom: 1px solid var(--cal-color-surface);
-}
-
-.grid th {
-  color: var(--cal-color-muted);
-  font-weight: 600;
-}
-
-.actions {
-  display: flex;
-  gap: calc(var(--cal-space) * 1.5);
-}
-
-.actions a {
-  color: var(--cal-color-accent);
-  text-decoration: none;
-}
-
-.link-danger {
-  background: none;
-  border: 0;
-  color: var(--cal-color-danger);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
-.empty {
-  color: var(--cal-color-muted);
-}
-
-.error {
-  color: var(--cal-color-danger);
+  justify-content: flex-end;
+  gap: var(--cal-space-1);
 }
 </style>

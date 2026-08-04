@@ -1,22 +1,229 @@
+/**
+ * Design-Token-Achse der Administration.
+ *
+ * Alle Tokens sind CSS-Custom-Properties auf `:root` — nicht SCSS-Variablen.
+ * Grund: Plugin-Admin-UIs werden als eigenständige IIFE-Bundles geladen und
+ * kompilieren NICHT gegen dieses SCSS. Sie können sich nur an Laufzeit-Variablen
+ * hängen. Die hier definierten Namen sind damit öffentlicher Vertrag: Umbenennen
+ * bricht fremde Plugin-UIs.
+ *
+ * Achsen:
+ *   Farbe     — semantische Rollen (surface/border/text/accent/status), nie Hex im Bauteil
+ *   Raum      — 4px-Basisraster, Stufen 1..16
+ *   Typo      — Größen-, Zeilenhöhen- und Gewichtsskala
+ *   Form      — Radien
+ *   Tiefe     — Schatten (im Dark-Modus bewusst flacher, dafür Ränder tragend)
+ *   Bewegung  — Dauern und Easing
+ *   Ebene     — z-index-Stapel
+ *
+ * Farbmodus: Dark ist die Standardsignatur. Light ist gleichwertig gepflegt und
+ * greift über `prefers-color-scheme` oder explizit über `data-theme` am <html>.
+ */
+
 :root {
-  --cal-color-bg: #0f1115;
-  --cal-color-surface: #1a1d24;
-  --cal-color-text: #e7e9ee;
-  --cal-color-muted: #9aa1ad;
-  --cal-color-accent: #4c8dff;
-  --cal-color-danger: #ff5c5c;
-  --cal-radius: 8px;
-  --cal-space: 8px;
-  --cal-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* ---------------------------------------------------------------- Raum */
+  --cal-space-1: 4px;
+  --cal-space-2: 8px;
+  --cal-space-3: 12px;
+  --cal-space-4: 16px;
+  --cal-space-5: 20px;
+  --cal-space-6: 24px;
+  --cal-space-8: 32px;
+  --cal-space-10: 40px;
+  --cal-space-12: 48px;
+  --cal-space-16: 64px;
+
+  /* ---------------------------------------------------------------- Form */
+  --cal-radius-xs: 4px;
+  --cal-radius-sm: 6px;
+  --cal-radius-md: 8px;
+  --cal-radius-lg: 12px;
+  --cal-radius-xl: 16px;
+  --cal-radius-full: 9999px;
+
+  /* ---------------------------------------------------------------- Typo */
+  --cal-font:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --cal-font-mono:
+    ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+
+  --cal-text-xs: 0.6875rem; /* 11px — Badges, Meta */
+  --cal-text-sm: 0.75rem; /* 12px — Tabellenkopf, Hinweise */
+  --cal-text-md: 0.8125rem; /* 13px — dichte Tabellen */
+  --cal-text-base: 0.875rem; /* 14px — Fließtext der Anwendung */
+  --cal-text-lg: 1rem; /* 16px — Karten-Titel */
+  --cal-text-xl: 1.125rem; /* 18px — Abschnitts-Titel */
+  --cal-text-2xl: 1.375rem; /* 22px — Seiten-Titel */
+  --cal-text-3xl: 1.75rem; /* 28px — KPI-Zahlen */
+
+  --cal-leading-tight: 1.2;
+  --cal-leading-normal: 1.5;
+  --cal-leading-relaxed: 1.65;
+
+  --cal-weight-normal: 400;
+  --cal-weight-medium: 500;
+  --cal-weight-semibold: 600;
+  --cal-weight-bold: 700;
+
+  --cal-tracking-wide: 0.06em;
+
+  /* ------------------------------------------------------------ Bewegung */
+  --cal-duration-fast: 120ms;
+  --cal-duration-base: 180ms;
+  --cal-duration-slow: 280ms;
+  --cal-ease: cubic-bezier(0.2, 0, 0.13, 1);
+  --cal-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* --------------------------------------------------------------- Ebene */
+  --cal-z-sticky: 200;
+  --cal-z-dropdown: 300;
+  --cal-z-overlay: 400;
+  --cal-z-modal: 500;
+  --cal-z-toast: 600;
+
+  /* --------------------------------------------------------------- Maße */
+  --cal-sidebar-width: 236px;
+  --cal-sidebar-width-collapsed: 60px;
+  --cal-topbar-height: 52px;
+  --cal-content-max: 1360px;
+
+  /* ------------------------------------------------- Farbe (Dark, Basis) */
+  color-scheme: dark;
+
+  --cal-bg: #0a0c0f;
+  --cal-bg-subtle: #0f1216;
+  --cal-surface: #14181d;
+  --cal-surface-raised: #191e24;
+  --cal-surface-hover: #1e242b;
+  --cal-surface-active: #242b33;
+  --cal-surface-inset: #0d1014;
+
+  --cal-border: #262d36;
+  --cal-border-strong: #333c47;
+  --cal-border-subtle: #1c222a;
+
+  --cal-text: #e6e9ee;
+  --cal-text-secondary: #a3adbb;
+  --cal-text-muted: #6d7683;
+  --cal-text-inverted: #0a0c0f;
+
+  --cal-accent: #4f8cff;
+  --cal-accent-hover: #6b9dff;
+  --cal-accent-active: #3d7bf0;
+  --cal-accent-contrast: #ffffff;
+  --cal-accent-subtle: rgb(79 140 255 / 14%);
+  --cal-accent-border: rgb(79 140 255 / 38%);
+
+  --cal-success: #3fb950;
+  --cal-success-subtle: rgb(63 185 80 / 14%);
+  --cal-success-border: rgb(63 185 80 / 38%);
+
+  --cal-warning: #d9a441;
+  --cal-warning-subtle: rgb(217 164 65 / 14%);
+  --cal-warning-border: rgb(217 164 65 / 38%);
+
+  --cal-danger: #f2615c;
+  --cal-danger-hover: #ff7772;
+  --cal-danger-subtle: rgb(242 97 92 / 14%);
+  --cal-danger-border: rgb(242 97 92 / 38%);
+
+  --cal-info: #58a6ff;
+  --cal-info-subtle: rgb(88 166 255 / 14%);
+  --cal-info-border: rgb(88 166 255 / 38%);
+
+  --cal-neutral-subtle: rgb(163 173 187 / 12%);
+  --cal-neutral-border: rgb(163 173 187 / 28%);
+
+  --cal-focus-ring: 0 0 0 2px var(--cal-bg), 0 0 0 4px var(--cal-accent);
+  --cal-overlay-backdrop: rgb(4 6 9 / 68%);
+
+  /* --------------------------------------------------------------- Tiefe */
+  --cal-shadow-sm: 0 1px 2px rgb(0 0 0 / 32%);
+  --cal-shadow-md: 0 4px 12px -2px rgb(0 0 0 / 42%);
+  --cal-shadow-lg: 0 12px 32px -6px rgb(0 0 0 / 52%);
+  --cal-shadow-xl: 0 24px 56px -12px rgb(0 0 0 / 62%);
+
+  /* ------------------------------------------- Kompatibilitäts-Aliasse
+     Die Namen der ersten Token-Generation. Bestehende Plugin-UIs stylen
+     dagegen — sie bleiben erhalten und zeigen auf die neuen Rollen. */
+  --cal-color-bg: var(--cal-bg);
+  --cal-color-surface: var(--cal-surface);
+  --cal-color-text: var(--cal-text);
+  --cal-color-muted: var(--cal-text-muted);
+  --cal-color-accent: var(--cal-accent);
+  --cal-color-danger: var(--cal-danger);
+  --cal-radius: var(--cal-radius-md);
+  --cal-space: var(--cal-space-2);
 }
 
-* {
-  box-sizing: border-box;
+/**
+ * Light-Modus.
+ *
+ * Zwei Selektoren, damit der Nutzerwille immer gewinnt: das Systemsignal greift
+ * nur, solange kein explizites `data-theme` gesetzt ist; `data-theme="light"`
+ * greift immer.
+ */
+@mixin cal-light-tokens {
+  color-scheme: light;
+
+  --cal-bg: #f6f7f9;
+  --cal-bg-subtle: #eff1f4;
+  --cal-surface: #ffffff;
+  --cal-surface-raised: #ffffff;
+  --cal-surface-hover: #f1f3f6;
+  --cal-surface-active: #e7eaef;
+  --cal-surface-inset: #f6f7f9;
+
+  --cal-border: #dfe3e8;
+  --cal-border-strong: #c6ccd4;
+  --cal-border-subtle: #ebeef2;
+
+  --cal-text: #171b21;
+  --cal-text-secondary: #4d5764;
+  --cal-text-muted: #79828f;
+  --cal-text-inverted: #ffffff;
+
+  --cal-accent: #2563eb;
+  --cal-accent-hover: #1d55d0;
+  --cal-accent-active: #1a4bb8;
+  --cal-accent-contrast: #ffffff;
+  --cal-accent-subtle: rgb(37 99 235 / 10%);
+  --cal-accent-border: rgb(37 99 235 / 32%);
+
+  --cal-success: #197f3a;
+  --cal-success-subtle: rgb(25 127 58 / 10%);
+  --cal-success-border: rgb(25 127 58 / 30%);
+
+  --cal-warning: #9a6700;
+  --cal-warning-subtle: rgb(154 103 0 / 10%);
+  --cal-warning-border: rgb(154 103 0 / 30%);
+
+  --cal-danger: #c8302b;
+  --cal-danger-hover: #a82521;
+  --cal-danger-subtle: rgb(200 48 43 / 10%);
+  --cal-danger-border: rgb(200 48 43 / 30%);
+
+  --cal-info: #0b62c4;
+  --cal-info-subtle: rgb(11 98 196 / 10%);
+  --cal-info-border: rgb(11 98 196 / 30%);
+
+  --cal-neutral-subtle: rgb(77 87 100 / 8%);
+  --cal-neutral-border: rgb(77 87 100 / 22%);
+
+  --cal-overlay-backdrop: rgb(23 27 33 / 42%);
+
+  --cal-shadow-sm: 0 1px 2px rgb(23 27 33 / 8%);
+  --cal-shadow-md: 0 4px 12px -2px rgb(23 27 33 / 12%);
+  --cal-shadow-lg: 0 12px 32px -6px rgb(23 27 33 / 16%);
+  --cal-shadow-xl: 0 24px 56px -12px rgb(23 27 33 / 20%);
 }
 
-body {
-  margin: 0;
-  background: var(--cal-color-bg);
-  color: var(--cal-color-text);
-  font-family: var(--cal-font);
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    @include cal-light-tokens;
+  }
+}
+
+:root[data-theme='light'] {
+  @include cal-light-tokens;
 }
