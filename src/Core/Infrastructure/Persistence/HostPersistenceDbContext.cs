@@ -94,6 +94,9 @@ public sealed class HostPersistenceDbContext(
     public DbSet<Callora.Core.Domain.Surfaces.SurfaceSessionRecord> SurfaceSessions =>
         Set<Callora.Core.Domain.Surfaces.SurfaceSessionRecord>();
 
+    public DbSet<Callora.Core.Domain.Surfaces.SurfaceHandoffTicketRecord> SurfaceHandoffTickets =>
+        Set<Callora.Core.Domain.Surfaces.SurfaceHandoffTicketRecord>();
+
     // Workspace-Isolation als Backstop (PLAT-267): ein workspace-gebundener
     // Aufrufer liest nur Zeilen seines Workspace, auch wenn ein Store das
     // explizite Where vergisst. Operatoren und Nicht-Request-Kontexte (Jobs,

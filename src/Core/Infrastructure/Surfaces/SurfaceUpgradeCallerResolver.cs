@@ -44,7 +44,10 @@ public sealed class SurfaceUpgradeCallerResolver(
             return null;
         }
 
-        return await authenticator.AuthenticateAsync(cookie, host, cancellationToken).ConfigureAwait(false);
+        var context = await authenticator
+            .AuthenticateAsync(cookie, host, cancellationToken)
+            .ConfigureAwait(false);
+        return context?.Caller;
     }
 
     private static bool IsSameOrigin(HttpContext httpContext, string host)
