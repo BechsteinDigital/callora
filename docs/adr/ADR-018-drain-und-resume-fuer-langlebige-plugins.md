@@ -91,6 +91,24 @@ Der Host besitzt Token, Deadline, Einlösung und Store. Das Plugin besitzt die
 Bedeutung des Payloads. Damit erbt jede künftige Realtime-Fläche das Verhalten, statt
 es ein drittes Mal zu bauen.
 
+**Der Payload wird verschlüsselt gespeichert.** Er ist für den Host opak — also kann
+der Host nicht beurteilen, wie sensibel er ist. Ein Konferenzplatz trägt technische
+IDs, eine Behandlungssitzung womöglich eine Patientenreferenz. Unbedingtes Schützen
+kostet eine Runde Data Protection und erspart die Frage. Der Purpose trägt die
+Plugin-Id, damit die Plugin-Bindung nicht nur ein Abfrageprädikat ist, sondern
+kryptografisch hält.
+
+**Ein Ticket beschreibt eine Identität, es erteilt keine.** Wer das Token hat, kann
+den Versuch machen — die Plugin-Bindung hält ein anderes *Plugin* ab, nicht einen
+anderen *Client*. Deshalb gehört in den Payload das Subjekt des Aufrufers, an den das
+Ticket ausgegeben wurde, und beim Einlösen muss der Konsument es gegen den aktuellen
+`HostWebSocketConnectRequest.Caller` prüfen. Auch ein erkannter Gast hat ein stabiles
+Subjekt (ADR-017 §3), diese Prüfung ist also nicht auf angemeldete Nutzer beschränkt.
+Wo überhaupt kein Aufrufer existiert — ein Out-of-Process-Client mit Token und sonst
+nichts —, bleibt es Bearer, und das kurze Fenster ist die einzige Schranke. Der Host
+kann diese Prüfung nicht für den Konsumenten übernehmen, weil nur der Konsument weiß,
+was sein Payload bedeutet; er kann sie nur ermöglichen und vorschreiben.
+
 ### 2.3 Was ausdrücklich nicht entschieden wird
 
 * **Keine Prozess-Isolation pro Plugin.** Die Kosten (Serialisierungsgrenze,

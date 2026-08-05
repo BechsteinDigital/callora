@@ -1474,6 +1474,7 @@ Callora.Core.Application.Options.CalloraHostingOptions.SessionResumeMaxPayloadBy
 Callora.Core.Application.Options.CalloraHostingOptions.SessionResumeMaxPayloadBytes.set -> void
 Callora.Core.Application.Options.CalloraHostingOptions.StaticPluginDirectory.get -> string!
 Callora.Core.Application.Options.CalloraHostingOptions.StaticPluginDirectory.set -> void
+Callora.Core.Application.Options.CalloraHostingOptionsValidator
 Callora.Core.Application.Persistence.Contracts.IPluginDbContextFactory<TContext>
 Callora.Core.Application.Persistence.Contracts.IPluginDbContextFactory<TContext>.CreateDbContext() -> TContext!
 Callora.Core.Application.Persistence.Contracts.IPluginDbContextFactory<TContext>.MigrateAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
@@ -5162,6 +5163,7 @@ const Callora.Core.Application.Notifications.Contracts.NotificationLevels.Error 
 const Callora.Core.Application.Notifications.Contracts.NotificationLevels.Info = "info" -> string!
 const Callora.Core.Application.Notifications.Contracts.NotificationLevels.Success = "success" -> string!
 const Callora.Core.Application.Notifications.Contracts.NotificationLevels.Warning = "warning" -> string!
+const Callora.Core.Application.Options.CalloraHostingOptionsValidator.MaxSessionResumePayloadBytes = 65536 -> int
 const Callora.Core.Application.Plugins.PluginPackageSignatureErrorCodes.ContentHashMismatch = "PLUGIN_PACKAGE_CONTENT_HASH_MISMATCH" -> string!
 const Callora.Core.Application.Plugins.PluginPackageSignatureErrorCodes.InvalidSignature = "PLUGIN_PACKAGE_SIGNATURE_INVALID" -> string!
 const Callora.Core.Application.Plugins.PluginPackageSignatureErrorCodes.Revoked = "PLUGIN_PACKAGE_REVOKED" -> string!
@@ -5969,6 +5971,7 @@ static Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.operator 
 static Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.operator ==(Callora.Core.Application.Monitoring.PluginLifecycleSloViolation? left, Callora.Core.Application.Monitoring.PluginLifecycleSloViolation? right) -> bool
 static Callora.Core.Application.Notifications.NotificationSnapshot.operator !=(Callora.Core.Application.Notifications.NotificationSnapshot? left, Callora.Core.Application.Notifications.NotificationSnapshot? right) -> bool
 static Callora.Core.Application.Notifications.NotificationSnapshot.operator ==(Callora.Core.Application.Notifications.NotificationSnapshot? left, Callora.Core.Application.Notifications.NotificationSnapshot? right) -> bool
+static Callora.Core.Application.Options.CalloraHostingOptionsValidator.Validate(Callora.Core.Application.Options.CalloraHostingOptions! options) -> void
 static Callora.Core.Application.Plugins.CalloraPluginCatalogExtensions.GetExports<TContract>(this Callora.Core.Application.Plugins.ICalloraPluginCatalog! catalog) -> System.Collections.Generic.IReadOnlyList<TContract!>!
 static Callora.Core.Application.Plugins.CalloraPluginCatalogExtensions.TryGetExport<TContract>(this Callora.Core.Application.Plugins.ICalloraPluginCatalog! catalog, out TContract? service) -> bool
 static Callora.Core.Application.Plugins.CalloraPluginExport.operator !=(Callora.Core.Application.Plugins.CalloraPluginExport? left, Callora.Core.Application.Plugins.CalloraPluginExport? right) -> bool

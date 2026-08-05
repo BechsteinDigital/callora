@@ -3,6 +3,7 @@ using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Security;
 using Callora.Core.Tests.Support;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
@@ -49,8 +50,9 @@ public sealed class PluginSessionResumeServiceTests
     {
         var store = new InMemorySessionResumeTicketStore();
         var clock = new FakeTimeProvider(Now);
-        var mine = NewService(store, clock, "videoconference").Service;
-        var theirs = NewService(store, clock, "communication").Service;
+        var protection = new EphemeralDataProtectionProvider();
+        var mine = NewService(store, clock, "videoconference", protection).Service;
+        var theirs = NewService(store, clock, "communication", protection).Service;
         var ticket = await mine.IssueAsync("conference", "p", TimeSpan.FromMinutes(5));
 
         Assert.Null(await theirs.RedeemAsync(ticket.Token));
@@ -105,6 +107,32 @@ public sealed class PluginSessionResumeServiceTests
     }
 
     [Fact]
+    public async Task ThePayloadIsNotStoredInTheClear()
+    {
+        var (service, store, _) = NewService();
+
+        await service.IssueAsync("conference", """{"patient":"case-4711"}""", TimeSpan.FromMinutes(5));
+
+        // The host never reads the payload, so it cannot judge how sensitive it is. A conference seat
+        // carries technical ids; the next product might carry a patient reference.
+        var stored = Assert.Single(store.Records);
+        Assert.DoesNotContain("case-4711", stored.Payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task APayloadThisHostCannotDecryptIsRefused()
+    {
+        var store = new InMemorySessionResumeTicketStore();
+        var (service, _, _) = NewService(store);
+        var ticket = await service.IssueAsync("conference", "p", TimeSpan.FromMinutes(5));
+
+        // Stands in for rotated keys or a database restored from another deployment.
+        Assert.Single(store.Records).Payload = "not-protected-by-this-host";
+
+        Assert.Null(await service.RedeemAsync(ticket.Token));
+    }
+
+    [Fact]
     public async Task RevokingGivesUpTheRightToComeBack()
     {
         var (service, store, _) = NewService();
@@ -145,10 +173,15 @@ public sealed class PluginSessionResumeServiceTests
         NewService(
             InMemorySessionResumeTicketStore? store = null,
             FakeTimeProvider? clock = null,
-            string pluginId = "videoconference")
+            string pluginId = "videoconference",
+            IDataProtectionProvider? protection = null)
     {
         store ??= new InMemorySessionResumeTicketStore();
         clock ??= new FakeTimeProvider(Now);
-        return (new PluginSessionResumeService(store, clock, new CalloraHostingOptions(), pluginId), store, clock);
+        return (
+            new PluginSessionResumeService(
+                store, protection ?? new EphemeralDataProtectionProvider(), clock, new CalloraHostingOptions(), pluginId),
+            store,
+            clock);
     }
 }

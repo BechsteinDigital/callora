@@ -18,6 +18,10 @@ public static class ServiceCollectionExtensions
         var options = new CalloraHostingOptions();
         configure?.Invoke(options);
 
+        // At configuration time, because every value guarded here fails quietly at runtime: a host
+        // that issues already-expired resume tickets looks like a plugin bug, not a typo.
+        CalloraHostingOptionsValidator.Validate(options);
+
         services.AddSingleton(typeof(CalloraHostingOptions), options);
         services.AddSingleton(typeof(RuntimePluginHost), typeof(RuntimePluginHost));
         services.AddSingleton(typeof(ICalloraPluginRuntime), provider =>
