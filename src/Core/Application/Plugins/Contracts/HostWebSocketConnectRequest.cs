@@ -1,3 +1,5 @@
+using Callora.Core.Application.Surfaces;
+
 namespace Callora.Core.Application.Plugins.Contracts;
 
 /// <summary>
@@ -12,9 +14,17 @@ namespace Callora.Core.Application.Plugins.Contracts;
 /// <param name="RouteValues">Values extracted from the route template (for example: sessionId → abc).</param>
 /// <param name="Query">Query-string values of the connect request (case-insensitive keys).</param>
 /// <param name="RequestedSubProtocols">Sub-protocols the client offered during the handshake.</param>
+/// <param name="Caller">
+/// The surface caller the upgrade carries, when the request presented a usable
+/// surface context (ADR-017 §9). Null for a connect that carries none, which is the
+/// normal case for an out-of-process agent using a connect-token. The host attaches
+/// it only when the handshake's <c>Origin</c> matches the requested host, because a
+/// browser sends cookies on a cross-site upgrade and no same-origin policy stops it.
+/// </param>
 public sealed record HostWebSocketConnectRequest(
     string PluginId,
     string RoutePath,
     IReadOnlyDictionary<string, string> RouteValues,
     IReadOnlyDictionary<string, string[]> Query,
-    IReadOnlyList<string> RequestedSubProtocols);
+    IReadOnlyList<string> RequestedSubProtocols,
+    SurfaceCaller? Caller = null);
