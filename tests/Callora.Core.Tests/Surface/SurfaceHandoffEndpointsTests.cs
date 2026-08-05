@@ -105,6 +105,27 @@ public sealed class SurfaceHandoffEndpointsTests
         Assert.Equal("/", redeemed.Headers.Location!.ToString());
     }
 
+    [Fact]
+    public async Task APrefetchDoesNotBurnTheTicket()
+    {
+        var codec = new JsonSurfaceSessionCookieCodec();
+        var sessions = new InMemorySurfaceSessionStore();
+        await using var app = await CreateAppAsync(codec, sessions);
+        var cookie = await SessionCookieAsync(codec, sessions);
+        var ticket = await IssueAsync(app, cookie, origin: $"https://{SourceHost}", returnPath: "/room/7");
+
+        var prefetch = new HttpRequestMessage(HttpMethod.Get, ticket.RedeemUrl);
+        prefetch.Headers.Add("Sec-Purpose", "prefetch;prerender");
+        var speculative = await app.GetTestClient().SendAsync(prefetch);
+
+        Assert.Equal(HttpStatusCode.Forbidden, speculative.StatusCode);
+
+        // The visitor's own click still works: a link scanner or a browser warming the
+        // URL must not consume a ticket the visitor never used.
+        var real = await RedeemAsync(app, ticket.RedeemUrl);
+        Assert.Equal(HttpStatusCode.Redirect, real.StatusCode);
+    }
+
     private static async Task<SurfaceHandoffTicketApiResponse> IssueAsync(
         WebApplication app,
         string? cookie,
