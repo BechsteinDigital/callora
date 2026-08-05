@@ -37,6 +37,7 @@ const developerSidebar = [
     text: 'Backend Extensions',
     items: [
       { text: 'Extension Points Reference', link: '/developers/extension-points' },
+      { text: 'Plugin Contracts', link: '/developers/plugin-contracts' },
       { text: 'Backend Extensions', link: '/guides/backend-extensions' },
       { text: 'Events & Jobs', link: '/guides/events-and-jobs' },
       { text: 'Capabilities & Entitlements', link: '/guides/capabilities' },

@@ -43,6 +43,7 @@ public static class CalloraAdministrationExtensions
         app.MapThemeEndpoints();
         app.MapSurfaceThemeEndpoints();
         app.MapSurfaceIdentityEndpoints();
+        app.MapContractCatalogEndpoints();
         app.MapPluginSurfaceApiEndpoints(
             Callora.Core.Infrastructure.Security.BackendRateLimiting.ApiPolicy);
 
