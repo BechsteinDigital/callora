@@ -53,20 +53,18 @@ public static class BackendRateLimiting
     }
 
     /// <summary>
-    /// Partitions per client: the first forwarded address behind the frontdoor,
-    /// otherwise the remote address.
+    /// Partitions per client on the connection's remote address.
+    /// <para>
+    /// Deliberately never reads <c>X-Forwarded-For</c> directly (#106): a raw header
+    /// is attacker-controlled, so rotating it would hand out a fresh login bucket per
+    /// request. Behind a proxy the address arrives here only through
+    /// <c>UseForwardedHeaders</c>, which applies the header solely from a configured
+    /// trusted proxy — see <see cref="BackendForwardedHeaders"/>.
+    /// </para>
     /// </summary>
     public static string ResolveClientKey(HttpContext httpContext)
     {
-        if (httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded) &&
-            !string.IsNullOrWhiteSpace(forwarded))
-        {
-            var first = forwarded.ToString().Split(',')[0].Trim();
-            if (first.Length > 0)
-            {
-                return first;
-            }
-        }
+        ArgumentNullException.ThrowIfNull(httpContext);
 
         return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
