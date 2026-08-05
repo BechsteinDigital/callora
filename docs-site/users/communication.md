@@ -138,7 +138,7 @@ call.
 
 ### Following calls live
 
-```
+```http
 POST /api/ext/admin/plugins/communication/calls/event-stream
 ```
 
@@ -176,7 +176,7 @@ softphone — reaches a call's audio over a WebSocket. It cannot open that socke
 on its own: it needs a **one-time ticket**, minted through the Admin API for a
 call the caller's workspace is running right now.
 
-```
+```http
 POST /api/ext/admin/plugins/communication/calls/{callId}/media-streams
 { "consumerRef": "ai-agent", "direction": "bidirectional" }
 ```
@@ -214,7 +214,7 @@ ended call stops being redeemable.
 A browser needs the same kind of ticket for signalling, plus the ICE
 configuration for its `RTCPeerConnection`:
 
-```
+```http
 POST /api/ext/admin/plugins/communication/webrtc/sessions
 { "target": "browser-1" }
 ```
