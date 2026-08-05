@@ -109,6 +109,17 @@ plugin discovery is configured.
 | `AutoActivateInstalledPlugins` | `bool` | `true` | Auto-activates installed plugins marked active in runtime state. |
 | `AutoBootstrapModules` | `bool` | *see options class* | Auto-bootstraps host modules at startup. |
 | `PluginRegistryFilePath` | `string` | `custom/plugins/registry.json` (env default) | Path to the plugin registry file. |
+| `PluginDrainTimeout` | `TimeSpan` | `00:00:30` | How long a plugin implementing `IDrainablePlugin` may take to run its outstanding work dry before it is stopped anyway. `00:00:00` skips draining. |
+
+::: warning Raising `PluginDrainTimeout` alone does not lengthen a restart
+On process shutdown the wait is bounded by ASP.NET Core's `HostOptions.ShutdownTimeout`
+(also 30 seconds by default), whichever is shorter. Raise both, or the extra drain time only
+applies to deactivations through the operator API.
+
+The value is a ceiling on how long an operator waits, and it is what a plugin carrying live work
+spends finishing it. For Communication that means existing calls run out while new ones are
+refused — see [Communication](../users/communication.md).
+:::
 
 > **Status:** Property-level defaults for `CalloraHostingOptions` are read from the
 > class initializers and the `.env.example` / `docker-compose.yml` defaults; the exact

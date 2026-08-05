@@ -38,11 +38,15 @@ public sealed class MintWebRtcSessionRouteHandler(
         }
 
         var status = await readinessProbe.ProbeAsync(cancellationToken).ConfigureAwait(false);
-        if (status.Status == CommunicationReadiness.Unavailable)
+        if (status.Status is CommunicationReadiness.Unavailable or CommunicationReadiness.Draining)
         {
+            // Both answers are 503, but for different reasons, and the caller deserves to know which:
+            // an outage is worth retrying against, a drain means this instance is on its way out.
             return new HostAdminApiResponse(503, new
             {
-                error = "Communication is unavailable; no session can be established right now.",
+                error = status.Status == CommunicationReadiness.Draining
+                    ? "Communication is draining; no new session can be established on this instance."
+                    : "Communication is unavailable; no session can be established right now.",
                 dependencies = status.Dependencies,
             });
         }

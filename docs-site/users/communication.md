@@ -267,6 +267,36 @@ voice-only install is `ready` without WebRTC. This is readiness only. Host
 liveness stays separate, so a carrier outage never gets a healthy process
 restarted.
 
+### Stopping without cutting people off
+
+Deactivating the plugin or shutting the host down does not hang up whoever is
+talking. Communication drains first: it withdraws each SIP registration so the
+carrier stops routing here, refuses anything that still arrives with
+`503 Service Unavailable` (which sends the call to the next route in the trunk
+group rather than giving the caller a busy tone), stops minting WebRTC sessions,
+and only then waits for the conversations already in progress to end by
+themselves.
+
+The wait is bounded by `CalloraHosting:PluginDrainTimeout`
+([configuration](../reference/configuration.md)). While it runs, the status route
+answers `draining` — a fourth verdict alongside `ready`, `degraded` and
+`unavailable`. **A monitor should treat it as planned, not as an outage:** the
+lines it just withdrew report themselves as down, and folding that into
+`unavailable` would page someone for an orderly shutdown.
+
+A call that is still up when the deadline expires is ended and recorded as
+`interrupted` rather than `failed`. Nothing went wrong with the call; the host
+went away underneath it, and a deployment should not leave a history full of
+failures behind.
+
+::: tip What a restart still costs
+SIP calls do not survive a restart — there is no way to hand a live media session
+to a new process, which is why draining exists. Browser-side sessions are a
+different story: they can reconnect. See
+[ADR-018](https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-018-drain-und-resume-fuer-langlebige-plugins.md)
+for where that line runs.
+:::
+
 ## Current scope — an honest note
 
 The call stack, dialer UI, call events, consent handling, and Flow call-control

@@ -15,4 +15,12 @@ public static class CommunicationReadiness
 
     /// <summary>No call can be placed.</summary>
     public const string Unavailable = "unavailable";
+
+    /// <summary>
+    /// The plugin is running its existing calls dry before a stop (ADR-018 §2.1). Reported
+    /// separately from <see cref="Unavailable"/> because nothing is broken: calls still up are
+    /// carried to their end, only new ones are refused. A monitor should read this as a planned
+    /// state, not an outage.
+    /// </summary>
+    public const string Draining = "draining";
 }

@@ -25,5 +25,12 @@ public enum CallOutcome
     NoAnswer = 6,
 
     /// <summary>The invitation was cancelled before it was answered.</summary>
-    Canceled = 7
+    Canceled = 7,
+
+    /// <summary>
+    /// The host stopped while the call was still up. Distinct from <see cref="Failed"/> on purpose:
+    /// nothing went wrong with the call itself, and a deployment should not leave a history full of
+    /// failures behind (ADR-018 §3).
+    /// </summary>
+    Interrupted = 8
 }

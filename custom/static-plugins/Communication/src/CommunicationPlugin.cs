@@ -21,6 +21,7 @@ using Callora.Plugin.Communication.Application.Flows;
 using Callora.Plugin.Communication.Application.Mcp;
 using Callora.Plugin.Communication.Application.RealtimeMedia;
 using Callora.Plugin.Communication.Application.Streaming;
+using Callora.Plugin.Communication.Application.Voice;
 using Callora.Plugin.Communication.Application.WebRtc;
 using Callora.Plugin.Communication.Infrastructure.Capabilities;
 using Callora.Plugin.Communication.Infrastructure.Channels;
@@ -44,7 +45,7 @@ namespace Callora.Plugin.Communication;
 /// <see cref="ISdkVoiceRuntime"/> (tests/custom hosts) or when configuration sets
 /// plugin-scoped <c>Voice:Enabled=true</c>, in which case the plugin builds the real SDK voice client itself.
 /// </summary>
-public sealed class CommunicationPlugin : IHostManagedPlugin
+public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
 {
     /// <summary>Stable plugin identifier.</summary>
     public const string Id = "communication";
@@ -92,6 +93,10 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     // surface and exported as IConferenceService for cross-plugin consumers (videoconference, call-center).
     // The provider owns its SDK client; both are disposed on stop.
     private CalloraVoipSdkProvider? _conferenceMediaProvider;
+
+    // Held past StartAsync only so a drain can flip it: once it reports "draining", every surface
+    // that gates on readiness stops handing out new sessions (ADR-018 §2.1).
+    private CommunicationReadinessProbe? _readinessProbe;
 
     /// <summary>Configuration key that enables the plugin's self-built SDK voice client.</summary>
     internal const string VoiceEnabledConfigKey = "Voice:Enabled";
@@ -243,7 +248,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
                 : [];
 
         // The status route answers a real dependency aggregate rather than a constant (#112).
-        var readinessProbe = new CommunicationReadinessProbe(
+        var readinessProbe = _readinessProbe = new CommunicationReadinessProbe(
             _channelRegistry,
             dbContextFactory is null ? null : new EfSipAccountStore(dbContextFactory),
             IsWebRtcEnabled(context.PluginConfiguration));
@@ -362,6 +367,35 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Three steps, in the only order that works. Readiness first, so every surface that gates on it
+    /// stops handing out sessions before anything else moves. Then the channels, because withdrawing a
+    /// SIP registration is what actually stops a carrier from routing here — refusing INVITEs only
+    /// covers the race. Only then the wait, which is the point of the whole exercise: the
+    /// conversations already in progress get to end by themselves.
+    /// </remarks>
+    public async ValueTask DrainAsync(CancellationToken cancellationToken = default)
+    {
+        _readinessProbe?.MarkDraining();
+
+        // The same channel can be registered for several workspaces; quiescing is idempotent, but
+        // asking once per channel keeps the log honest about how many lines were withdrawn.
+        var quiescable = _channelRegistry.GetAllRegistrations()
+            .Select(static registration => registration.Channel)
+            .OfType<IQuiescableChannel>()
+            .Distinct()
+            .ToArray();
+
+        await Task.WhenAll(quiescable.Select(channel => channel.QuiesceAsync(cancellationToken).AsTask()))
+            .ConfigureAwait(false);
+
+        if (_callControlService is not null)
+        {
+            await _callControlService.WaitForDrainAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <inheritdoc />
     public async ValueTask StopAsync(CancellationToken cancellationToken = default)
     {
         // Deregister and dispose provisioned channels, release live audio streams, then drop all
@@ -426,7 +460,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             new SdkSipAccountFactory(dataProtector, Id),
             voiceRuntime,
             Id,
-            ResolveLogger<SdkVoiceChannelConnector>(context.Services));
+            ResolveLogger<SdkVoiceChannelConnector>(context.Services),
+            ResolveLogger<SdkVoiceChannel>(context.Services));
 
         // Without a database there is no account row to write a status onto, so the reconciler
         // runs without a projector rather than with a no-op one (#112).

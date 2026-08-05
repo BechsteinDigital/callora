@@ -316,7 +316,17 @@ internal sealed class FakePhoneLine : IPhoneLine
         return Task.FromResult(DialResult ?? throw new InvalidOperationException("DialResult not set."));
     }
 
-    public Task UnregisterAsync(CancellationToken ct = default) => Task.CompletedTask;
+    /// <summary>How often the channel withdrew this line's registration (the drain path).</summary>
+    public int UnregisterCalls { get; private set; }
+
+    /// <summary>Set to make unregistering fail, so a drain can be shown to survive it.</summary>
+    public Exception? UnregisterFailure { get; set; }
+
+    public Task UnregisterAsync(CancellationToken ct = default)
+    {
+        UnregisterCalls++;
+        return UnregisterFailure is null ? Task.CompletedTask : Task.FromException(UnregisterFailure);
+    }
 
     // ── Members the channel must never touch ────────────────────────────────────
     public LineId LineId => throw new NotSupportedException();
