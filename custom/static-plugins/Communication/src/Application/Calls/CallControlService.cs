@@ -35,6 +35,10 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
 
     private readonly ConcurrentDictionary<ActiveCallKey, TrackedCall> _active = new();
 
+    // Completed once the last tracked call is gone. Created on the first waiter so the normal path
+    // allocates nothing (ADR-018 §2.1).
+    private TaskCompletionSource? _drainSignal;
+
     /// <summary>Creates the service over the channel registry and call-log store.</summary>
     /// <param name="channels">Resolves the workspace's voice channels.</param>
     /// <param name="callLogStore">Records history and the event outbox.</param>
@@ -241,7 +245,13 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
 
             try
             {
-                await FinalizeAsync(tracked, CallOutcome.Failed, "The host shut down while the call was active.")
+                // Interrupted, not Failed: a deployment must not leave history full of failures for
+                // calls that were simply cut short (ADR-018 §3). A call still here has already
+                // outlived the drain, so this is the deliberate hard stop.
+                await FinalizeAsync(
+                        tracked,
+                        CallOutcome.Interrupted,
+                        "The host stopped while the call was active.")
                     .ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -455,6 +465,46 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
         }
     }
 
+    /// <summary>Number of calls this service is currently tracking.</summary>
+    public int ActiveCallCount => _active.Count;
+
+    /// <summary>
+    /// Completes once the last tracked call has ended, so a drain can wait for the conversations
+    /// instead of cutting them (ADR-018 §2.1). Returns immediately when nothing is in flight.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// The drain deadline. Cancelling throws <see cref="OperationCanceledException"/>, which is the
+    /// host's signal that the wait ran out — calls still up are then finalized by
+    /// <see cref="DisposeAsync"/>.
+    /// </param>
+    /// <remarks>
+    /// Draining is one-way: the plugin is stopped afterwards, so the signal is never reset. Waiting
+    /// again after a completed drain is not a supported sequence.
+    /// </remarks>
+    public async Task WaitForDrainAsync(CancellationToken cancellationToken = default)
+    {
+        if (_active.IsEmpty)
+        {
+            return;
+        }
+
+        var signal = Volatile.Read(ref _drainSignal);
+        if (signal is null)
+        {
+            var created = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            signal = Interlocked.CompareExchange(ref _drainSignal, created, null) ?? created;
+        }
+
+        // Re-check after publishing the signal: a call that ended in between would otherwise have
+        // found no signal to complete, and this would wait for an event that already happened.
+        if (_active.IsEmpty)
+        {
+            signal.TrySetResult();
+        }
+
+        await signal.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>Removes the call from tracking and unhooks its handler. Safe to call twice.</summary>
     private void Detach(TrackedCall tracked)
     {
@@ -462,6 +512,11 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
         {
             tracked.Call.StateChanged -= tracked.Handler;
             tracked.Dispose();
+
+            if (_active.IsEmpty)
+            {
+                Volatile.Read(ref _drainSignal)?.TrySetResult();
+            }
         }
     }
 

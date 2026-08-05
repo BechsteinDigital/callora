@@ -30,6 +30,7 @@ host provides them at runtime); SourceLink lets you step into the platform sourc
 | Extension point | Mode | Purpose |
 | --- | --- | --- |
 | **IHostManagedPlugin** | Contributable | The plugin entrypoint — `StartAsync`/`StopAsync`. Everything below is wired from here. |
+| **IDrainablePlugin** | Contributable | Implement alongside the entrypoint when the plugin carries work a stop would cut through — live calls, open sessions. The host asks it to run dry before stopping it, within a deadline it owns ([ADR-018](https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-018-drain-und-resume-fuer-langlebige-plugins.md)). |
 | **IHostPluginExtensionContributor** | Contributable | Export code-first registrations (services, options) into the host container. |
 
 ## Events

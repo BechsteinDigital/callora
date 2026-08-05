@@ -17,13 +17,19 @@ public sealed class SdkVoiceChannelConnector : IVoiceChannelConnector
     private readonly ISdkVoiceRuntime _runtime;
     private readonly string _pluginId;
     private readonly ILogger<SdkVoiceChannelConnector> _logger;
+    private readonly ILogger<SdkVoiceChannel>? _channelLogger;
 
     /// <summary>Creates the connector over the account factory, SDK runtime seam and plugin id.</summary>
+    /// <param name="channelLogger">
+    /// Handed to every channel this connector produces, so a withdrawn registration or a refused call
+    /// during a drain is logged under the channel's own category rather than the connector's.
+    /// </param>
     public SdkVoiceChannelConnector(
         SdkSipAccountFactory accountFactory,
         ISdkVoiceRuntime runtime,
         string pluginId,
-        ILogger<SdkVoiceChannelConnector> logger)
+        ILogger<SdkVoiceChannelConnector> logger,
+        ILogger<SdkVoiceChannel>? channelLogger = null)
     {
         ArgumentNullException.ThrowIfNull(accountFactory);
         ArgumentNullException.ThrowIfNull(runtime);
@@ -34,6 +40,7 @@ public sealed class SdkVoiceChannelConnector : IVoiceChannelConnector
         _runtime = runtime;
         _pluginId = pluginId;
         _logger = logger;
+        _channelLogger = channelLogger;
     }
 
     /// <inheritdoc />
@@ -49,6 +56,13 @@ public sealed class SdkVoiceChannelConnector : IVoiceChannelConnector
             return null;
         }
 
-        return new SdkVoiceChannel(account.Id, account.DisplayName, _pluginId, line, _runtime.CreateMediaTap, account.MaxConcurrentCalls);
+        return new SdkVoiceChannel(
+            account.Id,
+            account.DisplayName,
+            _pluginId,
+            line,
+            _runtime.CreateMediaTap,
+            account.MaxConcurrentCalls,
+            _channelLogger);
     }
 }

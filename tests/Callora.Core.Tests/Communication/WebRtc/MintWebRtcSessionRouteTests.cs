@@ -124,6 +124,27 @@ public sealed class MintWebRtcSessionRouteTests
         Assert.Null(Assert.IsType<WebRtcSessionView>(response.Payload).IceCredentialExpiresInSeconds);
     }
 
+    [Fact]
+    public async Task ADrainingInstanceRefusesToMintAnything()
+    {
+        var probe = ReadyProbe();
+        probe.MarkDraining();
+        var handler = new MintWebRtcSessionRouteHandler(
+            new FakeWebRtcSessionMinter(),
+            probe,
+            IceConfigurationOptions.None,
+            new FakeTimeProvider(Now),
+            NullLogger<MintWebRtcSessionRouteHandler>.Instance);
+
+        var response = await handler.HandleAsync(Request("ws-a", new { target = "browser-1" }));
+
+        // Handing out a session on an instance that is shutting down would send a browser into a
+        // socket about to close (ADR-018 §2.1). The wording separates it from an outage, which is
+        // the same 503 for a different reason.
+        Assert.Equal(503, response.StatusCode);
+        Assert.Contains("draining", JsonSerializer.Serialize(response.Payload), StringComparison.OrdinalIgnoreCase);
+    }
+
     private static CommunicationReadinessProbe ReadyProbe()
     {
         var registry = new CommunicationChannelRegistry();

@@ -1464,6 +1464,8 @@ Callora.Core.Application.Options.CalloraHostingOptions.AutoLoadPlugins.set -> vo
 Callora.Core.Application.Options.CalloraHostingOptions.CalloraHostingOptions() -> void
 Callora.Core.Application.Options.CalloraHostingOptions.PluginDirectory.get -> string!
 Callora.Core.Application.Options.CalloraHostingOptions.PluginDirectory.set -> void
+Callora.Core.Application.Options.CalloraHostingOptions.PluginDrainTimeout.get -> System.TimeSpan
+Callora.Core.Application.Options.CalloraHostingOptions.PluginDrainTimeout.set -> void
 Callora.Core.Application.Options.CalloraHostingOptions.RuntimeCapabilityGracePeriod.get -> System.TimeSpan
 Callora.Core.Application.Options.CalloraHostingOptions.RuntimeCapabilityGracePeriod.set -> void
 Callora.Core.Application.Options.CalloraHostingOptions.StaticPluginDirectory.get -> string!
@@ -3946,6 +3948,8 @@ Callora.Core.Domain.Notifications.NotificationEntry.Title.set -> void
 Callora.Core.Domain.Notifications.NotificationEntry.WorkspaceKey.get -> string?
 Callora.Core.Domain.Notifications.NotificationEntry.WorkspaceKey.set -> void
 Callora.Core.Domain.Plugins.CapabilityListCodec
+Callora.Core.Domain.Plugins.Contracts.IDrainablePlugin
+Callora.Core.Domain.Plugins.Contracts.IDrainablePlugin.DrainAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Callora.Core.Domain.Plugins.Contracts.IHostManagedPlugin
 Callora.Core.Domain.Plugins.Contracts.IHostManagedPlugin.DisplayName.get -> string!
 Callora.Core.Domain.Plugins.Contracts.IHostManagedPlugin.PluginId.get -> string!
