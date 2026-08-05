@@ -23,12 +23,12 @@ public sealed class CommunicationWorkspaceDataPurger(IPluginDbContextFactory<Com
             .BeginTransactionAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        // Child → parent so the line→account workspace-FK (Restrict) is never violated mid-purge.
+        // Child → parent so no workspace-scoped foreign key is violated mid-purge.
         await db.MediaStreamSessions.Where(x => x.WorkspaceKey == workspaceKey)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
-        await db.CallLogs.Where(x => x.WorkspaceKey == workspaceKey)
+        await db.CallEventOutbox.Where(x => x.WorkspaceKey == workspaceKey)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
-        await db.SipLines.Where(x => x.WorkspaceKey == workspaceKey)
+        await db.CallLogs.Where(x => x.WorkspaceKey == workspaceKey)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await db.SipAccounts.Where(x => x.WorkspaceKey == workspaceKey)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);

@@ -174,10 +174,10 @@ public sealed class CallLifecycleSerializationTests
         // Two channels reporting the same call id must yield two records. While the provider id
         // was the primary key, the second insert collided and the call could not be recorded.
         var first = CallLog.Start(
-            "shared-id", Workspace, "ch-1", null, CallDirection.Outbound,
+            "shared-id", Workspace, "ch-1", CallDirection.Outbound,
             "+49301234567", "line", null, null, DateTimeOffset.UnixEpoch);
         var second = CallLog.Start(
-            "shared-id", Workspace, "ch-2", null, CallDirection.Outbound,
+            "shared-id", Workspace, "ch-2", CallDirection.Outbound,
             "+49301234568", "line", null, null, DateTimeOffset.UnixEpoch);
 
         Assert.NotEqual(first.RecordId, second.RecordId);

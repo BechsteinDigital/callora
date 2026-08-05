@@ -37,4 +37,11 @@ public interface ICallLogStore
 
     /// <summary>Deletes all records of a workspace (used by the GDPR purge contributor). Returns the count.</summary>
     Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes finished calls that ended before <paramref name="cutoff"/>, bounding how long a
+    /// remote party's number is kept (#117). In-progress calls are never touched. Returns the
+    /// count; idempotent, because a repeated run with the same cutoff finds nothing.
+    /// </summary>
+    Task<int> PurgeEndedBeforeAsync(DateTimeOffset cutoff, CancellationToken cancellationToken = default);
 }

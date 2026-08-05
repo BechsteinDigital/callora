@@ -21,7 +21,6 @@ public sealed class CallLogConfiguration : IEntityTypeConfiguration<CallLog>
         builder.HasIndex(x => new { x.WorkspaceKey, x.AccountId, x.Id }).IsUnique();
         builder.Property(x => x.WorkspaceKey).HasMaxLength(120).IsRequired();
         builder.Property(x => x.AccountId).HasMaxLength(64);
-        builder.Property(x => x.LineId).HasMaxLength(64);
         builder.Property(x => x.Direction).HasConversion<string>().HasMaxLength(20).IsRequired();
         builder.Property(x => x.RemoteParty).HasMaxLength(200).IsRequired();
         builder.Property(x => x.LocalIdentity).HasMaxLength(200).IsRequired();

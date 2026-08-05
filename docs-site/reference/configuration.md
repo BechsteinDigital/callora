@@ -202,6 +202,18 @@ For `PUT /api/config/values`, `scope` is one of `global` / `tenant` / `workspace
 `scopeKey` is required for `tenant` and `workspace`. Global/tenant writes are
 operator-only; workspace writes require access to the target workspace.
 
+## Communication plugin configuration
+
+Plugin-scoped keys, read from the plugin's own configuration section:
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Voice:Enabled` | `bool` | `false` | Lets the plugin build its own SDK voice client. |
+| `WebRtc:Enabled` | `bool` | `false` | Enables the WebRTC and conference surfaces. |
+| `Retention:CallLogDays` | `int` | `90` | How long finished call history is kept. Call logs carry the remote party's number, so this bounds how long it is stored. A missing, unparsable or non-positive value falls back to the default; keeping history forever is not configurable by accident. |
+
+Retention is deployment-wide. Per-workspace retention policy is not implemented.
+
 ## Forwarded headers
 
 Behind a TLS-terminating reverse proxy (Caddy/Nginx), set

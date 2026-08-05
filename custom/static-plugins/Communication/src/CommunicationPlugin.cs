@@ -89,6 +89,28 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     /// <summary>Configuration key that enables the plugin's self-built WebRTC client.</summary>
     internal const string WebRtcEnabledConfigKey = "WebRtc:Enabled";
 
+    /// <summary>Configuration key for how many days finished call history is kept.</summary>
+    internal const string CallLogRetentionDaysConfigKey = "Retention:CallLogDays";
+
+    /// <summary>
+    /// Default call-history window. Long enough for billing disputes and support, short enough
+    /// that a phone number is not kept indefinitely by default.
+    /// </summary>
+    internal static readonly TimeSpan DefaultCallLogRetention = TimeSpan.FromDays(90);
+
+    /// <summary>
+    /// Reads the configured call-history window. A missing, unparsable or non-positive value
+    /// falls back to the default rather than disabling retention, because "keep forever" must be
+    /// a deliberate choice, not a typo.
+    /// </summary>
+    internal static TimeSpan ResolveCallLogRetention(IConfiguration? pluginConfiguration)
+    {
+        var configured = pluginConfiguration?[CallLogRetentionDaysConfigKey];
+        return int.TryParse(configured, out var days) && days > 0
+            ? TimeSpan.FromDays(days)
+            : DefaultCallLogRetention;
+    }
+
     /// <inheritdoc />
     public async ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
     {
@@ -124,6 +146,16 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
                     ResolveLogger<CallEventOutboxDrainJobHandler>(context.Services)));
                 context.Export<IRecurringJobProvider>(new CallEventOutboxRecurringJobProvider());
             }
+
+            // Call history carries the remote party's number, so it needs a bound (#117). The
+            // window is deployment-wide from plugin configuration; per-workspace policy is not
+            // implemented.
+            context.Export<IBackgroundJobHandler>(new CallLogRetentionJobHandler(
+                callLogStore,
+                TimeProvider.System,
+                ResolveCallLogRetention(context.PluginConfiguration),
+                ResolveLogger<CallLogRetentionJobHandler>(context.Services)));
+            context.Export<IRecurringJobProvider>(new CallLogRetentionRecurringJobProvider());
 
             // Contribute the call-control primitives as MCP tools so out-of-process AI agents can place
             // and control calls over the host's /mcp surface — the same service, an additional face. The
@@ -221,10 +253,20 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             // its own SDK client, video enabled so conference peers carry camera tracks — plus the
             // ConferenceService over it. Exported as IConferenceService for cross-plugin consumers
             // (videoconference, call-center) via the same curated-export path as ICommunicationChannelRegistry.
+            // ADR-016 places provider selection on a DI/configuration boundary, but the
+            // composition root always built the SDK provider, so a host could not substitute one
+            // (#117). A host-supplied IRealtimeMediaProvider now wins; only without one does the
+            // plugin build and own the SDK provider itself.
             var conferencePeerOptions = ToConferencePeerOptions(webRtcOptions);
-            _conferenceMediaProvider = CalloraVoipSdkProvider.Create(conferencePeerOptions, loggerFactory);
+            var injectedMediaProvider =
+                context.Services.GetService(typeof(IRealtimeMediaProvider)) as IRealtimeMediaProvider;
+            if (injectedMediaProvider is null)
+            {
+                _conferenceMediaProvider = CalloraVoipSdkProvider.Create(conferencePeerOptions, loggerFactory);
+            }
+
             var conferenceService = new ConferenceService(
-                _conferenceMediaProvider,
+                injectedMediaProvider ?? _conferenceMediaProvider!,
                 conferencePeerOptions,
                 ResolveLogger<ConferenceService>(context.Services));
             context.Export<IConferenceService>(conferenceService);
