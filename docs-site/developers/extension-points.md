@@ -87,7 +87,31 @@ that only learns it when the socket dies has already missed its chance.
 
 Redemption is single use, so issue a fresh ticket on every connect if the client should stay
 resumable. Tickets are bound to the issuing plugin and their lifetime is clamped by the host
-(`CalloraHosting:SessionResumeMaxLifetime`).
+(`CalloraHosting:SessionResumeMaxLifetime`). The payload is encrypted at rest with a protector whose
+purpose carries your plugin id, so a leaked database yields neither a redeemable token nor a readable
+payload.
+:::
+
+::: warning A resume ticket is a bearer credential — it describes identity, it does not authorize
+Whoever holds the token can attempt to redeem it inside its window. The plugin binding stops another
+*plugin* from redeeming it; it does not stop another *client* of yours.
+
+So on redemption, check the payload against the caller in front of you. `HostWebSocketConnectRequest.Caller`
+carries the surface caller when the upgrade had one — including a recognised guest, who has a stable
+subject too (ADR-017 §3). If the seat was issued to a subject, the returning connection must present
+the same one:
+
+```csharp
+if (payload.SubjectId is { } expected &&
+    request.Caller?.Subject.SubjectId != expected)
+{
+    return WebSocketConnectAuthorization.Deny("resume subject mismatch");
+}
+```
+
+Where no caller exists at all — an out-of-process agent connecting with a token and nothing else —
+bearer is the only model available, and the short window is what bounds it. Say so in your own docs
+rather than leaving a reader to assume the ticket authenticated someone.
 :::
 | **IHostPublicHttpEndpointContributor** | Contributable | Contribute anonymous public HTTP endpoints under `/public/{pluginId}/…` (GET/POST, no platform auth). |
 | **IHostPublicHttpRouteHandler** | Contributable | Handle one plugin public HTTP route — responsible for all input validation and access control. |
