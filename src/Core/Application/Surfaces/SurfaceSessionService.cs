@@ -128,31 +128,19 @@ public sealed class SurfaceSessionService
             return null;
         }
 
-        // A cookie is host-bound, a surface is not, and two surfaces can share a host.
-        // A scope mismatch is discarded rather than repaired.
-        if (!envelope.MatchesScope(surface.TenantKey, surface.WorkspaceKey, surface.SurfaceKey, audience))
-        {
-            return null;
-        }
-
-        var now = _timeProvider.GetUtcNow();
-        if (envelope.Kind == SurfaceSessionEnvelopeKind.Guest &&
-            envelope.IssuedAtUtc + _options.GuestContextLifetime <= now)
-        {
-            return null;
-        }
-
-        // A change of identity provider voids everything issued before it: if another
-        // party now vouches for the surface's visitors, carrying trust over would be
-        // inconsistent (ADR-017 §6.3). Guests are unaffected — they vouch for nothing.
-        if (envelope.Kind == SurfaceSessionEnvelopeKind.Authenticated &&
-            surface.IdentityAssignedAtUtc is { } assignedAt &&
-            envelope.IssuedAtUtc < assignedAt)
-        {
-            return null;
-        }
-
-        return envelope;
+        // Shared with the WebSocket gate and the handoff exchange: a cookie one seam
+        // discards must not be honoured by another (ADR-017 §8.2).
+        return SurfaceSessionEnvelopeValidator.IsUsable(
+            envelope,
+            surface.TenantKey,
+            surface.WorkspaceKey,
+            surface.SurfaceKey,
+            audience,
+            surface.IdentityAssignedAtUtc,
+            _timeProvider.GetUtcNow(),
+            _options.GuestContextLifetime)
+            ? envelope
+            : null;
     }
 
     private async Task<SurfaceSessionEstablishment> PromoteAsync(
