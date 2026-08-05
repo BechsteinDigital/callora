@@ -2640,6 +2640,10 @@ Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.Identity.get -> Cal
 Callora.Core.Application.Surfaces.GuestSurfaceCaller
 Callora.Core.Application.Surfaces.GuestSurfaceCaller.Equals(Callora.Core.Application.Surfaces.GuestSurfaceCaller? other) -> bool
 Callora.Core.Application.Surfaces.GuestSurfaceCaller.GuestSurfaceCaller(Callora.Core.Application.Surfaces.SurfaceSubject! subject) -> void
+Callora.Core.Application.Surfaces.ISurfaceCredentialReader
+Callora.Core.Application.Surfaces.ISurfaceCredentialReader.Read(Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredentialKind kind, string! name) -> string?
+Callora.Core.Application.Surfaces.ISurfaceHostIdentitySource
+Callora.Core.Application.Surfaces.ISurfaceHostIdentitySource.AuthenticateAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult!>
 Callora.Core.Application.Surfaces.SurfaceCaller
 Callora.Core.Application.Surfaces.SurfaceCaller.Subject.get -> Callora.Core.Application.Surfaces.SurfaceSubject!
 Callora.Core.Application.Surfaces.SurfaceCaller.SurfaceCaller(Callora.Core.Application.Surfaces.SurfaceCaller! original) -> void
@@ -2682,6 +2686,43 @@ Callora.Core.Application.Surfaces.SurfaceIdentityOptions.MaxIdentityLifetime.set
 Callora.Core.Application.Surfaces.SurfaceIdentityOptions.ProviderTimeout.get -> System.TimeSpan
 Callora.Core.Application.Surfaces.SurfaceIdentityOptions.ProviderTimeout.set -> void
 Callora.Core.Application.Surfaces.SurfaceIdentityOptions.SurfaceIdentityOptions() -> void
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceIdentityResolution!
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Caller.get -> Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller?
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Caller.init -> void
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Deconstruct(out Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus Status, out Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? Caller, out string? Detail) -> void
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Detail.get -> string?
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Detail.init -> void
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Equals(Callora.Core.Application.Surfaces.SurfaceIdentityResolution? other) -> bool
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.IsClosed.get -> bool
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Status.get -> Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Status.init -> void
+Callora.Core.Application.Surfaces.SurfaceIdentityResolution.SurfaceIdentityResolution(Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus Status, Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? Caller = null, string? Detail = null) -> void
+Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus
+Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus.Anonymous = 0 -> Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus
+Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus.Authenticated = 1 -> Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus
+Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus.ProviderFailed = 5 -> Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus
+Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus.ProviderMissing = 4 -> Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus
+Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus.ProviderNotAssigned = 2 -> Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus
+Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus.ProviderUnavailable = 3 -> Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus
+Callora.Core.Application.Surfaces.SurfaceIdentityResolver
+Callora.Core.Application.Surfaces.SurfaceIdentityResolver.ResolveAsync(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot! surface, Callora.Core.Application.Surfaces.SurfaceRequestDescriptor! request, Callora.Core.Application.Surfaces.ISurfaceCredentialReader! credentials, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.SurfaceIdentityResolution!>!
+Callora.Core.Application.Surfaces.SurfaceIdentityResolver.SurfaceIdentityResolver(Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator! availabilityEvaluator, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Callora.Core.Application.Surfaces.ISurfaceHostIdentitySource! hostIdentitySource, Callora.Core.Application.Surfaces.SurfaceIdentityOptions! options, System.TimeProvider! timeProvider, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Surfaces.SurfaceIdentityResolver!>! logger) -> void
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceRequestDescriptor!
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.Deconstruct(out string! HttpMethod, out string! RoutePath, out string! Locale, out string? Origin, out string? UserAgent) -> void
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.Equals(Callora.Core.Application.Surfaces.SurfaceRequestDescriptor? other) -> bool
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.HttpMethod.get -> string!
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.HttpMethod.init -> void
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.Locale.get -> string!
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.Locale.init -> void
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.Origin.get -> string?
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.Origin.init -> void
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.RoutePath.get -> string!
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.RoutePath.init -> void
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.SurfaceRequestDescriptor(string! HttpMethod, string! RoutePath, string! Locale, string? Origin = null, string? UserAgent = null) -> void
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.UserAgent.get -> string?
+Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.UserAgent.init -> void
 Callora.Core.Application.Surfaces.SurfaceSubject
 Callora.Core.Application.Surfaces.SurfaceSubject.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceSubject!
 Callora.Core.Application.Surfaces.SurfaceSubject.Deconstruct(out string! Issuer, out string! SubjectId) -> void
@@ -4888,6 +4929,12 @@ override Callora.Core.Application.Surfaces.SurfaceCaller.ToString() -> string!
 override Callora.Core.Application.Surfaces.SurfaceIdentity.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.SurfaceIdentity.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.SurfaceIdentity.ToString() -> string!
+override Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SurfaceIdentityResolution.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SurfaceIdentityResolution.ToString() -> string!
+override Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.ToString() -> string!
 override Callora.Core.Application.Surfaces.SurfaceSubject.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.SurfaceSubject.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.SurfaceSubject.ToString() -> string!
@@ -5309,6 +5356,13 @@ static Callora.Core.Application.Surfaces.SurfaceCaller.operator ==(Callora.Core.
 static Callora.Core.Application.Surfaces.SurfaceIdentity.operator !=(Callora.Core.Application.Surfaces.SurfaceIdentity? left, Callora.Core.Application.Surfaces.SurfaceIdentity? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceIdentity.operator ==(Callora.Core.Application.Surfaces.SurfaceIdentity? left, Callora.Core.Application.Surfaces.SurfaceIdentity? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceIdentityIssuers.IsReserved(string? issuer) -> bool
+static Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Anonymous.get -> Callora.Core.Application.Surfaces.SurfaceIdentityResolution!
+static Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Authenticated(Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller! caller) -> Callora.Core.Application.Surfaces.SurfaceIdentityResolution!
+static Callora.Core.Application.Surfaces.SurfaceIdentityResolution.Closed(Callora.Core.Application.Surfaces.SurfaceIdentityResolutionStatus status, string? detail = null) -> Callora.Core.Application.Surfaces.SurfaceIdentityResolution!
+static Callora.Core.Application.Surfaces.SurfaceIdentityResolution.operator !=(Callora.Core.Application.Surfaces.SurfaceIdentityResolution? left, Callora.Core.Application.Surfaces.SurfaceIdentityResolution? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceIdentityResolution.operator ==(Callora.Core.Application.Surfaces.SurfaceIdentityResolution? left, Callora.Core.Application.Surfaces.SurfaceIdentityResolution? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.operator !=(Callora.Core.Application.Surfaces.SurfaceRequestDescriptor? left, Callora.Core.Application.Surfaces.SurfaceRequestDescriptor? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceRequestDescriptor.operator ==(Callora.Core.Application.Surfaces.SurfaceRequestDescriptor? left, Callora.Core.Application.Surfaces.SurfaceRequestDescriptor? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceSubject.operator !=(Callora.Core.Application.Surfaces.SurfaceSubject? left, Callora.Core.Application.Surfaces.SurfaceSubject? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceSubject.operator ==(Callora.Core.Application.Surfaces.SurfaceSubject? left, Callora.Core.Application.Surfaces.SurfaceSubject? right) -> bool
 static Callora.Core.Application.Tenants.TenantCreateResult.operator !=(Callora.Core.Application.Tenants.TenantCreateResult? left, Callora.Core.Application.Tenants.TenantCreateResult? right) -> bool
