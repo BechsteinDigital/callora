@@ -47,4 +47,25 @@ public sealed class CalloraHostingOptions
     /// restart.
     /// </remarks>
     public TimeSpan PluginDrainTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Longest a session resume promise may hold (ADR-018 §2.2). A plugin asking for more is clamped
+    /// to this.
+    /// </summary>
+    /// <remarks>
+    /// This is the line between a reconnect window and a bearer credential. Fifteen minutes covers a
+    /// tunnel, a WiFi handover and a host restart; a window measured in hours mostly covers a stolen
+    /// token.
+    /// </remarks>
+    public TimeSpan SessionResumeMaxLifetime { get; set; } = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// Largest resume payload a plugin may store, in UTF-8 bytes. Issuing a larger one is refused
+    /// rather than truncated.
+    /// </summary>
+    /// <remarks>
+    /// A resume payload carries identity (which session, which participant, which role), not session
+    /// state. The limit is what keeps the ticket table from becoming a document store.
+    /// </remarks>
+    public int SessionResumeMaxPayloadBytes { get; set; } = 4096;
 }

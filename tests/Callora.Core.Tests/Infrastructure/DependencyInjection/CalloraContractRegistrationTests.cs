@@ -22,8 +22,8 @@ public sealed class CalloraContractRegistrationTests
     }
 
     [Theory]
-    [InlineData(typeof(IBackgroundJobHandler), 7, ServiceLifetime.Scoped)]
-    [InlineData(typeof(IRecurringJobProvider), 3, ServiceLifetime.Singleton)]
+    [InlineData(typeof(IBackgroundJobHandler), 8, ServiceLifetime.Scoped)]
+    [InlineData(typeof(IRecurringJobProvider), 4, ServiceLifetime.Singleton)]
     [InlineData(typeof(IRuleConditionEvaluator), 4, ServiceLifetime.Singleton)]
     [InlineData(typeof(IFlowActionHandler), 3, ServiceLifetime.Singleton)]
     [InlineData(typeof(IBusinessEventListener), 2, ServiceLifetime.Singleton)]

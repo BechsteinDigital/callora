@@ -79,6 +79,10 @@ public static class CalloraHostCompositionExtensions
             Callora.Core.Infrastructure.Features.ConfiguredFeatureFlagService>();
         builder.Services.AddScoped<EfPluginDataStore>();
         builder.Services.AddSingleton<IPluginDataStore, ScopedPluginDataStore>();
+        // Resume-Zusagen für Realtime-Sitzungen (ADR-018 §2.2): dieselbe Singleton-Fassade wie beim
+        // Data-Store, weil ein Plugin sie aus WebSocket-Handlern ohne Request-Scope ausstellt.
+        builder.Services.AddSingleton<Callora.Core.Application.Plugins.ISessionResumeTicketStore,
+            ScopedSessionResumeTicketStore>();
         // Plugin-eigene EF-Datenbanken (PLAT-260): Plugins bringen echte Entities +
         // EF-Migrationen in ihrem eigenen Schema mit.
         builder.Services.AddSingleton<Callora.Core.Application.Plugins.IPluginDbContextProvider,
