@@ -134,6 +134,7 @@ public static class CalloraHostCompositionExtensions
         // den Caller aus dem Cookie statt aus der aufgelösten Surface (ADR-017 §9).
         builder.Services.AddScoped<Callora.Core.Application.Surfaces.SurfaceSessionAuthenticator>();
         builder.Services.AddScoped<Callora.Core.Infrastructure.Surfaces.SurfaceUpgradeCallerResolver>();
+        builder.Services.AddScoped<Callora.Core.Application.Surfaces.SurfaceHandoffService>();
         builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
         builder.Services.AddScoped<MarketplaceEntitlementApplier>();
 

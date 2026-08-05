@@ -30,9 +30,9 @@ public sealed class SurfaceSessionAuthenticatorTests
         var fixture = new AuthenticatorFixture();
         var cookie = fixture.GuestCookie("g-1");
 
-        var caller = await fixture.Authenticator.AuthenticateAsync(cookie, Audience);
+        var context = await fixture.Authenticator.AuthenticateAsync(cookie, Audience);
 
-        var guest = Assert.IsType<GuestSurfaceCaller>(caller);
+        var guest = Assert.IsType<GuestSurfaceCaller>(context!.Caller);
         Assert.Equal(SurfaceIdentityIssuers.Guest, guest.Subject.Issuer);
         Assert.Equal("g-1", guest.Subject.SubjectId);
     }
@@ -52,9 +52,11 @@ public sealed class SurfaceSessionAuthenticatorTests
         var fixture = new AuthenticatorFixture();
         var cookie = await fixture.SessionCookieAsync();
 
-        var caller = await fixture.Authenticator.AuthenticateAsync(cookie, Audience);
+        var context = await fixture.Authenticator.AuthenticateAsync(cookie, Audience);
 
-        var authenticated = Assert.IsType<AuthenticatedSurfaceCaller>(caller);
+        Assert.Equal("workspace-a", context!.WorkspaceKey);
+        Assert.Equal("portal", context.SurfaceKey);
+        var authenticated = Assert.IsType<AuthenticatedSurfaceCaller>(context.Caller);
         Assert.Equal("crm.example", authenticated.Subject.Issuer);
         Assert.Equal("lead-42", authenticated.Subject.SubjectId);
         Assert.Equal(["agent"], authenticated.Identity.Claims["crm.roles"]);

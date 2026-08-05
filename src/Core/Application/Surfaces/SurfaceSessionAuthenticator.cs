@@ -29,7 +29,7 @@ public sealed class SurfaceSessionAuthenticator(
     /// <param name="cookieValue">Incoming surface cookie value.</param>
     /// <param name="audience">Host the request arrived on.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task<SurfaceCaller?> AuthenticateAsync(
+    public async Task<SurfaceCallerContext?> AuthenticateAsync(
         string? cookieValue,
         string audience,
         CancellationToken cancellationToken = default)
@@ -65,9 +65,14 @@ public sealed class SurfaceSessionAuthenticator(
             return null;
         }
 
-        return envelope.Kind == SurfaceSessionEnvelopeKind.Guest
+        var caller = envelope.Kind == SurfaceSessionEnvelopeKind.Guest
             ? new GuestSurfaceCaller(new SurfaceSubject(SurfaceIdentityIssuers.Guest, envelope.Id))
             : await AuthenticateSessionAsync(envelope, audience, cancellationToken).ConfigureAwait(false);
+
+        return caller is null
+            ? null
+            : new SurfaceCallerContext(
+                caller, envelope.TenantKey, envelope.WorkspaceKey, envelope.SurfaceKey);
     }
 
     private async Task<SurfaceCaller?> AuthenticateSessionAsync(

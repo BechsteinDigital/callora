@@ -31,6 +31,7 @@ public static class CalloraSurfaceRenderingExtensions
     public static WebApplication MapCalloraSurfaceRendering(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
+        app.MapSurfaceHandoffEndpoints();
         app.MapSurfaceRenderEndpoints();
         return app;
     }
