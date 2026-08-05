@@ -191,10 +191,10 @@ namespace Callora.Plugin.Communication.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<string>("ConnectToken")
+                    b.Property<string>("ConnectTokenHash")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("ConsumerRef")
                         .IsRequired()
@@ -227,7 +227,7 @@ namespace Callora.Plugin.Communication.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ConnectToken")
+                    b.HasIndex("ConnectTokenHash")
                         .IsUnique();
 
                     b.HasIndex("WorkspaceKey");

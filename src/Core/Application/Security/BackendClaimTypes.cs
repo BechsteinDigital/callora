@@ -27,4 +27,18 @@ public static class BackendClaimTypes
     /// platform-wide access.
     /// </summary>
     public const string CalloraScope = "callora_scope";
+
+    /// <summary>
+    /// The account's security stamp at the moment the session was issued
+    /// (<see cref="BackendSecurityStamp"/>). A request whose stamp no longer
+    /// matches the stored one is rejected — that is how a password change,
+    /// deactivation or RBAC change revokes live sessions (#105).
+    /// </summary>
+    public const string SecurityStamp = "sst";
+
+    /// <summary>
+    /// Unique identifier of this session (JWT <c>jti</c>), so a single session can
+    /// be revoked on logout without touching the account's other sessions.
+    /// </summary>
+    public const string TokenId = "jti";
 }

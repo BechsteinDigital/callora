@@ -2,6 +2,8 @@ using System.Net;
 using Callora.Core.Application.Policies;
 using Callora.Core.Extensibility;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ForwardedHeaderKinds = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders;
 
 namespace Callora.Core.Infrastructure.Security;
@@ -26,15 +28,21 @@ public static class BackendForwardedHeaders
     {
         ArgumentNullException.ThrowIfNull(options);
 
+        // X-Forwarded-For rewrites Connection.RemoteIpAddress, which is the identity
+        // the rate limiter partitions on. Honour it only when trust is explicit
+        // (#106): with empty trust lists ASP.NET applies the header from *any* peer,
+        // so a direct client could hand itself a fresh login bucket per request.
+        // Proto/host keep the immediate-upstream trust the compose topology needs.
+        var trustsExplicitProxies = HasExplicitTrust(options);
+
         var result = new ForwardedHeadersOptions
         {
-            // Only proto + host: those drive the external origin the CSRF check, Secure
-            // cookies and redirects need. X-Forwarded-For is deliberately NOT processed —
-            // it would rewrite the connection's remote IP, and the only client-IP consumer
-            // (the rate limiter) reads the header itself, so honouring it here adds a
-            // spoofable surface without a consumer.
-            ForwardedHeaders = ForwardedHeaderKinds.XForwardedProto
-                | ForwardedHeaderKinds.XForwardedHost,
+            ForwardedHeaders = trustsExplicitProxies
+                ? ForwardedHeaderKinds.XForwardedProto
+                    | ForwardedHeaderKinds.XForwardedHost
+                    | ForwardedHeaderKinds.XForwardedFor
+                : ForwardedHeaderKinds.XForwardedProto
+                    | ForwardedHeaderKinds.XForwardedHost,
             // <= 0 would map to null = "unlimited hops" in ASP.NET; clamp to a single
             // proxy instead so a misconfiguration tightens rather than removes the limit.
             ForwardLimit = options.ForwardLimit <= 0 ? 1 : options.ForwardLimit,
@@ -67,6 +75,20 @@ public static class BackendForwardedHeaders
     }
 
     /// <summary>
+    /// Whether the deployment names its trusted proxies explicitly — the condition
+    /// under which <c>X-Forwarded-For</c> may rewrite the connection's remote
+    /// address. Without it the header is accepted from any peer and is therefore
+    /// spoofable.
+    /// </summary>
+    public static bool HasExplicitTrust(BackendForwardedHeadersOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        return options.KnownProxies.Any(static x => !string.IsNullOrWhiteSpace(x)) ||
+               options.KnownNetworks.Any(static x => !string.IsNullOrWhiteSpace(x));
+    }
+
+    /// <summary>
     /// Applies forwarded-header processing when enabled; a no-op otherwise. Call this
     /// first in the middleware pipeline, before anything that reads scheme/host.
     /// </summary>
@@ -77,11 +99,24 @@ public static class BackendForwardedHeaders
         ArgumentNullException.ThrowIfNull(app);
         ArgumentNullException.ThrowIfNull(options);
 
-        if (options.ForwardedHeaders.Enabled)
+        if (!options.ForwardedHeaders.Enabled)
         {
-            app.UseForwardedHeaders(Build(options.ForwardedHeaders));
+            return app;
         }
 
+        if (!HasExplicitTrust(options.ForwardedHeaders))
+        {
+            app.ApplicationServices
+                .GetService<ILoggerFactory>()
+                ?.CreateLogger(typeof(BackendForwardedHeaders))
+                .LogWarning(
+                    "Forwarded headers are enabled without KnownProxies/KnownNetworks. " +
+                    "X-Forwarded-For stays unprocessed, so per-client rate limits partition " +
+                    "on the proxy address. Configure BackendHost:ForwardedHeaders:KnownNetworks " +
+                    "to restore per-client limits.");
+        }
+
+        app.UseForwardedHeaders(Build(options.ForwardedHeaders));
         return app;
     }
 }

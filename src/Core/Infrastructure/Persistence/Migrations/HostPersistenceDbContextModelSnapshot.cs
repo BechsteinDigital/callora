@@ -1059,6 +1059,29 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("backend_rbac_user_roles", (string)null);
                 });
 
+            modelBuilder.Entity("Callora.Core.Domain.Security.BackendRevokedSession", b =>
+                {
+                    b.Property<string>("TokenId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("TokenId");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.ToTable("backend_revoked_sessions", (string)null);
+                });
+
             modelBuilder.Entity("Callora.Core.Domain.Security.BackendUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1081,6 +1104,19 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<int>("FailedAccessCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<bool>("IsDisabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTimeOffset?>("LockoutEndsAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PasswordHash")
                         .HasMaxLength(1024)
                         .HasColumnType("character varying(1024)");
@@ -1088,6 +1124,13 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.Property<string>("PasswordHashAlgorithm")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SecurityStamp")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasDefaultValue("");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");

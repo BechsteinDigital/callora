@@ -12,9 +12,9 @@ public sealed class BackendRbacDatabaseSeeder(
     IPasswordHasher<BackendUser> passwordHasher,
     ILogger<BackendRbacDatabaseSeeder> logger)
 {
-    // A bootstrap operator is a real super-admin; a trivially short password would
-    // be a standing risk. Below this length the operator is refused, not weakened.
-    private const int MinInitialOperatorPasswordLength = 12;
+    // Seeded accounts are real super-admins. They pass the same
+    // BackendPasswordPolicy as every later credential change (#104): below it the
+    // account is refused, never seeded with a weaker password.
 
     public async Task SeedAsync(
         HostPersistenceDbContext dbContext,
@@ -86,6 +86,14 @@ public sealed class BackendRbacDatabaseSeeder(
             return;
         }
 
+        if (BackendPasswordPolicy.Validate(demoUser.Password) is { } violation)
+        {
+            logger.LogWarning(
+                "BackendHost.DemoAdminUser was not seeded: {Violation} Set a stronger BackendHost__DemoAdminUser__Password.",
+                violation);
+            return;
+        }
+
         await UpsertOperatorAsync(
             dbContext, demoUser.ExternalId, demoUser.Email, demoUser.DisplayName, demoUser.Password, superAdminRole, cancellationToken)
             .ConfigureAwait(false);
@@ -112,13 +120,13 @@ public sealed class BackendRbacDatabaseSeeder(
         logger.LogWarning(
             "InitialOperator is enabled: bootstrap credentials are in configuration/.env. After first sign-in, change the password, set BackendHost__InitialOperator__Enabled=false, and remove the credentials from .env.");
 
-        if (op.Password.Length < MinInitialOperatorPasswordLength)
+        if (BackendPasswordPolicy.Validate(op.Password) is { } violation)
         {
             // Fail closed: a too-weak bootstrap password yields no operator (loud
             // warning) rather than a weak super-admin.
             logger.LogWarning(
-                "InitialOperator password is shorter than the required minimum of {MinLength} characters; no bootstrap operator was seeded. Set a stronger BackendHost__InitialOperator__Password.",
-                MinInitialOperatorPasswordLength);
+                "InitialOperator was not seeded: {Violation} Set a stronger BackendHost__InitialOperator__Password.",
+                violation);
             return;
         }
 
@@ -162,6 +170,7 @@ public sealed class BackendRbacDatabaseSeeder(
             {
                 Id = Guid.NewGuid(),
                 ExternalId = externalId,
+                SecurityStamp = BackendSecurityStamp.New(),
                 CreatedAtUtc = nowUtc,
                 UpdatedAtUtc = nowUtc
             };
@@ -176,6 +185,9 @@ public sealed class BackendRbacDatabaseSeeder(
         user.DisplayName = string.IsNullOrWhiteSpace(displayName) ? null : displayName.Trim();
         user.PasswordHash = passwordHasher.HashPassword(user, password);
         user.PasswordHashAlgorithm = "aspnet.identity.v3";
+        // Re-seeding rewrites the credential, so every session issued under the old
+        // one must die with it (#105).
+        user.SecurityStamp = BackendSecurityStamp.New();
 
         var assignment = await dbContext.BackendRbacUserRoles
             .SingleOrDefaultAsync(x => x.UserId == user.Id, cancellationToken)

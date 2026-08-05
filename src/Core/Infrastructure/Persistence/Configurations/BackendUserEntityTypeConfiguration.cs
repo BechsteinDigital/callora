@@ -18,6 +18,10 @@ public sealed class BackendUserEntityTypeConfiguration : IEntityTypeConfiguratio
         builder.Property(x => x.PasswordHash).HasMaxLength(1024);
         builder.Property(x => x.PasswordHashAlgorithm).HasMaxLength(100);
         builder.Property(x => x.DisplayName).HasMaxLength(300);
+        builder.Property(x => x.SecurityStamp).HasMaxLength(64).IsRequired().HasDefaultValue(string.Empty);
+        builder.Property(x => x.IsDisabled).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.FailedAccessCount).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.LockoutEndsAtUtc);
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.Property(x => x.UpdatedAtUtc).IsRequired();
     }

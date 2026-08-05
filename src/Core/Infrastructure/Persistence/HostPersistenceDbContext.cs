@@ -39,6 +39,8 @@ public sealed class HostPersistenceDbContext(
 
     public DbSet<BackendUser> BackendUsers => Set<BackendUser>();
 
+    public DbSet<BackendRevokedSession> BackendRevokedSessions => Set<BackendRevokedSession>();
+
     public DbSet<Tenant> Tenants => Set<Tenant>();
 
     public DbSet<WorkspaceEntity> Workspaces => Set<WorkspaceEntity>();

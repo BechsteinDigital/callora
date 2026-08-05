@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Secrets.Contracts;
 using Callora.Plugin.Communication.Application.Accounts;
+using Callora.Plugin.Communication.Application.Voice;
 
 namespace Callora.Plugin.Communication.Application.Admin.SipAccounts;
 
@@ -16,12 +17,16 @@ namespace Callora.Plugin.Communication.Application.Admin.SipAccounts;
 public sealed class UpdateSipAccountRouteHandler(
     ISipAccountStore store,
     IPluginDataProtector dataProtector,
-    string pluginId) : IHostAdminApiRouteHandler
+    string pluginId,
+    ISipAccountRuntimeReconciler? reconciler = null,
+    TimeProvider? timeProvider = null) : IHostAdminApiRouteHandler
 {
     private static readonly JsonSerializerOptions SerializerOptions =
         new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
 
     private readonly SipAccountConnectionFactory _connectionFactory = new(dataProtector, pluginId);
+    private readonly SipAccountRuntimeCoordinator _runtime =
+        new(store, reconciler, timeProvider ?? TimeProvider.System);
 
     /// <inheritdoc />
     public async ValueTask<HostAdminApiResponse> HandleAsync(
@@ -61,6 +66,14 @@ public sealed class UpdateSipAccountRouteHandler(
             return Bad("displayName is required.");
         }
 
+        // An update must not move an account onto an unsupported method either (#111). An
+        // omitted method keeps the stored one, so an already-unsupported account can still be
+        // edited towards a supported configuration.
+        if (SipAuthMethodValidation.Reject(body.AuthMethod ?? account.Connection.Authentication.Method) is { } unsupported)
+        {
+            return unsupported;
+        }
+
         // Reuse the existing authentication so omitted secrets are kept rather than dropped.
         if (!_connectionFactory.TryBuild(body, account.Connection.Authentication, out var connection, out var error))
         {
@@ -75,7 +88,10 @@ public sealed class UpdateSipAccountRouteHandler(
 
         account.Reconfigure(body.DisplayName!, connection!, maxConcurrentCalls);
         await store.UpdateAsync(account, cancellationToken).ConfigureAwait(false);
-        return new HostAdminApiResponse(200, SipAccountResponse.FromDomain(account));
+
+        // Credential, endpoint or capacity changes reconnect the live channel (#110).
+        var runtimeFailure = await _runtime.ReconcileAsync(account, cancellationToken).ConfigureAwait(false);
+        return runtimeFailure ?? new HostAdminApiResponse(200, SipAccountResponse.FromDomain(account));
     }
 
     private static HostAdminApiResponse Bad(string message) => new(400, new { error = message });

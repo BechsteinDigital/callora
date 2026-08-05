@@ -71,6 +71,28 @@ Voice is turned on for a workspace by two operator steps:
 Then configure the workspace's SIP account(s) so the channel can connect, and
 your users can place and receive calls from the workspace dialer.
 
+### Supported SIP authentication
+
+Only **digest** authentication (a registering account or a credentialed,
+registering trunk) can be connected. That covers the mass market — sipgate,
+easybell, Telekom CompanyFlex and comparable trunks all offer a registering
+variant.
+
+Two methods are **refused with `422`** rather than advertised, because the voice
+provider cannot operate them yet:
+
+| Method | Why it is refused | Tracked as |
+|---|---|---|
+| IP-authenticated trunk | The provider always registers; there is no registration-less mode. | [callora-voip-sdk#104](https://github.com/BechsteinDigital/callora-voip-sdk/issues/104) |
+| Mutual TLS | The provider's TLS configuration is per client, not per account, and loads its certificate from a file rather than the secret store. | [callora-voip-sdk#183](https://github.com/BechsteinDigital/callora-voip-sdk/issues/183) |
+
+For a carrier that offers only mutual TLS, use digest over a `Tls` transport —
+the signalling is still encrypted, only the client certificate is unavailable.
+
+An account of an unsupported kind created before this refusal existed stays in
+the database and is reported as **failed** with that reason on startup, instead
+of sitting on `Connecting` forever.
+
 ## Current scope — an honest note
 
 The call stack, dialer UI, call events, consent handling, and Flow call-control

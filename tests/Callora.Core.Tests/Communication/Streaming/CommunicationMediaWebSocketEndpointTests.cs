@@ -43,11 +43,14 @@ public sealed class CommunicationMediaWebSocketEndpointTests
         Assert.Equal(MediaStreamEventType.Start, start!.Event);
 
         // Consumer sends audio; the loopback call echoes it, so it comes back as a media frame.
-        await SendMessageAsync(socket, MediaStreamMessage.Media(Convert.ToBase64String(new byte[] { 7, 7, 7 })));
+        // The frame has exactly the negotiated size — the bridge rejects anything else (#108).
+        var frame = new byte[AudioFormat.G711Ulaw8k20ms.BytesPerFrame];
+        Array.Fill(frame, (byte)7);
+        await SendMessageAsync(socket, MediaStreamMessage.Media(Convert.ToBase64String(frame)));
         var echoed = await ReceiveUntilAsync(socket, MediaStreamEventType.Media);
 
         Assert.NotNull(echoed);
-        Assert.Equal(new byte[] { 7, 7, 7 }, Convert.FromBase64String(echoed!.Payload!));
+        Assert.Equal(frame, Convert.FromBase64String(echoed!.Payload!));
     }
 
     [Fact]
@@ -169,9 +172,11 @@ internal sealed class InMemoryMediaStreamSessionStore : IMediaStreamSessionStore
 
     public Task<MediaStreamSession?> GetByConnectTokenAsync(string connectToken, CancellationToken cancellationToken = default)
     {
+        // Only the hash is stored, so lookup hashes the presented token (#108).
+        var tokenHash = MediaStreamSession.HashToken(connectToken);
         foreach (var session in _byId.Values)
         {
-            if (session.ConnectToken == connectToken)
+            if (session.ConnectTokenHash == tokenHash)
             {
                 return Task.FromResult<MediaStreamSession?>(session);
             }
@@ -183,9 +188,10 @@ internal sealed class InMemoryMediaStreamSessionStore : IMediaStreamSessionStore
     public Task<MediaStreamSession?> TryActivateByConnectTokenAsync(
         string connectToken, DateTimeOffset now, TimeSpan timeToLive, CancellationToken cancellationToken = default)
     {
+        var tokenHash = MediaStreamSession.HashToken(connectToken);
         foreach (var session in _byId.Values)
         {
-            if (session.ConnectToken == connectToken)
+            if (session.ConnectTokenHash == tokenHash)
             {
                 if (!session.CanActivate(now, timeToLive))
                 {
@@ -202,6 +208,23 @@ internal sealed class InMemoryMediaStreamSessionStore : IMediaStreamSessionStore
 
     public Task<MediaStreamSession?> GetAsync(string workspaceKey, string sessionId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_byId.TryGetValue(sessionId, out var session) && session.WorkspaceKey == workspaceKey ? session : null);
+
+    public Task<int> PurgeExpiredAsync(
+        DateTimeOffset now, TimeSpan retention, CancellationToken cancellationToken = default)
+    {
+        var cutoff = now - retention;
+        var purged = 0;
+        foreach (var pair in _byId)
+        {
+            var endedOrCreated = pair.Value.EndedAt ?? pair.Value.CreatedAt;
+            if (endedOrCreated <= cutoff && _byId.TryRemove(pair.Key, out _))
+            {
+                purged++;
+            }
+        }
+
+        return Task.FromResult(purged);
+    }
 
     public Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default)
     {

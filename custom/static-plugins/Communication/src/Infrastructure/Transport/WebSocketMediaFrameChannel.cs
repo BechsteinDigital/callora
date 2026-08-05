@@ -36,25 +36,24 @@ public sealed class WebSocketMediaFrameChannel(WebSocket socket) : IMediaFrameCh
     public async ValueTask<MediaStreamMessage?> ReceiveAsync(CancellationToken cancellationToken = default)
     {
         // Loop so a single malformed/unknown frame is skipped rather than ending the stream;
-        // null is returned only when the socket actually closes.
+        // null is returned only when the socket actually closes. Reassembly is byte-capped
+        // and idle-bounded (#108) — an oversized message aborts the connection instead of
+        // growing the buffer.
         while (true)
         {
-            using var message = new MemoryStream();
-
-            WebSocketReceiveResult result;
-            do
+            var json = await BoundedWebSocketReader
+                .ReadTextAsync(
+                    socket,
+                    _receiveBuffer,
+                    CommunicationStreamLimits.MaxMediaMessageBytes,
+                    CommunicationStreamLimits.IdleTimeout,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            if (json is null)
             {
-                result = await socket.ReceiveAsync(_receiveBuffer, cancellationToken).ConfigureAwait(false);
-                if (result.MessageType == WebSocketMessageType.Close)
-                {
-                    return null;
-                }
-
-                message.Write(_receiveBuffer, 0, result.Count);
+                return null;
             }
-            while (!result.EndOfMessage);
 
-            var json = Encoding.UTF8.GetString(message.GetBuffer(), 0, (int)message.Length);
             var decoded = MediaStreamMessageCodec.TryDecode(json);
             if (decoded is not null)
             {

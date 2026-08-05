@@ -57,6 +57,19 @@ Plugin routes are attached dynamically (no host restart). See
 | **IApiController** | Contributable | Expose a plugin HTTP API — implement via `AdminApiController` / `WorkspaceApiController`. |
 | **IHostAdminApiExtensionContributor** | Contributable | Contribute Admin-API routes + navigation entries (workspace-scoped via `HostAdminApiRequest.WorkspaceKey`). |
 | **IHostAdminApiRouteHandler** | Contributable | Handle one plugin Admin-API route. |
+
+::: warning Admin route scope
+`HostAdminApiRouteRegistration.Scope` defaults to `HostAdminApiRouteScope.Workspace`.
+The host then resolves the effective workspace — the caller's bound one, or the one a
+platform operator names via `?workspaceKey=` — rejects the request with `400` when none
+resolves, and dispatches only while your plugin is effectively available there
+(entitlement, activation, capabilities, health). Read that workspace from
+`HostAdminApiRequest.WorkspaceKey`; **never re-read a workspace from the query**, which
+would bypass the gate.
+
+Declare `HostAdminApiRouteScope.Global` only for routes that genuinely touch nothing
+workspace-scoped (plugin-wide status, for example). It is an explicit opt-out.
+:::
 | **IHostWebSocketEndpointContributor** | Contributable | Contribute host-level WebSocket endpoints (real-time surface). |
 | **IHostWebSocketHandler** | Contributable | Service an accepted plugin WebSocket connection. |
 | **IWebSocketConnectAuthorizer** | Contributable | Validate a WebSocket connect-token before the connection is accepted. |

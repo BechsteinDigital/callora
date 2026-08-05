@@ -25,6 +25,14 @@ public interface IMediaStreamSessionStore
     /// <summary>Resolves a workspace-scoped session by id.</summary>
     Task<MediaStreamSession?> GetAsync(string workspaceKey, string sessionId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Deletes sessions that closed, or whose ticket has been unusable, for longer than
+    /// <paramref name="retention"/>. Returns the count. Spent and expired tickets must not
+    /// accumulate (#108).
+    /// </summary>
+    Task<int> PurgeExpiredAsync(
+        DateTimeOffset now, TimeSpan retention, CancellationToken cancellationToken = default);
+
     /// <summary>Deletes all sessions of a workspace (used by the GDPR purge contributor). Returns the count.</summary>
     Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default);
 }

@@ -1,5 +1,6 @@
 using Callora.Administration.Api;
 using Callora.Core.Api;
+using Callora.Core.Application.Audit;
 using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Security;
@@ -220,16 +221,21 @@ public sealed class AuthAndUserEndpointsTests
     }
 
     [Fact]
-    public async Task Users_DataExport_ForeignWorkspaceUser_IsDenied()
+    public async Task Users_DataExport_AsWorkspaceUser_IsForbidden()
     {
         await using var app = await CreateAppAsync();
         var client = app.GetTestClient();
         client.DefaultRequestHeaders.Add("X-Test-Permissions", "user.read");
         client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "workspace-a");
 
-        var response = await client.GetAsync("/api/users/dave/data-export");
+        // The export is a global identity operation (#102): it discloses every
+        // membership of the subject, so it stays operator-only — even for a
+        // member of the caller's own workspace.
+        var foreign = await client.GetAsync("/api/users/dave/data-export");
+        var own = await client.GetAsync("/api/users/alice/data-export");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, foreign.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, own.StatusCode);
     }
 
     [Fact]
@@ -333,6 +339,7 @@ public sealed class AuthAndUserEndpointsTests
         builder.Services.AddSingleton<IUserDataSubjectService>(new InMemoryUserDataSubjectService(userStore));
         builder.Services.AddSingleton<IBackendRbacStore>(new InMemoryBackendRbacStore(options));
         builder.Services.AddSingleton<IBusinessEventBus>(new RecordingBusinessEventBus());
+        builder.Services.AddSingleton<IHostAuditStore, InMemoryHostAuditStore>();
 
         var app = builder.Build();
         app.UseAuthentication();

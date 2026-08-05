@@ -1,13 +1,19 @@
+using System.Security.Cryptography;
+using System.Text;
 using Callora.Plugin.Communication.Abstractions;
 
 namespace Callora.Plugin.Communication.Domain.Streaming;
 
 /// <summary>
 /// Binds a live call to the WebSocket media stream of an external consumer (Twilio-Media-
-/// Streams-style). Metadata only — no audio is persisted. The <see cref="ConnectToken"/> is a
-/// short-lived, single-use credential the host validates when the consumer opens the socket;
-/// it is consumed by the <see cref="Activate"/> transition, so one token authorizes exactly
-/// one connect.
+/// Streams-style). Metadata only — no audio is persisted.
+/// <para>
+/// The connect token is a short-lived, single-use credential the host validates when the
+/// consumer opens the socket; it is consumed by the <see cref="Activate"/> transition, so one
+/// token authorizes exactly one connect. Only its <see cref="ConnectTokenHash"/> is kept
+/// (#108): the row is a lookup key, not a copy of a live credential, so a leaked database
+/// row hands out no working ticket.
+/// </para>
 /// </summary>
 public sealed class MediaStreamSession
 {
@@ -33,7 +39,7 @@ public sealed class MediaStreamSession
         CallId = callId;
         WorkspaceKey = workspaceKey;
         ConsumerRef = consumerRef;
-        ConnectToken = connectToken;
+        ConnectTokenHash = HashToken(connectToken);
         Format = format;
         Direction = direction;
         CreatedAt = createdAt;
@@ -58,8 +64,23 @@ public sealed class MediaStreamSession
     /// <summary>The external consumer this stream serves (for example <c>ai-agent</c>).</summary>
     public string ConsumerRef { get; }
 
-    /// <summary>Short-lived, single-use credential the host validates on WS connect.</summary>
-    public string ConnectToken { get; }
+    /// <summary>
+    /// SHA-256 of the connect token, hex-encoded. The plaintext exists only in the
+    /// response that mints the session; it is never stored.
+    /// </summary>
+    public string ConnectTokenHash { get; }
+
+    /// <summary>
+    /// One-way, deterministic hash of a connect token — deterministic so the store can
+    /// look a presented token up, one-way so the stored value is not a credential. No
+    /// salt: the token is high-entropy already, and a per-row salt would make lookup
+    /// impossible.
+    /// </summary>
+    public static string HashToken(string connectToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectToken);
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(connectToken.Trim())));
+    }
 
     /// <summary>Audio frame format negotiated for this stream.</summary>
     public AudioFormat Format { get; private set; }
@@ -81,11 +102,22 @@ public sealed class MediaStreamSession
 
     /// <summary>
     /// Whether the connect token may still be redeemed at <paramref name="now"/>: the session is
-    /// still <see cref="MediaStreamSessionStatus.Pending"/> and within <paramref name="timeToLive"/>
-    /// of creation.
+    /// still <see cref="MediaStreamSessionStatus.Pending"/> and its creation lies within
+    /// <paramref name="timeToLive"/> — and in the past. A future <see cref="CreatedAt"/> would
+    /// otherwise satisfy a bare lower-bound check forever (#108).
     /// </summary>
     public bool CanActivate(DateTimeOffset now, TimeSpan timeToLive) =>
-        Status == MediaStreamSessionStatus.Pending && now - CreatedAt <= timeToLive;
+        Status == MediaStreamSessionStatus.Pending &&
+        CreatedAt <= now &&
+        now - CreatedAt <= timeToLive;
+
+    /// <summary>
+    /// Whether the session may be purged at <paramref name="now"/>: it is closed, or its
+    /// ticket has been unusable for longer than <paramref name="retention"/>. Spent and
+    /// expired tickets must not accumulate (#108).
+    /// </summary>
+    public bool CanPurge(DateTimeOffset now, TimeSpan retention) =>
+        (EndedAt ?? CreatedAt) + retention <= now;
 
     /// <summary>
     /// Consumes the connect token and marks the stream live. Single-use: only a
