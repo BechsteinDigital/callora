@@ -1,5 +1,7 @@
 using System.Net.WebSockets;
 using System.Text;
+using Callora.Plugin.Communication.Application.Streaming;
+using Callora.Plugin.Communication.Infrastructure.Transport;
 
 namespace Callora.Plugin.Communication.Api.WebSocket;
 
@@ -38,28 +40,17 @@ internal sealed class WebRtcSignalingChannel(WebSocket socket) : IDisposable
 
     /// <summary>
     /// Reads the next whole text message and returns its raw JSON, or <see langword="null"/> when the
-    /// socket closes. Fragmented frames are reassembled; parsing/validation is the caller's concern so a
-    /// single malformed frame can be logged and ignored without ending the stream.
+    /// socket closes. Fragmented frames are reassembled under a hard byte cap and an idle timeout
+    /// (#108); parsing/validation is the caller's concern so a single malformed frame can be logged
+    /// and ignored without ending the stream.
     /// </summary>
-    public async ValueTask<string?> ReceiveTextAsync(CancellationToken cancellationToken = default)
-    {
-        using var message = new MemoryStream();
-
-        WebSocketReceiveResult result;
-        do
-        {
-            result = await socket.ReceiveAsync(_receiveBuffer, cancellationToken).ConfigureAwait(false);
-            if (result.MessageType == WebSocketMessageType.Close)
-            {
-                return null;
-            }
-
-            message.Write(_receiveBuffer, 0, result.Count);
-        }
-        while (!result.EndOfMessage);
-
-        return Encoding.UTF8.GetString(message.GetBuffer(), 0, (int)message.Length);
-    }
+    public ValueTask<string?> ReceiveTextAsync(CancellationToken cancellationToken = default) =>
+        BoundedWebSocketReader.ReadTextAsync(
+            socket,
+            _receiveBuffer,
+            CommunicationStreamLimits.MaxSignalingMessageBytes,
+            CommunicationStreamLimits.IdleTimeout,
+            cancellationToken);
 
     /// <inheritdoc />
     public void Dispose() => _sendLock.Dispose();

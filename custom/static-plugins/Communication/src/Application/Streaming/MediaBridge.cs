@@ -103,7 +103,10 @@ public sealed class MediaBridge(ICallAudioStream audioStream, IMediaFrameChannel
 
                 switch (message.Event)
                 {
-                    case MediaStreamEventType.Media when TryDecodePayload(message.Payload, out var frame):
+                    case MediaStreamEventType.Media when TryDecodePayload(
+                        message.Payload,
+                        audioStream.Format.BytesPerFrame,
+                        out var frame):
                         // Buffer for paced emission rather than sending straight through.
                         pacer.Enqueue(frame);
                         break;
@@ -129,23 +132,45 @@ public sealed class MediaBridge(ICallAudioStream audioStream, IMediaFrameChannel
         }
     }
 
-    private static bool TryDecodePayload(string? base64, out byte[] frame)
+    /// <summary>
+    /// Decodes one base64 audio payload, enforcing the negotiated frame size (#108).
+    /// The encoded length is checked <em>before</em> decoding, so an oversized payload
+    /// never gets allocated; the decoded frame must then match the format exactly,
+    /// because a stream that agreed on 20 ms µ-law has no reason to send anything else.
+    /// A violating frame is dropped, not fatal — a misbehaving consumer must not kill
+    /// the call.
+    /// </summary>
+    private static bool TryDecodePayload(string? base64, int expectedFrameBytes, out byte[] frame)
     {
-        if (!string.IsNullOrEmpty(base64))
+        frame = [];
+        if (string.IsNullOrEmpty(base64))
         {
-            try
-            {
-                frame = Convert.FromBase64String(base64);
-                return true;
-            }
-            catch (FormatException)
-            {
-                // A misbehaving consumer must not kill the stream — drop the frame.
-            }
+            return false;
         }
 
-        frame = [];
-        return false;
+        // 4 base64 chars per 3 bytes; reject before allocating.
+        if ((long)base64.Length / 4 * 3 > CommunicationStreamLimits.MaxAudioFrameBytes)
+        {
+            return false;
+        }
+
+        byte[] decoded;
+        try
+        {
+            decoded = Convert.FromBase64String(base64);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+
+        if (decoded.Length != expectedFrameBytes || decoded.Length > CommunicationStreamLimits.MaxAudioFrameBytes)
+        {
+            return false;
+        }
+
+        frame = decoded;
+        return true;
     }
 
     private static async Task ObserveAsync(Task task)

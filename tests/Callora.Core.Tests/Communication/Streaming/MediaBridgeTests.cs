@@ -23,13 +23,25 @@ public sealed class MediaBridgeTests
 {
     private static readonly MediaStreamStartMetadata Start = new("sess-1", "call-1", "audio/x-mulaw", 8000);
 
+    /// <summary>
+    /// A frame of exactly the negotiated size (8 kHz µ-law, 20 ms → 160 bytes). The bridge
+    /// enforces that size (#108), so test frames must be real frames; the leading byte is the
+    /// marker the assertions identify them by.
+    /// </summary>
+    private static byte[] Frame(byte marker)
+    {
+        var frame = new byte[AudioFormat.G711Ulaw8k20ms.BytesPerFrame];
+        frame[0] = marker;
+        return frame;
+    }
+
     [Fact]
     public async Task Start_IsSentFirst_And_ConsumerMedia_IsPacedToCall_OneFramePerTick()
     {
         var clock = new ManualPacingClock();
         var audio = new FakeCallAudioStream();
         var channel = new FakeMediaFrameChannel();
-        channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(new byte[] { 1, 2, 3 })));
+        channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(Frame(1))));
         channel.EnqueueInbound(MediaStreamMessage.ForMark("queued"));
 
         var run = new MediaBridge(audio, channel, clock).RunAsync(Start, CancellationToken.None);
@@ -41,7 +53,7 @@ public sealed class MediaBridgeTests
         clock.Tick();
         await audio.FirstSent.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Single(audio.Sent);
-        Assert.Equal(new byte[] { 1, 2, 3 }, audio.Sent[0]);
+        Assert.Equal(Frame(1), audio.Sent[0]);
 
         channel.CompleteInbound();
         await run;
@@ -53,10 +65,10 @@ public sealed class MediaBridgeTests
         var clock = new ManualPacingClock();
         var audio = new FakeCallAudioStream();
         var channel = new FakeMediaFrameChannel();
-        channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(new byte[] { 1 })));
-        channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(new byte[] { 2 })));
+        channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(Frame(1))));
+        channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(Frame(2))));
         channel.EnqueueInbound(MediaStreamMessage.Clear);
-        channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(new byte[] { 3 })));
+        channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(Frame(3))));
         channel.EnqueueInbound(MediaStreamMessage.ForMark("ready"));
 
         var run = new MediaBridge(audio, channel, clock).RunAsync(Start, CancellationToken.None);
@@ -67,7 +79,7 @@ public sealed class MediaBridgeTests
 
         // Only the post-clear frame survives — the pre-clear playback was dropped.
         Assert.Single(audio.Sent);
-        Assert.Equal(new byte[] { 3 }, audio.Sent[0]);
+        Assert.Equal(Frame(3), audio.Sent[0]);
 
         channel.CompleteInbound();
         await run;

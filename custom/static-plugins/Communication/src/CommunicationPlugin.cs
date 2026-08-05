@@ -1,4 +1,5 @@
 using Callora.Core.Application.Events.Contracts;
+using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Application.Mcp.Contracts;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
@@ -15,6 +16,7 @@ using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Application.Conference;
 using Callora.Plugin.Communication.Application.Mcp;
 using Callora.Plugin.Communication.Application.RealtimeMedia;
+using Callora.Plugin.Communication.Application.Streaming;
 using Callora.Plugin.Communication.Infrastructure.Capabilities;
 using Callora.Plugin.Communication.Infrastructure.Channels;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
@@ -205,8 +207,14 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         var audioStreamProvider = new SdkCallAudioStreamProvider();
         _audioRegistrar = new SdkCallAudioRegistrar(
             audioStreamProvider, ResolveLogger<SdkCallAudioRegistrar>(context.Services));
+        var mediaStreamSessionStore = new EfMediaStreamSessionStore(dbContextFactory);
         context.Export<IHostWebSocketEndpointContributor>(new CommunicationMediaWebSocketContributor(
-            new EfMediaStreamSessionStore(dbContextFactory), audioStreamProvider));
+            mediaStreamSessionStore, audioStreamProvider));
+
+        // Spent and expired media tickets are swept hourly (#108); without this the
+        // table only ever grows.
+        context.Export<IBackgroundJobHandler>(new MediaStreamSessionPurgeJobHandler(mediaStreamSessionStore));
+        context.Export<IRecurringJobProvider>(new MediaStreamSessionPurgeRecurringJobProvider());
 
         await ProvisionVoiceChannelsAsync(context, dbContextFactory, cancellationToken).ConfigureAwait(false);
     }
