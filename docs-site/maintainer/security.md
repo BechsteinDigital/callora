@@ -129,7 +129,11 @@ only**. Retire it as soon as named integrations exist:
 `RequireApiKeyAuthentication` is a startup policy switch (it refuses to boot
 with bootstrap keys enabled but unconfigured). It has no effect on whether a
 presented credential is accepted.
-- **CSRF guard** and **rate limiting** protect the operator/admin surface.
+- **CSRF guard** and **rate limiting** protect the operator/admin surface. Rate
+  limits partition on the connection's remote address; `X-Forwarded-For` is
+  honoured only from a configured trusted proxy
+  (`BackendHost__ForwardedHeaders__KnownNetworks__0`) — see
+  [Forwarded headers](../reference/configuration.md#forwarded-headers).
 - Errors use RFC 9457 ProblemDetails (`application/problem+json`) — no anonymous
   error objects.
 

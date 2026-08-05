@@ -45,8 +45,12 @@ it is shown as a relative fragment.
 | `WorkspaceShellBaseUrl` | `string` | `/` | Base URL under which the workspace shell is served. |
 | `PluginAssetBaseUrl` | `string` | `/plugin-assets` | Public base URL for plugin UI assets. |
 | `PluginManifestUrl` | `string` | `/manifests/plugin-ui-assets.manifest.json` | URL of the published plugin UI-asset manifest. |
-| `RateLimitAuthPerMinute` | `int` | `5` | Login attempts allowed per client per minute; `0` disables. |
+| `RateLimitAuthPerMinute` | `int` | `5` | Login attempts allowed per client per minute; `0` disables. The client is the connection's remote address — see [Forwarded headers](#forwarded-headers). |
 | `RateLimitApiPerMinute` | `int` | `600` | General API requests allowed per client per minute; `0` disables. |
+| `ForwardedHeaders:Enabled` | `bool` | `false` | Apply `X-Forwarded-Proto`/`-Host` (and `-For`, see below) from a reverse proxy. |
+| `ForwardedHeaders:KnownProxies` | `string[]` | `[]` | Trusted proxy IP addresses. |
+| `ForwardedHeaders:KnownNetworks` | `string[]` | `[]` | Trusted proxy networks in CIDR notation (e.g. `172.16.0.0/12`). |
+| `ForwardedHeaders:ForwardLimit` | `int` | `1` | Chained proxy hops to honour. |
 | `MediaStoragePath` | `string` | `media` | Root directory for stored media assets. |
 | `AllowPrivateWebhookTargets` | `bool` | `false` | Permits webhook targets on private/loopback addresses — **development only** (production keeps the SSRF egress guard on). |
 | `DataProtectionKeysPath` | `string` | `dataprotection-keys` | Key-ring directory for ASP.NET DataProtection. Must live on durable storage or every restart loses encrypted secrets. |
@@ -196,6 +200,40 @@ Operators manage values through the `/api/config` surface (see also
 For `PUT /api/config/values`, `scope` is one of `global` / `tenant` / `workspace`;
 `scopeKey` is required for `tenant` and `workspace`. Global/tenant writes are
 operator-only; workspace writes require access to the target workspace.
+
+## Forwarded headers
+
+Behind a TLS-terminating reverse proxy (Caddy/Nginx), set
+`BackendHost:ForwardedHeaders:Enabled=true` so the app observes the external
+scheme and host. Without it the same-origin CSRF check rejects every
+cookie-authenticated mutation.
+
+**`X-Forwarded-For` is applied only when trust is explicit.** With
+`KnownProxies`/`KnownNetworks` empty, ASP.NET accepts forwarded headers from any
+peer — a direct client could then hand itself a fresh rate-limit bucket per
+request by rotating the header. Callora therefore processes `X-Forwarded-For`
+only once at least one trusted proxy or network is configured, and logs a warning
+at startup otherwise:
+
+```json
+"BackendHost": {
+  "ForwardedHeaders": {
+    "Enabled": true,
+    "KnownNetworks": ["172.16.0.0/12"],
+    "ForwardLimit": 1
+  }
+}
+```
+
+Rate limiting always partitions on `Connection.RemoteIpAddress`, never on the raw
+header. Consequences:
+
+- **Trusted proxy configured** → per-client limits work as intended.
+- **No trust configured** → every request through the proxy shares one bucket
+  (the proxy address). Safe, but coarse: configure the proxy network.
+
+`ForwardLimit` bounds how many chained hops are honoured; keep it at the actual
+number of proxies in front of the app.
 
 ## See also
 
