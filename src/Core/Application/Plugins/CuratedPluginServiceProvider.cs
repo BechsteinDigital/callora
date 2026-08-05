@@ -2,7 +2,6 @@ using Callora.Core.Application.Data.Contracts;
 using Callora.Core.Application.Options;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Core.Application.Plugins;
@@ -41,18 +40,18 @@ internal sealed class CuratedPluginServiceProvider(
         if (serviceType == typeof(IHostSessionResumeService))
         {
             // Both dependencies are required rather than optional. Without the store there is nowhere
-            // to keep a promise; without data protection the payload would sit in the clear, and the
-            // host cannot judge how sensitive a payload it never reads is. A host missing either
-            // offers no resume at all, which a plugin already degrades cleanly against.
+            // to keep a promise; without a payload protector it would sit in the clear, and the host
+            // cannot judge how sensitive a payload it never reads is. A host missing either offers no
+            // resume at all, which a plugin already degrades cleanly against.
             if (rootServices.GetService(typeof(ISessionResumeTicketStore)) is not ISessionResumeTicketStore store ||
-                rootServices.GetService(typeof(IDataProtectionProvider)) is not IDataProtectionProvider protection)
+                rootServices.GetService(typeof(IPluginPayloadProtector)) is not IPluginPayloadProtector protector)
             {
                 return null;
             }
 
             return new PluginSessionResumeService(
                 store,
-                protection,
+                protector,
                 rootServices.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System,
                 rootServices.GetService(typeof(CalloraHostingOptions)) as CalloraHostingOptions
                     ?? new CalloraHostingOptions(),
