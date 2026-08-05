@@ -74,6 +74,21 @@ workspace-scoped (plugin-wide status, for example). It is an explicit opt-out.
 | **IHostWebSocketEndpointContributor** | Contributable | Contribute host-level WebSocket endpoints (real-time surface). |
 | **IHostWebSocketHandler** | Contributable | Service an accepted plugin WebSocket connection. |
 | **IWebSocketConnectAuthorizer** | Contributable | Validate a WebSocket connect-token before the connection is accepted. Reads `HostWebSocketConnectRequest.Caller` when the upgrade came from a surface. |
+| **IHostSessionResumeService** | Host service | Resolve it to make a real-time session resumable. Issue a ticket while the connection is healthy, redeem it in the authorizer when the client comes back ([ADR-018](https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-018-drain-und-resume-fuer-langlebige-plugins.md)). |
+
+::: tip Resume is a promise, not a stored session
+The host keeps a token, a deadline, the owning plugin and a payload it never reads. It cannot keep
+your session: sockets, SDK peers and negotiated media do not survive a process. On redemption you
+get your payload back and **rebuild** the session, which is what a reconnecting client does anyway.
+
+Two consequences worth designing for. Put identity in the payload (which room, which participant,
+which role), not state. And hand the token to the client while the connection is healthy: a client
+that only learns it when the socket dies has already missed its chance.
+
+Redemption is single use, so issue a fresh ticket on every connect if the client should stay
+resumable. Tickets are bound to the issuing plugin and their lifetime is clamped by the host
+(`CalloraHosting:SessionResumeMaxLifetime`).
+:::
 | **IHostPublicHttpEndpointContributor** | Contributable | Contribute anonymous public HTTP endpoints under `/public/{pluginId}/…` (GET/POST, no platform auth). |
 | **IHostPublicHttpRouteHandler** | Contributable | Handle one plugin public HTTP route — responsible for all input validation and access control. |
 | **IHostSurfaceIdentityProvider** | Contributable | Authenticate a surface's own visitors (leads, customers, patients). Bound per surface by operator assignment. |
