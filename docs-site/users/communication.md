@@ -111,6 +111,77 @@ The WebRTC and conference channels are provisioned per workspace the first time 
 workspace's WebRTC surface is used, so their capabilities appear then rather than at plugin
 start.
 
+### Streaming a live call
+
+An external consumer — a voice agent, a transcription service, a browser
+softphone — reaches a call's audio over a WebSocket. It cannot open that socket
+on its own: it needs a **one-time ticket**, minted through the Admin API for a
+call the caller's workspace is running right now.
+
+```
+POST /api/ext/admin/plugins/communication/calls/{callId}/media-streams
+{ "consumerRef": "ai-agent", "direction": "bidirectional" }
+```
+
+```json
+{
+  "sessionId": "0198…",
+  "callId": "call-1",
+  "connectToken": "…",
+  "connectPath": "/ws/communication/media/…",
+  "direction": "bidirectional",
+  "expiresInSeconds": 120,
+  "encoding": "audio/x-mulaw",
+  "sampleRateHz": 8000
+}
+```
+
+The ticket needs `communication.calls.manage`, because it hands out live access
+to a conversation. Four properties bound what it can do:
+
+| Property | Behaviour |
+|---|---|
+| Ownership | A call the workspace does not run answers `404` — the same as a call that never existed. |
+| Single use | The first connect consumes the token; a second attempt is refused. |
+| Expiry | Unredeemed after two minutes, the token is dead. |
+| Direction | `inbound` the consumer only listens, `outbound` it only speaks, `bidirectional` both. Enforced on the socket, not just recorded. |
+
+Only the token's hash is stored, so a leaked database row is not a working
+ticket. When the call ends, its sessions are closed and its sockets are aborted:
+a stream never outlives the conversation it carries, and an unspent ticket for an
+ended call stops being redeemable.
+
+### Connecting a browser
+
+A browser needs the same kind of ticket for signalling, plus the ICE
+configuration for its `RTCPeerConnection`:
+
+```
+POST /api/ext/admin/plugins/communication/webrtc/sessions
+{ "target": "browser-1" }
+```
+
+```json
+{
+  "connectToken": "…",
+  "connectPath": "/ws/communication/webrtc/…",
+  "expiresInSeconds": 120,
+  "iceServers": [{ "urls": ["turn:turn.example.com:3478?transport=udp"], "username": "1780…:ws-a", "credential": "…" }],
+  "iceCredentialExpiresInSeconds": 600
+}
+```
+
+The route exists only when the deployment enables WebRTC, and it answers `503`
+while Communication is unavailable rather than handing out a ticket that would
+fail at connect time.
+
+TURN credentials are derived per session when the deployment configures a
+`SharedSecret` for the relay (the TURN REST API scheme that coturn and the
+managed services implement), so no long-lived password ever reaches a browser.
+Without a shared secret the configured static credentials are passed through
+unchanged and `iceCredentialExpiresInSeconds` is absent — the response does not
+claim a lifetime the deployment does not keep.
+
 ### Account status and readiness
 
 Each account carries the state the voice provider last reported, so the admin

@@ -11,12 +11,15 @@ using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Admin.Calls;
 using Callora.Plugin.Communication.Application.Admin.SipAccounts;
+using Callora.Plugin.Communication.Application.Admin.Streaming;
+using Callora.Plugin.Communication.Application.Admin.WebRtc;
 using Callora.Plugin.Communication.Application.Calls;
 using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Application.Conference;
 using Callora.Plugin.Communication.Application.Mcp;
 using Callora.Plugin.Communication.Application.RealtimeMedia;
 using Callora.Plugin.Communication.Application.Streaming;
+using Callora.Plugin.Communication.Application.WebRtc;
 using Callora.Plugin.Communication.Infrastructure.Capabilities;
 using Callora.Plugin.Communication.Infrastructure.Channels;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
@@ -124,16 +127,38 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         // call history. Built first (when a database is present — it records history) so its REST routes
         // can join the admin surface below; also exported for in-process plugins (Dialer/PBX/CRM).
         IReadOnlyList<HostAdminApiRouteRegistration> callRoutes = [];
+        EfMediaStreamSessionStore? mediaStreamSessionStore = null;
+        var mediaConnections = new MediaStreamConnectionRegistry();
         if (dbContextFactory is not null)
         {
             var callLogStore = new EfCallLogStore(dbContextFactory);
+
+            // Media teardown is wired into call control from the start: a call that ends must close
+            // its streams (#114), and that has to hold for the very first call the host places.
+            mediaStreamSessionStore = new EfMediaStreamSessionStore(dbContextFactory);
             _callControlService = new CallControlService(
                 _channelRegistry,
                 callLogStore,
                 ResolveLogger<CallControlService>(context.Services),
-                TimeProvider.System);
+                TimeProvider.System,
+                new CallMediaStreamTerminator(
+                    mediaStreamSessionStore,
+                    mediaConnections,
+                    TimeProvider.System,
+                    ResolveLogger<CallMediaStreamTerminator>(context.Services)));
             context.Export<ICallControlService>(_callControlService);
-            callRoutes = CallAdminRoutes.Build(_callControlService);
+
+            // Call control plus the ticket route that lets a consumer attach to a live call — the
+            // only production path onto the media socket (#114).
+            var mediaStreamMinter = new MediaStreamSessionMinter(
+                _callControlService, mediaStreamSessionStore, TimeProvider.System);
+            context.Export<IMediaStreamSessionMinter>(mediaStreamMinter);
+            callRoutes =
+            [
+                .. CallAdminRoutes.Build(_callControlService),
+                .. MediaStreamAdminRoutes.Build(
+                    mediaStreamMinter, ResolveLogger<MintMediaStreamRouteHandler>(context.Services)),
+            ];
 
             // Call events are written to the outbox with the log change and delivered by this
             // job, so a bus outage delays them instead of losing them (#113).
@@ -193,8 +218,6 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             _channelRegistry,
             dbContextFactory is null ? null : new EfSipAccountStore(dbContextFactory),
             IsWebRtcEnabled(context.PluginConfiguration));
-        context.Export<IHostAdminApiExtensionContributor>(
-            new CommunicationAdminApiExtensionContributor([.. accountRoutes, .. callRoutes], readinessProbe));
 
         // The channel registry is where the voice bridge registers channels and consumers resolve
         // them; exported unconditionally since it needs no database.
@@ -208,8 +231,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
 
         // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
         // Host die DB-Factory bereitstellt (ein minimaler Host ohne Persistenz degradiert sauber).
-        if (dbContextFactory is null)
+        // Ohne DB bleibt die Admin-Fläche auf Status- und (leere) Account-/Call-Routen beschränkt.
+        if (dbContextFactory is null || mediaStreamSessionStore is null)
         {
+            context.Export<IHostAdminApiExtensionContributor>(
+                new CommunicationAdminApiExtensionContributor([.. accountRoutes, .. callRoutes], readinessProbe));
             return;
         }
 
@@ -221,6 +247,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         // Consequence: WebRTC requires a database (consistent with the SIP voice path). Without a DB the
         // plugin degrades cleanly: no minter or signalling contributor exported, no error.
         // The in-memory token store still needs no persistence; it is constructed here for wiring symmetry.
+        IReadOnlyList<HostAdminApiRouteRegistration> webRtcRoutes = [];
         if (IsWebRtcEnabled(context.PluginConfiguration))
         {
             var loggerFactory = context.Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
@@ -243,6 +270,17 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             var signalingStore = new WebRtcSignalingSessionStore(TimeProvider.System, tokenLifetime);
             var minter = new WebRtcSessionMinter(_webRtcProvisioner, signalingStore, tokenLifetime);
             context.Export<IWebRtcSessionMinter>(minter);
+
+            // The browser-facing mint route: without it the minter is an in-process primitive no
+            // browser can reach (#114). ICE settings come from the same section the server-side
+            // client reads, so both peers see one configuration.
+            webRtcRoutes = WebRtcAdminRoutes.Build(
+                minter,
+                readinessProbe,
+                IceConfigurationOptions.FromConfiguration(context.PluginConfiguration),
+                TimeProvider.System,
+                ResolveLogger<MintWebRtcSessionRouteHandler>(context.Services));
+
             context.Export<IHostWebSocketEndpointContributor>(
                 new WebRtcSignalingContributor(
                     signalingStore,
@@ -272,14 +310,19 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             context.Export<IConferenceService>(conferenceService);
         }
 
+        // The full admin surface, now that the WebRTC routes are known.
+        context.Export<IHostAdminApiExtensionContributor>(new CommunicationAdminApiExtensionContributor(
+            [.. accountRoutes, .. callRoutes, .. webRtcRoutes], readinessProbe));
+
         context.Export<IWorkspaceDataPurgeContributor>(new CommunicationDataPurgeContributor(
             new CommunicationWorkspaceDataPurger(dbContextFactory)));
 
         // Media WebSocket surface (/ws/communication/media/{connectToken}) backed by the live-call
-        // audio provider built above; the registrar populates it as tracked calls connect.
-        var mediaStreamSessionStore = new EfMediaStreamSessionStore(dbContextFactory);
+        // audio provider built above; the registrar populates it as tracked calls connect. The
+        // connection registry is shared with call control, which aborts these sockets when the call
+        // they carry ends (#114).
         context.Export<IHostWebSocketEndpointContributor>(new CommunicationMediaWebSocketContributor(
-            mediaStreamSessionStore, audioStreamProvider));
+            mediaStreamSessionStore, audioStreamProvider, mediaConnections));
 
         // Spent and expired media tickets are swept hourly (#108); without this the
         // table only ever grows.

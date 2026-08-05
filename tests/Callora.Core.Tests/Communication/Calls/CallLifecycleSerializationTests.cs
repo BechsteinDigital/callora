@@ -1,5 +1,6 @@
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Calls;
+using Callora.Plugin.Communication.Application.Streaming;
 using Callora.Plugin.Communication.Domain.Calls;
 using Callora.Plugin.Communication.Infrastructure.Channels;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -198,6 +199,52 @@ public sealed class CallLifecycleSerializationTests
         Assert.Equal(deliveredAt, entry.DeliveredAt);
     }
 
+    [Fact]
+    public async Task AnEndedCall_TearsDownItsMediaStreams()
+    {
+        // The media surface has no other signal that the conversation is over (#114): the socket
+        // would otherwise stay open and the unspent ticket redeemable.
+        var registry = new CommunicationChannelRegistry();
+        var mediaStreams = new RecordingMediaStreamTerminator();
+        await using var service = new CallControlService(
+            registry,
+            new RecordingCallLogStore(),
+            NullLogger<CallControlService>.Instance,
+            TimeProvider.System,
+            mediaStreams);
+
+        var call = new ControllableCall("call-1");
+        registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
+        await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
+
+        Assert.Empty(mediaStreams.Closed);
+        call.Transition(CallState.Terminated);
+
+        Assert.Equal([(Workspace, "call-1")], mediaStreams.Closed);
+    }
+
+    [Fact]
+    public async Task ShutdownWhileACallIsLive_AlsoTearsDownItsMediaStreams()
+    {
+        // Finalization at shutdown ends the call; a socket surviving the host that owns it would
+        // never be closed by anything else.
+        var registry = new CommunicationChannelRegistry();
+        var mediaStreams = new RecordingMediaStreamTerminator();
+        var service = new CallControlService(
+            registry,
+            new RecordingCallLogStore(),
+            NullLogger<CallControlService>.Instance,
+            TimeProvider.System,
+            mediaStreams);
+
+        registry.Register(Workspace, new FakeCommunicationChannel { NextCall = new ControllableCall("call-1") });
+        await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
+
+        await service.DisposeAsync();
+
+        Assert.Equal([(Workspace, "call-1")], mediaStreams.Closed);
+    }
+
     private static async Task<(CallControlService Service, CommunicationChannelRegistry Registry, RecordingCallLogStore Store, ControllableCall Call)>
         PlacedCallAsync()
     {
@@ -211,5 +258,17 @@ public sealed class CallLifecycleSerializationTests
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
 
         return (service, registry, store, call);
+    }
+}
+
+/// <summary>Records which calls had their media streams torn down.</summary>
+internal sealed class RecordingMediaStreamTerminator : ICallMediaStreamTerminator
+{
+    public List<(string WorkspaceKey, string CallId)> Closed { get; } = [];
+
+    public Task CloseForCallAsync(string workspaceKey, string callId, CancellationToken cancellationToken = default)
+    {
+        Closed.Add((workspaceKey, callId));
+        return Task.CompletedTask;
     }
 }

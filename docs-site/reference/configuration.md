@@ -214,6 +214,38 @@ Plugin-scoped keys, read from the plugin's own configuration section:
 
 Retention is deployment-wide. Per-workspace retention policy is not implemented.
 
+### ICE servers
+
+`WebRtc:IceServers` is read by both peers: the server-side WebRTC client gathers
+candidates through it, and the browser receives it with every minted WebRTC
+session.
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `WebRtc:IceServers:{n}:Host` | `string` | — | Hostname of the STUN/TURN server. An entry without one is skipped. |
+| `WebRtc:IceServers:{n}:Port` | `int` | — | Port. Omitted from the URL when absent. |
+| `WebRtc:IceServers:{n}:Type` | `stun` / `turn` | `stun` | Server kind. |
+| `WebRtc:IceServers:{n}:Transport` | `udp` / `tcp` / `tls` | `udp` | Transport. `tls` yields a `turns:`/`stuns:` URL. |
+| `WebRtc:IceServers:{n}:SharedSecret` | `string` | — | The relay's TURN REST-API secret (coturn `static-auth-secret`). Set it, and every session gets its own expiring credential. |
+| `WebRtc:IceServers:{n}:Username` | `string` | — | Static username. Used only without a shared secret. |
+| `WebRtc:IceServers:{n}:Password` | `string` | — | Static credential. Used only without a shared secret. |
+| `WebRtc:CredentialTimeToLiveSeconds` | `int` | `600` | How long a derived TURN credential stays valid. A missing, unparsable or non-positive value falls back to the default. |
+
+```json
+"WebRtc": {
+  "Enabled": true,
+  "CredentialTimeToLiveSeconds": 600,
+  "IceServers": [
+    { "Host": "stun.example.com", "Port": 3478, "Type": "stun" },
+    { "Host": "turn.example.com", "Port": 3478, "Type": "turn", "Transport": "udp", "SharedSecret": "…" }
+  ]
+}
+```
+
+Prefer `SharedSecret` over `Username`/`Password`: a static TURN password handed
+to a browser is a long-lived relay credential in untrusted hands, while a derived
+one expires on its own. Callora issues no static credential it was not given.
+
 ## Forwarded headers
 
 Behind a TLS-terminating reverse proxy (Caddy/Nginx), set

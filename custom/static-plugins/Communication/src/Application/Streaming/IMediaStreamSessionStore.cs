@@ -26,6 +26,14 @@ public interface IMediaStreamSessionStore
     Task<MediaStreamSession?> GetAsync(string workspaceKey, string sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Closes every session bound to one call — pending tickets and live streams alike — and
+    /// returns the count. Called when the call ends (#114): a ticket for a call that no longer
+    /// exists must not stay redeemable, and a stream must not outlive the conversation it carries.
+    /// </summary>
+    Task<int> CloseByCallAsync(
+        string workspaceKey, string callId, DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes sessions that closed, or whose ticket has been unusable, for longer than
     /// <paramref name="retention"/>. Returns the count. Spent and expired tickets must not
     /// accumulate (#108).
