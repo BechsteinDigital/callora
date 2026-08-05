@@ -1,5 +1,7 @@
 using Callora.Core.Application.Data.Contracts;
+using Callora.Core.Application.Options;
 using Callora.Core.Application.Persistence.Contracts;
+using Callora.Core.Application.Plugins.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Core.Application.Plugins;
@@ -30,6 +32,20 @@ internal sealed class CuratedPluginServiceProvider(
         {
             return rootServices.GetService(typeof(IPluginDataStore)) is IPluginDataStore inner
                 ? new PluginBoundDataStore(inner, pluginId)
+                : null;
+        }
+
+        // IHostSessionResumeService: handed out plugin-bound for the same reason as the data store —
+        // a ticket must only ever be redeemable by the plugin that issued it (ADR-018 §2.2).
+        if (serviceType == typeof(IHostSessionResumeService))
+        {
+            return rootServices.GetService(typeof(ISessionResumeTicketStore)) is ISessionResumeTicketStore store
+                ? new PluginSessionResumeService(
+                    store,
+                    rootServices.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System,
+                    rootServices.GetService(typeof(CalloraHostingOptions)) as CalloraHostingOptions
+                        ?? new CalloraHostingOptions(),
+                    pluginId)
                 : null;
         }
 
