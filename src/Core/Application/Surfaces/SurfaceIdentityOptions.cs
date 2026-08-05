@@ -31,6 +31,13 @@ public sealed class SurfaceIdentityOptions
     public TimeSpan GuestContextLifetime { get; set; } = TimeSpan.FromDays(30);
 
     /// <summary>
+    /// How long a cross-origin handoff ticket stays redeemable (ADR-017 §8.4). It has
+    /// to cover one redirect, not a session, so it is deliberately measured in
+    /// seconds: the ticket is a bearer credential travelling in a URL.
+    /// </summary>
+    public TimeSpan HandoffTicketLifetime { get; set; } = TimeSpan.FromSeconds(60);
+
+    /// <summary>
     /// Tolerance for clocks that disagree, applied to <c>AuthenticatedAt</c> so a
     /// marginally fast provider clock is not treated as a forged future timestamp.
     /// </summary>

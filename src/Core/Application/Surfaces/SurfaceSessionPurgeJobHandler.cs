@@ -4,20 +4,28 @@ using Callora.Core.Extensibility;
 namespace Callora.Core.Application.Surfaces;
 
 /// <summary>
-/// Drops surface sessions past their expiry (ADR-017 §8.1). A session is never
-/// extended by use, so an expired row is dead weight — without the purge the table
-/// would grow with every login the platform ever served.
+/// Drops surface transport state past its expiry (ADR-017 §8). A session is never
+/// extended by use and a handoff ticket lives for seconds, so an expired row of
+/// either kind is dead weight — without the purge both tables would grow with every
+/// login and every handover the platform ever served.
 /// </summary>
 [HostProtected]
-public sealed class SurfaceSessionPurgeJobHandler(ISurfaceSessionStore store, TimeProvider timeProvider)
+public sealed class SurfaceSessionPurgeJobHandler(
+    ISurfaceSessionStore sessions,
+    ISurfaceHandoffTicketStore tickets,
+    TimeProvider timeProvider)
     : IBackgroundJobHandler
 {
     public const string JobTypeName = "surfaces.session-purge";
 
     public string JobType => JobTypeName;
 
-    public Task ExecuteAsync(
+    public async Task ExecuteAsync(
         BackgroundJobExecutionContext context,
-        CancellationToken cancellationToken = default) =>
-        store.PurgeExpiredAsync(timeProvider.GetUtcNow(), cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        var nowUtc = timeProvider.GetUtcNow();
+        await sessions.PurgeExpiredAsync(nowUtc, cancellationToken).ConfigureAwait(false);
+        await tickets.PurgeExpiredAsync(nowUtc, cancellationToken).ConfigureAwait(false);
+    }
 }

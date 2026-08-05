@@ -286,9 +286,36 @@ Quell-Surface
   → Ticket gegen zielgebundene Surface-Session tauschen
 ```
 
-Invarianten: kurze Gültigkeit, Audience-Bindung an die konkrete Ziel-Surface,
-Einmalverwendung, serverseitige Invalidierung, definierte Redirect-, Origin- und
-CORS-Regeln.
+Invarianten: kurze Gültigkeit (Default 60 s), Audience-Bindung an die konkrete
+Ziel-Surface, Einmalverwendung, serverseitige Invalidierung, definierte Redirect-,
+Origin- und CORS-Regeln.
+
+Konkret: `POST /surface/handoff/tickets` auf der Quell-Surface,
+`GET /surface/handoff/redeem` auf dem Ziel-Host. Gespeichert wird nur der
+SHA-256-Hash des Geheimnisses, und die Einlösung löscht die Zeile und gibt zurück,
+was sie gelöscht hat — Einmalverwendung ist damit eine Datenbank-Eigenschaft, keine
+Prüfung, die zwei gleichzeitige Einlösungen umlaufen können. Eine abgelehnte
+Präsentation verbraucht das Ticket trotzdem. Der Return-Pfad muss site-relativ sein;
+alles andere wird auf `/` reduziert, sonst wäre die Einlöse-Route ein Open Redirect.
+Das Ausstellen verlangt einen passenden `Origin`, denn ein Cross-Site-POST würde am
+Cookie des Besuchers mitfahren.
+
+Die Einlösung ist ein GET, der Zustand ändert. Wer die URL stellvertretend abruft —
+ein Prefetcher, ein Link-Scanner in Mail oder Chat — zerstört das Ticket, bevor der
+Besucher ankommt. Abgelehnt wird deshalb, wer sich als spekulativ zu erkennen gibt
+(`Sec-Purpose`/`Purpose`/`X-Purpose`/`X-Moz` mit `prefetch`). Ein positives
+Navigationssignal zu verlangen wäre die falsche Richtung: das sperrt jeden Client
+aus, der gar keine `Sec-Fetch`-Header schickt. Handoff-URLs bleiben Redirect-Ziele,
+keine verschickbaren Links.
+
+### 8.5 Origin-Prüfung an cookie-getragenen Nahtstellen
+
+Ein Browser hängt Cookies an einen WebSocket-Handshake und an einen Cross-Site-POST,
+und keine Same-Origin-Policy hält ihn davon ab. Wo der Host das Surface-Cookie als
+Credential akzeptiert (WebSocket-Upgrade, Handoff-Ausstellung), prüft er deshalb den
+`Origin`-Header gegen den angefragten Host. Ein fremder Origin bekommt keinen Caller
+beziehungsweise wird abgelehnt. Fehlt `Origin` ganz, ist es kein Browser — ein Client,
+der das Cookie ohne Origin schickt, hat das bewusst getan.
 
 ---
 

@@ -1,5 +1,7 @@
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Infrastructure.Surfaces;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Callora.Administration.Api;
 
@@ -11,6 +13,12 @@ namespace Callora.Administration.Api;
 /// upgrade. These endpoints are anonymous at the cookie/JWT layer by design — the
 /// consumers are out-of-process agents connecting with a connect-token, not browser
 /// sessions — so authorization is delegated entirely to the per-route authorizer.
+/// <para>
+/// A connect that does arrive from a surface carries its caller into the authorizer
+/// and the handler (ADR-017 §9). The host attaches it only when the handshake's
+/// <c>Origin</c> matches the requested host; the caller is offered as a credential,
+/// never as a grant, so the route's authorizer still decides.
+/// </para>
 /// </summary>
 public static class PluginWebSocketEndpoints
 {
@@ -31,6 +39,9 @@ public static class PluginWebSocketEndpoints
         string? routePath,
         HttpContext httpContext,
         ICalloraPluginCatalog pluginCatalog,
+        // Composed with the surface identity subsystem; a host without it upgrades
+        // exactly as before, with no caller on the connect request.
+        [FromServices] SurfaceUpgradeCallerResolver? callerResolver,
         CancellationToken cancellationToken)
     {
         if (!httpContext.WebSockets.IsWebSocketRequest)
@@ -48,12 +59,17 @@ public static class PluginWebSocketEndpoints
             return;
         }
 
+        var caller = callerResolver is null
+            ? null
+            : await callerResolver.ResolveAsync(httpContext, cancellationToken).ConfigureAwait(false);
+
         var connectRequest = new HostWebSocketConnectRequest(
             match.Contributor.PluginId,
             routePath ?? string.Empty,
             match.RouteValues,
             HttpQueryValues.Read(httpContext.Request.Query),
-            httpContext.WebSockets.WebSocketRequestedProtocols.ToArray());
+            httpContext.WebSockets.WebSocketRequestedProtocols.ToArray(),
+            caller);
 
         var authorization = await match.Route.Authorizer
             .AuthorizeAsync(connectRequest, cancellationToken)

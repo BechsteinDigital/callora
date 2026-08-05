@@ -72,7 +72,7 @@ workspace-scoped (plugin-wide status, for example). It is an explicit opt-out.
 :::
 | **IHostWebSocketEndpointContributor** | Contributable | Contribute host-level WebSocket endpoints (real-time surface). |
 | **IHostWebSocketHandler** | Contributable | Service an accepted plugin WebSocket connection. |
-| **IWebSocketConnectAuthorizer** | Contributable | Validate a WebSocket connect-token before the connection is accepted. |
+| **IWebSocketConnectAuthorizer** | Contributable | Validate a WebSocket connect-token before the connection is accepted. Reads `HostWebSocketConnectRequest.Caller` when the upgrade came from a surface. |
 | **IHostPublicHttpEndpointContributor** | Contributable | Contribute anonymous public HTTP endpoints under `/public/{pluginId}/…` (GET/POST, no platform auth). |
 | **IHostPublicHttpRouteHandler** | Contributable | Handle one plugin public HTTP route — responsible for all input validation and access control. |
 | **IHostSurfaceIdentityProvider** | Contributable | Authenticate a surface's own visitors (leads, customers, patients). Bound per surface by operator assignment. |

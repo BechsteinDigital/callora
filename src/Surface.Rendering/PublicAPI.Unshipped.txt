@@ -1,5 +1,26 @@
 #nullable enable
 Callora.Surface.Rendering.Api.SurfaceAccessGate
+Callora.Surface.Rendering.Api.SurfaceHandoffEndpoints
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.<Clone>$() -> Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest!
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.Deconstruct(out string? SurfaceKey, out string? ReturnPath) -> void
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.Equals(Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest? other) -> bool
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.ReturnPath.get -> string?
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.ReturnPath.init -> void
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.SurfaceHandoffTicketApiRequest(string? SurfaceKey, string? ReturnPath) -> void
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.SurfaceKey.get -> string?
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.SurfaceKey.init -> void
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.<Clone>$() -> Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse!
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.Deconstruct(out string! RedeemUrl, out string! TargetSurfaceKey, out System.DateTimeOffset ExpiresAtUtc) -> void
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.Equals(Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse? other) -> bool
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.ExpiresAtUtc.get -> System.DateTimeOffset
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.ExpiresAtUtc.init -> void
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.RedeemUrl.get -> string!
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.RedeemUrl.init -> void
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.SurfaceHandoffTicketApiResponse(string! RedeemUrl, string! TargetSurfaceKey, System.DateTimeOffset ExpiresAtUtc) -> void
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.TargetSurfaceKey.get -> string!
+Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.TargetSurfaceKey.init -> void
 Callora.Surface.Rendering.Api.SurfaceRenderEndpoints
 Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions
 Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider
@@ -67,6 +88,12 @@ const Callora.Surface.Rendering.SurfaceCallerView.GuestState = "guest" -> string
 const Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot = "<!doctype html>\n<html lang=\"{{ locale }}\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <title>{{ surface.key }}</title>\n  <link rel=\"stylesheet\" href=\"/surface-app/surface.css\" />\n</head>\n<body>\n  <div id=\"callora-app\"\n       data-workspace=\"{{ workspace.key }}\"\n       data-surface=\"{{ surface.key }}\"\n       data-caller-state=\"{{ caller.state }}\"\n       data-caller-issuer=\"{{ caller.issuer }}\"\n       data-caller-subject=\"{{ caller.subjectId }}\"\n       data-caller-name=\"{{ caller.displayName }}\"\n       data-caller-claims=\"{{ caller.claimsJson }}\"></div>\n  <script src=\"/surface-app/surface.js\" defer></script>\n</body>\n</html>" -> string!
 const Callora.Surface.Rendering.SurfaceThemeTokens.ThemePluginIdKey = "themePluginId" -> string!
 const Callora.Surface.Rendering.SurfaceThemeTokens.ThemeVersionKey = "themeVersion" -> string!
+override Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.Equals(object? obj) -> bool
+override Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.GetHashCode() -> int
+override Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.ToString() -> string!
+override Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.Equals(object? obj) -> bool
+override Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.GetHashCode() -> int
+override Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.ToString() -> string!
 override Callora.Surface.Rendering.SurfaceCallerView.Equals(object? obj) -> bool
 override Callora.Surface.Rendering.SurfaceCallerView.GetHashCode() -> int
 override Callora.Surface.Rendering.SurfaceCallerView.ToString() -> string!
@@ -75,6 +102,11 @@ override Callora.Surface.Rendering.SurfaceRenderContext.GetHashCode() -> int
 override Callora.Surface.Rendering.SurfaceRenderContext.ToString() -> string!
 static Callora.Surface.Rendering.Api.SurfaceAccessGate.LoginRedirect(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot! surface, Microsoft.AspNetCore.Http.HttpContext! httpContext) -> Microsoft.AspNetCore.Http.IResult!
 static Callora.Surface.Rendering.Api.SurfaceAccessGate.Reject(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot! surface, Callora.Core.Application.Surfaces.SurfaceSessionEstablishment! establishment, Microsoft.AspNetCore.Http.HttpContext! httpContext) -> Microsoft.AspNetCore.Http.IResult?
+static Callora.Surface.Rendering.Api.SurfaceHandoffEndpoints.MapSurfaceHandoffEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.operator !=(Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest? left, Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest? right) -> bool
+static Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.operator ==(Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest? left, Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest? right) -> bool
+static Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.operator !=(Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse? left, Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse? right) -> bool
+static Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.operator ==(Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse? left, Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse? right) -> bool
 static Callora.Surface.Rendering.Api.SurfaceRenderEndpoints.MapSurfaceRenderEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.AddCalloraSurfaceRendering(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.MapCalloraSurfaceRendering(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
