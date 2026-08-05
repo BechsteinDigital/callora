@@ -549,9 +549,26 @@ internal sealed class ControllableCall : ICall
         StateChanged?.Invoke(this, new CallStateChangedEventArgs(previous, next));
     }
 
-    public Task AcceptAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public bool AcceptCalled { get; private set; }
 
-    public Task RejectAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public bool RejectCalled { get; private set; }
+
+    /// <summary>Tones passed to <see cref="SendDtmfAsync"/>, in order.</summary>
+    public List<char> SentTones { get; } = [];
+
+    public Task AcceptAsync(CancellationToken cancellationToken = default)
+    {
+        AcceptCalled = true;
+        Transition(CallState.Connected);
+        return Task.CompletedTask;
+    }
+
+    public Task RejectAsync(CancellationToken cancellationToken = default)
+    {
+        RejectCalled = true;
+        Transition(CallState.Terminated);
+        return Task.CompletedTask;
+    }
 
     public Task HangupAsync(CancellationToken cancellationToken = default)
     {
@@ -560,7 +577,11 @@ internal sealed class ControllableCall : ICall
         return Task.CompletedTask;
     }
 
-    public Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default)
+    {
+        SentTones.Add(tone);
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>

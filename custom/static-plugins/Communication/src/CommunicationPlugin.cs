@@ -1,4 +1,5 @@
 using Callora.Core.Application.Events.Contracts;
+using Callora.Core.Application.Flows.Contracts;
 using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Application.Mcp.Contracts;
 using Callora.Core.Application.Persistence.Contracts;
@@ -16,6 +17,7 @@ using Callora.Plugin.Communication.Application.Admin.WebRtc;
 using Callora.Plugin.Communication.Application.Calls;
 using Callora.Plugin.Communication.Application.Compliance;
 using Callora.Plugin.Communication.Application.Conference;
+using Callora.Plugin.Communication.Application.Flows;
 using Callora.Plugin.Communication.Application.Mcp;
 using Callora.Plugin.Communication.Application.RealtimeMedia;
 using Callora.Plugin.Communication.Application.Streaming;
@@ -69,6 +71,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     // plugin has a database (it records call history). Disposed on stop so no call handler dangles.
     private CallControlService? _callControlService;
 
+    // Live call-event fan-out to whatever is watching this process (#116): the dialer's socket and
+    // any other in-process subscriber. Runtime state with no persistence, so it lives for the
+    // plugin's lifetime.
+    private readonly CallEventBroadcaster _callEventBroadcaster = new();
+
     // Observes inbound calls on every registered channel → call.ringing + history + lifecycle. Set
     // alongside the call-control service; detaches on stop.
     private IncomingCallObserver? _incomingCallObserver;
@@ -91,6 +98,13 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
 
     /// <summary>Configuration key that enables the plugin's self-built WebRTC client.</summary>
     internal const string WebRtcEnabledConfigKey = "WebRtc:Enabled";
+
+    /// <summary>
+    /// How long a call-event stream ticket stays redeemable. The same two-minute window the media and
+    /// signalling tickets use: long enough for a browser to open a socket, short enough that a leaked
+    /// one is worthless.
+    /// </summary>
+    internal static readonly TimeSpan CallEventStreamTicketLifetime = TimeSpan.FromMinutes(2);
 
     /// <summary>Configuration key for how many days finished call history is kept.</summary>
     internal const string CallLogRetentionDaysConfigKey = "Retention:CallLogDays";
@@ -145,17 +159,32 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
                     mediaStreamSessionStore,
                     mediaConnections,
                     TimeProvider.System,
-                    ResolveLogger<CallMediaStreamTerminator>(context.Services)));
+                    ResolveLogger<CallMediaStreamTerminator>(context.Services)),
+                _callEventBroadcaster);
             context.Export<ICallControlService>(_callControlService);
+
+            // Flow actions over the same primitive the REST and MCP faces use, so a rule that answers
+            // a call is subject to the same ownership check and state machine as an operator's click
+            // (#116).
+            context.Export<IFlowActionHandler>(new CallAcceptActionHandler(_callControlService));
+            context.Export<IFlowActionHandler>(new CallRejectActionHandler(_callControlService));
+            context.Export<IFlowActionHandler>(new CallHangupActionHandler(_callControlService));
+            context.Export<IFlowActionHandler>(new SendDtmfActionHandler(_callControlService));
 
             // Call control plus the ticket route that lets a consumer attach to a live call — the
             // only production path onto the media socket (#114).
             var mediaStreamMinter = new MediaStreamSessionMinter(
                 _callControlService, mediaStreamSessionStore, TimeProvider.System);
             context.Export<IMediaStreamSessionMinter>(mediaStreamMinter);
+            var callEventTickets = new CallEventTicketStore(TimeProvider.System, CallEventStreamTicketLifetime);
+            context.Export<IHostWebSocketEndpointContributor>(new CommunicationCallEventContributor(
+                callEventTickets,
+                _callEventBroadcaster,
+                ResolveLogger<CallEventWebSocketHandler>(context.Services)));
+
             callRoutes =
             [
-                .. CallAdminRoutes.Build(_callControlService),
+                .. CallAdminRoutes.Build(_callControlService, callEventTickets),
                 .. MediaStreamAdminRoutes.Build(
                     mediaStreamMinter, ResolveLogger<MintMediaStreamRouteHandler>(context.Services)),
             ];

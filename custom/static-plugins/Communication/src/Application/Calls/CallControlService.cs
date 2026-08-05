@@ -29,6 +29,7 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
     private readonly ILogger<CallControlService> _logger;
     private readonly TimeProvider _timeProvider;
     private readonly ICallMediaStreamTerminator? _mediaStreams;
+    private readonly ICallEventPublisher? _liveEvents;
 
     private static readonly JsonSerializerOptions PayloadOptions = new(JsonSerializerDefaults.Web);
 
@@ -43,18 +44,25 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
     /// Ends the call's media streams when it terminates (#114). Optional: a deployment without the
     /// media surface has none, and the call lifecycle runs unchanged.
     /// </param>
+    /// <param name="liveEvents">
+    /// Pushes each transition to whoever is watching this process right now (#116). Optional and
+    /// best effort: the durable delivery path is the outbox, this one exists so a dialer lights up
+    /// while the phone is still ringing.
+    /// </param>
     public CallControlService(
         ICommunicationChannelRegistry channels,
         ICallLogStore callLogStore,
         ILogger<CallControlService> logger,
         TimeProvider timeProvider,
-        ICallMediaStreamTerminator? mediaStreams = null)
+        ICallMediaStreamTerminator? mediaStreams = null,
+        ICallEventPublisher? liveEvents = null)
     {
         _channels = channels ?? throw new ArgumentNullException(nameof(channels));
         _callLogStore = callLogStore ?? throw new ArgumentNullException(nameof(callLogStore));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _mediaStreams = mediaStreams;
+        _liveEvents = liveEvents;
     }
 
     /// <inheritdoc />
@@ -115,6 +123,57 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
     }
 
     /// <inheritdoc />
+    public async Task<bool> AcceptAsync(string workspaceKey, string callId, CancellationToken cancellationToken = default)
+    {
+        if (!TryGetOwned(workspaceKey, callId, out var tracked))
+        {
+            return false;
+        }
+
+        RequireRingingInbound(tracked, "accepted");
+
+        // The resulting Connected transition drives OnConnectedAsync, which records the answer.
+        await tracked.Call.AcceptAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> RejectAsync(string workspaceKey, string callId, CancellationToken cancellationToken = default)
+    {
+        if (!TryGetOwned(workspaceKey, callId, out var tracked))
+        {
+            return false;
+        }
+
+        RequireRingingInbound(tracked, "rejected");
+
+        // Termination is observed the same way a remote hang-up is; the channel translates the
+        // rejection into its protocol cause, which then shapes the recorded outcome.
+        await tracked.Call.RejectAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> SendDtmfAsync(
+        string workspaceKey, string callId, string tones, CancellationToken cancellationToken = default)
+    {
+        var validated = DtmfSequence.Parse(tones);
+        if (!TryGetOwned(workspaceKey, callId, out var tracked))
+        {
+            return false;
+        }
+
+        // Validated before the lookup so a malformed sequence is a caller error regardless of
+        // whether the call happens to be live.
+        foreach (var tone in validated)
+        {
+            await tracked.Call.SendDtmfAsync(tone, cancellationToken).ConfigureAwait(false);
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc />
     public async Task<bool> HangupAsync(string workspaceKey, string callId, CancellationToken cancellationToken = default)
     {
         if (!TryGetOwned(workspaceKey, callId, out var tracked))
@@ -130,6 +189,33 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
     /// <inheritdoc />
     public CallSnapshot? Get(string workspaceKey, string callId) =>
         TryGetOwned(workspaceKey, callId, out var tracked) ? Snapshot(tracked.Call) : null;
+
+    /// <inheritdoc />
+    public IReadOnlyList<CallSnapshot> ListActive(string workspaceKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
+
+        return
+        [
+            .. _active
+                .Where(x => string.Equals(x.Key.WorkspaceKey, workspaceKey, StringComparison.OrdinalIgnoreCase))
+                .Select(x => Snapshot(x.Value.Call))
+        ];
+    }
+
+    /// <summary>
+    /// Guards the two transitions only a ringing inbound call can make. Reported as a caller error
+    /// rather than "not found", because the call is right there — it is the request that does not
+    /// apply to it, and a client needs to tell those apart to render anything sensible.
+    /// </summary>
+    private static void RequireRingingInbound(TrackedCall tracked, string operation)
+    {
+        if (tracked.Call.Direction != CallDirection.Inbound || tracked.Call.State != CallState.Ringing)
+        {
+            throw new InvalidOperationException(
+                $"Call '{tracked.Key.CallId}' is {tracked.Call.Direction} and {tracked.Call.State}; only a ringing inbound call can be {operation}.");
+        }
+    }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<CallHistoryEntry>> ListRecentAsync(
@@ -198,6 +284,11 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
             : CallBusinessEvent.Ringing(workspaceKey, call.CallId, direction, remoteParty, call.State, startedAt);
 
         await _callLogStore.AddAsync(log, ToOutboxEntry(initial, startedAt), cancellationToken).ConfigureAwait(false);
+
+        // After the write, so a live client is never told about a call the database does not hold.
+        PublishLive(
+            direction == CallDirection.Outbound ? CallEventTypes.Placed : CallEventTypes.Ringing,
+            workspaceKey, call.CallId, direction, call.State, remoteParty, startedAt);
 
         void Handler(object? sender, CallStateChangedEventArgs e) => _ = HandleStateChangeAsync(key, e.CurrentState);
 
@@ -323,6 +414,10 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
             CallState.Connected,
             answeredAt);
         await _callLogStore.UpdateAsync(tracked.Log, ToOutboxEntry(connected, answeredAt)).ConfigureAwait(false);
+        PublishLive(
+            CallEventTypes.StateChanged,
+            tracked.WorkspaceKey, tracked.Key.CallId, tracked.Log.Direction, CallState.Connected,
+            tracked.Log.RemoteParty, answeredAt);
     }
 
     /// <summary>
@@ -344,6 +439,10 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
         var ended = CallBusinessEvent.Ended(
             tracked.WorkspaceKey, tracked.Key.CallId, tracked.Log.Direction, tracked.Log.RemoteParty, endedAt);
         await _callLogStore.UpdateAsync(tracked.Log, ToOutboxEntry(ended, endedAt)).ConfigureAwait(false);
+        PublishLive(
+            CallEventTypes.Ended,
+            tracked.WorkspaceKey, tracked.Key.CallId, tracked.Log.Direction, CallState.Terminated,
+            tracked.Log.RemoteParty, endedAt);
 
         // The conversation is over, so its media streams are too (#114). After the log write, because
         // history is the durable record and must not depend on media teardown; the terminator itself
@@ -363,6 +462,36 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
         {
             tracked.Call.StateChanged -= tracked.Handler;
             tracked.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Pushes one transition to the live stream. Failures are swallowed on purpose: a broken
+    /// subscriber must not be able to interrupt a call's lifecycle, and the durable record of this
+    /// transition is already written.
+    /// </summary>
+    private void PublishLive(
+        string eventName,
+        string workspaceKey,
+        string callId,
+        CallDirection direction,
+        CallState state,
+        string remoteParty,
+        DateTimeOffset occurredAt)
+    {
+        if (_liveEvents is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _liveEvents.Publish(CallEventNotification.For(
+                eventName, workspaceKey, callId, direction, state, remoteParty, occurredAt));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Publishing the live {EventName} event for call {CallId} failed.", eventName, callId);
         }
     }
 

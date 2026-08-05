@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import CallDialer from './CallDialer.vue'
 
 // The plugin's operator API is reached through the host proxy; the plugin declared
 // these routes via IHostAdminApiExtensionContributor. A platform operator must name
@@ -266,6 +267,8 @@ onMounted(() => {
           </tr>
         </tbody>
       </table>
+
+      <CallDialer :workspace-key="workspaceKey" />
     </template>
   </section>
 </template>

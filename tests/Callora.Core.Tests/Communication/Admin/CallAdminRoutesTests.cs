@@ -283,6 +283,41 @@ internal sealed class FakeCallControlService : ICallControlService
         return Task.FromResult(HangupResult);
     }
 
+    /// <summary>Set to make the next control operation report a rejected state transition.</summary>
+    public Exception? ControlThrows { get; set; }
+
+    public (string Workspace, string CallId)? LastAccepted { get; private set; }
+
+    public (string Workspace, string CallId)? LastRejected { get; private set; }
+
+    public (string Workspace, string CallId, string Tones)? LastDtmf { get; private set; }
+
+    /// <summary>Outcome the accept/reject/DTMF operations report; hang-up keeps its own flag.</summary>
+    public bool ControlResult { get; set; }
+
+    public IReadOnlyList<CallSnapshot> ActiveResult { get; set; } = [];
+
+    public Task<bool> AcceptAsync(string workspaceKey, string callId, CancellationToken cancellationToken = default)
+    {
+        LastAccepted = (workspaceKey, callId);
+        return ControlThrows is not null ? Task.FromException<bool>(ControlThrows) : Task.FromResult(ControlResult);
+    }
+
+    public Task<bool> RejectAsync(string workspaceKey, string callId, CancellationToken cancellationToken = default)
+    {
+        LastRejected = (workspaceKey, callId);
+        return ControlThrows is not null ? Task.FromException<bool>(ControlThrows) : Task.FromResult(ControlResult);
+    }
+
+    public Task<bool> SendDtmfAsync(
+        string workspaceKey, string callId, string tones, CancellationToken cancellationToken = default)
+    {
+        LastDtmf = (workspaceKey, callId, tones);
+        return ControlThrows is not null ? Task.FromException<bool>(ControlThrows) : Task.FromResult(ControlResult);
+    }
+
+    public IReadOnlyList<CallSnapshot> ListActive(string workspaceKey) => ActiveResult;
+
     /// <summary>
     /// Calls this fake considers live. Empty means "answer <see cref="GetResult"/> for anything",
     /// which is what the older route tests expect; adding entries makes the fake workspace- and
