@@ -107,6 +107,51 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
         return ToSnapshotObject(normalizedWorkspaceKey, surface);
     }
 
+    public async Task<WorkspaceSurfaceSnapshot?> AssignIdentityProviderAsync(
+        string workspaceKey,
+        string surfaceKey,
+        string? pluginId,
+        string? version,
+        string? assignedBy,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(workspaceKey) || string.IsNullOrWhiteSpace(surfaceKey))
+        {
+            return null;
+        }
+
+        var normalizedWorkspaceKey = workspaceKey.Trim();
+        var normalizedSurfaceKey = surfaceKey.Trim();
+        var surface = await dbContext.WorkspaceSurfaces
+            .SingleOrDefaultAsync(
+                x => x.Workspace.WorkspaceKey == normalizedWorkspaceKey && x.SurfaceKey == normalizedSurfaceKey,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (surface is null)
+        {
+            return null;
+        }
+
+        var normalizedPluginId = string.IsNullOrWhiteSpace(pluginId) ? null : pluginId.Trim();
+        var nowUtc = DateTimeOffset.UtcNow;
+
+        surface.IdentityPluginId = normalizedPluginId;
+        surface.IdentityVersion = normalizedPluginId is null || string.IsNullOrWhiteSpace(version)
+            ? null
+            : version.Trim();
+        surface.IdentityAssignedBy = normalizedPluginId is null || string.IsNullOrWhiteSpace(assignedBy)
+            ? null
+            : assignedBy.Trim();
+        // Stamped on clearing too: it is the instant every previously issued session
+        // stops being trusted, and that boundary must exist even without a provider.
+        surface.IdentityAssignedAtUtc = nowUtc;
+        surface.UpdatedAtUtc = nowUtc;
+
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return ToSnapshotObject(normalizedWorkspaceKey, surface);
+    }
+
     public async Task<bool> DeleteAsync(
         string workspaceKey,
         string surfaceKey,
@@ -152,7 +197,13 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             x.ThemeVersion,
             x.IsActive,
             x.CreatedAtUtc,
-            x.UpdatedAtUtc);
+            x.UpdatedAtUtc)
+        {
+            IdentityPluginId = x.IdentityPluginId,
+            IdentityVersion = x.IdentityVersion,
+            IdentityAssignedBy = x.IdentityAssignedBy,
+            IdentityAssignedAtUtc = x.IdentityAssignedAtUtc,
+        };
 
     private static WorkspaceSurfaceSnapshot ToSnapshotObject(string workspaceKey, WorkspaceSurface x) =>
         new(
@@ -172,5 +223,11 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             x.ThemeVersion,
             x.IsActive,
             x.CreatedAtUtc,
-            x.UpdatedAtUtc);
+            x.UpdatedAtUtc)
+        {
+            IdentityPluginId = x.IdentityPluginId,
+            IdentityVersion = x.IdentityVersion,
+            IdentityAssignedBy = x.IdentityAssignedBy,
+            IdentityAssignedAtUtc = x.IdentityAssignedAtUtc,
+        };
 }

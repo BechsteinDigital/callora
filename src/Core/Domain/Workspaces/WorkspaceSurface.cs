@@ -41,6 +41,31 @@ public sealed class WorkspaceSurface
 
     public DateTimeOffset? ThemeAssignedAtUtc { get; set; }
 
+    /// <summary>
+    /// Plugin an operator assigned as this surface's identity provider (ADR-017 §5.2),
+    /// or null when the surface has none. Assignment is operator data, not plugin
+    /// self-declaration: a shipped login plugin cannot know a surface key the customer
+    /// creates later.
+    /// </summary>
+    public string? IdentityPluginId { get; set; }
+
+    /// <summary>Version of the assigned identity plugin at assignment time.</summary>
+    public string? IdentityVersion { get; set; }
+
+    /// <summary>
+    /// Who assigned the identity provider. Unlike the theme equivalent this is not a
+    /// convenience: who vouches for a surface's visitors, and since when, is audit
+    /// material.
+    /// </summary>
+    public string? IdentityAssignedBy { get; set; }
+
+    /// <summary>
+    /// When the identity provider was assigned. Doubles as the invalidation boundary:
+    /// a surface session issued before this instant predates the current provider and
+    /// is no longer trusted (ADR-017 §6.3).
+    /// </summary>
+    public DateTimeOffset? IdentityAssignedAtUtc { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTimeOffset CreatedAtUtc { get; set; }
