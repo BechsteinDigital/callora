@@ -135,6 +135,11 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<Callora.Core.Application.Surfaces.SurfaceSessionAuthenticator>();
         builder.Services.AddScoped<Callora.Core.Infrastructure.Surfaces.SurfaceUpgradeCallerResolver>();
         builder.Services.AddScoped<Callora.Core.Application.Surfaces.SurfaceHandoffService>();
+        var surfaceApiOptions = new Callora.Core.Application.Surfaces.SurfaceApiOptions();
+        builder.Configuration
+            .GetSection(Callora.Core.Application.Surfaces.SurfaceApiOptions.SectionName)
+            .Bind(surfaceApiOptions);
+        builder.Services.AddSingleton(surfaceApiOptions);
         builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
         builder.Services.AddScoped<MarketplaceEntitlementApplier>();
 
