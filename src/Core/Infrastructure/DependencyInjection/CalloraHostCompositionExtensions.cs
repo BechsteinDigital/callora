@@ -129,6 +129,7 @@ public static class CalloraHostCompositionExtensions
         // Scoped, weil er das Kontext-Cookie auf die Antwort schreibt, für die er
         // gerade auflöst. Ein Host ohne diese Komposition rendert unverändert weiter.
         builder.Services.AddScoped<Callora.Core.Infrastructure.Surfaces.SurfaceRequestCallerResolver>();
+        builder.Services.AddScoped<Callora.Core.Application.Surfaces.SurfaceIdentityAssignmentService>();
         builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
         builder.Services.AddScoped<MarketplaceEntitlementApplier>();
 
