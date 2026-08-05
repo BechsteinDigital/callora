@@ -27,7 +27,7 @@ public sealed class MediaStreamWebSocketHandlerTests
         var trackingStream = new DisposeCountingCallAudioStream();
         var provider = new FixedCallAudioStreamProvider(trackingStream);
 
-        var handler = new MediaStreamWebSocketHandler(store, provider);
+        var handler = new MediaStreamWebSocketHandler(store, provider, new MediaStreamConnectionRegistry());
 
         // A close-immediately fake socket: ReceiveAsync returns Close right away so the bridge's
         // consumer-to-call pump exits, causing MediaBridge.RunAsync to terminate without the
@@ -91,6 +91,10 @@ internal sealed class SingleSessionStore : IMediaStreamSessionStore
 
     public Task<int> PurgeExpiredAsync(
         DateTimeOffset now, TimeSpan retention, CancellationToken cancellationToken = default) =>
+        Task.FromResult(0);
+
+    public Task<int> CloseByCallAsync(
+        string workspaceKey, string callId, DateTimeOffset now, CancellationToken cancellationToken = default) =>
         Task.FromResult(0);
 }
 

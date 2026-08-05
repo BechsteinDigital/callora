@@ -95,7 +95,7 @@ public sealed class CommunicationMediaWebSocketEndpointTests
         IMediaStreamSessionStore store,
         ICallAudioStreamProvider provider)
     {
-        var contributor = new CommunicationMediaWebSocketContributor(store, provider);
+        var contributor = new CommunicationMediaWebSocketContributor(store, provider, new MediaStreamConnectionRegistry());
 
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
@@ -238,6 +238,26 @@ internal sealed class InMemoryMediaStreamSessionStore : IMediaStreamSessionStore
         }
 
         return Task.FromResult(removed);
+    }
+
+    public Task<int> CloseByCallAsync(
+        string workspaceKey, string callId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        var closed = 0;
+        foreach (var session in _byId.Values)
+        {
+            if (session.WorkspaceKey != workspaceKey
+                || session.CallId != callId
+                || session.Status == MediaStreamSessionStatus.Closed)
+            {
+                continue;
+            }
+
+            session.Close(now);
+            closed++;
+        }
+
+        return Task.FromResult(closed);
     }
 }
 

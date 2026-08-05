@@ -283,7 +283,24 @@ internal sealed class FakeCallControlService : ICallControlService
         return Task.FromResult(HangupResult);
     }
 
-    public CallSnapshot? Get(string workspaceKey, string callId) => GetResult;
+    /// <summary>
+    /// Calls this fake considers live. Empty means "answer <see cref="GetResult"/> for anything",
+    /// which is what the older route tests expect; adding entries makes the fake workspace- and
+    /// call-aware, which is what the ticket-minting tests need.
+    /// </summary>
+    public HashSet<(string WorkspaceKey, string CallId)> LiveCalls { get; } = [];
+
+    public CallSnapshot? Get(string workspaceKey, string callId)
+    {
+        if (LiveCalls.Count == 0)
+        {
+            return GetResult;
+        }
+
+        return LiveCalls.Contains((workspaceKey, callId))
+            ? GetResult ?? new CallSnapshot(callId, CallDirection.Inbound, CallState.Connected, "+49301234567")
+            : null;
+    }
 
     public Task<IReadOnlyList<CallHistoryEntry>> ListRecentAsync(
         string workspaceKey, int limit, CancellationToken cancellationToken = default)

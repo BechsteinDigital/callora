@@ -9,6 +9,7 @@ using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Streaming;
 using Callora.Plugin.Communication.Application.Streaming.Pacing;
 using Callora.Plugin.Communication.Application.Streaming.Protocol;
+using Callora.Plugin.Communication.Domain.Streaming;
 using Xunit;
 
 namespace Callora.Core.Tests.Communication.Streaming;
@@ -44,7 +45,7 @@ public sealed class MediaBridgeTests
         channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(Frame(1))));
         channel.EnqueueInbound(MediaStreamMessage.ForMark("queued"));
 
-        var run = new MediaBridge(audio, channel, clock).RunAsync(Start, CancellationToken.None);
+        var run = new MediaBridge(audio, channel, MediaStreamDirection.Bidirectional, clock).RunAsync(Start, CancellationToken.None);
         await channel.MarkEchoed("queued").WaitAsync(TimeSpan.FromSeconds(5)); // frame is now buffered in the pacer
 
         Assert.Equal(MediaStreamEventType.Start, channel.Sent[0].Event);
@@ -71,7 +72,7 @@ public sealed class MediaBridgeTests
         channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(Frame(3))));
         channel.EnqueueInbound(MediaStreamMessage.ForMark("ready"));
 
-        var run = new MediaBridge(audio, channel, clock).RunAsync(Start, CancellationToken.None);
+        var run = new MediaBridge(audio, channel, MediaStreamDirection.Bidirectional, clock).RunAsync(Start, CancellationToken.None);
         await channel.MarkEchoed("ready").WaitAsync(TimeSpan.FromSeconds(5)); // f1,f2 enqueued+flushed, f3 enqueued
 
         clock.Tick();
@@ -92,7 +93,7 @@ public sealed class MediaBridgeTests
         var audio = new FakeCallAudioStream();
         var channel = new FakeMediaFrameChannel();
 
-        var run = new MediaBridge(audio, channel, clock).RunAsync(Start, CancellationToken.None);
+        var run = new MediaBridge(audio, channel, MediaStreamDirection.Bidirectional, clock).RunAsync(Start, CancellationToken.None);
         audio.RaiseInbound(new byte[] { 9, 9 });
         await channel.FirstMediaSent.WaitAsync(TimeSpan.FromSeconds(5));
 
@@ -114,7 +115,7 @@ public sealed class MediaBridgeTests
         channel.EnqueueInbound(MediaStreamMessage.Stop);
 
         // The stop frame (not CompleteInbound) terminates the bridge on its own.
-        await new MediaBridge(audio, channel, clock).RunAsync(Start, CancellationToken.None)
+        await new MediaBridge(audio, channel, MediaStreamDirection.Bidirectional, clock).RunAsync(Start, CancellationToken.None)
             .WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.Contains(channel.Sent, m => m.Event == MediaStreamEventType.Mark && m.MarkName == "beep");

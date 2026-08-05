@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugin.Communication.Application.Streaming;
 using Callora.Plugin.Communication.Domain.Calls;
 using Microsoft.Extensions.Logging;
 
@@ -27,22 +28,33 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
     private readonly ICallLogStore _callLogStore;
     private readonly ILogger<CallControlService> _logger;
     private readonly TimeProvider _timeProvider;
+    private readonly ICallMediaStreamTerminator? _mediaStreams;
 
     private static readonly JsonSerializerOptions PayloadOptions = new(JsonSerializerDefaults.Web);
 
     private readonly ConcurrentDictionary<ActiveCallKey, TrackedCall> _active = new();
 
     /// <summary>Creates the service over the channel registry and call-log store.</summary>
+    /// <param name="channels">Resolves the workspace's voice channels.</param>
+    /// <param name="callLogStore">Records history and the event outbox.</param>
+    /// <param name="logger">Diagnostics.</param>
+    /// <param name="timeProvider">Clock for every recorded timestamp.</param>
+    /// <param name="mediaStreams">
+    /// Ends the call's media streams when it terminates (#114). Optional: a deployment without the
+    /// media surface has none, and the call lifecycle runs unchanged.
+    /// </param>
     public CallControlService(
         ICommunicationChannelRegistry channels,
         ICallLogStore callLogStore,
         ILogger<CallControlService> logger,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        ICallMediaStreamTerminator? mediaStreams = null)
     {
         _channels = channels ?? throw new ArgumentNullException(nameof(channels));
         _callLogStore = callLogStore ?? throw new ArgumentNullException(nameof(callLogStore));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        _mediaStreams = mediaStreams;
     }
 
     /// <inheritdoc />
@@ -332,6 +344,16 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
         var ended = CallBusinessEvent.Ended(
             tracked.WorkspaceKey, tracked.Key.CallId, tracked.Log.Direction, tracked.Log.RemoteParty, endedAt);
         await _callLogStore.UpdateAsync(tracked.Log, ToOutboxEntry(ended, endedAt)).ConfigureAwait(false);
+
+        // The conversation is over, so its media streams are too (#114). After the log write, because
+        // history is the durable record and must not depend on media teardown; the terminator itself
+        // is total and never throws.
+        if (_mediaStreams is not null)
+        {
+            await _mediaStreams
+                .CloseForCallAsync(tracked.WorkspaceKey, tracked.Key.CallId, CancellationToken.None)
+                .ConfigureAwait(false);
+        }
     }
 
     /// <summary>Removes the call from tracking and unhooks its handler. Safe to call twice.</summary>
