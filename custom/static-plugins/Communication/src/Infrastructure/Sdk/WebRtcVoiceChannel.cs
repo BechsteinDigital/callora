@@ -14,16 +14,26 @@ namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 /// Health reflects external reachability: <see cref="ChannelHealth.Up"/> when at least one STUN/TURN
 /// server is configured or the bind endpoint is not loopback (meaning the server is reachable from
 /// outside), <see cref="ChannelHealth.Degraded"/> otherwise — the client is alive but NAT traversal
-/// will only succeed for local/loopback peers. There is no dynamic health transition in v1; the value
-/// is fixed at construction. <see cref="ICommunicationChannel.HealthChanged"/> exists for a future
-/// source (e.g. live TURN-reachability probes).
+/// will only succeed for local/loopback peers. The initial value comes from deployment
+/// configuration; <see cref="ReportHealth"/> lets a live source move it afterwards, which is what
+/// makes the WebRTC capability revocable rather than fixed for the process lifetime (#115).
 /// </remarks>
 public sealed class WebRtcVoiceChannel : IVoiceChannel
 {
-    private static readonly IReadOnlyCollection<string> VoiceCapability = [CommunicationCapabilities.Voice];
+    // The channel is the WebRTC surface, so it publishes the WebRTC capability alongside voice
+    // (#115). Declaring communication.webrtc in the manifest while no channel reported it left the
+    // capability permanently unsatisfiable, and blocked dependent plugins whose underlying service
+    // was in fact present.
+    /// <summary>
+    /// What this channel publishes. Exposed statically so the manifest's conditional
+    /// capabilities can be checked against a real publisher without constructing an SDK client.
+    /// </summary>
+    public static IReadOnlyCollection<string> PublishedCapabilities { get; } =
+        [CommunicationCapabilities.Voice, CommunicationCapabilities.WebRtc];
 
     private readonly IWebRtcClient _client;
-    private readonly ChannelHealth _health;
+    private readonly Lock _healthGate = new();
+    private ChannelHealth _health;
 
     /// <summary>Wraps <paramref name="client"/> as a workspace channel identified by the given ids.</summary>
     /// <param name="channelId">Stable channel identifier.</param>
@@ -65,17 +75,42 @@ public sealed class WebRtcVoiceChannel : IVoiceChannel
     public string PluginId { get; }
 
     /// <inheritdoc />
-    public IReadOnlyCollection<string> Capabilities => VoiceCapability;
+    public IReadOnlyCollection<string> Capabilities => PublishedCapabilities;
 
     /// <inheritdoc />
-    public ChannelHealth Health => _health;
+    public ChannelHealth Health
+    {
+        get
+        {
+            lock (_healthGate)
+            {
+                return _health;
+            }
+        }
+    }
 
     /// <inheritdoc />
-    // No dynamic health source in v1; the health is fixed at construction from deployment configuration.
-    // The event exists for a future source (e.g. live TURN reachability probes).
-#pragma warning disable CS0067
     public event EventHandler<ChannelHealthChangedEventArgs>? HealthChanged;
-#pragma warning restore CS0067
+
+    /// <summary>
+    /// Moves the channel's health and raises <see cref="HealthChanged"/> when it actually changed.
+    /// This is the seam a reachability source drives; without it the WebRTC capability could be
+    /// granted at startup but never revoked when NAT traversal stops working (#115).
+    /// </summary>
+    public void ReportHealth(ChannelHealth health)
+    {
+        lock (_healthGate)
+        {
+            if (_health == health)
+            {
+                return;
+            }
+
+            _health = health;
+        }
+
+        HealthChanged?.Invoke(this, new ChannelHealthChangedEventArgs(health));
+    }
 
     /// <inheritdoc />
     public event EventHandler<IncomingCallEventArgs>? IncomingCall;

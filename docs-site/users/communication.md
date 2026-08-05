@@ -93,6 +93,24 @@ An account of an unsupported kind created before this refusal existed stays in
 the database and is reported as **failed** with that reason on startup, instead
 of sitting on `Connecting` forever.
 
+### Runtime capabilities
+
+The plugin provides `communication.foundation` unconditionally, and three capabilities only
+while a channel that can serve them is registered and healthy:
+
+| Capability | Published by | Healthy when |
+|---|---|---|
+| `communication.voice` | SIP channel, WebRTC channel | The account is registered / the deployment is reachable |
+| `communication.webrtc` | WebRTC channel | STUN/TURN is configured or the bind address is routable |
+| `communication.video` | Conference channel | Same reachability as WebRTC |
+
+A dependent plugin declaring one of these in `requiresCapabilities` activates once it is
+granted, and is gated again when the channel behind it goes unhealthy or is deregistered.
+
+The WebRTC and conference channels are provisioned per workspace the first time that
+workspace's WebRTC surface is used, so their capabilities appear then rather than at plugin
+start.
+
 ### Account status and readiness
 
 Each account carries the state the voice provider last reported, so the admin
