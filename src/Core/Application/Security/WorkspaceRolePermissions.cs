@@ -10,8 +10,16 @@ namespace Callora.Core.Application.Security;
 /// (tenant.*, plugin.*, role.*, workspace.*, extension.*, config.update) —
 /// those stay with <see cref="BackendRoles.SuperAdmin"/>. A workspace role
 /// must never get "*", or it would satisfy <c>RequirePermission</c> on
-/// platform endpoints too. The user.* grants are safe only because the user
-/// endpoints are workspace-scoped (audit finding H1).
+/// platform endpoints too.
+/// </para>
+/// <para>
+/// DECISION (#102): workspace roles never receive <c>user.*</c> <em>write</em>
+/// permissions. Those operate on the global <c>BackendUser</c> — credentials,
+/// erasure, data-subject export — and therefore reach every workspace the
+/// victim belongs to. Workspace administration works on
+/// <c>membership.*</c> instead, which the endpoints confine to the caller's own
+/// workspace. <c>user.read</c> stays because the read endpoints are already
+/// filtered to the caller's workspace.
 /// </para>
 /// </summary>
 [CalloraInternal("Workspace-role permission grants — RBAC enforcement, not a plugin contract (REV2 §7.2)")]
@@ -31,9 +39,9 @@ public static class WorkspaceRolePermissions
         BackendPermissionKeys.JobRead,
         BackendPermissionKeys.ConfigRead,
         BackendPermissionKeys.UserRead,
-        BackendPermissionKeys.UserCreate,
-        BackendPermissionKeys.UserUpdate,
-        BackendPermissionKeys.UserDelete
+        BackendPermissionKeys.MembershipRead,
+        BackendPermissionKeys.MembershipUpdate,
+        BackendPermissionKeys.MembershipDelete
     ];
 
     private static readonly IReadOnlyList<string> MemberPermissions =

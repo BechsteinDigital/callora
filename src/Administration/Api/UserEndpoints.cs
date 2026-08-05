@@ -97,6 +97,14 @@ public static class UserEndpoints
             ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
+            // Mutates the global BackendUser — email, display name, password —
+            // which every workspace of that user shares. Platform operation
+            // (#102); workspace admins change membership, not identities.
+            if (!WorkspaceScopeEvaluator.IsOperator(httpContext.User))
+            {
+                return Results.Forbid();
+            }
+
             if (!await CallerMayAccessAsync(httpContext, userStore, userId, cancellationToken).ConfigureAwait(false))
             {
                 return Results.NotFound();
@@ -133,6 +141,15 @@ public static class UserEndpoints
             ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
+            // Erases the global account, every workspace membership and the
+            // global RBAC assignment. Platform operation (#102) — a workspace
+            // admin removing someone from its workspace uses the membership
+            // endpoint instead.
+            if (!WorkspaceScopeEvaluator.IsOperator(httpContext.User))
+            {
+                return Results.Forbid();
+            }
+
             if (!await CallerMayAccessAsync(httpContext, userStore, userId, cancellationToken).ConfigureAwait(false))
             {
                 return Results.NotFound();
@@ -161,6 +178,14 @@ public static class UserEndpoints
             IUserDataSubjectService dataSubjectService,
             CancellationToken cancellationToken) =>
         {
+            // The export discloses every workspace membership and the global
+            // RBAC role of the subject — data from workspaces the caller may
+            // not see. Platform operation (#102).
+            if (!WorkspaceScopeEvaluator.IsOperator(httpContext.User))
+            {
+                return Results.Forbid();
+            }
+
             if (!await CallerMayAccessAsync(httpContext, userStore, userId, cancellationToken).ConfigureAwait(false))
             {
                 return ApiProblems.NotFound($"User '{userId}' not found.");

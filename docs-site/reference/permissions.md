@@ -1,7 +1,7 @@
 # Permissions
 
 The Callora host authorizes every operator/admin API call against a fixed set of
-RBAC permission keys. This page catalogues **all 34 permission keys** — the key
+RBAC permission keys. This page catalogues **all 37 permission keys** — the key
 string, its C# constant, and the endpoints that require it — and explains how the
 RBAC model, the `callora_scope` claim, and the SuperAdmin bypass fit together.
 
@@ -37,6 +37,19 @@ Role names live in `Callora.Core.Application.Security.BackendRoles`:
 | `BackendRoles.SuperAdmin` | `superadmin` | Platform | Unrestricted global backend access. **The only role that satisfies permission checks unconditionally.** Seeded with the `*` wildcard grant. |
 | `BackendRoles.Admin` | `admin` | Workspace | Workspace administrator — **not** a global operator; grants are carried per workspace via `WorkspaceMembership`. |
 | `BackendRoles.HostApi` | `host.api` | Platform | Role for API-key host access; treated as a platform operator (scope, not authority). |
+
+::: warning Global identity vs. workspace membership
+`user.*` **write** keys govern the *global* `BackendUser` — credentials, account
+erasure and the data-subject export. Those operations reach every workspace the
+subject belongs to, so the endpoints additionally require **platform scope**: a
+workspace-scoped session is rejected with `403` even while holding the key.
+
+Workspace administration uses `membership.*` instead, which manages only who
+belongs to a workspace and in which workspace role. A workspace-bound caller
+reaches only its own workspace; any other `{workspaceKey}` answers `404`.
+`WorkspaceRolePermissions` therefore grants the workspace `admin` role
+`membership.read/update/delete` and `user.read`, never a `user.*` write key.
+:::
 
 ### SuperAdmin bypass and seeding
 
@@ -85,10 +98,13 @@ MVC controllers.
 | `extension.update` | `ExtensionUpdate` | `PUT /api/themes/definitions/{templateKey}/plugins/{pluginId}/versions/{version}` (and its `/activation`), `PUT /api/themes/workspaces/{wk}`, `DELETE /api/themes/workspaces/{wk}`, `PUT /api/themes/workspaces/{wk}/settings` |
 | `role.read` | `RoleRead` | `GET /api/rbac/roles`, `/permissions`, `/users` |
 | `role.update` | `RoleUpdate` | `PUT /api/rbac/roles/{role}`, `DELETE /api/rbac/roles/{role}`, `PUT /api/rbac/users/{userId}`, `DELETE /api/rbac/users/{userId}` |
-| `user.create` | `UserCreate` | `POST /api/users` |
-| `user.read` | `UserRead` | `GET /api/users`, `GET /api/users/{userId}`, `GET /api/users/{userId}/data-export` |
-| `user.update` | `UserUpdate` | `PUT /api/users/{userId}` |
-| `user.delete` | `UserDelete` | `DELETE /api/users/{userId}` |
+| `user.create` | `UserCreate` | `POST /api/users` — **platform operators only** |
+| `user.read` | `UserRead` | `GET /api/users`, `GET /api/users/{userId}` (workspace-filtered), `GET /api/users/{userId}/data-export` (**platform operators only**) |
+| `user.update` | `UserUpdate` | `PUT /api/users/{userId}` — **platform operators only** |
+| `user.delete` | `UserDelete` | `DELETE /api/users/{userId}` — **platform operators only** |
+| `membership.read` | `MembershipRead` | `GET /api/workspaces/{wk}/members` |
+| `membership.update` | `MembershipUpdate` | `PUT /api/workspaces/{wk}/members/{userId}` |
+| `membership.delete` | `MembershipDelete` | `DELETE /api/workspaces/{wk}/members/{userId}` |
 | `workspace.create` | `WorkspaceCreate` | — *(defined; no endpoint currently enforces it)* |
 | `workspace.read` | `WorkspaceRead` | `GET /api/workspaces`, `/{wk}`, `/{wk}/members`; `GET /api/surfaces`, `/{surfaceKey}` |
 | `workspace.update` | `WorkspaceUpdate` | `PUT /api/workspaces/{wk}`, `PUT /api/workspaces/{wk}/members/{userId}`, `DELETE /api/workspaces/{wk}/members/{userId}`; `PUT /api/surfaces/{surfaceKey}`, `DELETE /api/surfaces/{surfaceKey}` |

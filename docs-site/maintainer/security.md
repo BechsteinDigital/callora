@@ -93,6 +93,10 @@ untrusted content executes — plugin *code* is trusted by provenance, but templ
   role at startup (see [Migration & Rollback](migration-and-rollback.md)).
 - **`Admin`** — scoped **per workspace**, not a global operator. The historical
   `admin` role was migrated to `SuperAdmin`.
+- **Global identity is operator-only**: changing credentials, deleting an account
+  and exporting data-subject data act on the global user across every workspace,
+  so they require platform scope. Workspace admins manage `membership.*` in their
+  own workspace instead — see [Permissions](../reference/permissions.md).
 - Permission keys follow `<function>.<action>` (`create/read/update/delete/execute`);
   effective rights are the union of a principal's roles.
 - The bootstrap operator password policy refuses initial passwords shorter than
@@ -100,9 +104,31 @@ untrusted content executes — plugin *code* is trusted by provenance, but templ
 
 ## CSRF, rate limiting, and API auth
 
-- **Control-plane API auth**: an API key in the `X-Callora-Api-Key` header
-  (`BackendHost__RequireApiKeyAuthentication`, keys in `BackendHost__ApiKeys__*`).
-  Rotate the default `callora-local-dev-key-change-me`.
+- **Control-plane API auth**: an API key in the `X-Callora-Api-Key` header.
+  Every presented key is matched against a known credential — a named
+  integration (hashed lookup, own RBAC role) or a configured bootstrap key.
+  Unknown keys always return `401`, in every configuration permutation.
+
+### Bootstrap credential lifecycle
+
+The bootstrap key is a **break-glass super-admin credential for first-run setup
+only**. Retire it as soon as named integrations exist:
+
+1. **Install** — set `BackendHost__EnableBootstrapApiKeys=true` and put one
+   generated key in `BackendHost__ApiKeys__0`. Never ship
+   `callora-local-dev-key-change-me`.
+2. **Bound it** — set `BackendHost__BootstrapApiKeysExpireAtUtc` to a few hours
+   out. The key stops authenticating at that instant even if nobody remembers to
+   remove it.
+3. **Onboard** — create named integrations via `/api/security/integrations`;
+   each gets its own key, RBAC role and scope, never super-admin.
+4. **Retire** — clear `BackendHost__ApiKeys__*` **or** set
+   `BackendHost__EnableBootstrapApiKeys=false`. Both revoke the credential
+   immediately; nothing else needs to change.
+
+`RequireApiKeyAuthentication` is a startup policy switch (it refuses to boot
+with bootstrap keys enabled but unconfigured). It has no effect on whether a
+presented credential is accepted.
 - **CSRF guard** and **rate limiting** protect the operator/admin surface.
 - Errors use RFC 9457 ProblemDetails (`application/problem+json`) — no anonymous
   error objects.

@@ -138,14 +138,24 @@ public static class WorkspaceEndpoints
         }).WithName("Workspaces_Delete")
             .RequirePermission(BackendPermissionKeys.WorkspaceDelete);
 
+        // Workspace-membership administration (#102). A workspace-bound caller
+        // reaches only its own workspace; operators reach every workspace. This
+        // is the surface a workspace administrator uses instead of the global
+        // /api/users write endpoints.
         group.MapGet("/{workspaceKey}/members", async (
             string workspaceKey,
             int? limit,
             string? cursor,
+            HttpContext httpContext,
             BackendHostOptions hostOptions,
             IWorkspaceManagementStore workspaceStore,
             CancellationToken cancellationToken) =>
         {
+            if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, workspaceKey))
+            {
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
+            }
+
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
             {
                 return ApiProblems.BadRequest("Workspace host default tenant key is not configured.");
@@ -167,18 +177,26 @@ public static class WorkspaceEndpoints
                 ordered, limit, cursor, static x => x.UserId));
         }).WithName("Workspaces_Members_List")
             .Produces<PagedApiResponse<WorkspaceMemberApiResponse>>()
-            .RequirePermission(BackendPermissionKeys.WorkspaceRead);
+            .RequireAnyPermission(
+                BackendPermissionKeys.MembershipRead,
+                BackendPermissionKeys.WorkspaceRead);
 
         group.MapPut("/{workspaceKey}/members/{userId}", async (
             string workspaceKey,
             string userId,
             UpsertWorkspaceMemberApiRequest request,
+            HttpContext httpContext,
             BackendHostOptions hostOptions,
             IWorkspaceManagementStore workspaceStore,
             IBusinessEventBus businessEventBus,
             ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
+            if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, workspaceKey))
+            {
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
+            }
+
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
             {
                 return ApiProblems.BadRequest("Workspace host default tenant key is not configured.");
@@ -211,17 +229,25 @@ public static class WorkspaceEndpoints
                 _ => Results.BadRequest()
             };
         }).WithName("Workspaces_Members_Upsert")
-            .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
+            .RequireAnyPermission(
+                BackendPermissionKeys.MembershipUpdate,
+                BackendPermissionKeys.WorkspaceUpdate);
 
         group.MapDelete("/{workspaceKey}/members/{userId}", async (
             string workspaceKey,
             string userId,
+            HttpContext httpContext,
             BackendHostOptions hostOptions,
             IWorkspaceManagementStore workspaceStore,
             IBusinessEventBus businessEventBus,
             ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
+            if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, workspaceKey))
+            {
+                return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
+            }
+
             if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
             {
                 return ApiProblems.BadRequest("Workspace host default tenant key is not configured.");
@@ -252,7 +278,9 @@ public static class WorkspaceEndpoints
                 _ => Results.BadRequest()
             };
         }).WithName("Workspaces_Members_Delete")
-            .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
+            .RequireAnyPermission(
+                BackendPermissionKeys.MembershipDelete,
+                BackendPermissionKeys.WorkspaceUpdate);
 
     }
 
