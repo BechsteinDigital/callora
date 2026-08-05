@@ -119,6 +119,26 @@ public sealed class BackendSecretHygieneTests
         Assert.Equal(4, BackendSecretHygiene.Inspect(options).Count);
     }
 
+    [Fact]
+    public void AllowingUnsignedPluginsIsAViolation()
+    {
+        // Not a secret, but the same consequence: a plugin runs as host code, so an unsigned package
+        // is code of unestablished origin with the process's full rights. The trust model calls this
+        // tier "production: always blocked", and this is where that stops being advice.
+        var options = Secure();
+        options.AllowUnsignedPlugins = true;
+
+        var violation = Assert.Single(BackendSecretHygiene.Inspect(options));
+
+        Assert.Contains("AllowUnsignedPlugins", violation, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RequiringSignaturesTripsNothing()
+    {
+        Assert.Empty(BackendSecretHygiene.Inspect(Secure()));
+    }
+
     /// <summary>
     /// Baseline options with every repository-known default overridden, so each
     /// test can trip exactly one violation in isolation.
