@@ -103,6 +103,73 @@ jobs:
           path: ./test-results/**/coverage.cobertura.xml
           if-no-files-found: warn
 
+  frontends:
+    name: ${{ matrix.name }} (${{ matrix.gates }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      # No fail-fast: one workspace breaking should not hide the state of the others,
+      # which is the whole point of gating them separately.
+      fail-fast: false
+      matrix:
+        include:
+          - name: Surface Runtime
+            path: src/Surface.Rendering/Resources/app/surface
+            gates: test + build
+            test: true
+          - name: Surface SDK
+            path: custom/surface-sdk
+            gates: test + build
+            test: true
+          - name: Communication Admin
+            path: custom/static-plugins/Communication/src/Resources/app/admin
+            gates: build
+            test: false
+          - name: SurfaceDemo
+            path: custom/plugins/SurfaceDemo
+            gates: build
+            test: false
+          - name: Docs Site
+            path: docs-site
+            gates: lint + build
+            test: false
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Shipped dependencies are the gate. A vulnerable test runner is worth knowing about and
+      # worth fixing, but it never reaches a customer — blocking on it would train everyone to
+      # ignore the signal that does.
+      - name: Audit (shipped dependencies)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit (all dependencies, advisory)
+        run: npm audit --audit-level=high || true
+
+      - name: Test
+        if: matrix.test
+        run: npm run test
+
+      - name: Lint
+        if: matrix.name == 'Docs Site'
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
   admin-frontend:
     name: Admin Shell (Vitest + Build)
     runs-on: ubuntu-latest
@@ -123,6 +190,12 @@ jobs:
 
       - name: Install
         run: npm ci
+
+      - name: Audit (shipped dependencies)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit (all dependencies, advisory)
+        run: npm audit --audit-level=high || true
 
       # Die Vitest-Suite (Slots/Hooks/Services/Loader + alle Admin-Module) läuft
       # als eigener Gate-Schritt, damit UI-Verhaltensregressionen main nicht

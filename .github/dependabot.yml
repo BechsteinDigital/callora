@@ -22,3 +22,48 @@ updates:
     groups:
       npm-all:
         patterns: ["*"]
+
+  # Surface-Runtime (ausgeliefert)
+  - package-ecosystem: npm
+    directory: /src/Surface.Rendering/Resources/app/surface
+    schedule:
+      interval: weekly
+    groups:
+      npm-all:
+        patterns: ["*"]
+
+  # Surface-SDK (an Plugin-Autoren ausgeliefert)
+  - package-ecosystem: npm
+    directory: /custom/surface-sdk
+    schedule:
+      interval: weekly
+    groups:
+      npm-all:
+        patterns: ["*"]
+
+  # Communication-Admin-UI
+  - package-ecosystem: npm
+    directory: /custom/static-plugins/Communication/src/Resources/app/admin
+    schedule:
+      interval: weekly
+    groups:
+      npm-all:
+        patterns: ["*"]
+
+  # SurfaceDemo-Referenzplugin
+  - package-ecosystem: npm
+    directory: /custom/plugins/SurfaceDemo
+    schedule:
+      interval: weekly
+    groups:
+      npm-all:
+        patterns: ["*"]
+
+  # Doku-Site
+  - package-ecosystem: npm
+    directory: /docs-site
+    schedule:
+      interval: weekly
+    groups:
+      npm-all:
+        patterns: ["*"]
