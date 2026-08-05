@@ -132,6 +132,63 @@ public sealed class SharedContractAssemblyRegistryTests
         Assert.Empty(PluginContractManifestReader.ReadDeclaredContracts(assemblyPath));
     }
 
+    [Fact]
+    public void Register_WithUnprovidedCalloraPrefix_ThrowsInsteadOfSkipping()
+    {
+        var contractName = $"Callora.Fake.Contracts.{Guid.NewGuid():N}";
+        using var workspace = new TempWorkspace();
+        var plugin = workspace.CreateDirectory("plugin");
+        EmitContractAssembly(Path.Combine(plugin, $"{contractName}.dll"), contractName, new Version(1, 0, 0, 0));
+
+        var registry = new SharedContractAssemblyRegistry();
+
+        // The prefix means "the host provides this", and the plugin load context delegates those
+        // names to the default context. A plugin-provided contract carrying it would be skipped
+        // here AND absent there, so it would fail to load at plugin start. Fail-closed instead.
+        var error = Assert.Throws<InvalidOperationException>(
+            () => registry.RegisterContracts(plugin, [$"{contractName}.dll"], "acme"));
+
+        Assert.Contains("reserved 'Callora.' prefix", error.Message, StringComparison.Ordinal);
+        Assert.Empty(registry.ListRegistrations());
+    }
+
+    [Fact]
+    public void Register_WithHostProvidedCalloraContract_IsRecordedNotLoaded()
+    {
+        using var workspace = new TempWorkspace();
+        var plugin = workspace.CreateDirectory("plugin");
+        // Callora.Core is loaded in this process, so it stands in for a contract the host app
+        // references: declaring it is legitimate and must not fail.
+        var source = typeof(SharedContractAssemblyRegistry).Assembly.Location;
+        File.Copy(source, Path.Combine(plugin, "Callora.Core.dll"));
+
+        var registry = new SharedContractAssemblyRegistry();
+        registry.RegisterContracts(plugin, ["Callora.Core.dll"], "acme");
+
+        var registration = Assert.Single(registry.ListRegistrations());
+        Assert.Equal("Callora.Core", registration.AssemblyName);
+        Assert.True(registration.IsHostProvided);
+        Assert.Equal("acme", registration.DeclaringPluginId);
+    }
+
+    [Fact]
+    public void ListRegistrations_NamesThePluginThatBroughtTheContract()
+    {
+        var contractName = UniqueName();
+        using var workspace = new TempWorkspace();
+        var plugin = workspace.CreateDirectory("plugin");
+        EmitContractAssembly(Path.Combine(plugin, $"{contractName}.dll"), contractName, new Version(2, 1, 0, 0));
+
+        var registry = new SharedContractAssemblyRegistry();
+        registry.RegisterContracts(plugin, [$"{contractName}.dll"], "acme.chat");
+
+        var registration = Assert.Single(registry.ListRegistrations());
+        Assert.Equal(contractName, registration.AssemblyName);
+        Assert.Equal("2.1.0.0", registration.Version);
+        Assert.Equal("acme.chat", registration.DeclaringPluginId);
+        Assert.False(registration.IsHostProvided);
+    }
+
     private static string UniqueName() => $"Acme.Fake.Contracts.{Guid.NewGuid():N}";
 
     private static void EmitContractAssembly(string path, string assemblyName, Version version)

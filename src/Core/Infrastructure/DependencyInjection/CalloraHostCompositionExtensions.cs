@@ -211,7 +211,13 @@ public static class CalloraHostCompositionExtensions
         // the shared-contract registry is host-encapsulated, so it is not supplied here.
         builder.Services.AddSingleton<Callora.Core.Application.Plugins.IProvidedContractVersionProvider>(
             static sp => new Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider(
+                // Plugin-provided contracts count too: without the registry the gate only ever saw
+                // what the host itself ships, so a range against a partner contract went unchecked.
+                sharedContracts: sp.GetService<Callora.Core.Application.Plugins.SharedContractAssemblyRegistry>(),
                 logger: sp.GetService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider>>()));
+        builder.Services.AddSingleton(static sp =>
+            sp.GetRequiredService<Callora.Core.Application.Plugins.RuntimePluginHost>().SharedContracts);
+        builder.Services.AddScoped<Callora.Core.Application.Plugins.ContractCatalogService>();
         builder.Services.AddSingleton<Callora.Core.Application.Plugins.PluginDependencyVersionGate>(
             static sp => new Callora.Core.Application.Plugins.PluginDependencyVersionGate(
                 sp.GetRequiredService<Callora.Core.Application.Plugins.IProvidedContractVersionProvider>(),

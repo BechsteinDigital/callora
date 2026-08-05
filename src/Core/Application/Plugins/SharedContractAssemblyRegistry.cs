@@ -17,13 +17,21 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
 {
     private readonly object _syncLock = new();
     private readonly Dictionary<string, Assembly> _assembliesByName = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, SharedContractRegistration> _registrationsByName =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Loads the declared contract assemblies of one plugin into the shared
     /// context. First registration of a name wins; a later registration with
     /// a different major version fails the plugin operation.
     /// </summary>
-    public void RegisterContracts(string pluginDirectory, IReadOnlyCollection<string> contractFileNames)
+    /// <param name="pluginDirectory">Directory the plugin was installed into.</param>
+    /// <param name="contractFileNames">File names declared under "contracts" in its manifest.</param>
+    /// <param name="declaringPluginId">Plugin that declared them, for the catalog.</param>
+    public void RegisterContracts(
+        string pluginDirectory,
+        IReadOnlyCollection<string> contractFileNames,
+        string? declaringPluginId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginDirectory);
         ArgumentNullException.ThrowIfNull(contractFileNames);
@@ -49,7 +57,7 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
                     $"Declared contract assembly '{fileName}' is missing from the plugin package.");
             }
 
-            RegisterContractAssembly(fullPath);
+            RegisterContractAssembly(fullPath, declaringPluginId);
         }
     }
 
@@ -84,7 +92,20 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
         }
     }
 
-    private void RegisterContractAssembly(string fullPath)
+    /// <summary>
+    /// Everything currently shared, host-provided and plugin-provided alike, ordered by name.
+    /// </summary>
+    public IReadOnlyList<SharedContractRegistration> ListRegistrations()
+    {
+        lock (_syncLock)
+        {
+            return _registrationsByName.Values
+                .OrderBy(static registration => registration.AssemblyName, StringComparer.Ordinal)
+                .ToArray();
+        }
+    }
+
+    private void RegisterContractAssembly(string fullPath, string? declaringPluginId)
     {
         var assemblyName = AssemblyName.GetAssemblyName(fullPath);
         if (assemblyName.Name is not { Length: > 0 } name)
@@ -92,12 +113,32 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
             throw new InvalidOperationException($"Contract assembly '{fullPath}' has no assembly name.");
         }
 
-        // Callora.*-Verträge teilen ihre Identität bereits über den
-        // Default-Kontext des Hosts — keine Doppelregistrierung.
+        // The Callora. prefix means "the host provides this": the plugin load context delegates
+        // those names to the default context instead of loading them locally. That only works when
+        // the host application actually references the assembly. A plugin-provided contract
+        // carrying the prefix would be skipped here AND absent from the default context, so it
+        // would fail to load the moment the plugin touched one of its types — a defect that
+        // previously surfaced as a debug line and a crash at plugin start.
         if (name.Equals("Callora", StringComparison.Ordinal) ||
             name.StartsWith("Callora.", StringComparison.Ordinal))
         {
-            logger?.LogDebug("Contract declaration '{AssemblyName}' is host-shared already; skipping.", name);
+            if (TryResolveFromDefaultContext(name) is not { } hostProvided)
+            {
+                throw new InvalidOperationException(
+                    $"Declared contract '{name}' uses the reserved 'Callora.' prefix but the host does " +
+                    "not provide it. Name a plugin-provided contract outside that prefix so it can be " +
+                    "shared across load contexts.");
+            }
+
+            lock (_syncLock)
+            {
+                _registrationsByName.TryAdd(
+                    name,
+                    new SharedContractRegistration(
+                        name, VersionOf(hostProvided), declaringPluginId, IsHostProvided: true));
+            }
+
+            logger?.LogDebug("Contract declaration '{AssemblyName}' is host-provided; recorded only.", name);
             return;
         }
 
@@ -124,11 +165,15 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
                         existingVersion);
                 }
 
+                // A later declarer of an already-shared contract still belongs in the catalog's
+                // dependents, but the first registration keeps ownership of the identity.
                 return;
             }
 
             var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(fullPath);
             _assembliesByName[name] = assembly;
+            _registrationsByName[name] = new SharedContractRegistration(
+                name, VersionOf(assembly), declaringPluginId, IsHostProvided: false);
             logger?.LogInformation(
                 "Shared contract assembly {AssemblyName} {Version} loaded from {Path}.",
                 name,
@@ -136,4 +181,21 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
                 fullPath);
         }
     }
+
+    private static Assembly? TryResolveFromDefaultContext(string name)
+    {
+        try
+        {
+            return AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(name));
+        }
+        catch (Exception exception)
+            when (exception is FileNotFoundException or FileLoadException or BadImageFormatException
+                      or ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    private static string VersionOf(Assembly assembly) =>
+        assembly.GetName().Version?.ToString() ?? "0.0.0.0";
 }
