@@ -76,6 +76,28 @@ workspace-scoped (plugin-wide status, for example). It is an explicit opt-out.
 | **IHostPublicHttpEndpointContributor** | Contributable | Contribute anonymous public HTTP endpoints under `/public/{pluginId}/…` (GET/POST, no platform auth). |
 | **IHostPublicHttpRouteHandler** | Contributable | Handle one plugin public HTTP route — responsible for all input validation and access control. |
 | **IHostSurfaceIdentityProvider** | Contributable | Authenticate a surface's own visitors (leads, customers, patients). Bound per surface by operator assignment. |
+| **IHostSurfaceApiContributor** | Contributable | Contribute HTTP routes a surface's visitors may call, under `/surface-api/{pluginId}/…`. |
+| **IHostSurfaceApiRouteHandler** | Contributable | Handle one surface API route — owns the business authorization for the calling subject. |
+
+::: warning Surface API routes
+This is the seam between the two that existed before: the Admin API speaks for an
+operator, the public HTTP seam is anonymous, and neither lets you act in the name of an
+ordinary CRM, patient or portal user.
+
+The host enforces the surface session, the host binding, plugin availability in that
+workspace, the route mount, the body cap, the handler deadline, the same-origin rule and
+the audit entry. It does not interpret a single claim. Whether the subject in
+`HostSurfaceApiRequest.Caller` may perform the concrete action is yours to decide, and a
+handler that skips that check has no authorization at all.
+
+Routes default to `SurfaceApiRouteAudience.Authenticated`. Opt into
+`GuestOrAuthenticated` only for state a recognised guest legitimately owns — a cart, a
+draft, a multi-step form. The guest subject is a key, not an entitlement.
+
+A route whose template is absolute or contains `..`, and a second route with the same
+method and template, are not mounted. The refusal is recorded with its reason and logged
+when a request misses, so a route that silently never matches is diagnosable.
+:::
 
 ::: warning Surface identity providers
 The provider receives normalised request metadata plus the values of the credential
