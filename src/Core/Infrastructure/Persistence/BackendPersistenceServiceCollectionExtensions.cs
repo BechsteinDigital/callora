@@ -34,7 +34,16 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddScoped<IHostUnitOfWork, EfHostUnitOfWork>();
         services.AddScoped<IBackendRbacStore, EfBackendRbacStore>();
         services.AddScoped<IIntegrationCredentialStore, EfIntegrationCredentialStore>();
-        services.AddScoped<IBackendUserStore, EfBackendUserStore>();
+        // Session revocation (#105): a durable revocation list, the bounded
+        // account-state cache the request-path validator reads, and the decorator
+        // that drops a cached account the moment its stamp rotates.
+        services.AddScoped<EfBackendUserStore>();
+        services.AddScoped<IBackendUserStore>(provider => new SessionStateInvalidatingUserStore(
+            provider.GetRequiredService<EfBackendUserStore>(),
+            provider.GetRequiredService<BackendSessionStateCache>()));
+        services.AddScoped<IBackendSessionRevocationStore, EfBackendSessionRevocationStore>();
+        services.AddSingleton<BackendSessionStateCache>();
+        services.AddScoped<IBackendSessionValidator, BackendSessionValidator>();
         services.AddScoped<ITenantManagementStore, EfTenantManagementStore>();
         services.AddScoped<IWorkspaceManagementStore, EfWorkspaceManagementStore>();
         services.AddScoped<IWorkspaceSurfaceStore, EfWorkspaceSurfaceStore>();

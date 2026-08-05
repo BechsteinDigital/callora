@@ -30,13 +30,115 @@ public sealed class EfBackendUserStore(
             return null;
         }
 
-        var verification = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
-        return verification switch
+        // Disabled and locked-out accounts fail before the hash is even verified,
+        // and produce the same null result as a wrong password — the caller must not
+        // be able to distinguish the cases (#104).
+        if (user.IsDisabled || IsLockedOut(user))
         {
-            PasswordVerificationResult.Success => user,
-            PasswordVerificationResult.SuccessRehashNeeded => await RehashOnLoginAsync(user, password, cancellationToken).ConfigureAwait(false),
-            _ => null
-        };
+            return null;
+        }
+
+        var verification = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        if (verification == PasswordVerificationResult.Failed)
+        {
+            await RecordFailedAttemptAsync(user, cancellationToken).ConfigureAwait(false);
+            return null;
+        }
+
+        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            user.PasswordHash = passwordHasher.HashPassword(user, password);
+            user.PasswordHashAlgorithm = "aspnet.identity.v3";
+            user.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        }
+
+        await ClearFailedAttemptsAsync(user, cancellationToken).ConfigureAwait(false);
+        return user;
+    }
+
+    public async Task<bool> SetEnabledAsync(
+        string externalId,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await FindTrackedAsync(externalId, cancellationToken).ConfigureAwait(false);
+        if (user is null)
+        {
+            return false;
+        }
+
+        user.IsDisabled = !enabled;
+        if (enabled)
+        {
+            // Re-enabling clears the guessing counters, so a lockout accumulated
+            // before deactivation does not survive the reactivation.
+            user.FailedAccessCount = 0;
+            user.LockoutEndsAtUtc = null;
+        }
+
+        // Both directions revoke live sessions: disabling must stop them at once,
+        // and re-enabling should not resurrect pre-deactivation tokens.
+        user.SecurityStamp = BackendSecurityStamp.New();
+        user.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task<bool> RevokeSessionsAsync(
+        string externalId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await FindTrackedAsync(externalId, cancellationToken).ConfigureAwait(false);
+        if (user is null)
+        {
+            return false;
+        }
+
+        user.SecurityStamp = BackendSecurityStamp.New();
+        user.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    private static bool IsLockedOut(BackendUser user) =>
+        user.LockoutEndsAtUtc is { } until && until > DateTimeOffset.UtcNow;
+
+    private async Task RecordFailedAttemptAsync(BackendUser user, CancellationToken cancellationToken)
+    {
+        user.FailedAccessCount++;
+        if (user.FailedAccessCount >= BackendLockoutPolicy.MaxFailedAttempts)
+        {
+            user.LockoutEndsAtUtc = DateTimeOffset.UtcNow.Add(BackendLockoutPolicy.LockoutDuration);
+            user.FailedAccessCount = 0;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task ClearFailedAttemptsAsync(BackendUser user, CancellationToken cancellationToken)
+    {
+        if (user.FailedAccessCount == 0 &&
+            user.LockoutEndsAtUtc is null &&
+            !dbContext.ChangeTracker.HasChanges())
+        {
+            return;
+        }
+
+        user.FailedAccessCount = 0;
+        user.LockoutEndsAtUtc = null;
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private Task<BackendUser?> FindTrackedAsync(string externalId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(externalId))
+        {
+            return Task.FromResult<BackendUser?>(null);
+        }
+
+        var normalizedExternalId = externalId.Trim();
+        return dbContext.BackendUsers
+            .SingleOrDefaultAsync(x => x.ExternalId == normalizedExternalId, cancellationToken);
     }
 
     public Task<bool> IsWorkspaceMemberAsync(
@@ -147,6 +249,14 @@ public sealed class EfBackendUserStore(
             .ConfigureAwait(false);
         var nowUtc = DateTimeOffset.UtcNow;
 
+        // One policy for onboarding and every later change (#104): a password is
+        // validated here regardless of which caller supplied it.
+        if (!string.IsNullOrWhiteSpace(password) &&
+            BackendPasswordPolicy.Validate(password) is { } policyViolation)
+        {
+            throw new InvalidOperationException(policyViolation);
+        }
+
         if (user is null)
         {
             if (string.IsNullOrWhiteSpace(password))
@@ -158,6 +268,7 @@ public sealed class EfBackendUserStore(
             {
                 Id = Guid.NewGuid(),
                 ExternalId = normalizedExternalId,
+                SecurityStamp = BackendSecurityStamp.New(),
                 CreatedAtUtc = nowUtc,
                 UpdatedAtUtc = nowUtc
             };
@@ -175,6 +286,11 @@ public sealed class EfBackendUserStore(
         {
             user.PasswordHash = passwordHasher.HashPassword(user, password);
             user.PasswordHashAlgorithm = "aspnet.identity.v3";
+            // A credential change revokes every session issued with the old one (#105),
+            // and clears the guessing counters for the new credential.
+            user.SecurityStamp = BackendSecurityStamp.New();
+            user.FailedAccessCount = 0;
+            user.LockoutEndsAtUtc = null;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -204,15 +320,4 @@ public sealed class EfBackendUserStore(
         return true;
     }
 
-    private async Task<BackendUser?> RehashOnLoginAsync(
-        BackendUser user,
-        string password,
-        CancellationToken cancellationToken)
-    {
-        user.PasswordHash = passwordHasher.HashPassword(user, password);
-        user.PasswordHashAlgorithm = "aspnet.identity.v3";
-        user.UpdatedAtUtc = DateTimeOffset.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return user;
-    }
 }

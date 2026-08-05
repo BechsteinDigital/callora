@@ -31,8 +31,28 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
             return Task.FromResult<BackendUser?>(null);
         }
 
+        if (user.IsDisabled ||
+            (user.LockoutEndsAtUtc is { } until && until > DateTimeOffset.UtcNow))
+        {
+            return Task.FromResult<BackendUser?>(null);
+        }
+
         var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
-        return Task.FromResult(verification == PasswordVerificationResult.Failed ? null : user);
+        if (verification == PasswordVerificationResult.Failed)
+        {
+            user.FailedAccessCount++;
+            if (user.FailedAccessCount >= BackendLockoutPolicy.MaxFailedAttempts)
+            {
+                user.LockoutEndsAtUtc = DateTimeOffset.UtcNow.Add(BackendLockoutPolicy.LockoutDuration);
+                user.FailedAccessCount = 0;
+            }
+
+            return Task.FromResult<BackendUser?>(null);
+        }
+
+        user.FailedAccessCount = 0;
+        user.LockoutEndsAtUtc = null;
+        return Task.FromResult<BackendUser?>(user);
     }
 
     public Task<bool> IsWorkspaceMemberAsync(
@@ -133,6 +153,7 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
         {
             Id = Guid.NewGuid(),
             ExternalId = normalizedExternalId,
+            SecurityStamp = BackendSecurityStamp.New(),
             CreatedAtUtc = nowUtc,
             UpdatedAtUtc = nowUtc
         });
@@ -150,9 +171,52 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
         {
             user.PasswordHash = _passwordHasher.HashPassword(user, password);
             user.PasswordHashAlgorithm = "aspnet.identity.v3";
+            // Mirrors the production store: a credential change revokes every
+            // session issued under the previous one (#105).
+            user.SecurityStamp = BackendSecurityStamp.New();
+            user.FailedAccessCount = 0;
+            user.LockoutEndsAtUtc = null;
         }
 
         return Task.FromResult(user);
+    }
+
+    public Task<bool> SetEnabledAsync(
+        string externalId,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(externalId) || !_users.TryGetValue(externalId.Trim(), out var user))
+        {
+            return Task.FromResult(false);
+        }
+
+        user.IsDisabled = !enabled;
+        if (enabled)
+        {
+            user.FailedAccessCount = 0;
+            user.LockoutEndsAtUtc = null;
+        }
+
+        user.SecurityStamp = BackendSecurityStamp.New();
+        user.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> RevokeSessionsAsync(
+        string externalId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(externalId) || !_users.TryGetValue(externalId.Trim(), out var user))
+        {
+            return Task.FromResult(false);
+        }
+
+        user.SecurityStamp = BackendSecurityStamp.New();
+        user.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        return Task.FromResult(true);
     }
 
     public Task<bool> RemoveAsync(

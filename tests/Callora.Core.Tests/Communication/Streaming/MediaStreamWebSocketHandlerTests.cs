@@ -88,6 +88,10 @@ internal sealed class SingleSessionStore : IMediaStreamSessionStore
 
     public Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default) =>
         Task.FromResult(0);
+
+    public Task<int> PurgeExpiredAsync(
+        DateTimeOffset now, TimeSpan retention, CancellationToken cancellationToken = default) =>
+        Task.FromResult(0);
 }
 
 /// <summary>Provider that always returns the same stream instance.</summary>

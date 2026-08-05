@@ -24,6 +24,34 @@ public static class EndpointAuthorizationExtensions
     }
 
     /// <summary>
+    /// Requires at least one of the permission keys, unless the caller is a
+    /// super administrator. Used where a capability is reachable through two
+    /// legitimate grants — e.g. workspace membership administration, held
+    /// either by a platform workspace manager or by a workspace administrator.
+    /// </summary>
+    public static TBuilder RequireAnyPermission<TBuilder>(this TBuilder builder, params string[] permissionKeys)
+        where TBuilder : IEndpointConventionBuilder
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(permissionKeys);
+        if (permissionKeys.Length == 0)
+        {
+            throw new ArgumentException("At least one permission key is required.", nameof(permissionKeys));
+        }
+
+        foreach (var permissionKey in permissionKeys)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(permissionKey);
+        }
+
+        builder.RequireAuthorization(policy =>
+            policy.RequireAssertion(context =>
+                permissionKeys.Any(permissionKey => HasPermission(context.User, permissionKey))));
+
+        return builder;
+    }
+
+    /// <summary>
     /// Returns whether the current user has the provided permission key.
     /// </summary>
     public static bool UserHasPermission(ClaimsPrincipal user, string permissionKey)

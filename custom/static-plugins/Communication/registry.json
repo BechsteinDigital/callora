@@ -14,6 +14,9 @@
     "communication.video",
     "communication.webrtc"
   ],
+  "sensitiveFields": [
+    "remoteParty"
+  ],
   "dependencies": {
     "Callora.Core": ">=0.1.0-local",
     "Callora.Plugin.Communication.Abstractions": ">=0.1.0-local"

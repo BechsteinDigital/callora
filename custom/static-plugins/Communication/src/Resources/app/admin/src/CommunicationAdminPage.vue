@@ -6,13 +6,17 @@ import { onMounted, reactive, ref } from 'vue'
 // the target workspace explicitly (?workspaceKey=…), so the page carries that field.
 const API_BASE = '/api/ext/admin/plugins/communication/'
 const TRANSPORTS = ['Udp', 'Tcp', 'Tls'] as const
-// Matches SipAuthMethod on the backend. The mode (Register/Trunk) and registration
-// expiry are derived server-side from the method, so the form only picks the method
-// and its credential shape.
+// Matches SipAuthMethodSupport.Supported on the backend. The mode (Register/Trunk) and
+// registration expiry are derived server-side from the method, so the form only picks the
+// method and its credential shape.
+//
+// Only digest is offered: the voice provider cannot connect IP-authenticated trunks
+// (callora-voip-sdk#104, no registration-less mode) or mutual TLS (callora-voip-sdk#183,
+// TLS config is client-wide and file-based). The API refuses both with 422, so offering
+// them here would only produce accounts that never come up. Re-add an entry when the
+// backend adds the method to SipAuthMethodSupport.
 const AUTH_METHODS = [
   { value: 'Digest', label: 'Digest (Registrierung)' },
-  { value: 'IpAuthenticated', label: 'IP-Trunk (ohne Zugangsdaten)' },
-  { value: 'MutualTls', label: 'Mutual TLS (Client-Zertifikat)' },
 ] as const
 
 interface SipAccount {
@@ -42,13 +46,12 @@ const form = reactive({
   username: '',
   password: '',
   authId: '',
-  clientCertificate: '',
 })
 
 function resetForm(): void {
   Object.assign(form, {
     displayName: '', host: '', port: 5060, transport: 'Udp',
-    authMethod: 'Digest', username: '', password: '', authId: '', clientCertificate: '',
+    authMethod: 'Digest', username: '', password: '', authId: '',
   })
 }
 
@@ -131,8 +134,8 @@ async function create(): Promise<void> {
     enabled: true,
   }
 
-  // Credential shape per method (mode/expiry are derived server-side):
-  // Digest needs username+password, MutualTls a client certificate, IP-trunk nothing.
+  // Credential shape per method (mode/expiry are derived server-side). Only digest is
+  // offered; the backend refuses the other methods with 422 until the provider supports them.
   if (form.authMethod === 'Digest') {
     if (!form.username.trim() || !form.password) {
       error.value = 'Für Digest sind Benutzername und Passwort erforderlich.'
@@ -143,12 +146,6 @@ async function create(): Promise<void> {
     if (form.authId.trim()) {
       body.authId = form.authId.trim()
     }
-  } else if (form.authMethod === 'MutualTls') {
-    if (!form.clientCertificate.trim()) {
-      error.value = 'Für Mutual TLS ist ein Client-Zertifikat (PEM) erforderlich.'
-      return
-    }
-    body.clientCertificate = form.clientCertificate.trim()
   }
 
   await run(request('POST', 'sip-accounts', body), 'Account angelegt.')
@@ -213,18 +210,6 @@ onMounted(() => {
             Auth-ID (optional)<input v-model="form.authId" />
           </label>
         </template>
-
-        <label
-          v-else-if="form.authMethod === 'MutualTls'"
-          style="grid-column: 1 / -1; display: flex; flex-direction: column; font-size: 0.85rem; gap: 0.15rem"
-        >
-          Client-Zertifikat (PEM)
-          <textarea v-model="form.clientCertificate" rows="4" placeholder="-----BEGIN CERTIFICATE-----" style="font-family: monospace" />
-        </label>
-
-        <p v-else style="grid-column: 1 / -1; font-size: 0.85rem; color: var(--cal-color-text-muted)">
-          IP-Trunk: keine Zugangsdaten — die Gegenstelle authentifiziert über die Absender-IP (Modus Trunk).
-        </p>
 
         <button type="submit" :disabled="busy" style="grid-column: 1 / -1; justify-self: start">Account anlegen</button>
       </form>

@@ -45,8 +45,12 @@ it is shown as a relative fragment.
 | `WorkspaceShellBaseUrl` | `string` | `/` | Base URL under which the workspace shell is served. |
 | `PluginAssetBaseUrl` | `string` | `/plugin-assets` | Public base URL for plugin UI assets. |
 | `PluginManifestUrl` | `string` | `/manifests/plugin-ui-assets.manifest.json` | URL of the published plugin UI-asset manifest. |
-| `RateLimitAuthPerMinute` | `int` | `5` | Login attempts allowed per client per minute; `0` disables. |
+| `RateLimitAuthPerMinute` | `int` | `5` | Login attempts allowed per client per minute; `0` disables. The client is the connection's remote address — see [Forwarded headers](#forwarded-headers). |
 | `RateLimitApiPerMinute` | `int` | `600` | General API requests allowed per client per minute; `0` disables. |
+| `ForwardedHeaders:Enabled` | `bool` | `false` | Apply `X-Forwarded-Proto`/`-Host` (and `-For`, see below) from a reverse proxy. |
+| `ForwardedHeaders:KnownProxies` | `string[]` | `[]` | Trusted proxy IP addresses. |
+| `ForwardedHeaders:KnownNetworks` | `string[]` | `[]` | Trusted proxy networks in CIDR notation (e.g. `172.16.0.0/12`). |
+| `ForwardedHeaders:ForwardLimit` | `int` | `1` | Chained proxy hops to honour. |
 | `MediaStoragePath` | `string` | `media` | Root directory for stored media assets. |
 | `AllowPrivateWebhookTargets` | `bool` | `false` | Permits webhook targets on private/loopback addresses — **development only** (production keeps the SSRF egress guard on). |
 | `DataProtectionKeysPath` | `string` | `dataprotection-keys` | Key-ring directory for ASP.NET DataProtection. Must live on durable storage or every restart loses encrypted secrets. |
@@ -62,12 +66,14 @@ it is shown as a relative fragment.
 | `JwtAudience` | `string` | `callora-host-api` | Audience claim for host-issued JWTs. |
 | `JwtSigningKey` | `string` | `BackendSecretHygiene.DefaultJwtSigningKey` | HMAC signing key for JWTs. **Override in production.** |
 | `OidcAuthority` | `string?` | `null` | Optional external OIDC authority. |
+| `RequireExternalIdentityForOperators` | `bool` | `false` | Refuses the local password login for platform operators, so privileged sign-in goes through `OidcAuthority` (which enforces MFA). Requires `OidcAuthority`. |
 | `AuthCookieName` | `string` | `callora_admin_auth` | Name of the auth cookie carrying the JWT. |
 | `AuthCookieRequireHttps` | `bool` | `false` | Marks the auth cookie `Secure` (HTTPS-only). |
-| `EnableBootstrapApiKeys` | `bool` | `true` | Enables the seeded bootstrap API keys. |
-| `RequireApiKeyAuthentication` | `bool` | `true` | Requires an API key header on API requests. |
+| `EnableBootstrapApiKeys` | `bool` | `true` | Enables the break-glass bootstrap credential. Set `false` to reject bootstrap keys entirely. |
+| `RequireApiKeyAuthentication` | `bool` | `true` | **Policy only:** refuses startup when bootstrap keys are enabled but none are configured. Never decides whether a presented key is valid. |
+| `BootstrapApiKeysExpireAtUtc` | `DateTimeOffset?` | `null` | Instant after which bootstrap keys stop authenticating even while enabled. |
 | `ApiKeyHeaderName` | `string` | `X-Callora-Api-Key` | Header carrying the API key. |
-| `ApiKeys` | `string[]` | `[]` | Accepted API keys (host-scoped access). |
+| `ApiKeys` | `string[]` | `[]` | Bootstrap credentials. Clearing the list retires the break-glass path. |
 | `RbacRoles` | `BackendRbacRoleOptions[]` | `[]` | Config-defined RBAC roles and their permission grants. |
 | `RbacUserAssignments` | `BackendRbacUserAssignmentOptions[]` | `[]` | Config-defined user→role assignments. |
 | `PlatformOperatorRoles` | `string[]` | `["superadmin"]` | Roles permitted to sign in via the platform-operator login and granted platform **scope** (not blanket authority). |
@@ -195,6 +201,40 @@ Operators manage values through the `/api/config` surface (see also
 For `PUT /api/config/values`, `scope` is one of `global` / `tenant` / `workspace`;
 `scopeKey` is required for `tenant` and `workspace`. Global/tenant writes are
 operator-only; workspace writes require access to the target workspace.
+
+## Forwarded headers
+
+Behind a TLS-terminating reverse proxy (Caddy/Nginx), set
+`BackendHost:ForwardedHeaders:Enabled=true` so the app observes the external
+scheme and host. Without it the same-origin CSRF check rejects every
+cookie-authenticated mutation.
+
+**`X-Forwarded-For` is applied only when trust is explicit.** With
+`KnownProxies`/`KnownNetworks` empty, ASP.NET accepts forwarded headers from any
+peer — a direct client could then hand itself a fresh rate-limit bucket per
+request by rotating the header. Callora therefore processes `X-Forwarded-For`
+only once at least one trusted proxy or network is configured, and logs a warning
+at startup otherwise:
+
+```json
+"BackendHost": {
+  "ForwardedHeaders": {
+    "Enabled": true,
+    "KnownNetworks": ["172.16.0.0/12"],
+    "ForwardLimit": 1
+  }
+}
+```
+
+Rate limiting always partitions on `Connection.RemoteIpAddress`, never on the raw
+header. Consequences:
+
+- **Trusted proxy configured** → per-client limits work as intended.
+- **No trust configured** → every request through the proxy shares one bucket
+  (the proxy address). Safe, but coarse: configure the proxy network.
+
+`ForwardLimit` bounds how many chained hops are honoured; keep it at the actual
+number of proxies in front of the app.
 
 ## See also
 

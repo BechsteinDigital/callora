@@ -130,3 +130,6 @@ src/Surface.Rendering/wwwroot/surface-app/
 
 custom/plugins/*/node_modules/
 custom/static-plugins/*/node_modules/
+# Archived plugins keep their own app trees; their dependencies are never tracked.
+custom/static-plugins/_archive/*/node_modules/
+custom/static-plugins/*/app/*/node_modules/

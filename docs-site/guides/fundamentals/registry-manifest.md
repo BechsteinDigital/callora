@@ -112,34 +112,44 @@ Here is the Communication plugin's manifest,
 {
   "contractVersion": "v1",
   "schemaVersion": "1.0",
-  "name": "Callora Communication",
+  "name": "Communication",
   "pluginId": "communication",
-  "version": "0.2.0",
-  "tier": "system",
+  "version": "0.1.0",
   "assemblyFileName": "Callora.Plugin.Communication.dll",
-  "entryTypeName": "Callora.Plugin.Communication.Application.CommunicationPlugin",
-  "databaseSchema": "plugin_communication",
+  "entryTypeName": "Callora.Plugin.Communication.CommunicationPlugin",
   "capabilities": [
-    "communication.voice"
+    "communication.foundation"
+  ],
+  "conditionalCapabilities": [
+    "communication.voice",
+    "communication.video",
+    "communication.webrtc"
   ],
   "sensitiveFields": [
-    "phoneNumber",
-    "callerNumber",
-    "calleeNumber"
+    "remoteParty"
   ],
   "dependencies": {
-    "Callora.Host.PluginContracts": ">=0.1.0",
-    "Callora.Plugin.Communication.Abstractions": ">=0.1.0"
+    "Callora.Core": ">=0.1.0-local",
+    "Callora.Plugin.Communication.Abstractions": ">=0.1.0-local"
   }
 }
 ```
 
-Reading it top to bottom: this is a **system-tier** plugin named *Callora Communication*,
-id `communication`, version `0.2.0`. Its entry class is
-`CommunicationPlugin`, in `Callora.Plugin.Communication.dll`. It owns the
-`plugin_communication` schema, **provides** the `communication.voice` capability, marks three
-call-related fields as sensitive for webhook masking, and depends on the host plugin
-contracts plus its own abstractions package.
+Reading it top to bottom: this is a plugin named *Communication*, id `communication`,
+version `0.1.0`. Its entry class is `CommunicationPlugin`, in
+`Callora.Plugin.Communication.dll`. It **provides** `communication.foundation`
+unconditionally and `communication.voice` / `communication.video` /
+`communication.webrtc` only while the corresponding runtime dependency is healthy.
+It marks `remoteParty` — the telephone number its call events carry — as sensitive,
+so webhook data-minimization masks it by default, and depends on the core plus its
+own abstractions package.
+
+::: warning Declare the field names you actually emit
+The masking registry matches **property names in the serialized payload**, case-insensitively.
+`CallBusinessEvent.ToEventData()` emits `remoteParty`, so that is the name that must appear
+here — a plausible-looking `phoneNumber` would mask nothing. When you change an event's
+schema, update `sensitiveFields` in the same commit.
+:::
 
 Contrast the **consumer** side — the Dialer plugin's
 `custom/plugins/Dialer/registry.json` — which *requires* the capability Communication

@@ -225,6 +225,8 @@ public sealed class JwtRbacIntegrationTests
         builder.Services.AddBackendApiSecurity(options);
         builder.Services.AddSingleton<IPluginLifecycleService, StaticPluginLifecycleService>();
         builder.Services.AddSingleton<IHostAuditStore, InMemoryHostAuditStore>();
+        // RBAC changes revoke the affected accounts' sessions (#105).
+        builder.Services.AddSingleton<IBackendUserStore>(new InMemoryBackendUserStore());
         builder.Services.AddSingleton<IPluginEntitlementStore>(new InMemoryPluginEntitlementStore(options));
         builder.Services.AddSingleton<IPluginSignatureTrustStore, StaticPluginSignatureTrustStore>();
         var app = builder.Build();

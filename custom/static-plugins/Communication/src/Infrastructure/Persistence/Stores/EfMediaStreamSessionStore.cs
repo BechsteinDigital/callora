@@ -30,9 +30,11 @@ public sealed class EfMediaStreamSessionStore(IPluginDbContextFactory<Communicat
     /// <inheritdoc />
     public async Task<MediaStreamSession?> GetByConnectTokenAsync(string connectToken, CancellationToken cancellationToken = default)
     {
+        // Only the hash is stored (#108), so the presented token is hashed to look it up.
+        var tokenHash = MediaStreamSession.HashToken(connectToken);
         await using var db = dbContextFactory.CreateDbContext();
         return await db.MediaStreamSessions.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.ConnectToken == connectToken, cancellationToken)
+            .FirstOrDefaultAsync(x => x.ConnectTokenHash == tokenHash, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -40,17 +42,21 @@ public sealed class EfMediaStreamSessionStore(IPluginDbContextFactory<Communicat
     public async Task<MediaStreamSession?> TryActivateByConnectTokenAsync(
         string connectToken, DateTimeOffset now, TimeSpan timeToLive, CancellationToken cancellationToken = default)
     {
+        var tokenHash = MediaStreamSession.HashToken(connectToken);
         await using var db = dbContextFactory.CreateDbContext();
 
         // Atomic compare-and-swap: one UPDATE flips Pending → Active only while the token is still
-        // pending and within its TTL. The predicate mirrors MediaStreamSession.CanActivate; encoding
-        // it in the WHERE is what makes activation atomic, so a concurrent double-connect cannot both
-        // win — the loser's UPDATE matches zero rows.
+        // pending and inside its validity window. The predicate mirrors
+        // MediaStreamSession.CanActivate — including the upper bound, without which a
+        // future-dated row would stay redeemable forever (#108). Encoding it in the WHERE is what
+        // makes activation atomic, so a concurrent double-connect cannot both win — the loser's
+        // UPDATE matches zero rows.
         var earliestValidCreation = now - timeToLive;
         var activated = await db.MediaStreamSessions
-            .Where(x => x.ConnectToken == connectToken
+            .Where(x => x.ConnectTokenHash == tokenHash
                 && x.Status == MediaStreamSessionStatus.Pending
-                && x.CreatedAt >= earliestValidCreation)
+                && x.CreatedAt >= earliestValidCreation
+                && x.CreatedAt <= now)
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(x => x.Status, MediaStreamSessionStatus.Active)
@@ -64,7 +70,22 @@ public sealed class EfMediaStreamSessionStore(IPluginDbContextFactory<Communicat
         }
 
         return await db.MediaStreamSessions.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.ConnectToken == connectToken, cancellationToken)
+            .FirstOrDefaultAsync(x => x.ConnectTokenHash == tokenHash, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> PurgeExpiredAsync(
+        DateTimeOffset now, TimeSpan retention, CancellationToken cancellationToken = default)
+    {
+        // Spent and expired tickets must not accumulate (#108): a closed session, or one
+        // whose token has been unusable for longer than the retention window, is dropped.
+        var cutoff = now - retention;
+        await using var db = dbContextFactory.CreateDbContext();
+        return await db.MediaStreamSessions
+            .Where(x => (x.EndedAt != null && x.EndedAt <= cutoff)
+                || (x.EndedAt == null && x.CreatedAt <= cutoff))
+            .ExecuteDeleteAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 

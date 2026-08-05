@@ -25,9 +25,12 @@ public static class BackendJwtTokenIssuer
         ArgumentException.ThrowIfNullOrWhiteSpace(subject);
         ArgumentNullException.ThrowIfNull(roles);
 
+        // Every issued session is individually identifiable (jti), so logout can
+        // revoke exactly one session without touching the account's others (#105).
         var claims = new List<Claim>
         {
-            new("sub", subject)
+            new("sub", subject),
+            new(BackendClaimTypes.TokenId, Guid.NewGuid().ToString("N"))
         };
 
         if (!string.IsNullOrWhiteSpace(displayName))

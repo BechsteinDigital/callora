@@ -12,28 +12,40 @@ namespace Callora.Plugin.Communication.Application.Streaming.Pacing;
 public sealed class PacedAudioSender(
     Func<ReadOnlyMemory<byte>, CancellationToken, ValueTask> sendFrameAsync,
     IPacingClock clock,
-    int maxBufferedFrames = 500)
+    int maxBufferedFrames = 500,
+    int maxBufferedBytes = CommunicationStreamLimits.MaxPacedBufferBytes)
 {
     private readonly ConcurrentQueue<byte[]> _queue = new();
+    private int _bufferedBytes;
 
-    /// <summary>Queues one outbound frame, dropping the oldest if the safety cap is exceeded.</summary>
+    /// <summary>Bytes currently held in the buffer — the quantity the byte cap bounds.</summary>
+    public int BufferedBytes => Volatile.Read(ref _bufferedBytes);
+
+    /// <summary>
+    /// Queues one outbound frame, dropping the oldest until both the frame count and
+    /// the total byte cap are satisfied. Bounding by count alone was not enough (#108):
+    /// a producer sending many large frames stays under the count while the buffer grows.
+    /// </summary>
     public void Enqueue(byte[] frame)
     {
         ArgumentNullException.ThrowIfNull(frame);
 
-        while (_queue.Count >= maxBufferedFrames && _queue.TryDequeue(out _))
-        {
-            // Safety cap: bound the buffer so a runaway producer cannot exhaust memory.
-        }
-
         _queue.Enqueue(frame);
+        Interlocked.Add(ref _bufferedBytes, frame.Length);
+
+        while ((_queue.Count > maxBufferedFrames || Volatile.Read(ref _bufferedBytes) > maxBufferedBytes) &&
+               _queue.TryDequeue(out var dropped))
+        {
+            Interlocked.Add(ref _bufferedBytes, -dropped.Length);
+        }
     }
 
     /// <summary>Drops all queued audio — barge-in: the agent's pending playback stops at once.</summary>
     public void Flush()
     {
-        while (_queue.TryDequeue(out _))
+        while (_queue.TryDequeue(out var dropped))
         {
+            Interlocked.Add(ref _bufferedBytes, -dropped.Length);
         }
     }
 
@@ -44,6 +56,7 @@ public sealed class PacedAudioSender(
         {
             if (_queue.TryDequeue(out var frame))
             {
+                Interlocked.Add(ref _bufferedBytes, -frame.Length);
                 await sendFrameAsync(frame, cancellationToken).ConfigureAwait(false);
             }
         }

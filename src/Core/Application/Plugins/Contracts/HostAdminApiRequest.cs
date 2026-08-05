@@ -13,10 +13,13 @@ namespace Callora.Core.Application.Plugins.Contracts;
 /// <param name="Body">Parsed JSON body when provided.</param>
 /// <param name="UserId">Caller user identifier when available.</param>
 /// <param name="WorkspaceKey">
-/// The caller's bound workspace, resolved from the authenticated principal. Non-null for a
-/// workspace-scoped operator (who may only act within it); null for a platform operator
-/// (super-admin/global), who is not bound to a single workspace. Handlers of workspace-scoped
-/// resources must use this value as the authoritative scope, never a client-supplied workspace.
+/// The effective workspace, resolved by the host: the caller's bound workspace when the
+/// principal carries one — a client-supplied value can never override it — otherwise the
+/// workspace a platform operator selected explicitly via <c>?workspaceKey=</c>. For a route
+/// declared <see cref="HostAdminApiRouteScope.Workspace"/> this is non-null and the host has
+/// already confirmed the plugin is available there; only a
+/// <see cref="HostAdminApiRouteScope.Global"/> route may see null. Handlers must use this
+/// value as the authoritative scope and never re-read a workspace from the query.
 /// </param>
 public sealed record HostAdminApiRequest(
     string PluginId,

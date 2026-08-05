@@ -60,21 +60,38 @@ public static class RbacEndpoints
             .WithName("Rbac_Permissions_List")
             .RequirePermission(BackendPermissionKeys.RoleRead);
 
-        group.MapPut("/roles/{role}", async (string role, RbacRoleUpsertApiRequest request, [FromServices] IBackendRbacStore store, CancellationToken cancellationToken) =>
+        group.MapPut("/roles/{role}", async (
+            string role,
+            RbacRoleUpsertApiRequest request,
+            [FromServices] IBackendRbacStore store,
+            [FromServices] IBackendUserStore userStore,
+            CancellationToken cancellationToken) =>
         {
             var permissions = request.Functions
                 .SelectMany(x => x.Actions.Select(action => $"{x.Function.Trim().ToLowerInvariant()}.{action.Trim().ToLowerInvariant()}"))
                 .ToArray();
 
             await store.UpsertRoleAsync(role, permissions, cancellationToken).ConfigureAwait(false);
+            await RevokeSessionsOfRoleMembersAsync(role, store, userStore, cancellationToken).ConfigureAwait(false);
             return Results.Ok(new RbacRoleApiResponse(role, permissions));
         })
             .WithName("Rbac_Roles_Upsert")
             .RequirePermission(BackendPermissionKeys.RoleUpdate);
 
-        group.MapDelete("/roles/{role}", async (string role, [FromServices] IBackendRbacStore store, CancellationToken cancellationToken) =>
+        group.MapDelete("/roles/{role}", async (
+            string role,
+            [FromServices] IBackendRbacStore store,
+            [FromServices] IBackendUserStore userStore,
+            CancellationToken cancellationToken) =>
         {
+            // Collect the members first — after removal the assignments are gone.
+            var members = await ResolveRoleMembersAsync(role, store, cancellationToken).ConfigureAwait(false);
             var removed = await store.RemoveRoleAsync(role, cancellationToken).ConfigureAwait(false);
+            if (removed)
+            {
+                await RevokeSessionsAsync(members, userStore, cancellationToken).ConfigureAwait(false);
+            }
+
             return removed ? Results.NoContent() : Results.NotFound();
         })
             .WithName("Rbac_Roles_Delete")
@@ -101,20 +118,78 @@ public static class RbacEndpoints
             .WithName("Rbac_Users_List")
             .RequirePermission(BackendPermissionKeys.RoleRead);
 
-        group.MapPut("/users/{userId}", async (string userId, RbacUserUpsertApiRequest request, [FromServices] IBackendRbacStore store, CancellationToken cancellationToken) =>
+        group.MapPut("/users/{userId}", async (
+            string userId,
+            RbacUserUpsertApiRequest request,
+            [FromServices] IBackendRbacStore store,
+            [FromServices] IBackendUserStore userStore,
+            CancellationToken cancellationToken) =>
         {
             await store.UpsertUserRoleAsync(userId, request.Role, cancellationToken).ConfigureAwait(false);
+            // The user's authority just changed; sessions issued under the old role
+            // must not survive it (#105).
+            await userStore.RevokeSessionsAsync(userId, cancellationToken).ConfigureAwait(false);
             return Results.Ok(new RbacUserApiResponse(userId, request.Role));
         })
             .WithName("Rbac_Users_Upsert")
             .RequirePermission(BackendPermissionKeys.RoleUpdate);
 
-        group.MapDelete("/users/{userId}", async (string userId, [FromServices] IBackendRbacStore store, CancellationToken cancellationToken) =>
+        group.MapDelete("/users/{userId}", async (
+            string userId,
+            [FromServices] IBackendRbacStore store,
+            [FromServices] IBackendUserStore userStore,
+            CancellationToken cancellationToken) =>
         {
             var removed = await store.RemoveUserRoleAsync(userId, cancellationToken).ConfigureAwait(false);
+            if (removed)
+            {
+                await userStore.RevokeSessionsAsync(userId, cancellationToken).ConfigureAwait(false);
+            }
+
             return removed ? Results.NoContent() : Results.NotFound();
         })
             .WithName("Rbac_Users_Delete")
             .RequirePermission(BackendPermissionKeys.RoleUpdate);
+    }
+
+    /// <summary>
+    /// External ids of the accounts currently assigned <paramref name="role"/>.
+    /// </summary>
+    private static async Task<IReadOnlyList<string>> ResolveRoleMembersAsync(
+        string role,
+        IBackendRbacStore store,
+        CancellationToken cancellationToken)
+    {
+        var assignments = await store.GetUserRolesAsync(cancellationToken).ConfigureAwait(false);
+        return assignments
+            .Where(x => string.Equals(x.Value, role, StringComparison.OrdinalIgnoreCase))
+            .Select(x => x.Key)
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Changing a role's grants changes what its members may do. Their live sessions
+    /// carry the old permission claims, so they are revoked (#105) — fail-closed:
+    /// members re-authenticate and receive the new grants.
+    /// </summary>
+    private static async Task RevokeSessionsOfRoleMembersAsync(
+        string role,
+        IBackendRbacStore store,
+        IBackendUserStore userStore,
+        CancellationToken cancellationToken)
+    {
+        var members = await ResolveRoleMembersAsync(role, store, cancellationToken).ConfigureAwait(false);
+        await RevokeSessionsAsync(members, userStore, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task RevokeSessionsAsync(
+        IReadOnlyList<string> userIds,
+        IBackendUserStore userStore,
+        CancellationToken cancellationToken)
+    {
+        foreach (var userId in userIds)
+        {
+            await userStore.RevokeSessionsAsync(userId, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

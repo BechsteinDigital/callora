@@ -68,16 +68,57 @@ public sealed class BackendHostOptions
 
     public string? OidcAuthority { get; set; }
 
+    /// <summary>
+    /// Refuses the local password login for <em>platform operators</em>, so their
+    /// sessions can only come from <see cref="OidcAuthority"/> (#104).
+    /// <para>
+    /// Callora issues no second factor of its own. This is the enforceable
+    /// alternative: privileged operators authenticate at an identity provider that
+    /// does — MFA, conditional access, device trust — while workspace logins keep
+    /// working locally. Requires <see cref="OidcAuthority"/> to be configured;
+    /// otherwise the host refuses to start rather than locking every operator out.
+    /// </para>
+    /// </summary>
+    public bool RequireExternalIdentityForOperators { get; set; }
+
     public string AuthCookieName { get; set; } = "callora_admin_auth";
 
     public bool AuthCookieRequireHttps { get; set; }
 
+    /// <summary>
+    /// Enables the break-glass bootstrap credential: a key from
+    /// <see cref="ApiKeys"/> authenticates as platform super-admin. Set to
+    /// <c>false</c> once named integrations exist — a presented bootstrap key is
+    /// then rejected like any unknown credential.
+    /// </summary>
     public bool EnableBootstrapApiKeys { get; set; } = true;
 
+    /// <summary>
+    /// Authentication <em>policy</em> switch: when <c>true</c> the host refuses to
+    /// start while bootstrap keys are enabled but none are configured.
+    /// <para>
+    /// It never decides whether a presented credential is valid. An unknown key is
+    /// rejected with 401 in every permutation of this flag and
+    /// <see cref="EnableBootstrapApiKeys"/>.
+    /// </para>
+    /// </summary>
     public bool RequireApiKeyAuthentication { get; set; } = true;
+
+    /// <summary>
+    /// Optional UTC instant after which bootstrap keys stop authenticating, even
+    /// while <see cref="EnableBootstrapApiKeys"/> is <c>true</c>. Lets onboarding
+    /// hand out a credential that retires itself. <c>null</c> keeps bootstrap keys
+    /// valid until they are explicitly disabled or removed.
+    /// </summary>
+    public DateTimeOffset? BootstrapApiKeysExpireAtUtc { get; set; }
 
     public string ApiKeyHeaderName { get; set; } = "X-Callora-Api-Key";
 
+    /// <summary>
+    /// Bootstrap credentials. Only meaningful while
+    /// <see cref="EnableBootstrapApiKeys"/> is <c>true</c>; clearing the list
+    /// retires the break-glass path without a configuration-flag change.
+    /// </summary>
     public string[] ApiKeys { get; set; } = [];
 
     public BackendRbacRoleOptions[] RbacRoles { get; set; } = [];

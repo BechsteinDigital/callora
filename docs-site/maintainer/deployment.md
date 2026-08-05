@@ -77,7 +77,7 @@ Keys a deployment operator must review:
 | Key | Meaning |
 |---|---|
 | `BackendHost__DatabaseConnectionString` | PostgreSQL connection. |
-| `BackendHost__RequireApiKeyAuthentication` / `BackendHost__ApiKeys__0` | Control-plane API key auth (header `X-Callora-Api-Key`). **Rotate the default key** `callora-local-dev-key-change-me`. |
+| `BackendHost__EnableBootstrapApiKeys` / `BackendHost__ApiKeys__0` / `BackendHost__BootstrapApiKeysExpireAtUtc` | Break-glass control-plane key (header `X-Callora-Api-Key`). **Rotate the default key** `callora-local-dev-key-change-me` and retire it after onboarding — see the [bootstrap credential lifecycle](security.md#bootstrap-credential-lifecycle). |
 | `BackendHost__AllowUnsignedPlugins` | Dev sets `true`; **production must be `false`** so every plugin (including bundled system plugins) must be signed and trusted. |
 | `BackendHost__TrustedSigners__*` | Trusted signer public keys (see [Security](security.md)). |
 | `BackendHost__RevokedSignerFingerprints__*` / `BackendHost__RevokedContentHashes__*` | Revocation lists, enforced at install and at runtime rehydration. |

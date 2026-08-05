@@ -23,10 +23,10 @@ Callora.Administration.Api.Admin.WorkspacePlugins.WorkspacePluginsController.Wor
 Callora.Administration.Api.AdminContextEndpoints
 Callora.Administration.Api.BackendUserApiResponse
 Callora.Administration.Api.BackendUserApiResponse.<Clone>$() -> Callora.Administration.Api.BackendUserApiResponse!
-Callora.Administration.Api.BackendUserApiResponse.BackendUserApiResponse(string! ExternalId, string? Email, string? DisplayName, bool HasPassword, string? PasswordHashAlgorithm, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.BackendUserApiResponse.BackendUserApiResponse(string! ExternalId, string? Email, string? DisplayName, bool HasPassword, string? PasswordHashAlgorithm, bool IsDisabled, bool IsLockedOut, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Administration.Api.BackendUserApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Administration.Api.BackendUserApiResponse.CreatedAtUtc.init -> void
-Callora.Administration.Api.BackendUserApiResponse.Deconstruct(out string! ExternalId, out string? Email, out string? DisplayName, out bool HasPassword, out string? PasswordHashAlgorithm, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.BackendUserApiResponse.Deconstruct(out string! ExternalId, out string? Email, out string? DisplayName, out bool HasPassword, out string? PasswordHashAlgorithm, out bool IsDisabled, out bool IsLockedOut, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Administration.Api.BackendUserApiResponse.DisplayName.get -> string?
 Callora.Administration.Api.BackendUserApiResponse.DisplayName.init -> void
 Callora.Administration.Api.BackendUserApiResponse.Email.get -> string?
@@ -36,6 +36,10 @@ Callora.Administration.Api.BackendUserApiResponse.ExternalId.get -> string!
 Callora.Administration.Api.BackendUserApiResponse.ExternalId.init -> void
 Callora.Administration.Api.BackendUserApiResponse.HasPassword.get -> bool
 Callora.Administration.Api.BackendUserApiResponse.HasPassword.init -> void
+Callora.Administration.Api.BackendUserApiResponse.IsDisabled.get -> bool
+Callora.Administration.Api.BackendUserApiResponse.IsDisabled.init -> void
+Callora.Administration.Api.BackendUserApiResponse.IsLockedOut.get -> bool
+Callora.Administration.Api.BackendUserApiResponse.IsLockedOut.init -> void
 Callora.Administration.Api.BackendUserApiResponse.PasswordHashAlgorithm.get -> string?
 Callora.Administration.Api.BackendUserApiResponse.PasswordHashAlgorithm.init -> void
 Callora.Administration.Api.BackendUserApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
@@ -401,6 +405,13 @@ Callora.Administration.Api.RbacUserUpsertApiRequest.Equals(Callora.Administratio
 Callora.Administration.Api.RbacUserUpsertApiRequest.RbacUserUpsertApiRequest(string! Role) -> void
 Callora.Administration.Api.RbacUserUpsertApiRequest.Role.get -> string!
 Callora.Administration.Api.RbacUserUpsertApiRequest.Role.init -> void
+Callora.Administration.Api.SetBackendUserActivationApiRequest
+Callora.Administration.Api.SetBackendUserActivationApiRequest.<Clone>$() -> Callora.Administration.Api.SetBackendUserActivationApiRequest!
+Callora.Administration.Api.SetBackendUserActivationApiRequest.Deconstruct(out bool IsActive) -> void
+Callora.Administration.Api.SetBackendUserActivationApiRequest.Equals(Callora.Administration.Api.SetBackendUserActivationApiRequest? other) -> bool
+Callora.Administration.Api.SetBackendUserActivationApiRequest.IsActive.get -> bool
+Callora.Administration.Api.SetBackendUserActivationApiRequest.IsActive.init -> void
+Callora.Administration.Api.SetBackendUserActivationApiRequest.SetBackendUserActivationApiRequest(bool IsActive) -> void
 Callora.Administration.Api.SetEntitlementApiRequest
 Callora.Administration.Api.SetEntitlementApiRequest.<Clone>$() -> Callora.Administration.Api.SetEntitlementApiRequest!
 Callora.Administration.Api.SetEntitlementApiRequest.Deconstruct(out string! PluginId, out string? WorkspaceKey, out string? TenantKey, out bool IsEntitled) -> void
@@ -943,6 +954,9 @@ override Callora.Administration.Api.RbacUserApiResponse.ToString() -> string!
 override Callora.Administration.Api.RbacUserUpsertApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.RbacUserUpsertApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.RbacUserUpsertApiRequest.ToString() -> string!
+override Callora.Administration.Api.SetBackendUserActivationApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.SetBackendUserActivationApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.SetBackendUserActivationApiRequest.ToString() -> string!
 override Callora.Administration.Api.SetEntitlementApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.SetEntitlementApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.SetEntitlementApiRequest.ToString() -> string!
@@ -1099,6 +1113,8 @@ static Callora.Administration.Api.RbacUserApiResponse.operator !=(Callora.Admini
 static Callora.Administration.Api.RbacUserApiResponse.operator ==(Callora.Administration.Api.RbacUserApiResponse? left, Callora.Administration.Api.RbacUserApiResponse? right) -> bool
 static Callora.Administration.Api.RbacUserUpsertApiRequest.operator !=(Callora.Administration.Api.RbacUserUpsertApiRequest? left, Callora.Administration.Api.RbacUserUpsertApiRequest? right) -> bool
 static Callora.Administration.Api.RbacUserUpsertApiRequest.operator ==(Callora.Administration.Api.RbacUserUpsertApiRequest? left, Callora.Administration.Api.RbacUserUpsertApiRequest? right) -> bool
+static Callora.Administration.Api.SetBackendUserActivationApiRequest.operator !=(Callora.Administration.Api.SetBackendUserActivationApiRequest? left, Callora.Administration.Api.SetBackendUserActivationApiRequest? right) -> bool
+static Callora.Administration.Api.SetBackendUserActivationApiRequest.operator ==(Callora.Administration.Api.SetBackendUserActivationApiRequest? left, Callora.Administration.Api.SetBackendUserActivationApiRequest? right) -> bool
 static Callora.Administration.Api.SetEntitlementApiRequest.operator !=(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
 static Callora.Administration.Api.SetEntitlementApiRequest.operator ==(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
 static Callora.Administration.Api.SurfaceApiResponse.operator !=(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool

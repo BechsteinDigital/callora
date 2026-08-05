@@ -93,17 +93,89 @@ untrusted content executes — plugin *code* is trusted by provenance, but templ
   role at startup (see [Migration & Rollback](migration-and-rollback.md)).
 - **`Admin`** — scoped **per workspace**, not a global operator. The historical
   `admin` role was migrated to `SuperAdmin`.
+- **Global identity is operator-only**: changing credentials, deleting an account
+  and exporting data-subject data act on the global user across every workspace,
+  so they require platform scope. Workspace admins manage `membership.*` in their
+  own workspace instead — see [Permissions](../reference/permissions.md).
 - Permission keys follow `<function>.<action>` (`create/read/update/delete/execute`);
   effective rights are the union of a principal's roles.
-- The bootstrap operator password policy refuses initial passwords shorter than
-  **12 characters**.
+
+## Local accounts
+
+One `BackendPasswordPolicy` governs every local credential — the bootstrap
+operator seed, the demo admin, operator-created accounts and later password
+changes. A password below **12 characters** is refused everywhere; a seed that
+violates it is skipped with a warning instead of creating a weak super-admin.
+
+- **Lockout**: 10 consecutive failures lock the account for 15 minutes. A success
+  clears the counter. The lock is account-scoped and time-bounded; per-IP
+  throttling stays with the rate limiter.
+- **Deactivation instead of deletion**: `PUT /api/users/{id}/activation` disables
+  an account. It keeps its data, memberships and audit trail, authenticates
+  nowhere, and its live sessions stop working immediately. Both directions are
+  written to the audit trail.
+- **MFA**: Callora issues no second factor of its own. Set
+  `BackendHost__RequireExternalIdentityForOperators=true` (together with
+  `OidcAuthority`) to refuse the local password login for **platform operators**,
+  so privileged sign-in happens at an identity provider that does enforce MFA.
+  Workspace logins keep working locally.
+
+## Session revocation
+
+Every session this host issues carries a `jti` and the account's **security
+stamp**. On each request the stamp is compared against the stored one, so a
+change to the account invalidates outstanding tokens instead of waiting out their
+one-hour lifetime:
+
+| Event | Effect |
+|---|---|
+| Password change | All sessions of the account |
+| Deactivate / re-enable | All sessions of the account |
+| Account deletion | All sessions of the account |
+| RBAC role assigned/removed | All sessions of that account |
+| Role grants changed/deleted | All sessions of every member of that role |
+| Logout | Exactly the session that was used |
+
+Logout records the `jti` in a durable revocation list (an in-memory list would
+resurrect logged-out tokens on restart); an hourly job purges entries whose
+tokens have expired. Account state is cached for 15 seconds on the request path
+and dropped the moment a stamp rotates, so revocation is immediate, not eventual.
+
+Tokens without a security stamp — external OIDC sessions and named integration
+credentials — are governed by their own issuer, not by this mechanism.
 
 ## CSRF, rate limiting, and API auth
 
-- **Control-plane API auth**: an API key in the `X-Callora-Api-Key` header
-  (`BackendHost__RequireApiKeyAuthentication`, keys in `BackendHost__ApiKeys__*`).
-  Rotate the default `callora-local-dev-key-change-me`.
-- **CSRF guard** and **rate limiting** protect the operator/admin surface.
+- **Control-plane API auth**: an API key in the `X-Callora-Api-Key` header.
+  Every presented key is matched against a known credential — a named
+  integration (hashed lookup, own RBAC role) or a configured bootstrap key.
+  Unknown keys always return `401`, in every configuration permutation.
+
+### Bootstrap credential lifecycle
+
+The bootstrap key is a **break-glass super-admin credential for first-run setup
+only**. Retire it as soon as named integrations exist:
+
+1. **Install** — set `BackendHost__EnableBootstrapApiKeys=true` and put one
+   generated key in `BackendHost__ApiKeys__0`. Never ship
+   `callora-local-dev-key-change-me`.
+2. **Bound it** — set `BackendHost__BootstrapApiKeysExpireAtUtc` to a few hours
+   out. The key stops authenticating at that instant even if nobody remembers to
+   remove it.
+3. **Onboard** — create named integrations via `/api/security/integrations`;
+   each gets its own key, RBAC role and scope, never super-admin.
+4. **Retire** — clear `BackendHost__ApiKeys__*` **or** set
+   `BackendHost__EnableBootstrapApiKeys=false`. Both revoke the credential
+   immediately; nothing else needs to change.
+
+`RequireApiKeyAuthentication` is a startup policy switch (it refuses to boot
+with bootstrap keys enabled but unconfigured). It has no effect on whether a
+presented credential is accepted.
+- **CSRF guard** and **rate limiting** protect the operator/admin surface. Rate
+  limits partition on the connection's remote address; `X-Forwarded-For` is
+  honoured only from a configured trusted proxy
+  (`BackendHost__ForwardedHeaders__KnownNetworks__0`) — see
+  [Forwarded headers](../reference/configuration.md#forwarded-headers).
 - Errors use RFC 9457 ProblemDetails (`application/problem+json`) — no anonymous
   error objects.
 
