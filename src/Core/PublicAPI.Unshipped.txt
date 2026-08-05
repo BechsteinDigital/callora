@@ -1499,6 +1499,37 @@ Callora.Core.Application.Plugins.CalloraPluginExport.PluginId.get -> string!
 Callora.Core.Application.Plugins.CalloraPluginExport.PluginId.init -> void
 Callora.Core.Application.Plugins.CalloraPluginExport.Service.get -> object!
 Callora.Core.Application.Plugins.CalloraPluginExport.Service.init -> void
+Callora.Core.Application.Plugins.ContractCatalogEntry
+Callora.Core.Application.Plugins.ContractCatalogEntry.<Clone>$() -> Callora.Core.Application.Plugins.ContractCatalogEntry!
+Callora.Core.Application.Plugins.ContractCatalogEntry.AssemblyName.get -> string!
+Callora.Core.Application.Plugins.ContractCatalogEntry.AssemblyName.init -> void
+Callora.Core.Application.Plugins.ContractCatalogEntry.ContractCatalogEntry(string! AssemblyName, string! Version, string? DeclaringPluginId, bool IsHostProvided, bool RequiresRestartToChange, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.ContractDependent!>! Dependents) -> void
+Callora.Core.Application.Plugins.ContractCatalogEntry.DeclaringPluginId.get -> string?
+Callora.Core.Application.Plugins.ContractCatalogEntry.DeclaringPluginId.init -> void
+Callora.Core.Application.Plugins.ContractCatalogEntry.Deconstruct(out string! AssemblyName, out string! Version, out string? DeclaringPluginId, out bool IsHostProvided, out bool RequiresRestartToChange, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.ContractDependent!>! Dependents) -> void
+Callora.Core.Application.Plugins.ContractCatalogEntry.Dependents.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.ContractDependent!>!
+Callora.Core.Application.Plugins.ContractCatalogEntry.Dependents.init -> void
+Callora.Core.Application.Plugins.ContractCatalogEntry.Equals(Callora.Core.Application.Plugins.ContractCatalogEntry? other) -> bool
+Callora.Core.Application.Plugins.ContractCatalogEntry.IsHostProvided.get -> bool
+Callora.Core.Application.Plugins.ContractCatalogEntry.IsHostProvided.init -> void
+Callora.Core.Application.Plugins.ContractCatalogEntry.RequiresRestartToChange.get -> bool
+Callora.Core.Application.Plugins.ContractCatalogEntry.RequiresRestartToChange.init -> void
+Callora.Core.Application.Plugins.ContractCatalogEntry.Version.get -> string!
+Callora.Core.Application.Plugins.ContractCatalogEntry.Version.init -> void
+Callora.Core.Application.Plugins.ContractCatalogService
+Callora.Core.Application.Plugins.ContractCatalogService.ContractCatalogService(Callora.Core.Application.Plugins.SharedContractAssemblyRegistry! sharedContracts, Callora.Core.Application.Persistence.IPluginInstallationRepository! installations, Callora.Core.Application.Plugins.IPluginPackageRegistryReader? registryReader = null) -> void
+Callora.Core.Application.Plugins.ContractCatalogService.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.ContractCatalogEntry!>!>!
+Callora.Core.Application.Plugins.ContractDependent
+Callora.Core.Application.Plugins.ContractDependent.<Clone>$() -> Callora.Core.Application.Plugins.ContractDependent!
+Callora.Core.Application.Plugins.ContractDependent.ContractDependent(string! PluginId, string! RequiredRange, bool IsSatisfied) -> void
+Callora.Core.Application.Plugins.ContractDependent.Deconstruct(out string! PluginId, out string! RequiredRange, out bool IsSatisfied) -> void
+Callora.Core.Application.Plugins.ContractDependent.Equals(Callora.Core.Application.Plugins.ContractDependent? other) -> bool
+Callora.Core.Application.Plugins.ContractDependent.IsSatisfied.get -> bool
+Callora.Core.Application.Plugins.ContractDependent.IsSatisfied.init -> void
+Callora.Core.Application.Plugins.ContractDependent.PluginId.get -> string!
+Callora.Core.Application.Plugins.ContractDependent.PluginId.init -> void
+Callora.Core.Application.Plugins.ContractDependent.RequiredRange.get -> string!
+Callora.Core.Application.Plugins.ContractDependent.RequiredRange.init -> void
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest!
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.Body.get -> System.Text.Json.JsonElement?
@@ -2276,6 +2307,7 @@ Callora.Core.Application.Plugins.RuntimePluginHost.GetOwnedExports(System.Type! 
 Callora.Core.Application.Plugins.RuntimePluginHost.InstallAsync(string! assemblyPath, string? entryTypeName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.RuntimePluginInstallResult!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.LoadedPlugins.get -> System.Collections.Generic.IReadOnlyCollection<Callora.Core.Application.Plugins.RuntimePluginDescriptor!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.RuntimePluginHost(System.IServiceProvider! services, Callora.Core.Application.Options.CalloraHostingOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.RuntimePluginHost!>! logger, Callora.Core.Application.Plugins.RuntimeCapabilityRegistry? runtimeCapabilities = null, Callora.Core.Infrastructure.Mcp.McpToolRegistry? mcpTools = null) -> void
+Callora.Core.Application.Plugins.RuntimePluginHost.SharedContracts.get -> Callora.Core.Application.Plugins.SharedContractAssemblyRegistry!
 Callora.Core.Application.Plugins.RuntimePluginHost.TryGetExport(System.Type! contractType, out object? service) -> bool
 Callora.Core.Application.Plugins.RuntimePluginHost.UninstallAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.RuntimePluginUninstallResult!>!
 Callora.Core.Application.Plugins.RuntimePluginInstallResult
@@ -2320,9 +2352,23 @@ Callora.Core.Application.Plugins.RuntimePluginUninstallStatus.Failed = 2 -> Call
 Callora.Core.Application.Plugins.RuntimePluginUninstallStatus.NotInstalled = 1 -> Callora.Core.Application.Plugins.RuntimePluginUninstallStatus
 Callora.Core.Application.Plugins.RuntimePluginUninstallStatus.Uninstalled = 0 -> Callora.Core.Application.Plugins.RuntimePluginUninstallStatus
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry
-Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.RegisterContracts(string! pluginDirectory, System.Collections.Generic.IReadOnlyCollection<string!>! contractFileNames) -> void
+Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.ListRegistrations() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.SharedContractRegistration!>!
+Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.RegisterContracts(string! pluginDirectory, System.Collections.Generic.IReadOnlyCollection<string!>! contractFileNames, string? declaringPluginId = null) -> void
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.SharedContractAssemblyRegistry(Microsoft.Extensions.Logging.ILogger? logger = null) -> void
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.TryResolve(System.Reflection.AssemblyName! assemblyName) -> System.Reflection.Assembly?
+Callora.Core.Application.Plugins.SharedContractRegistration
+Callora.Core.Application.Plugins.SharedContractRegistration.<Clone>$() -> Callora.Core.Application.Plugins.SharedContractRegistration!
+Callora.Core.Application.Plugins.SharedContractRegistration.AssemblyName.get -> string!
+Callora.Core.Application.Plugins.SharedContractRegistration.AssemblyName.init -> void
+Callora.Core.Application.Plugins.SharedContractRegistration.DeclaringPluginId.get -> string?
+Callora.Core.Application.Plugins.SharedContractRegistration.DeclaringPluginId.init -> void
+Callora.Core.Application.Plugins.SharedContractRegistration.Deconstruct(out string! AssemblyName, out string! Version, out string? DeclaringPluginId, out bool IsHostProvided) -> void
+Callora.Core.Application.Plugins.SharedContractRegistration.Equals(Callora.Core.Application.Plugins.SharedContractRegistration? other) -> bool
+Callora.Core.Application.Plugins.SharedContractRegistration.IsHostProvided.get -> bool
+Callora.Core.Application.Plugins.SharedContractRegistration.IsHostProvided.init -> void
+Callora.Core.Application.Plugins.SharedContractRegistration.SharedContractRegistration(string! AssemblyName, string! Version, string? DeclaringPluginId, bool IsHostProvided) -> void
+Callora.Core.Application.Plugins.SharedContractRegistration.Version.get -> string!
+Callora.Core.Application.Plugins.SharedContractRegistration.Version.init -> void
 Callora.Core.Application.Plugins.Signing.PluginContentHasher
 Callora.Core.Application.Plugins.Signing.PluginSignatureAlgorithms
 Callora.Core.Application.Plugins.Signing.PluginSignatureCryptography
@@ -5346,6 +5392,12 @@ override Callora.Core.Application.Notifications.NotificationSnapshot.ToString() 
 override Callora.Core.Application.Plugins.CalloraPluginExport.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.CalloraPluginExport.GetHashCode() -> int
 override Callora.Core.Application.Plugins.CalloraPluginExport.ToString() -> string!
+override Callora.Core.Application.Plugins.ContractCatalogEntry.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.ContractCatalogEntry.GetHashCode() -> int
+override Callora.Core.Application.Plugins.ContractCatalogEntry.ToString() -> string!
+override Callora.Core.Application.Plugins.ContractDependent.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.ContractDependent.GetHashCode() -> int
+override Callora.Core.Application.Plugins.ContractDependent.ToString() -> string!
 override Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.GetHashCode() -> int
 override Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.ToString() -> string!
@@ -5468,6 +5520,9 @@ override Callora.Core.Application.Plugins.RuntimePluginInstallResult.ToString() 
 override Callora.Core.Application.Plugins.RuntimePluginUninstallResult.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.RuntimePluginUninstallResult.GetHashCode() -> int
 override Callora.Core.Application.Plugins.RuntimePluginUninstallResult.ToString() -> string!
+override Callora.Core.Application.Plugins.SharedContractRegistration.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.SharedContractRegistration.GetHashCode() -> int
+override Callora.Core.Application.Plugins.SharedContractRegistration.ToString() -> string!
 override Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.GetHashCode() -> int
 override Callora.Core.Application.Plugins.Signing.PluginSignatureFileHash.ToString() -> string!
@@ -5830,6 +5885,10 @@ static Callora.Core.Application.Plugins.CalloraPluginCatalogExtensions.GetExport
 static Callora.Core.Application.Plugins.CalloraPluginCatalogExtensions.TryGetExport<TContract>(this Callora.Core.Application.Plugins.ICalloraPluginCatalog! catalog, out TContract? service) -> bool
 static Callora.Core.Application.Plugins.CalloraPluginExport.operator !=(Callora.Core.Application.Plugins.CalloraPluginExport? left, Callora.Core.Application.Plugins.CalloraPluginExport? right) -> bool
 static Callora.Core.Application.Plugins.CalloraPluginExport.operator ==(Callora.Core.Application.Plugins.CalloraPluginExport? left, Callora.Core.Application.Plugins.CalloraPluginExport? right) -> bool
+static Callora.Core.Application.Plugins.ContractCatalogEntry.operator !=(Callora.Core.Application.Plugins.ContractCatalogEntry? left, Callora.Core.Application.Plugins.ContractCatalogEntry? right) -> bool
+static Callora.Core.Application.Plugins.ContractCatalogEntry.operator ==(Callora.Core.Application.Plugins.ContractCatalogEntry? left, Callora.Core.Application.Plugins.ContractCatalogEntry? right) -> bool
+static Callora.Core.Application.Plugins.ContractDependent.operator !=(Callora.Core.Application.Plugins.ContractDependent? left, Callora.Core.Application.Plugins.ContractDependent? right) -> bool
+static Callora.Core.Application.Plugins.ContractDependent.operator ==(Callora.Core.Application.Plugins.ContractDependent? left, Callora.Core.Application.Plugins.ContractDependent? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.operator !=(Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest? left, Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest.operator ==(Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest? left, Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostAdminApiResponse.operator !=(Callora.Core.Application.Plugins.Contracts.HostAdminApiResponse? left, Callora.Core.Application.Plugins.Contracts.HostAdminApiResponse? right) -> bool
@@ -5935,6 +5994,8 @@ static Callora.Core.Application.Plugins.RuntimePluginInstallResult.operator !=(C
 static Callora.Core.Application.Plugins.RuntimePluginInstallResult.operator ==(Callora.Core.Application.Plugins.RuntimePluginInstallResult? left, Callora.Core.Application.Plugins.RuntimePluginInstallResult? right) -> bool
 static Callora.Core.Application.Plugins.RuntimePluginUninstallResult.operator !=(Callora.Core.Application.Plugins.RuntimePluginUninstallResult? left, Callora.Core.Application.Plugins.RuntimePluginUninstallResult? right) -> bool
 static Callora.Core.Application.Plugins.RuntimePluginUninstallResult.operator ==(Callora.Core.Application.Plugins.RuntimePluginUninstallResult? left, Callora.Core.Application.Plugins.RuntimePluginUninstallResult? right) -> bool
+static Callora.Core.Application.Plugins.SharedContractRegistration.operator !=(Callora.Core.Application.Plugins.SharedContractRegistration? left, Callora.Core.Application.Plugins.SharedContractRegistration? right) -> bool
+static Callora.Core.Application.Plugins.SharedContractRegistration.operator ==(Callora.Core.Application.Plugins.SharedContractRegistration? left, Callora.Core.Application.Plugins.SharedContractRegistration? right) -> bool
 static Callora.Core.Application.Plugins.Signing.PluginContentHasher.EnumeratePackageFiles(string! pluginRoot) -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Plugins.Signing.PluginContentHasher.HashFile(string! absolutePath) -> string!
 static Callora.Core.Application.Plugins.Signing.PluginContentHasher.ResolveContained(string! pluginRoot, string! relativePath) -> string!
