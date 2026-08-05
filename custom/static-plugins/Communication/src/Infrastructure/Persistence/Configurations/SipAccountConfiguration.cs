@@ -40,7 +40,9 @@ public sealed class SipAccountConfiguration : IEntityTypeConfiguration<SipAccoun
         builder.Property(x => x.MaxConcurrentCalls).IsRequired();
         builder.Property(x => x.Enabled).IsRequired();
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+        // Matches SipStatusError.MaxLength: the domain truncates before this ever binds.
         builder.Property(x => x.LastError).HasMaxLength(500);
+        builder.Property(x => x.LastRegisteredAt);
 
         builder.OwnsOne(x => x.Connection, connection =>
         {
