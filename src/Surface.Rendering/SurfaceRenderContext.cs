@@ -11,4 +11,13 @@ public sealed record SurfaceRenderContext(
     string SurfaceKey,
     string SurfaceType,
     string Locale,
-    IReadOnlyDictionary<string, string> Tokens);
+    IReadOnlyDictionary<string, string> Tokens)
+{
+    /// <summary>
+    /// Who is looking at this page (ADR-017 §9) — a guest or an authenticated
+    /// visitor. Null only in a composition without the identity subsystem, so a
+    /// minimal host keeps rendering. It never carries the session token: a template
+    /// may read the caller, but must not be able to pass their session on.
+    /// </summary>
+    public SurfaceCallerView? Caller { get; init; }
+}

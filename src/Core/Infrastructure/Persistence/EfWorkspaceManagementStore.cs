@@ -505,7 +505,13 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             surface.CreatedAtUtc,
             surface.UpdatedAtUtc)
         {
-            TenantKey = surface.Workspace.Tenant.TenantKey
+            TenantKey = surface.Workspace.Tenant.TenantKey,
+            // Carried on the public-route resolution too: the render path decides the
+            // surface's identity behaviour from the binding, so it must travel with it.
+            IdentityPluginId = surface.IdentityPluginId,
+            IdentityVersion = surface.IdentityVersion,
+            IdentityAssignedBy = surface.IdentityAssignedBy,
+            IdentityAssignedAtUtc = surface.IdentityAssignedAtUtc,
         };
     }
 

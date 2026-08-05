@@ -438,6 +438,13 @@ Beispiele:
 
 ## 6.2 Surface-Login
 
+> **Für Surfaces abgelöst durch ADR-017.** Die fachliche Identität eines
+> Surface-Besuchers gehört seit ADR-017 dem Plugin, dem die Daten gehören; der Core
+> transportiert sie nur (`IHostSurfaceIdentityProvider`, Operator-Zuweisung pro
+> Surface, Gast-Kontext + optionale Identität). Die Access-Modes aus §6.1 gelten
+> unverändert weiter. Für die Backend-/Admin-Anmeldung bleibt dieser Abschnitt gültig.
+
+
 Geschützte und gemischte Surfaces verwenden einen surfacebezogenen Authentifizierungsfluss.
 
 Die Surface bestimmt:
@@ -483,6 +490,11 @@ Partnerportal
 Sie sind Principal- beziehungsweise Profilrollen innerhalb eines Identity-Kontexts.
 
 ## 6.4 Identity und Profile
+
+> **Für Surfaces abgelöst durch ADR-017.** Ein Identity-/Profilmodell im Core
+> widerspricht der Domänen-Neutralität (ADR-012). Surface-Identität ist stattdessen
+> `Issuer + SubjectId` plus namespaced Claims, ausgestellt vom zuständigen Plugin.
+
 
 Die Identität einer Person und ihre fachlichen Profile werden getrennt.
 

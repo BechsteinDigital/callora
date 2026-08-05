@@ -28,4 +28,23 @@ public sealed record WorkspaceSurfaceSnapshot(
     /// callers that do not project it.
     /// </summary>
     public string TenantKey { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Plugin assigned as this surface's identity provider (ADR-017 §5.2), or null
+    /// when none is assigned. Deliberately outside <see cref="WorkspaceSurfaceInput"/>:
+    /// editing a surface must not silently drop who vouches for its visitors.
+    /// </summary>
+    public string? IdentityPluginId { get; init; }
+
+    /// <summary>Version of the assigned identity plugin at assignment time.</summary>
+    public string? IdentityVersion { get; init; }
+
+    /// <summary>Who assigned the identity provider — audit material, not convenience.</summary>
+    public string? IdentityAssignedBy { get; init; }
+
+    /// <summary>
+    /// When the identity provider was assigned; sessions issued before this instant
+    /// predate the current provider and are no longer trusted (ADR-017 §6.3).
+    /// </summary>
+    public DateTimeOffset? IdentityAssignedAtUtc { get; init; }
 }

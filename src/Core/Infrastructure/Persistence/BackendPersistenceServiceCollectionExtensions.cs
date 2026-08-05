@@ -47,6 +47,7 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddScoped<ITenantManagementStore, EfTenantManagementStore>();
         services.AddScoped<IWorkspaceManagementStore, EfWorkspaceManagementStore>();
         services.AddScoped<IWorkspaceSurfaceStore, EfWorkspaceSurfaceStore>();
+        services.AddScoped<Callora.Core.Application.Surfaces.ISurfaceSessionStore, EfSurfaceSessionStore>();
         services.AddScoped<WorkspaceSurfaceProvisioner>();
         services.AddSingleton<
             Callora.Core.Application.Workspaces.Contracts.IWorkspaceSurfaceProvisioner,

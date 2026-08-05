@@ -88,6 +88,85 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task IdentityAssignment_RoundTripsAndSurvivesASurfaceEdit()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        var options = Options();
+
+        await using var context = new HostPersistenceDbContext(options);
+        await context.Database.EnsureCreatedAsync();
+        await SeedWorkspaceAsync(context, "workspace-identity");
+
+        var store = new EfWorkspaceSurfaceStore(context);
+        await store.UpsertAsync("workspace-identity", new WorkspaceSurfaceInput(
+            "portal", "Portal", "spa", null, null, "/", SurfaceAccessMode.Authenticated,
+            null, null, null, null, null, true));
+
+        var assigned = await store.AssignIdentityProviderAsync(
+            "workspace-identity", "portal", "crm", "1.2.0", "operator@example.de");
+
+        Assert.Equal("crm", assigned!.IdentityPluginId);
+        Assert.Equal("1.2.0", assigned.IdentityVersion);
+        Assert.Equal("operator@example.de", assigned.IdentityAssignedBy);
+        Assert.NotNull(assigned.IdentityAssignedAtUtc);
+
+        // A surface edit carries no identity fields, so it must not clear who vouches
+        // for the surface's visitors as a side effect.
+        var renamed = await store.UpsertAsync("workspace-identity", new WorkspaceSurfaceInput(
+            "portal", "Renamed", "spa", null, null, "/", SurfaceAccessMode.Authenticated,
+            null, null, null, null, null, true));
+
+        Assert.Equal("Renamed", renamed!.DisplayName);
+        Assert.Equal("crm", renamed.IdentityPluginId);
+        Assert.Equal("operator@example.de", renamed.IdentityAssignedBy);
+
+        var reread = await store.GetAsync("workspace-identity", "portal");
+        Assert.Equal("crm", reread!.IdentityPluginId);
+    }
+
+    [SkippableFact]
+    public async Task ClearingTheIdentityProvider_DropsProvenanceButKeepsTheBoundary()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        var options = Options();
+
+        await using var context = new HostPersistenceDbContext(options);
+        await context.Database.EnsureCreatedAsync();
+        await SeedWorkspaceAsync(context, "workspace-clear");
+
+        var store = new EfWorkspaceSurfaceStore(context);
+        await store.UpsertAsync("workspace-clear", new WorkspaceSurfaceInput(
+            "portal", "Portal", "spa", null, null, "/", SurfaceAccessMode.Mixed,
+            null, null, null, null, null, true));
+        await store.AssignIdentityProviderAsync(
+            "workspace-clear", "portal", "crm", "1.0.0", "operator@example.de");
+
+        var cleared = await store.AssignIdentityProviderAsync(
+            "workspace-clear", "portal", null, null, "operator@example.de");
+
+        Assert.Null(cleared!.IdentityPluginId);
+        Assert.Null(cleared.IdentityVersion);
+        Assert.Null(cleared.IdentityAssignedBy);
+        // The instant still moves: it is the boundary from which previously issued
+        // sessions stop being trusted, and that must exist without a provider too.
+        Assert.NotNull(cleared.IdentityAssignedAtUtc);
+    }
+
+    [SkippableFact]
+    public async Task AssignIdentityProvider_ForUnknownSurface_ReturnsNull()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        var options = Options();
+
+        await using var context = new HostPersistenceDbContext(options);
+        await context.Database.EnsureCreatedAsync();
+        var store = new EfWorkspaceSurfaceStore(context);
+
+        Assert.Null(await store.AssignIdentityProviderAsync(
+            "no-such-workspace", "portal", "crm", "1.0.0", "operator@example.de"));
+    }
+
+    [SkippableFact]
     public async Task Upsert_ForUnknownWorkspace_ReturnsNull()
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");

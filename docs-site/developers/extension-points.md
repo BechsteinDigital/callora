@@ -75,6 +75,22 @@ workspace-scoped (plugin-wide status, for example). It is an explicit opt-out.
 | **IWebSocketConnectAuthorizer** | Contributable | Validate a WebSocket connect-token before the connection is accepted. |
 | **IHostPublicHttpEndpointContributor** | Contributable | Contribute anonymous public HTTP endpoints under `/public/{pluginId}/…` (GET/POST, no platform auth). |
 | **IHostPublicHttpRouteHandler** | Contributable | Handle one plugin public HTTP route — responsible for all input validation and access control. |
+| **IHostSurfaceIdentityProvider** | Contributable | Authenticate a surface's own visitors (leads, customers, patients). Bound per surface by operator assignment. |
+
+::: warning Surface identity providers
+The provider receives normalised request metadata plus the values of the credential
+sources it declared in `CredentialSources` — never an `HttpContext`, a raw header
+collection or the host's own session. Declaring a source is how you ask for it, and the
+declaration is what an operator reviews before assigning you.
+
+To become assignable, declare the `surface.identity` capability in your `registry.json`.
+The binding itself is operator data on the surface (ADR-017 §5) — a shipped plugin cannot
+know a surface key the customer creates later.
+
+The call runs under a hard deadline. A timeout, an exception or an invalid result is a
+provider failure, not a fall-through to anonymous: on a protected surface that would be
+an access leak, so the surface closes for authenticated access instead.
+:::
 
 ## Service decoration
 
