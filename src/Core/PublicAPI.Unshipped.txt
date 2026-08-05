@@ -2260,6 +2260,8 @@ Callora.Core.Application.Policies.BackendHostOptions.AuthCookieName.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.AuthCookieRequireHttps.get -> bool
 Callora.Core.Application.Policies.BackendHostOptions.AuthCookieRequireHttps.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.BackendHostOptions() -> void
+Callora.Core.Application.Policies.BackendHostOptions.BootstrapApiKeysExpireAtUtc.get -> System.DateTimeOffset?
+Callora.Core.Application.Policies.BackendHostOptions.BootstrapApiKeysExpireAtUtc.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.DataProtectionKeysPath.get -> string!
 Callora.Core.Application.Policies.BackendHostOptions.DataProtectionKeysPath.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.DatabaseConnectionString.get -> string!
@@ -4058,7 +4060,7 @@ Callora.Core.Infrastructure.Plugins.ScopedPluginMigrationRunner.RunAsync(string!
 Callora.Core.Infrastructure.Plugins.ScopedPluginMigrationRunner.ScopedPluginMigrationRunner(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Plugins.ScopedPluginMigrationRunner!>! logger) -> void
 Callora.Core.Infrastructure.Security.ApiKeyAuthenticationDefaults
 Callora.Core.Infrastructure.Security.ApiKeyAuthenticationHandler
-Callora.Core.Infrastructure.Security.ApiKeyAuthenticationHandler.ApiKeyAuthenticationHandler(Microsoft.Extensions.Options.IOptionsMonitor<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions!>! options, Microsoft.Extensions.Logging.ILoggerFactory! logger, System.Text.Encodings.Web.UrlEncoder! encoder, Callora.Core.Application.Policies.BackendHostOptions! hostOptions) -> void
+Callora.Core.Infrastructure.Security.ApiKeyAuthenticationHandler.ApiKeyAuthenticationHandler(Microsoft.Extensions.Options.IOptionsMonitor<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions!>! options, Microsoft.Extensions.Logging.ILoggerFactory! logger, System.Text.Encodings.Web.UrlEncoder! encoder, Callora.Core.Application.Policies.BackendHostOptions! hostOptions, System.TimeProvider! timeProvider) -> void
 Callora.Core.Infrastructure.Security.BackendAuthCookieService
 Callora.Core.Infrastructure.Security.BackendClaimsTransformation
 Callora.Core.Infrastructure.Security.BackendClaimsTransformation.BackendClaimsTransformation(Callora.Core.Application.Security.IBackendRbacStore! rbacStore) -> void
@@ -4249,6 +4251,9 @@ const Callora.Core.Application.Security.BackendPermissionKeys.IntegrationRead = 
 const Callora.Core.Application.Security.BackendPermissionKeys.JobRead = "job.read" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.MediaManage = "media.manage" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.MediaRead = "media.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.MembershipDelete = "membership.delete" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.MembershipRead = "membership.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.MembershipUpdate = "membership.update" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.NotificationRead = "notification.read" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.PluginCreate = "plugin.create" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.PluginDelete = "plugin.delete" -> string!
@@ -5099,6 +5104,7 @@ static Callora.Core.Infrastructure.Security.BackendLoginCsrfProtection.RequireSa
 static Callora.Core.Infrastructure.Security.BackendRateLimiting.AddBackendRateLimiting(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.Security.BackendRateLimiting.ResolveClientKey(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> string!
 static Callora.Core.Infrastructure.Security.BackendSecurityServiceCollectionExtensions.AddBackendApiSecurity(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.RequireAnyPermission<TBuilder>(this TBuilder builder, params string![]! permissionKeys) -> TBuilder
 static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.RequirePermission<TBuilder>(this TBuilder builder, string! permissionKey) -> TBuilder
 static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.UserHasPermission(System.Security.Claims.ClaimsPrincipal! user, string! permissionKey) -> bool
 static Callora.Core.Infrastructure.Security.IntegrationPrincipalFactory.Create(Callora.Core.Domain.Integrations.IntegrationCredential! integration) -> System.Security.Claims.ClaimsPrincipal!

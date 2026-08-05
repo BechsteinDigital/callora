@@ -29,10 +29,24 @@ public static class BackendPermissionKeys
     public const string ExtensionUpdate = "extension.update";
     public const string RoleRead = "role.read";
     public const string RoleUpdate = "role.update";
+    /// <summary>
+    /// Global identity administration (credentials, erasure, data-subject
+    /// export). Platform-only: workspace roles never receive a <c>user.*</c>
+    /// write permission, because these operations reach across workspaces.
+    /// </summary>
     public const string UserCreate = "user.create";
     public const string UserRead = "user.read";
     public const string UserUpdate = "user.update";
     public const string UserDelete = "user.delete";
+
+    /// <summary>
+    /// Workspace-membership administration: who belongs to a workspace and in
+    /// which workspace role. Grantable to workspace administrators — the
+    /// endpoints confine a workspace-bound caller to its own workspace.
+    /// </summary>
+    public const string MembershipRead = "membership.read";
+    public const string MembershipUpdate = "membership.update";
+    public const string MembershipDelete = "membership.delete";
     public const string WorkspaceCreate = "workspace.create";
     public const string WorkspaceRead = "workspace.read";
     public const string WorkspaceUpdate = "workspace.update";

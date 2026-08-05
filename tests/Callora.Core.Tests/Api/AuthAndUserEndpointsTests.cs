@@ -220,16 +220,21 @@ public sealed class AuthAndUserEndpointsTests
     }
 
     [Fact]
-    public async Task Users_DataExport_ForeignWorkspaceUser_IsDenied()
+    public async Task Users_DataExport_AsWorkspaceUser_IsForbidden()
     {
         await using var app = await CreateAppAsync();
         var client = app.GetTestClient();
         client.DefaultRequestHeaders.Add("X-Test-Permissions", "user.read");
         client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "workspace-a");
 
-        var response = await client.GetAsync("/api/users/dave/data-export");
+        // The export is a global identity operation (#102): it discloses every
+        // membership of the subject, so it stays operator-only — even for a
+        // member of the caller's own workspace.
+        var foreign = await client.GetAsync("/api/users/dave/data-export");
+        var own = await client.GetAsync("/api/users/alice/data-export");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, foreign.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, own.StatusCode);
     }
 
     [Fact]

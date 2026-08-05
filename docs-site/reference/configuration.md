@@ -64,10 +64,11 @@ it is shown as a relative fragment.
 | `OidcAuthority` | `string?` | `null` | Optional external OIDC authority. |
 | `AuthCookieName` | `string` | `callora_admin_auth` | Name of the auth cookie carrying the JWT. |
 | `AuthCookieRequireHttps` | `bool` | `false` | Marks the auth cookie `Secure` (HTTPS-only). |
-| `EnableBootstrapApiKeys` | `bool` | `true` | Enables the seeded bootstrap API keys. |
-| `RequireApiKeyAuthentication` | `bool` | `true` | Requires an API key header on API requests. |
+| `EnableBootstrapApiKeys` | `bool` | `true` | Enables the break-glass bootstrap credential. Set `false` to reject bootstrap keys entirely. |
+| `RequireApiKeyAuthentication` | `bool` | `true` | **Policy only:** refuses startup when bootstrap keys are enabled but none are configured. Never decides whether a presented key is valid. |
+| `BootstrapApiKeysExpireAtUtc` | `DateTimeOffset?` | `null` | Instant after which bootstrap keys stop authenticating even while enabled. |
 | `ApiKeyHeaderName` | `string` | `X-Callora-Api-Key` | Header carrying the API key. |
-| `ApiKeys` | `string[]` | `[]` | Accepted API keys (host-scoped access). |
+| `ApiKeys` | `string[]` | `[]` | Bootstrap credentials. Clearing the list retires the break-glass path. |
 | `RbacRoles` | `BackendRbacRoleOptions[]` | `[]` | Config-defined RBAC roles and their permission grants. |
 | `RbacUserAssignments` | `BackendRbacUserAssignmentOptions[]` | `[]` | Config-defined user→role assignments. |
 | `PlatformOperatorRoles` | `string[]` | `["superadmin"]` | Roles permitted to sign in via the platform-operator login and granted platform **scope** (not blanket authority). |

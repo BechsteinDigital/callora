@@ -32,6 +32,7 @@ public static class BackendSecurityServiceCollectionExtensions
         // The repository-known dev signing key is rejected outside Development by
         // the unified BackendSecretHygiene gate in the composition root.
 
+        services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IBackendRbacStore>(_ => new InMemoryBackendRbacStore(options));
         services.AddTransient<IClaimsTransformation, BackendClaimsTransformation>();
 

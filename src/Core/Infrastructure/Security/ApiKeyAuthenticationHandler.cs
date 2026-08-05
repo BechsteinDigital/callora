@@ -17,7 +17,8 @@ public sealed class ApiKeyAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    BackendHostOptions hostOptions) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+    BackendHostOptions hostOptions,
+    TimeProvider timeProvider) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -49,15 +50,29 @@ public sealed class ApiKeyAuthenticationHandler(
 
         // 2) Global bootstrap keys: the operator break-glass credential, kept for
         // first-run setup. Grants super-admin, so it stays gated behind opt-in.
-        if (hostOptions.EnableBootstrapApiKeys &&
-            (!hostOptions.RequireApiKeyAuthentication || IsKnownBootstrapKey(providedKey)))
+        //
+        // Credential validity depends on the presented key alone. No policy
+        // switch — notably not RequireApiKeyAuthentication — may turn an unknown
+        // key into a valid one (SEC-102/#103).
+        if (hostOptions.EnableBootstrapApiKeys && IsKnownBootstrapKey(providedKey))
         {
+            if (IsBootstrapWindowExpired())
+            {
+                Logger.LogWarning(
+                    "Rejected an expired bootstrap API key; retire it by clearing BackendHost.ApiKeys.");
+                return AuthenticateResult.Fail("Bootstrap API keys have expired.");
+            }
+
             var principal = CreateBootstrapPrincipal("bootstrap-api-key");
             return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name));
         }
 
         return AuthenticateResult.Fail("Invalid API key.");
     }
+
+    private bool IsBootstrapWindowExpired() =>
+        hostOptions.BootstrapApiKeysExpireAtUtc is { } expiry &&
+        timeProvider.GetUtcNow() >= expiry;
 
     private bool IsKnownBootstrapKey(string provided)
     {
@@ -66,22 +81,22 @@ public sealed class ApiKeyAuthenticationHandler(
             return false;
         }
 
+        // Every candidate is compared, and comparison runs over fixed-length
+        // digests, so neither the match position nor the key length leaks.
+        var providedDigest = SHA256.HashData(Encoding.UTF8.GetBytes(provided));
+        var matched = false;
         foreach (var key in hostOptions.ApiKeys ?? [])
         {
-            if (ConstantTimeEquals(key, provided))
+            if (string.IsNullOrWhiteSpace(key))
             {
-                return true;
+                continue;
             }
+
+            var candidateDigest = SHA256.HashData(Encoding.UTF8.GetBytes(key));
+            matched |= CryptographicOperations.FixedTimeEquals(candidateDigest, providedDigest);
         }
 
-        return false;
-    }
-
-    private static bool ConstantTimeEquals(string left, string right)
-    {
-        var leftBytes = Encoding.UTF8.GetBytes(left);
-        var rightBytes = Encoding.UTF8.GetBytes(right);
-        return CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
+        return matched;
     }
 
     private static ClaimsPrincipal CreateBootstrapPrincipal(string identityName)
