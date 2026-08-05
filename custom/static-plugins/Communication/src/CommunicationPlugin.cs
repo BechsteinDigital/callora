@@ -56,7 +56,10 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
 
     // Set during StartAsync when the media/voice surface is wired; torn down on stop.
     private SdkCallAudioRegistrar? _audioRegistrar;
-    private VoiceChannelProvisioner? _voiceProvisioner;
+
+    // The single path from a persisted account to a live channel (#110): startup and every
+    // admin mutation go through it, so the runtime cannot drift from the database.
+    private SipAccountRuntimeReconciler? _sipRuntimeReconciler;
     private CommunicationRuntimeCapabilitySource? _capabilitySource;
 
     // Call-control primitive, exported for in-process consumers (and the REST adapter); set when the
@@ -123,12 +126,22 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             _incomingCallObserver.Start();
         }
 
+        // Live-call audio surface and the SIP runtime reconciler are built here, before the admin
+        // routes, because those routes must reconcile the runtime on every mutation (#110). Both
+        // degrade cleanly: no data protector or no voice runtime means no reconciler, and the
+        // routes fall back to pure persistence.
+        var audioStreamProvider = new SdkCallAudioStreamProvider();
+        _audioRegistrar = new SdkCallAudioRegistrar(
+            audioStreamProvider, ResolveLogger<SdkCallAudioRegistrar>(context.Services));
+        _sipRuntimeReconciler = TryCreateSipRuntimeReconciler(context, dataProtector);
+
         // Operator Admin-API: the status route always; the SIP-account management routes only when
         // persistence and a data protector are present (credentials must be protectable) plus the
         // call-control routes above. These read/write the DB that this same StartAsync migrates below.
         IReadOnlyList<HostAdminApiRouteRegistration> accountRoutes =
             dbContextFactory is not null && dataProtector is not null
-                ? SipAccountAdminRoutes.Build(new EfSipAccountStore(dbContextFactory), dataProtector, Id)
+                ? SipAccountAdminRoutes.Build(
+                    new EfSipAccountStore(dbContextFactory), dataProtector, Id, _sipRuntimeReconciler)
                 : [];
         context.Export<IHostAdminApiExtensionContributor>(
             new CommunicationAdminApiExtensionContributor([.. accountRoutes, .. callRoutes]));
@@ -203,10 +216,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             new CommunicationWorkspaceDataPurger(dbContextFactory)));
 
         // Media WebSocket surface (/ws/communication/media/{connectToken}) backed by the live-call
-        // audio provider; the registrar populates it as tracked calls connect.
-        var audioStreamProvider = new SdkCallAudioStreamProvider();
-        _audioRegistrar = new SdkCallAudioRegistrar(
-            audioStreamProvider, ResolveLogger<SdkCallAudioRegistrar>(context.Services));
+        // audio provider built above; the registrar populates it as tracked calls connect.
         var mediaStreamSessionStore = new EfMediaStreamSessionStore(dbContextFactory);
         context.Export<IHostWebSocketEndpointContributor>(new CommunicationMediaWebSocketContributor(
             mediaStreamSessionStore, audioStreamProvider));
@@ -216,7 +226,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         context.Export<IBackgroundJobHandler>(new MediaStreamSessionPurgeJobHandler(mediaStreamSessionStore));
         context.Export<IRecurringJobProvider>(new MediaStreamSessionPurgeRecurringJobProvider());
 
-        await ProvisionVoiceChannelsAsync(context, dbContextFactory, cancellationToken).ConfigureAwait(false);
+        await ProvisionVoiceChannelsAsync(dbContextFactory, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -224,7 +234,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     {
         // Deregister and dispose provisioned channels, release live audio streams, then drop all
         // channel registrations so nothing dangles past unload.
-        _voiceProvisioner?.Teardown();
+        _sipRuntimeReconciler?.Dispose();
         if (_audioRegistrar is not null)
         {
             await _audioRegistrar.ClearAsync().ConfigureAwait(false);
@@ -259,20 +269,19 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     // Voice provisioning is opt-in: it needs the plugin data protector (to resolve credentials) and a
     // voice runtime — either injected by the host or built by the plugin when voice is configured.
     // Without both the plugin serves the foundation surface only — no voice channels.
-    private async Task ProvisionVoiceChannelsAsync(
+    private SipAccountRuntimeReconciler? TryCreateSipRuntimeReconciler(
         IHostPluginContext context,
-        IPluginDbContextFactory<CommunicationDbContext> dbContextFactory,
-        CancellationToken cancellationToken)
+        IPluginDataProtector? dataProtector)
     {
-        if (context.Services.GetService(typeof(IPluginDataProtector)) is not IPluginDataProtector dataProtector)
+        if (dataProtector is null)
         {
-            return;
+            return null;
         }
 
         var voiceRuntime = ResolveVoiceRuntime(context.Services, context.PluginConfiguration);
         if (voiceRuntime is null)
         {
-            return;
+            return null;
         }
 
         var connector = new SdkVoiceChannelConnector(
@@ -280,13 +289,29 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             voiceRuntime,
             Id,
             ResolveLogger<SdkVoiceChannelConnector>(context.Services));
-        _voiceProvisioner = new VoiceChannelProvisioner(
-            connector, _channelRegistry, _audioRegistrar!, ResolveLogger<VoiceChannelProvisioner>(context.Services));
+
+        return new SipAccountRuntimeReconciler(
+            connector,
+            _channelRegistry,
+            _audioRegistrar!,
+            ResolveLogger<SipAccountRuntimeReconciler>(context.Services));
+    }
+
+    // Startup uses the same reconciler as the admin mutations, so there is one provisioning
+    // path rather than two that can disagree (#110).
+    private async Task ProvisionVoiceChannelsAsync(
+        IPluginDbContextFactory<CommunicationDbContext> dbContextFactory,
+        CancellationToken cancellationToken)
+    {
+        if (_sipRuntimeReconciler is null)
+        {
+            return;
+        }
 
         var enabledAccounts = await new EfSipAccountStore(dbContextFactory)
             .ListEnabledAsync(cancellationToken)
             .ConfigureAwait(false);
-        await _voiceProvisioner.ProvisionAsync(enabledAccounts, cancellationToken).ConfigureAwait(false);
+        await _sipRuntimeReconciler.ApplyAllAsync(enabledAccounts, cancellationToken).ConfigureAwait(false);
     }
 
     // An explicitly injected runtime (tests/custom hosts) always wins. Otherwise, when the deployment
