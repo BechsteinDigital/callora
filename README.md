@@ -18,9 +18,11 @@ several distributions (community, enterprise, OEM/customer-specific hosts).
 - `src/Workspace` — Workspace module
 - `src/Analyzers` — Roslyn analyzers guarding the public API surface
 - `src/Host/Cli` — `callora` CLI (e.g. the plugin contract-test kit)
+- `src/Host/Dev` — this repository's own runnable composition, for `docker compose`
+  and F5. Not packed and not a product: a distribution composes the packages itself
 - `custom/static-plugins/*` — system-tier plugins (e.g. Communication)
 - `custom/plugins/*` — dynamically installable plugins
-- Composition / process entrypoint: external `callora-production` repository
+- Shipping composition / process entrypoint: external `callora-production` repository
 
 ## Build & test
 ```bash
@@ -94,7 +96,7 @@ Beispiel fuer lokale Shell-Session:
 set -a
 source .env
 set +a
-dotnet run --project src/Core/Callora.Core.csproj
+dotnet run --project src/Host/Dev/Callora.Host.Dev.csproj
 ```
 
 Lokalen Dev-Stack (Backend + Postgres) starten:

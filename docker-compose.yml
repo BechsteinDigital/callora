@@ -39,7 +39,7 @@ services:
       - ./:/workspace
       - callora-nuget-cache-dev:/root/.nuget/packages
     command: >
-      dotnet watch --project src/Core/Callora.Core.csproj run --no-launch-profile
+      dotnet watch --project src/Host/Dev/Callora.Host.Dev.csproj run --no-launch-profile
 
   postgres:
     image: postgres:16

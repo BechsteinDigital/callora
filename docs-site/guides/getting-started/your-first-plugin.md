@@ -21,8 +21,8 @@ You'll need:
 
 - The **.NET 10 SDK** (`dotnet --version` → `10.*`)
 - A **running Callora host in development mode** on `http://localhost:5000`
-  (`dotnet run --project src/Core/Callora.Core.csproj`, or the dev stack via
-  `docker compose up -d`). Check it with
+  (`dotnet run --project src/Host/Dev/Callora.Host.Dev.csproj`, or the dev stack
+  via `docker compose up -d`). Check it with
   `curl http://localhost:5000/health`.
 - The **`callora` CLI** — in this repo it's `dotnet run --project src/Host/Cli/Callora.Host.Cli.csproj --`.
   This tutorial uses that form; if you have the CLI installed as a global tool, use
