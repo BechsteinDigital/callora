@@ -82,7 +82,8 @@ it is shown as a relative fragment.
 | `DefaultPluginEntitlement` | `bool` | `true` | Entitlement verdict when no explicit entitlement row exists. `true` suits self-hosted (every installed plugin usable); cloud sets `false` for explicit grants. |
 | `TrustedSignerThumbprints` | `string[]` | `[]` | Legacy trusted-signer certificate thumbprints. |
 | `TrustedSigners` | `BackendTrustedSignerOptions[]` | `[]` | Structured trusted signers (publisher id, display name, fingerprint, source). |
-| `AllowUnsignedPlugins` | `bool` | `false` | Permits installing/loading unsigned plugins. **Development only.** |
+| `AllowUnsignedPlugins` | `bool` | `false` | Permits installing/loading unsigned plugins. **Development only — outside Development the host refuses to start with it on.** |
+| `ContentSecurityPolicy` | `string` | see `BackendContentSecurityPolicy` | CSP sent with every response. Same-origin scripts and connections, no `eval`, `frame-ancestors 'none'`. Empty string sends none. |
 | `RevokedSignerFingerprints` | `string[]` | `[]` | Signer key fingerprints (SHA-256 of the SPKI) that are revoked; enforced at install and at load. |
 | `RevokedContentHashes` | `string[]` | `[]` | Revoked plugin assembly content hashes (SHA-256, hex); rejected regardless of signature. |
 | `DemoAdminUser` | `BackendDemoAdminUserOptions` | `new()` | Development convenience admin, re-seeded on start when enabled. |
@@ -92,8 +93,9 @@ it is shown as a relative fragment.
 ::: warning Production hardening
 `JwtSigningKey`, `ApiKeys`, and `DatabaseConnectionString` ship with development
 defaults. Override them in production, and set `AuthCookieRequireHttps=true`. Note
-`docker-compose.yml` sets `AllowUnsignedPlugins=true` for local development — keep it
-`false` (the property default) in production.
+`docker-compose.yml` sets `AllowUnsignedPlugins=true` for local development. Outside
+Development the host now refuses to start with it on, so this is enforced rather than
+left to the deployment.
 :::
 
 ## `CalloraHosting` options — plugin directories & loading

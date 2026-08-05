@@ -52,7 +52,7 @@ Skip the frontend build (no Node required): `dotnet build -p:SkipAdminFrontend=t
 Installing a plugin is a fully privileged act — a plugin runs as host code and its
 admin bundle as privileged admin-frontend code. The install gate verifies a detached
 signature manifest (`plugin.signature.json`, ECDSA-P256) against a **trusted signer's
-public key** and checks the covered file hashes (assembly + `registry.json`), so
+public key** and checks the hash of every file in the package, so
 capabilities and entry type are tamper-evident. Unsigned plugins are rejected unless
 `BackendHost__AllowUnsignedPlugins=true`. Signature standing is shown per plugin in
 Admin → Plugins.

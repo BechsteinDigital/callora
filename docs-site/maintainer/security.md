@@ -31,18 +31,81 @@ Therefore (ADR-013, Accepted 2026-07-14):
 plugin runs as host code and its admin bundle as privileged admin-frontend code.
 Only install plugins whose author you trust.
 
+### What actually stands between a plugin and each asset
+
+Being explicit about this is the point of the model. A control that only makes
+accidents less likely is worth having; calling it a boundary is not.
+
+| Asset | What a malicious plugin could do | What actually stands in the way |
+| --- | --- | --- |
+| Host process | Anything the process may: reflection, P/Invoke, threads | **Provenance only.** Signature, trusted signer, review, operator consent |
+| Filesystem, network | Read/write anything the service account may; call out anywhere | **Provenance only.** The OS account and its container are the technical bound |
+| Secrets, connection strings | Read them from configuration or memory | **Provenance only.** Curated DI narrows what is *injected*, not what is reachable |
+| Tenant data | Query across workspaces via its own DbContext | **Provenance**, plus the host's workspace filter for anything going through host stores |
+| Admin DOM, session | Read the session, alter the shell, call the API as the operator | **Provenance**, plus the CSP below: it bounds *where code and data may come from and go*, not what already-loaded code does |
+| Package contents | Ship unsigned code beside signed code | **Enforced.** Full-package hashing, and any uncovered file fails the install |
+| A known-bad build | Keep running after it is found out | **Enforced.** Content-hash revocation, signer removal, deactivation |
+
+Read the "provenance only" rows as they are written. They are not gaps to be
+patched later — they are what "trusted in-process" means, and the reason the
+distribution is curated.
+
+### Content-Security-Policy
+
+Plugin admin bundles load as ordinary scripts in the shell's document, which is
+what lets them extend the UI deeply and also gives them its DOM, origin and
+session. Every response therefore carries a CSP
+(`BackendHost__ContentSecurityPolicy`, default in `BackendContentSecurityPolicy`):
+scripts and connections are same-origin, `eval` is not available, and
+`frame-ancestors` is closed.
+
+What it buys: a bundle cannot pull further code from an arbitrary origin, cannot
+evaluate a payload it fetched, and cannot exfiltrate to a host outside the policy.
+What it does not buy: any constraint on what the bundle does with what it already
+has. Nothing served into the same document can offer that.
+
+Overriding the policy — for a CDN, or to embed a shell elsewhere — widens what
+plugin UI code can reach. It belongs to the operator, in configuration, and never
+to a plugin's manifest.
+
+### Revoking trust
+
+Three levers, smallest blast radius first:
+
+1. **One build.** Add its content hash to `BackendHost__RevokedContentHashes`. The
+   verifier refuses it regardless of signature, so it also stops an otherwise
+   allowed unsigned package.
+2. **One publisher.** Remove their entry from `BackendHost__TrustedSigners`. Every
+   package signed by that key stops verifying, past and future.
+3. **One installed plugin, right now.** Deactivate it through **Admin → Plugins**
+   (or the plugin API). Exports, routes, assets and background work are withdrawn.
+   If its load context stays pinned, the deactivation reports that and a restart
+   completes it — see [ADR-018](https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-018-drain-und-resume-fuer-langlebige-plugins.md).
+
+Revocation currently applies at the next verification. A plugin already running
+keeps running until it is deactivated or the host restarts, so an emergency is
+lever 3 first, then 1 or 2 so it cannot come back.
+
 ## Plugin signing and fingerprint trust
 
 The install gate verifies a **detached signature manifest**
 (`plugin.signature.json`, **ECDSA-P256**) against a trusted signer's **public key**
-and checks the covered file hashes (assembly + `registry.json`), so a plugin's
-capabilities and entry type are tamper-evident. Trust = the **public-key
+and checks the hash of **every file in the package**, so a plugin's code, UI
+bundles, templates and manifest are all tamper-evident. Trust = the **public-key
 fingerprint** of a signer you configured.
 
+The coverage is total in both directions: the signer hashes every file under the
+plugin root, and the verifier rejects any file on disk that the manifest does not
+cover. There is no place inside a package where executable or interpreted content
+can sit unsigned.
+
 - **Unsigned plugins are rejected** unless `BackendHost__AllowUnsignedPlugins=true`.
-  Dev sets this `true`; **production keeps it `false`**, so every deployed plugin —
-  including the bundled system-tier plugins under `custom/static-plugins/` — must
-  be signed and its signer trusted, or it will not load.
+  Dev sets this `true`. **Outside Development the host refuses to start with the flag
+  on**, so every deployed plugin — including the bundled system-tier plugins under
+  `custom/static-plugins/` — must be signed and its signer trusted. This used to be a
+  convention; it is now the same startup guard that rejects development secrets,
+  because accepting an unsigned package means running code of unestablished origin
+  with the process's full rights.
 - Signature standing is shown per plugin in **Admin → Plugins**.
 
 Sign a plugin for production:

@@ -2490,6 +2490,7 @@ Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentS
 Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.PluginInactive = 3 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
 Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.PluginNotFound = 2 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
 Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.WorkspaceNotFound = 1 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
+Callora.Core.Application.Policies.BackendContentSecurityPolicy
 Callora.Core.Application.Policies.BackendDemoAdminUserOptions
 Callora.Core.Application.Policies.BackendDemoAdminUserOptions.BackendDemoAdminUserOptions() -> void
 Callora.Core.Application.Policies.BackendDemoAdminUserOptions.DisplayName.get -> string!
@@ -2542,6 +2543,8 @@ Callora.Core.Application.Policies.BackendHostOptions.AuthCookieRequireHttps.set 
 Callora.Core.Application.Policies.BackendHostOptions.BackendHostOptions() -> void
 Callora.Core.Application.Policies.BackendHostOptions.BootstrapApiKeysExpireAtUtc.get -> System.DateTimeOffset?
 Callora.Core.Application.Policies.BackendHostOptions.BootstrapApiKeysExpireAtUtc.set -> void
+Callora.Core.Application.Policies.BackendHostOptions.ContentSecurityPolicy.get -> string!
+Callora.Core.Application.Policies.BackendHostOptions.ContentSecurityPolicy.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.DataProtectionKeysPath.get -> string!
 Callora.Core.Application.Policies.BackendHostOptions.DataProtectionKeysPath.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.DatabaseConnectionString.get -> string!
@@ -5185,6 +5188,7 @@ const Callora.Core.Application.Plugins.PluginSignatureStates.Untrusted = "untrus
 const Callora.Core.Application.Plugins.SessionResumePurgeJobHandler.JobTypeName = "plugins.session-resume-purge" -> string!
 const Callora.Core.Application.Plugins.Signing.PluginContentHasher.SignatureFileName = "plugin.signature.json" -> string!
 const Callora.Core.Application.Plugins.Signing.PluginSignatureAlgorithms.EcdsaP256Sha256 = "ECDSA-P256-SHA256" -> string!
+const Callora.Core.Application.Policies.BackendContentSecurityPolicy.Default = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' ws: wss:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" -> string!
 const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultApiKey = "callora-local-dev-key-change-me" -> string!
 const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultDemoAdminPassword = "callora-demo-admin!" -> string!
 const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultJwtSigningKey = "callora-local-dev-signing-key-change-me" -> string!
