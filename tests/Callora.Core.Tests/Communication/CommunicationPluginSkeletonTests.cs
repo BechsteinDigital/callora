@@ -1,6 +1,7 @@
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Plugin.Communication;
 using Callora.Plugin.Communication.Application.Admin;
+using Callora.Plugin.Communication.Infrastructure.Channels;
 using Xunit;
 
 namespace Callora.Core.Tests.Communication;
@@ -25,7 +26,7 @@ public sealed class CommunicationPluginSkeletonTests
     [Fact]
     public void AdminContributor_DeclaresStatusRouteAndPermissions()
     {
-        var contributor = new CommunicationAdminApiExtensionContributor();
+        var contributor = new CommunicationAdminApiExtensionContributor([], NewProbe());
 
         Assert.Equal(CommunicationPlugin.Id, contributor.PluginId);
         Assert.Contains(CommunicationPermissionKeys.AccountsRead, contributor.PermissionKeys);
@@ -41,9 +42,11 @@ public sealed class CommunicationPluginSkeletonTests
     }
 
     [Fact]
-    public async Task StatusRoute_ReturnsOkPayload()
+    public async Task StatusRoute_WithoutAnyChannel_ReportsUnavailable()
     {
-        var handler = new CommunicationStatusRouteHandler();
+        // No registered channel means nothing can be dialled, so readiness must say so
+        // instead of the constant "ok" this route used to answer (#112).
+        var handler = new CommunicationStatusRouteHandler(NewProbe());
         var request = new HostAdminApiRequest(
             CommunicationPlugin.Id,
             "GET",
@@ -55,9 +58,13 @@ public sealed class CommunicationPluginSkeletonTests
 
         var response = await handler.HandleAsync(request);
 
-        Assert.Equal(200, response.StatusCode);
+        Assert.Equal(503, response.StatusCode);
         var status = Assert.IsType<CommunicationStatus>(response.Payload);
         Assert.Equal(CommunicationPlugin.Id, status.PluginId);
-        Assert.Equal("ok", status.Status);
+        Assert.Equal(CommunicationReadiness.Unavailable, status.Status);
+        Assert.Contains(status.Dependencies, x => x.Name == "channels" && x.State == "down");
     }
+
+    private static CommunicationReadinessProbe NewProbe() =>
+        new(new CommunicationChannelRegistry());
 }

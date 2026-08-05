@@ -10,7 +10,7 @@ public sealed class CallLogTests
     private static readonly DateTimeOffset Start = DateTimeOffset.UnixEpoch;
 
     private static CallLog Started() =>
-        CallLog.Start("call-1", "ws-a", "acc-1", "line-1", CallDirection.Inbound,
+        CallLog.Start("call-1", "ws-a", "acc-1", CallDirection.Inbound,
             "+49309999999", "sip:alice@example.org", handledBy: "ai-agent", correlationId: null, Start);
 
     [Fact]

@@ -28,17 +28,23 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
     private readonly IVoiceChannelConnector _connector;
     private readonly ICommunicationChannelRegistry _registry;
     private readonly SdkCallAudioRegistrar _registrar;
+    private readonly ISipAccountStatusProjector? _statusProjector;
     private readonly ILogger<SipAccountRuntimeReconciler> _logger;
 
     private readonly ConcurrentDictionary<string, ProvisionedVoiceChannel> _provisioned = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new(StringComparer.Ordinal);
 
     /// <summary>Creates a reconciler over the connector seam, channel registry and audio registrar.</summary>
+    /// <param name="statusProjector">
+    /// Receives the channel's health transitions so they land on the persisted account (#112).
+    /// Null in a deployment without persistence, where there is no account row to update.
+    /// </param>
     public SipAccountRuntimeReconciler(
         IVoiceChannelConnector connector,
         ICommunicationChannelRegistry registry,
         SdkCallAudioRegistrar registrar,
-        ILogger<SipAccountRuntimeReconciler> logger)
+        ILogger<SipAccountRuntimeReconciler> logger,
+        ISipAccountStatusProjector? statusProjector = null)
     {
         ArgumentNullException.ThrowIfNull(connector);
         ArgumentNullException.ThrowIfNull(registry);
@@ -48,6 +54,7 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
         _connector = connector;
         _registry = registry;
         _registrar = registrar;
+        _statusProjector = statusProjector;
         _logger = logger;
     }
 
@@ -118,7 +125,15 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
 
             var decorated = new AudioRegisteringChannel(channel, _registrar);
             var registration = _registry.Register(account.WorkspaceKey, decorated);
-            _provisioned[key] = new ProvisionedVoiceChannel(registration, decorated, fingerprint);
+
+            // From here the channel owns the truth about connectivity, so its transitions are
+            // projected onto the account instead of the account staying on "Connecting" (#112).
+            var subscription = SubscribeToHealth(account, decorated);
+            _provisioned[key] = new ProvisionedVoiceChannel(registration, decorated, fingerprint, subscription);
+
+            // Record the state the channel reports right now, so a connector that returns an
+            // already-registered channel does not leave the account looking like it is still coming up.
+            ProjectHealth(account.WorkspaceKey, account.Id, decorated.Health);
             return SipRuntimeReconciliation.Connected;
         }
         finally
@@ -207,9 +222,61 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
             return;
         }
 
+        provisioned.HealthSubscription?.Dispose();
         provisioned.Registration.Dispose();
         provisioned.Channel.Dispose();
     }
+
+    /// <summary>
+    /// Bridges the channel's health events onto the account, returning a handle that detaches
+    /// the handler. Without detaching, a torn-down channel would keep writing status for an
+    /// account the reconciler no longer owns.
+    /// </summary>
+    private IDisposable? SubscribeToHealth(SipAccount account, ICommunicationChannel channel)
+    {
+        if (_statusProjector is null)
+        {
+            return null;
+        }
+
+        var workspaceKey = account.WorkspaceKey;
+        var accountId = account.Id;
+
+        void OnHealthChanged(object? sender, ChannelHealthChangedEventArgs args) =>
+            ProjectHealth(workspaceKey, accountId, args.Health);
+
+        channel.HealthChanged += OnHealthChanged;
+        return new HealthSubscription(() => channel.HealthChanged -= OnHealthChanged);
+    }
+
+    /// <summary>
+    /// Fires the projection without awaiting it. The caller is a provider callback that must not
+    /// block on a database write; the projector itself never throws.
+    /// </summary>
+    private void ProjectHealth(string workspaceKey, string accountId, ChannelHealth health)
+    {
+        if (_statusProjector is null)
+        {
+            return;
+        }
+
+        var status = MapHealth(health);
+        var error = health == ChannelHealth.Down ? "The channel reported no usable registration." : null;
+        _ = _statusProjector.ProjectAsync(workspaceKey, accountId, status, error, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Channel health to account status. <see cref="ChannelHealth.Unknown"/> maps to
+    /// <see cref="SipAccountStatus.Connecting"/> rather than a failure: the channel exists and
+    /// has simply not reported yet.
+    /// </summary>
+    private static SipAccountStatus MapHealth(ChannelHealth health) => health switch
+    {
+        ChannelHealth.Up => SipAccountStatus.Up,
+        ChannelHealth.Degraded => SipAccountStatus.Degraded,
+        ChannelHealth.Down => SipAccountStatus.Failed,
+        _ => SipAccountStatus.Connecting
+    };
 
     private static string KeyOf(string workspaceKey, string accountId) =>
         string.Concat(workspaceKey.Trim(), "/", accountId.Trim());

@@ -9,6 +9,12 @@ namespace Callora.Plugin.Communication.Infrastructure.Channels;
 /// channel id may repeat across workspaces but not within one — and a registration handle removes
 /// exactly its own entry on dispose. Thread-safe: mutations are serialized under a lock, while the
 /// registered/unregistered events fire outside it so a handler may safely re-enter the registry.
+/// <para>
+/// Removal matches the stored <em>instance</em>, not just the channel id (#117). Keying removal on
+/// the id alone meant that after a clear-and-re-register cycle, disposing the old handle
+/// deregistered the new channel: the provisioner reuses its ids, so the stale handle looked
+/// authoritative for a registration it no longer owned.
+/// </para>
 /// </summary>
 public sealed class CommunicationChannelRegistry : ICommunicationChannelRegistry
 {
@@ -129,16 +135,27 @@ public sealed class CommunicationChannelRegistry : ICommunicationChannelRegistry
         }
     }
 
+    /// <summary>
+    /// Removes the registration a handle owns. The stored instance must be the one the handle was
+    /// created for, otherwise a stale handle disposed after a re-registration would deregister a
+    /// live channel that merely reuses the id (#117).
+    /// </summary>
     private void Remove(string workspaceKey, ICommunicationChannel channel)
     {
-        bool removed;
+        var removed = false;
         lock (_gate)
         {
-            removed = _byWorkspace.TryGetValue(workspaceKey, out var channels) &&
-                      channels.Remove(channel.ChannelId);
-            if (removed && _byWorkspace[workspaceKey].Count == 0)
+            if (_byWorkspace.TryGetValue(workspaceKey, out var channels) &&
+                channels.TryGetValue(channel.ChannelId, out var stored) &&
+                ReferenceEquals(stored, channel))
             {
-                _byWorkspace.Remove(workspaceKey);
+                channels.Remove(channel.ChannelId);
+                removed = true;
+
+                if (channels.Count == 0)
+                {
+                    _byWorkspace.Remove(workspaceKey);
+                }
             }
         }
 

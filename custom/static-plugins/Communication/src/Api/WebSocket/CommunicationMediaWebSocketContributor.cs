@@ -17,19 +17,26 @@ public sealed class CommunicationMediaWebSocketContributor : IHostWebSocketEndpo
     private readonly IReadOnlyList<HostWebSocketRouteRegistration> _routes;
 
     /// <summary>Wires the media route with its connect-token authorizer and bridge handler.</summary>
+    /// <param name="sessionStore">Resolves and consumes the minted session.</param>
+    /// <param name="audioStreamProvider">Opens the live call's audio.</param>
+    /// <param name="connections">
+    /// Tracks the accepted sockets by call so ending the call aborts them (#114).
+    /// </param>
     public CommunicationMediaWebSocketContributor(
         IMediaStreamSessionStore sessionStore,
-        ICallAudioStreamProvider audioStreamProvider)
+        ICallAudioStreamProvider audioStreamProvider,
+        MediaStreamConnectionRegistry connections)
     {
         ArgumentNullException.ThrowIfNull(sessionStore);
         ArgumentNullException.ThrowIfNull(audioStreamProvider);
+        ArgumentNullException.ThrowIfNull(connections);
 
         _routes =
         [
             new HostWebSocketRouteRegistration(
                 RouteTemplate,
                 new MediaStreamConnectTokenAuthorizer(sessionStore),
-                new MediaStreamWebSocketHandler(sessionStore, audioStreamProvider))
+                new MediaStreamWebSocketHandler(sessionStore, audioStreamProvider, connections))
         ];
     }
 

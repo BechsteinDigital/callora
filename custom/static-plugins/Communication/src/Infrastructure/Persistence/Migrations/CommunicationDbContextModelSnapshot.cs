@@ -41,6 +41,9 @@ namespace Callora.Plugin.Communication.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<DateTimeOffset?>("LastRegisteredAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("LastStatusChangeAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -66,7 +69,11 @@ namespace Callora.Plugin.Communication.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Callora.Plugin.Communication.Domain.Calls.CallLog", b =>
                 {
+                    b.Property<Guid>("RecordId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Id")
+                        .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
@@ -100,10 +107,6 @@ namespace Callora.Plugin.Communication.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("LineId")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
                     b.Property<string>("LocalIdentity")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -127,57 +130,19 @@ namespace Callora.Plugin.Communication.Infrastructure.Persistence.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
-                    b.HasKey("Id");
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid");
+
+                    b.HasKey("RecordId");
 
                     b.HasIndex("WorkspaceKey", "StartedAt");
 
+                    b.HasIndex("WorkspaceKey", "AccountId", "Id")
+                        .IsUnique();
+
                     b.ToTable("call_logs", "plugin_communication");
-                });
-
-            modelBuilder.Entity("Callora.Plugin.Communication.Domain.Lines.SipLine", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("AccountId")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<bool>("Enabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("InboundRoutingTarget")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("PrimaryNumber")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("SipUri")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("WorkspaceKey")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WorkspaceKey");
-
-                    b.HasIndex("WorkspaceKey", "AccountId");
-
-                    b.ToTable("sip_lines", "plugin_communication");
                 });
 
             modelBuilder.Entity("Callora.Plugin.Communication.Domain.Streaming.MediaStreamSession", b =>
@@ -294,16 +259,6 @@ namespace Callora.Plugin.Communication.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Callora.Plugin.Communication.Domain.Lines.SipLine", b =>
-                {
-                    b.HasOne("Callora.Plugin.Communication.Domain.Accounts.SipAccount", null)
-                        .WithMany()
-                        .HasForeignKey("WorkspaceKey", "AccountId")
-                        .HasPrincipalKey("WorkspaceKey", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Callora.Plugin.Communication.Domain.Streaming.MediaStreamSession", b =>
                 {
                     b.OwnsOne("Callora.Plugin.Communication.Abstractions.AudioFormat", "Format", b1 =>
@@ -336,6 +291,51 @@ namespace Callora.Plugin.Communication.Infrastructure.Persistence.Migrations
                     b.Navigation("Format")
                         .IsRequired();
                 });
+
+            modelBuilder.Entity("Callora.Plugin.Communication.Domain.Calls.CallEventOutboxEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkspaceKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OccurredAt");
+
+                    b.HasIndex("DeliveredAt", "NextAttemptAt");
+
+                    b.ToTable("call_event_outbox", "plugin_communication");
+                });
+
 #pragma warning restore 612, 618
         }
     }

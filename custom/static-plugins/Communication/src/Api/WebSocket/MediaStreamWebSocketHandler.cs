@@ -8,13 +8,19 @@ namespace Callora.Plugin.Communication.Api.WebSocket;
 
 /// <summary>
 /// Services an accepted media WebSocket: resolves the (already-authorized) session from the
-/// connection subject, opens the call's audio stream and runs the <see cref="MediaBridge"/>. When
-/// no live call exists yet (B5) it emits a <c>stop</c> and closes cleanly. The session is marked
-/// <see cref="MediaStreamSessionStatus.Closed"/> when the socket ends.
+/// connection subject, opens the call's audio stream and runs the <see cref="MediaBridge"/> under the
+/// session's direction. When no live call exists yet (B5) it emits a <c>stop</c> and closes cleanly.
+/// The session is marked <see cref="MediaStreamSessionStatus.Closed"/> when the socket ends.
+/// <para>
+/// While the bridge runs, the socket is registered against its call so ending the call aborts it
+/// (#114). Without that registration a hang-up would close the audio path but leave the consumer's
+/// socket open on a conversation that no longer exists.
+/// </para>
 /// </summary>
 public sealed class MediaStreamWebSocketHandler(
     IMediaStreamSessionStore sessionStore,
-    ICallAudioStreamProvider audioStreamProvider) : IHostWebSocketHandler
+    ICallAudioStreamProvider audioStreamProvider,
+    MediaStreamConnectionRegistry connections) : IHostWebSocketHandler
 {
     /// <inheritdoc />
     public async Task HandleAsync(HostWebSocketConnection connection, CancellationToken cancellationToken = default)
@@ -55,7 +61,18 @@ public sealed class MediaStreamWebSocketHandler(
                 EncodingLabel(session.Format.Codec),
                 session.Format.SampleRateHz);
 
-            await new MediaBridge(scopedAudio, channel).RunAsync(start, cancellationToken).ConfigureAwait(false);
+            // Linked so both stop the bridge: the request ending (the consumer disconnects) and the
+            // call ending (the terminator aborts what it finds registered).
+            using var abort = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            using var registration = connections.Register(session.CallId, session.Id, abort);
+
+            await new MediaBridge(scopedAudio, channel, session.Direction)
+                .RunAsync(start, abort.Token)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // The call ended or the consumer disconnected; the finally below records the close.
         }
         finally
         {

@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Callora.Core.Application.Flows.Contracts;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Tests.Communication.Sdk;
 using Callora.Plugin.Communication;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Api.WebSocket;
+using Callora.Plugin.Communication.Application.Flows;
+using Callora.Plugin.Communication.Application.Streaming;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Xunit;
@@ -67,6 +70,104 @@ public sealed class CommunicationPluginWiringTests
         Assert.Equal(
             [new RuntimeCapabilityGrant(CommunicationCapabilities.Voice, "ws-1")],
             source.CurrentGrants);
+    }
+
+    [Fact]
+    public async Task StartAsync_WithDbFactory_ExposesTheMediaTicketRoute()
+    {
+        // The media socket used to have no production caller at all (#114): the endpoint existed,
+        // but nothing minted the ticket that opens it.
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        Assert.True(
+            context.AllExports.Any(e => e.ContractType == typeof(IMediaStreamSessionMinter)),
+            "IMediaStreamSessionMinter should be exported for in-process consumers.");
+        var contributor = (IHostAdminApiExtensionContributor)context.Exports[typeof(IHostAdminApiExtensionContributor)];
+        Assert.Contains(
+            contributor.Routes,
+            r => r is { HttpMethod: "POST", RouteTemplate: "calls/{callId}/media-streams" });
+    }
+
+    [Fact]
+    public async Task StartAsync_WithDbFactory_ContributesTheCallControlFlowActions()
+    {
+        // The flow actions existed only in the archived plugin, reaching for the provider's call
+        // object; they are back over the call-control primitive (#116).
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        var actionTypes = context.AllExports
+            .Where(e => e.ContractType == typeof(IFlowActionHandler))
+            .Select(e => ((IFlowActionHandler)e.Service).Type)
+            .ToArray();
+
+        Assert.Equal(
+            [
+                CallFlowActionTypes.Accept,
+                CallFlowActionTypes.Reject,
+                CallFlowActionTypes.Hangup,
+                CallFlowActionTypes.SendDtmf,
+            ],
+            actionTypes);
+    }
+
+    [Fact]
+    public async Task StartAsync_WithoutDbFactory_ContributesNoFlowActions()
+    {
+        // Without call control there is no call for an action to act on.
+        var context = new CapturingHostPluginContext(hasDbFactory: false);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        Assert.DoesNotContain(context.AllExports, e => e.ContractType == typeof(IFlowActionHandler));
+    }
+
+    [Fact]
+    public async Task StartAsync_WithDbFactory_ExposesTheCallEventStream()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        Assert.Contains(context.AllExports, e => e.Service is CommunicationCallEventContributor);
+        var contributor = (IHostAdminApiExtensionContributor)context.Exports[typeof(IHostAdminApiExtensionContributor)];
+        Assert.Contains(
+            contributor.Routes,
+            r => r is { HttpMethod: "POST", RouteTemplate: "calls/event-stream" });
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenWebRtcDisabled_ExposesNoWebRtcSessionRoute()
+    {
+        // A route that can never succeed reads as a capability the deployment does not have.
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        var contributor = (IHostAdminApiExtensionContributor)context.Exports[typeof(IHostAdminApiExtensionContributor)];
+        Assert.DoesNotContain(contributor.Routes, r => r.RouteTemplate == "webrtc/sessions");
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenWebRtcEnabled_ExposesTheWebRtcSessionRoute()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [CommunicationPlugin.WebRtcEnabledConfigKey] = "true",
+            })
+            .Build();
+        var context = new CapturingHostPluginContext(hasDbFactory: true, configuration: config);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        var contributor = (IHostAdminApiExtensionContributor)context.Exports[typeof(IHostAdminApiExtensionContributor)];
+        Assert.Contains(
+            contributor.Routes,
+            r => r is { HttpMethod: "POST", RouteTemplate: "webrtc/sessions" });
     }
 
     [Fact]

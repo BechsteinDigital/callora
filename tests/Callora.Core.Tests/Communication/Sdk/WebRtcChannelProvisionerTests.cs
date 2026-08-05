@@ -33,9 +33,14 @@ public sealed class WebRtcChannelProvisionerTests
 
         provisioner.GetOrCreateChannel("ws-1");
 
+        // The WebRTC surface and the conference surface ride the same client and the same NAT
+        // traversal, so both are registered together; the conference one is what makes
+        // communication.video satisfiable (#115).
         var channels = registry.GetChannels("ws-1");
-        Assert.Single(channels);
-        Assert.Contains(CommunicationCapabilities.Voice, channels[0].Capabilities);
+        Assert.Equal(2, channels.Count);
+        Assert.Contains(channels, x => x.Capabilities.Contains(CommunicationCapabilities.Voice));
+        Assert.Contains(channels, x => x.Capabilities.Contains(CommunicationCapabilities.WebRtc));
+        Assert.Contains(channels, x => x.Capabilities.Contains(CommunicationCapabilities.Video));
     }
 
     [Fact]
@@ -49,7 +54,7 @@ public sealed class WebRtcChannelProvisionerTests
         var second = provisioner.GetOrCreateChannel("ws-1");
 
         Assert.Same(first, second);
-        Assert.Single(registry.GetChannels("ws-1"));
+        Assert.Equal(2, registry.GetChannels("ws-1").Count);
     }
 
     [Fact]
@@ -63,8 +68,8 @@ public sealed class WebRtcChannelProvisionerTests
         var chB = provisioner.GetOrCreateChannel("ws-b");
 
         Assert.NotSame(chA, chB);
-        Assert.Single(registry.GetChannels("ws-a"));
-        Assert.Single(registry.GetChannels("ws-b"));
+        Assert.Equal(2, registry.GetChannels("ws-a").Count);
+        Assert.Equal(2, registry.GetChannels("ws-b").Count);
     }
 
     [Fact]

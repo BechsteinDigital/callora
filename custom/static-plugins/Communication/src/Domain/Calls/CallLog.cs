@@ -10,10 +10,10 @@ namespace Callora.Plugin.Communication.Domain.Calls;
 public sealed class CallLog
 {
     private CallLog(
+        Guid recordId,
         string id,
         string workspaceKey,
         string? accountId,
-        string? lineId,
         CallDirection direction,
         string remoteParty,
         string localIdentity,
@@ -21,10 +21,10 @@ public sealed class CallLog
         string? correlationId,
         DateTimeOffset startedAt)
     {
+        RecordId = recordId;
         Id = id;
         WorkspaceKey = workspaceKey;
         AccountId = accountId;
-        LineId = lineId;
         Direction = direction;
         RemoteParty = remoteParty;
         LocalIdentity = localIdentity;
@@ -39,7 +39,6 @@ public sealed class CallLog
         string id,
         string workspaceKey,
         string? accountId,
-        string? lineId,
         CallDirection direction,
         string remoteParty,
         string localIdentity,
@@ -53,11 +52,25 @@ public sealed class CallLog
         ArgumentException.ThrowIfNullOrWhiteSpace(localIdentity);
 
         return new CallLog(
-            id, workspaceKey, accountId, lineId, direction, remoteParty, localIdentity,
-            handledBy, correlationId, startedAt);
+            Guid.CreateVersion7(), id, workspaceKey, accountId, direction, remoteParty,
+            localIdentity, handledBy, correlationId, startedAt);
     }
 
-    /// <summary>Stable identifier.</summary>
+    /// <summary>
+    /// Primary key of the history record, independent of any provider identifier (#113).
+    /// <para>
+    /// <see cref="Id"/> used to be the key, but a provider's call id is unique only inside its
+    /// own channel: two channels reporting the same id collided on insert, so the second, entirely
+    /// legitimate call could not be recorded. Version 7 so the key sorts by creation time and
+    /// index inserts stay sequential.
+    /// </para>
+    /// </summary>
+    public Guid RecordId { get; }
+
+    /// <summary>
+    /// The provider's call id. Unique within its channel, not globally, which is why it is no
+    /// longer the primary key. This is the id consumers name in call-control calls.
+    /// </summary>
     public string Id { get; }
 
     /// <summary>Owning workspace.</summary>
@@ -65,9 +78,6 @@ public sealed class CallLog
 
     /// <summary>Account the call ran on (when known).</summary>
     public string? AccountId { get; }
-
-    /// <summary>Line the call ran on (when known).</summary>
-    public string? LineId { get; }
 
     /// <summary>Call direction.</summary>
     public CallDirection Direction { get; }

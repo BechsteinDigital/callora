@@ -41,17 +41,41 @@ public sealed class CommunicationMcpToolContributor : IMcpToolContributor
             CommunicationPermissionKeys.CallsManage,
             PlaceCallAsync),
         new McpToolRegistration(
+            "accept_call",
+            "Answers a ringing inbound call owned by the workspace.",
+            CallIdSchema,
+            CommunicationPermissionKeys.CallsManage,
+            AcceptCallAsync),
+        new McpToolRegistration(
+            "reject_call",
+            "Turns away a ringing inbound call owned by the workspace.",
+            CallIdSchema,
+            CommunicationPermissionKeys.CallsManage,
+            RejectCallAsync),
+        new McpToolRegistration(
+            "send_dtmf",
+            "Sends keypad tones to the remote party of a live call, for example to navigate an IVR menu.",
+            SendDtmfSchema,
+            CommunicationPermissionKeys.CallsManage,
+            SendDtmfAsync),
+        new McpToolRegistration(
             "hangup_call",
             "Ends a live call owned by the workspace.",
-            HangupCallSchema,
+            CallIdSchema,
             CommunicationPermissionKeys.CallsManage,
             HangupCallAsync),
         new McpToolRegistration(
             "get_call",
             "Returns a snapshot of a live call owned by the workspace, or a not-found marker.",
-            GetCallSchema,
+            CallIdSchema,
             CommunicationPermissionKeys.CallsRead,
             GetCall),
+        new McpToolRegistration(
+            "list_active_calls",
+            "Lists the calls the workspace has in flight right now.",
+            ListActiveCallsSchema,
+            CommunicationPermissionKeys.CallsRead,
+            ListActiveCalls),
         new McpToolRegistration(
             "list_recent_calls",
             "Lists the workspace's most recent recorded calls, newest first.",
@@ -85,18 +109,71 @@ public sealed class CommunicationMcpToolContributor : IMcpToolContributor
         }
     }
 
+    // accept_call: {callId (required)} → { accepted: bool }. A call that cannot be answered in its
+    // current state is a tool error, not a false — an agent needs to know it asked the wrong thing.
+    private Task<McpToolResult> AcceptCallAsync(McpToolInvocation invocation, CancellationToken cancellationToken) =>
+        RunCallOperationAsync(
+            invocation,
+            "accepted",
+            (workspaceKey, callId) => _callControl.AcceptAsync(workspaceKey, callId, cancellationToken));
+
+    // reject_call: {callId (required)} → { rejected: bool }.
+    private Task<McpToolResult> RejectCallAsync(McpToolInvocation invocation, CancellationToken cancellationToken) =>
+        RunCallOperationAsync(
+            invocation,
+            "rejected",
+            (workspaceKey, callId) => _callControl.RejectAsync(workspaceKey, callId, cancellationToken));
+
+    // send_dtmf: {callId, tones (both required)} → { sent: bool }.
+    private Task<McpToolResult> SendDtmfAsync(McpToolInvocation invocation, CancellationToken cancellationToken)
+    {
+        if (!TryGetRequiredString(invocation.Arguments, "tones", out var tones))
+        {
+            return Task.FromResult(McpToolResult.Error("'tones' is required and must be a non-empty string."));
+        }
+
+        return RunCallOperationAsync(
+            invocation,
+            "sent",
+            (workspaceKey, callId) => _callControl.SendDtmfAsync(workspaceKey, callId, tones, cancellationToken));
+    }
+
     // hangup_call: {callId (required)} → { hungUp: bool } reflecting whether a live call was ended.
-    private async Task<McpToolResult> HangupCallAsync(McpToolInvocation invocation, CancellationToken cancellationToken)
+    private Task<McpToolResult> HangupCallAsync(McpToolInvocation invocation, CancellationToken cancellationToken) =>
+        RunCallOperationAsync(
+            invocation,
+            "hungUp",
+            (workspaceKey, callId) => _callControl.HangupAsync(workspaceKey, callId, cancellationToken));
+
+    // list_active_calls: {} → CallView[] of everything in flight.
+    private Task<McpToolResult> ListActiveCalls(McpToolInvocation invocation, CancellationToken cancellationToken) =>
+        Task.FromResult(McpToolResult.Json(
+            _callControl.ListActive(invocation.WorkspaceKey).Select(CallView.From).ToArray()));
+
+    /// <summary>
+    /// The shape the four call-control tools share: require a call id, run the operation, and report
+    /// its boolean outcome under <paramref name="outcomeName"/>. A rejected state transition or an
+    /// invalid argument surfaces as a tool error rather than crossing the transport boundary.
+    /// </summary>
+    private static async Task<McpToolResult> RunCallOperationAsync(
+        McpToolInvocation invocation,
+        string outcomeName,
+        Func<string, string, Task<bool>> operation)
     {
         if (!TryGetRequiredString(invocation.Arguments, "callId", out var callId))
         {
             return McpToolResult.Error("'callId' is required and must be a non-empty string.");
         }
 
-        var hungUp = await _callControl
-            .HangupAsync(invocation.WorkspaceKey, callId, cancellationToken)
-            .ConfigureAwait(false);
-        return McpToolResult.Json(new { hungUp });
+        try
+        {
+            var outcome = await operation(invocation.WorkspaceKey, callId).ConfigureAwait(false);
+            return McpToolResult.Json(new Dictionary<string, object> { [outcomeName] = outcome });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            return McpToolResult.Error(ex.Message);
+        }
     }
 
     // get_call: {callId (required)} → CallView, or { found: false } when the call is not tracked.
@@ -192,26 +269,41 @@ public sealed class CommunicationMcpToolContributor : IMcpToolContributor
         required = new[] { "to" },
     });
 
-    private static readonly JsonElement HangupCallSchema = SerializeSchema(new
+    // Shared by every tool that names one call and nothing else.
+    private static readonly JsonElement CallIdSchema = SerializeSchema(new
     {
         type = "object",
         properties = new
         {
-            callId = new { type = "string", description = "Identifier of the live call to end." },
+            callId = new { type = "string", description = "Identifier of the call to act on." },
             workspaceKey = WorkspaceKeyProperty,
         },
         required = new[] { "callId" },
     });
 
-    private static readonly JsonElement GetCallSchema = SerializeSchema(new
+    private static readonly JsonElement SendDtmfSchema = SerializeSchema(new
     {
         type = "object",
         properties = new
         {
-            callId = new { type = "string", description = "Identifier of the call to look up." },
+            callId = new { type = "string", description = "Identifier of the live call to send tones on." },
+            tones = new
+            {
+                type = "string",
+                description = "Tones to send in order, e.g. \"123#\". Accepts 0-9, *, # and A-D; at most 32.",
+            },
             workspaceKey = WorkspaceKeyProperty,
         },
-        required = new[] { "callId" },
+        required = new[] { "callId", "tones" },
+    });
+
+    private static readonly JsonElement ListActiveCallsSchema = SerializeSchema(new
+    {
+        type = "object",
+        properties = new
+        {
+            workspaceKey = WorkspaceKeyProperty,
+        },
     });
 
     private static readonly JsonElement ListRecentCallsSchema = SerializeSchema(new

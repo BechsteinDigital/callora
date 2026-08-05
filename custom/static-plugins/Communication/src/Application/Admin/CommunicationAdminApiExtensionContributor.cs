@@ -11,16 +11,15 @@ public sealed class CommunicationAdminApiExtensionContributor : IHostAdminApiExt
 {
     private readonly IReadOnlyList<HostAdminApiRouteRegistration> _routes;
 
-    /// <summary>Creates the contributor with the status route only (no persistence).</summary>
-    public CommunicationAdminApiExtensionContributor()
-        : this([])
-    {
-    }
-
     /// <summary>Creates the contributor with the status route plus the given account routes.</summary>
-    public CommunicationAdminApiExtensionContributor(IReadOnlyList<HostAdminApiRouteRegistration> accountRoutes)
+    /// <param name="accountRoutes">SIP-account and call-control routes, empty without persistence.</param>
+    /// <param name="readinessProbe">Backs the status route's dependency aggregate (#112).</param>
+    public CommunicationAdminApiExtensionContributor(
+        IReadOnlyList<HostAdminApiRouteRegistration> accountRoutes,
+        CommunicationReadinessProbe readinessProbe)
     {
         ArgumentNullException.ThrowIfNull(accountRoutes);
+        ArgumentNullException.ThrowIfNull(readinessProbe);
 
         _routes =
         [
@@ -31,7 +30,7 @@ public sealed class CommunicationAdminApiExtensionContributor : IHostAdminApiExt
                 "GET",
                 "status",
                 CommunicationPermissionKeys.AccountsRead,
-                new CommunicationStatusRouteHandler(),
+                new CommunicationStatusRouteHandler(readinessProbe),
                 HostAdminApiRouteScope.Global),
             .. accountRoutes,
         ];

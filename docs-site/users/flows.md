@@ -11,7 +11,7 @@ A **Flow** is an automation bound to one business event. It has:
 
 - a **name**;
 - a **trigger event** — the business event name it listens for (for example
-  `call.incoming` or `workspace.created`);
+  `call.ringing` or `workspace.created`);
 - **conditions** — a **Rule**: a JSON tree of boolean logic that gates whether
   the flow runs (no conditions means "always");
 - **actions** — an ordered JSON list of steps to run when the conditions pass;
@@ -45,19 +45,29 @@ types available to you therefore depend on which plugins are installed.
 The **Communication** plugin contributes the call-control actions that make call
 routing work:
 
-- `call.accept` — answer an incoming call
-- `call.reject` — reject an incoming call
-- `call.hangup` — end a call
-- `audio.play` — play an audio prompt (when a media library is available)
+- `call.accept` — answer the ringing inbound call the event names
+- `call.reject` — turn it away instead
+- `call.hangup` — end the call the event names, in whatever state it is
+- `call.dtmf` — send keypad tones on it (`tones` parameter, e.g. `"123#"`)
+
+Each action reads the call from the triggering event's `callId` field and runs
+through the same call-control primitive the Admin API and MCP tools use, so a
+rule that answers a call produces exactly the record an operator's click would
+have. An action that finds no live call fails loudly rather than passing
+silently — a call that ended between the trigger and the action is the normal
+race, and a flow author should see it.
+
+Playing audio into a call is not implemented; there is no media library to play
+from yet.
 
 ## Call-routing example
 
-A flow that auto-answers calls at night and plays a greeting, conceptually:
+A flow that auto-answers calls at night:
 
 ```json
 {
   "name": "Auto-answer calls at night",
-  "triggerEvent": "call.incoming",
+  "triggerEvent": "call.ringing",
   "conditions": {
     "type": "and",
     "children": [
@@ -65,16 +75,14 @@ A flow that auto-answers calls at night and plays a greeting, conceptually:
     ]
   },
   "actions": [
-    { "type": "call.accept", "params": {} },
-    { "type": "audio.play", "params": { "audioUrl": "https://…" } }
+    { "type": "call.accept", "params": {} }
   ],
   "priority": 10
 }
 ```
 
-The condition names and parameters above illustrate the shape; the exact leaf
-types and action parameters available depend on the host and installed plugin
-versions.
+The condition names above illustrate the shape; the exact leaf types available
+depend on the host and installed plugin versions.
 
 ## Where flows are managed
 
