@@ -300,6 +300,14 @@ alles andere wird auf `/` reduziert, sonst wäre die Einlöse-Route ein Open Red
 Das Ausstellen verlangt einen passenden `Origin`, denn ein Cross-Site-POST würde am
 Cookie des Besuchers mitfahren.
 
+Die Einlösung ist ein GET, der Zustand ändert. Wer die URL stellvertretend abruft —
+ein Prefetcher, ein Link-Scanner in Mail oder Chat — zerstört das Ticket, bevor der
+Besucher ankommt. Abgelehnt wird deshalb, wer sich als spekulativ zu erkennen gibt
+(`Sec-Purpose`/`Purpose`/`X-Purpose`/`X-Moz` mit `prefetch`). Ein positives
+Navigationssignal zu verlangen wäre die falsche Richtung: das sperrt jeden Client
+aus, der gar keine `Sec-Fetch`-Header schickt. Handoff-URLs bleiben Redirect-Ziele,
+keine verschickbaren Links.
+
 ### 8.5 Origin-Prüfung an cookie-getragenen Nahtstellen
 
 Ein Browser hängt Cookies an einen WebSocket-Handshake und an einen Cross-Site-POST,

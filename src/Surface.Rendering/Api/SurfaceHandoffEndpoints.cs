@@ -94,6 +94,15 @@ public static class SurfaceHandoffEndpoints
         SurfaceSessionCookieAccessor cookies,
         CancellationToken cancellationToken)
     {
+        // Redemption is a GET that consumes a one-time ticket, so anything fetching
+        // the URL on the visitor's behalf destroys it before they arrive. Only clients
+        // that announce themselves are refused: requiring a positive navigation signal
+        // instead would lock out every client that sends no Sec-Fetch headers at all.
+        if (IsPrefetch(httpContext))
+        {
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+        }
+
         var host = httpContext.Request.Host.Host;
         var redemption = await handoff.RedeemAsync(ticket, host, cancellationToken).ConfigureAwait(false);
         if (redemption.Status != SurfaceHandoffStatus.Ok ||
@@ -132,6 +141,23 @@ public static class SurfaceHandoffEndpoints
                !trimmed.Contains('\\', StringComparison.Ordinal)
             ? trimmed
             : "/";
+    }
+
+    // Sec-Purpose is the current spelling, Purpose/X-Purpose the one Chrome and some
+    // link scanners still send. A request that says it is speculative is taken at its
+    // word; one that says nothing is treated as a real visit.
+    private static bool IsPrefetch(HttpContext httpContext)
+    {
+        foreach (var header in (ReadOnlySpan<string>)["Sec-Purpose", "Purpose", "X-Purpose", "X-Moz"])
+        {
+            if (httpContext.Request.Headers.TryGetValue(header, out var value) &&
+                value.ToString().Contains("prefetch", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsSameOrigin(HttpContext httpContext, string host)
