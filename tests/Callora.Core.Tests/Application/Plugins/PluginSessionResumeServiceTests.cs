@@ -2,8 +2,9 @@ using Callora.Core.Application.Options;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Security;
-using Callora.Core.Tests.Support;
+using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.DataProtection;
+using Callora.Core.Tests.Support;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
@@ -50,9 +51,10 @@ public sealed class PluginSessionResumeServiceTests
     {
         var store = new InMemorySessionResumeTicketStore();
         var clock = new FakeTimeProvider(Now);
-        var protection = new EphemeralDataProtectionProvider();
-        var mine = NewService(store, clock, "videoconference", protection).Service;
-        var theirs = NewService(store, clock, "communication", protection).Service;
+        // One protector shared by both, or the cross-plugin test would pass for the wrong reason.
+        var protector = NewProtector();
+        var mine = NewService(store, clock, "videoconference", protector).Service;
+        var theirs = NewService(store, clock, "communication", protector).Service;
         var ticket = await mine.IssueAsync("conference", "p", TimeSpan.FromMinutes(5));
 
         Assert.Null(await theirs.RedeemAsync(ticket.Token));
@@ -169,18 +171,21 @@ public sealed class PluginSessionResumeServiceTests
         Assert.Null((await service.RedeemAsync(without.Token))!.WorkspaceKey);
     }
 
+    private static IPluginPayloadProtector NewProtector() =>
+        new DataProtectionPluginPayloadProtector(new EphemeralDataProtectionProvider());
+
     private static (IHostSessionResumeService Service, InMemorySessionResumeTicketStore Store, FakeTimeProvider Clock)
         NewService(
             InMemorySessionResumeTicketStore? store = null,
             FakeTimeProvider? clock = null,
             string pluginId = "videoconference",
-            IDataProtectionProvider? protection = null)
+            IPluginPayloadProtector? protector = null)
     {
         store ??= new InMemorySessionResumeTicketStore();
         clock ??= new FakeTimeProvider(Now);
         return (
             new PluginSessionResumeService(
-                store, protection ?? new EphemeralDataProtectionProvider(), clock, new CalloraHostingOptions(), pluginId),
+                store, protector ?? NewProtector(), clock, new CalloraHostingOptions(), pluginId),
             store,
             clock);
     }

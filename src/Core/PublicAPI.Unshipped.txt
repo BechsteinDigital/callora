@@ -2038,6 +2038,9 @@ Callora.Core.Application.Plugins.IPluginPackageRegistryReader
 Callora.Core.Application.Plugins.IPluginPackageRegistryReader.ReadForAssemblyAsync(string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.PluginPackageRegistryReadResult!>
 Callora.Core.Application.Plugins.IPluginPackageSignatureVerifier
 Callora.Core.Application.Plugins.IPluginPackageSignatureVerifier.VerifyAsync(string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult!>
+Callora.Core.Application.Plugins.IPluginPayloadProtector
+Callora.Core.Application.Plugins.IPluginPayloadProtector.Protect(string! pluginId, string! payload) -> string!
+Callora.Core.Application.Plugins.IPluginPayloadProtector.TryUnprotect(string! pluginId, string! protectedPayload, out string! payload) -> bool
 Callora.Core.Application.Plugins.IPluginSignatureTrustStore
 Callora.Core.Application.Plugins.IPluginSignatureTrustStore.GetTrustedSigners() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.TrustedPluginSigner!>!
 Callora.Core.Application.Plugins.IPluginSignatureTrustStore.IsTrusted(string? signerThumbprint) -> bool
@@ -5015,6 +5018,10 @@ Callora.Core.Infrastructure.Security.DataProtectionPluginDataProtector
 Callora.Core.Infrastructure.Security.DataProtectionPluginDataProtector.DataProtectionPluginDataProtector(Microsoft.AspNetCore.DataProtection.IDataProtectionProvider! dataProtectionProvider) -> void
 Callora.Core.Infrastructure.Security.DataProtectionPluginDataProtector.Protect(string! pluginId, string! plaintext) -> string!
 Callora.Core.Infrastructure.Security.DataProtectionPluginDataProtector.TryUnprotect(string! pluginId, string! protectedValue, out string! plaintext) -> bool
+Callora.Core.Infrastructure.Security.DataProtectionPluginPayloadProtector
+Callora.Core.Infrastructure.Security.DataProtectionPluginPayloadProtector.DataProtectionPluginPayloadProtector(Microsoft.AspNetCore.DataProtection.IDataProtectionProvider! dataProtectionProvider) -> void
+Callora.Core.Infrastructure.Security.DataProtectionPluginPayloadProtector.Protect(string! pluginId, string! payload) -> string!
+Callora.Core.Infrastructure.Security.DataProtectionPluginPayloadProtector.TryUnprotect(string! pluginId, string! protectedPayload, out string! payload) -> bool
 Callora.Core.Infrastructure.Security.DataProtectionSurfaceSessionCookieCodec
 Callora.Core.Infrastructure.Security.DataProtectionSurfaceSessionCookieCodec.DataProtectionSurfaceSessionCookieCodec(Microsoft.AspNetCore.DataProtection.IDataProtectionProvider! dataProtectionProvider) -> void
 Callora.Core.Infrastructure.Security.DataProtectionSurfaceSessionCookieCodec.Protect(Callora.Core.Application.Surfaces.SurfaceSessionEnvelope! envelope) -> string!
