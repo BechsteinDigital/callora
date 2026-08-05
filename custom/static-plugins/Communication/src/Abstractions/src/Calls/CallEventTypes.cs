@@ -18,9 +18,7 @@ public static class CallEventTypes
     /// <summary>Call ended.</summary>
     public const string Ended = "call.ended";
 
-    /// <summary>Recording consent was granted (PLAT-241).</summary>
-    public const string ConsentGranted = "call.consent-granted";
-
-    /// <summary>Recording consent was denied (PLAT-241).</summary>
-    public const string ConsentDenied = "call.consent-denied";
+    // Recording-consent events lived here without anything ever raising them, because recording
+    // itself is not implemented (#116). A published event name is a promise consumers can match on;
+    // they come back with the feature that produces them.
 }

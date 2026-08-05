@@ -17,36 +17,34 @@ The Communication plugin (`custom/static-plugins/Communication`) is a
 - **Live calls** — a call moves through `Connecting`, `Ringing`, `Connected`,
   and `Terminated`, and emits business events (`call.ringing`, `call.placed`,
   `call.state-changed`, `call.ended`) onto the platform event bus.
-- **A workspace dialer** — a browser UI to place outbound calls (optionally
-  choosing a channel), answer or reject incoming calls, send DTMF digits, and
-  hang up, with call state streamed live.
-- **Call-control actions for Flows** — accept, reject, hang up, and (where a
-  media library is available) play audio, so calls can be routed automatically.
-  See [Flows](flows.md).
-- **Recording-consent handling** — an optional per-call consent flow
-  (`NotRequested` / `Pending` / `Granted` / `Denied`), typically driven by DTMF,
-  to support recording-consent requirements.
+- **Call control** — place, answer, reject, send DTMF and hang up, over one
+  primitive that the Admin API, MCP tools and Flow actions all share. Whichever
+  face is used, the same workspace ownership check, the same state machine and
+  the same history writes apply.
+- **A live event stream** — a WebSocket carrying the workspace's call
+  transitions as they happen, so a dialer lights up while the phone is still
+  ringing.
+- **Call-control actions for Flows** — `call.accept`, `call.reject`,
+  `call.hangup` and `call.dtmf`, so calls can be routed automatically. See
+  [Flows](flows.md).
 
 Completed calls are logged to the plugin's own `plugin_communication` database
 schema.
 
-### The Dialer plugin
-
-A separate, dynamically installable **Dialer** plugin
-(`custom/plugins/Dialer`, `pluginId: dialer`) builds on Communication: it
-declares `requiresCapabilities: ["communication.voice"]` and uses the channel
-registry to dial workspace numbers. It only works where the Communication plugin
-is installed and active.
+**Not implemented:** call recording, and with it recording-consent handling.
+Recording needs storage, a retention policy and consent enforcement before it can
+be offered, and none of those exist yet — so the plugin does not advertise a
+recording capability. There is no separate Dialer plugin either; call control
+lives in Communication itself.
 
 ## Where it appears
 
-- **End users** work in the **workspace surface** — the calls page (dialer,
-  incoming-call accept/reject, active-call list with DTMF and hangup, live event
-  stream). This is served through a workspace surface, so it needs an
-  `Authenticated` (or `Mixed`) surface with a signed-in user. See
-  [Workspaces & Surfaces](workspaces-surfaces.md).
-- **Calls API** — the plugin exposes `/api/calls` (and a live events stream) for
-  the workspace UI and integrations.
+- **Operators** work in the **admin shell** — the plugin's Communication page
+  carries the dialer: place a call, answer or reject a ringing one, send DTMF and
+  hang up, with the active-call list following the live event stream.
+- **Integrations** use the plugin's Admin API under
+  `/api/ext/admin/plugins/communication/…` and the same operations as MCP tools.
+  Both are workspace-scoped and permission-checked by the host.
 
 ## Enabling it per workspace
 
@@ -110,6 +108,66 @@ granted, and is gated again when the channel behind it goes unhealthy or is dere
 The WebRTC and conference channels are provisioned per workspace the first time that
 workspace's WebRTC surface is used, so their capabilities appear then rather than at plugin
 start.
+
+### Controlling a call
+
+Every call operation is workspace-scoped and reachable three ways — Admin API,
+MCP tool, Flow action — over one primitive:
+
+| Operation | Admin API | MCP tool | Flow action |
+|---|---|---|---|
+| Place | `POST calls` | `place_call` | — |
+| Answer | `POST calls/{callId}/accept` | `accept_call` | `call.accept` |
+| Reject | `POST calls/{callId}/reject` | `reject_call` | `call.reject` |
+| Send DTMF | `POST calls/{callId}/dtmf` | `send_dtmf` | `call.dtmf` |
+| Hang up | `POST calls/{callId}/hangup` | `hangup_call` | `call.hangup` |
+| List live | `GET calls/active` | `list_active_calls` | — |
+| List history | `GET calls` | `list_recent_calls` | — |
+
+Every operation that changes a call needs `communication.calls.manage`; reads
+need `communication.calls.read`. One key covers all five control operations
+rather than a key per verb — they all act on the same live conversation.
+
+The three answers a control request can get are distinct on purpose. `404` means
+the workspace has no such live call. `409` means the call is there but the
+request does not apply to its state — answering an outbound call, or one that is
+already connected. `400` means the request itself was malformed, for example a
+DTMF sequence containing something that is not a keypad tone. A sequence with an
+invalid tone is rejected whole, so a bad request never leaves a half-dialled
+call.
+
+### Following calls live
+
+```
+POST /api/ext/admin/plugins/communication/calls/event-stream
+```
+
+returns a single-use ticket and the socket path to redeem it on
+(`/ws/communication/calls/{token}`, two-minute window). The socket then carries
+one JSON frame per transition:
+
+```json
+{
+  "eventName": "call.ringing",
+  "workspaceKey": "ws-a",
+  "callId": "call-1",
+  "direction": "Inbound",
+  "state": "Ringing",
+  "remoteParty": "+49301234567",
+  "occurredAt": "2026-08-05T12:00:00+00:00"
+}
+```
+
+A browser cannot put an Authorization header on a WebSocket handshake, which is
+why the stream is reached through a ticket: the permission check happens on the
+normal authenticated request that mints it.
+
+The stream is best effort and deliberately so. It is filtered to the workspace,
+send-only, and a client that falls too far behind loses its oldest events rather
+than slowing the call down — the current picture is always one
+`GET calls/active` away. Durable delivery is a different path: `call.*` business
+events go through the transactional outbox to flows and webhooks, which survives
+a restart but arrives on a job cadence rather than instantly.
 
 ### Streaming a live call
 
