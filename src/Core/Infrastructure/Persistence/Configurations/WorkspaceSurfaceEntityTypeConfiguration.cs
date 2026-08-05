@@ -28,6 +28,10 @@ public sealed class WorkspaceSurfaceEntityTypeConfiguration : IEntityTypeConfigu
         builder.Property(x => x.ThemeVersion).HasColumnName("theme_version").HasMaxLength(80);
         builder.Property(x => x.ThemeAssignedBy).HasColumnName("theme_assigned_by").HasMaxLength(200);
         builder.Property(x => x.ThemeAssignedAtUtc).HasColumnName("theme_assigned_at_utc");
+        builder.Property(x => x.IdentityPluginId).HasColumnName("identity_plugin_id").HasMaxLength(200);
+        builder.Property(x => x.IdentityVersion).HasColumnName("identity_version").HasMaxLength(80);
+        builder.Property(x => x.IdentityAssignedBy).HasColumnName("identity_assigned_by").HasMaxLength(200);
+        builder.Property(x => x.IdentityAssignedAtUtc).HasColumnName("identity_assigned_at_utc");
         builder.Property(x => x.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc").IsRequired();
         builder.Property(x => x.UpdatedAtUtc).HasColumnName("updated_at_utc").IsRequired();

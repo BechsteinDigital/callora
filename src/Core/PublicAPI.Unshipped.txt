@@ -2862,6 +2862,7 @@ Callora.Core.Application.Workspaces.IWorkspaceManagementStore.UpsertAsync(string
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore.UpsertMemberAsync(string! workspaceKey, string! userExternalId, string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult!>!
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore.UpsertThemeAssignmentAsync(string! workspaceKey, string! themePluginId, string! themeVersion, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot?>!
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore
+Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.AssignIdentityProviderAsync(string! workspaceKey, string! surfaceKey, string? pluginId, string? version, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.GetAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.ListAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot!>!>!
@@ -2995,6 +2996,14 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.DisplayName.init ->
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Equals(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot? other) -> bool
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Id.get -> System.Guid
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Id.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IdentityAssignedAtUtc.get -> System.DateTimeOffset?
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IdentityAssignedAtUtc.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IdentityAssignedBy.get -> string?
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IdentityAssignedBy.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IdentityPluginId.get -> string?
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IdentityPluginId.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IdentityVersion.get -> string?
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IdentityVersion.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IsActive.get -> bool
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IsActive.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Locale.get -> string?
@@ -3650,6 +3659,14 @@ Callora.Core.Domain.Workspaces.WorkspaceSurface.DisplayName.get -> string!
 Callora.Core.Domain.Workspaces.WorkspaceSurface.DisplayName.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.Id.get -> System.Guid
 Callora.Core.Domain.Workspaces.WorkspaceSurface.Id.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.IdentityAssignedAtUtc.get -> System.DateTimeOffset?
+Callora.Core.Domain.Workspaces.WorkspaceSurface.IdentityAssignedAtUtc.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.IdentityAssignedBy.get -> string?
+Callora.Core.Domain.Workspaces.WorkspaceSurface.IdentityAssignedBy.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.IdentityPluginId.get -> string?
+Callora.Core.Domain.Workspaces.WorkspaceSurface.IdentityPluginId.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.IdentityVersion.get -> string?
+Callora.Core.Domain.Workspaces.WorkspaceSurface.IdentityVersion.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.IsActive.get -> bool
 Callora.Core.Domain.Workspaces.WorkspaceSurface.IsActive.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.Locale.get -> string?
@@ -4060,6 +4077,7 @@ Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationStore
 Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationStore.EfWorkspacePluginActivationStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationStore.SetActiveAsync(string! pluginId, string! workspaceKey, string! tenantKey, bool isActive, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore
+Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.AssignIdentityProviderAsync(string! workspaceKey, string! surfaceKey, string? pluginId, string? version, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.EfWorkspaceSurfaceStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.GetAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
