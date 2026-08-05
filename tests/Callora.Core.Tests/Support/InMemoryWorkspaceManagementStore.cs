@@ -173,6 +173,9 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             DateTimeOffset.UtcNow)
         {
             TenantKey = workspace.TenantKey,
+            IdentityPluginId = overlay?.IdentityPluginId,
+            IdentityVersion = overlay?.IdentityPluginId is null ? null : "1.0.0",
+            IdentityAssignedAtUtc = overlay?.IdentityAssignedAtUtc,
         };
 
         return Task.FromResult<WorkspaceSurfaceSnapshot?>(snapshot);
@@ -431,13 +434,21 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         string workspaceKey,
         SurfaceAccessMode accessMode,
         string surfaceKey = "default",
-        string? locale = null)
+        string? locale = null,
+        string? identityPluginId = null,
+        DateTimeOffset? identityAssignedAtUtc = null)
     {
         if (!string.IsNullOrWhiteSpace(workspaceKey))
         {
-            _surfaceOverlays[workspaceKey.Trim()] = new SurfaceOverlay(accessMode, surfaceKey, locale);
+            _surfaceOverlays[workspaceKey.Trim()] = new SurfaceOverlay(
+                accessMode, surfaceKey, locale, identityPluginId, identityAssignedAtUtc);
         }
     }
 
-    private sealed record SurfaceOverlay(SurfaceAccessMode AccessMode, string SurfaceKey, string? Locale);
+    private sealed record SurfaceOverlay(
+        SurfaceAccessMode AccessMode,
+        string SurfaceKey,
+        string? Locale,
+        string? IdentityPluginId = null,
+        DateTimeOffset? IdentityAssignedAtUtc = null);
 }

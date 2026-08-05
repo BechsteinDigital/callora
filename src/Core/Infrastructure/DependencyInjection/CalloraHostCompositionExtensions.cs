@@ -108,10 +108,27 @@ public static class CalloraHostCompositionExtensions
             // importiert der DB-Init-Service einmalig (PLAT-232).
             .PersistKeysToDbContext<HostPersistenceDbContext>();
         builder.Services.AddSingleton<IPluginDataProtector, DataProtectionPluginDataProtector>();
-        // Surface-Kontext-Cookie (ADR-017 §8.2): läuft über denselben Keyring, damit
-        // ein Gast-Kontext client-seitig liegen kann, ohne fälschbar zu sein.
+        // Surface-Identität und -Session (ADR-017). Das Cookie läuft über denselben
+        // Keyring, damit ein Gast-Kontext client-seitig liegen kann, ohne fälschbar
+        // zu sein. Die Host-Quelle ist bewusst nachrangig: sie greift nur, wenn der
+        // Surface kein Plugin-Anbieter zugewiesen ist (§5.3).
         builder.Services.AddSingleton<Callora.Core.Application.Surfaces.ISurfaceSessionCookieCodec,
             DataProtectionSurfaceSessionCookieCodec>();
+        var surfaceIdentityOptions = new Callora.Core.Application.Surfaces.SurfaceIdentityOptions();
+        builder.Configuration
+            .GetSection(Callora.Core.Application.Surfaces.SurfaceIdentityOptions.SectionName)
+            .Bind(surfaceIdentityOptions);
+        builder.Services.AddSingleton(surfaceIdentityOptions);
+        builder.Services.AddSingleton<Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor>();
+        builder.Services.AddScoped<Callora.Core.Application.Surfaces.ISurfaceCredentialReader,
+            Callora.Core.Infrastructure.Surfaces.HttpContextSurfaceCredentialReader>();
+        builder.Services.AddScoped<Callora.Core.Application.Surfaces.ISurfaceHostIdentitySource,
+            Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource>();
+        builder.Services.AddScoped<Callora.Core.Application.Surfaces.SurfaceIdentityResolver>();
+        builder.Services.AddScoped<Callora.Core.Application.Surfaces.SurfaceSessionService>();
+        // Scoped, weil er das Kontext-Cookie auf die Antwort schreibt, für die er
+        // gerade auflöst. Ein Host ohne diese Komposition rendert unverändert weiter.
+        builder.Services.AddScoped<Callora.Core.Infrastructure.Surfaces.SurfaceRequestCallerResolver>();
         builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
         builder.Services.AddScoped<MarketplaceEntitlementApplier>();
 

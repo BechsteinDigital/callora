@@ -8,6 +8,11 @@ import { injectPluginScript, loadSurfacePlugins } from './plugin-loader'
 // (built by the @callora/surface-sdk preset: Vue external → CalloraVue, registerSurfaceView).
 import surfaceDemoBundle from '../../../../../../custom/plugins/SurfaceDemo/src/Resources/public/workspace/main.js?raw'
 
+const guestCaller = {
+  state: 'guest' as const,
+  subject: { issuer: 'callora.surface-guest', subjectId: '' },
+}
+
 /**
  * End-to-end golden path, exercised with the REAL reference-plugin bundle: chain loader →
  * asset injection → the plugin bundle executes and registers its view → the runtime mount
@@ -56,7 +61,7 @@ describe('surface golden path (real SurfaceDemo bundle)', () => {
       injectPluginScript(doc, src)
     }
     const results = await loadSurfacePlugins(
-      { workspaceKey: 'acme', surfaceKey: 'portal' },
+      { workspaceKey: 'acme', surfaceKey: 'portal', caller: guestCaller },
       {},
       { fetchJson, loadScript },
     )
