@@ -70,6 +70,16 @@ public sealed class EfCallLogStore(IPluginDbContextFactory<CommunicationDbContex
     }
 
     /// <inheritdoc />
+    public async Task<int> PurgeEndedBeforeAsync(DateTimeOffset cutoff, CancellationToken cancellationToken = default)
+    {
+        await using var db = dbContextFactory.CreateDbContext();
+        return await db.CallLogs
+            .Where(x => x.EndedAt != null && x.EndedAt <= cutoff)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<CallEventOutboxEntry>> ListDueAsync(
         DateTimeOffset now,
         int limit,

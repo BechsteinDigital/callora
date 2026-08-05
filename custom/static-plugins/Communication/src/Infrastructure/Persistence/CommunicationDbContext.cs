@@ -1,6 +1,5 @@
 using Callora.Plugin.Communication.Domain.Accounts;
 using Callora.Plugin.Communication.Domain.Calls;
-using Callora.Plugin.Communication.Domain.Lines;
 using Callora.Plugin.Communication.Domain.Streaming;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,8 +20,6 @@ public sealed class CommunicationDbContext(DbContextOptions<CommunicationDbConte
     /// <summary>Configured SIP accounts.</summary>
     public DbSet<SipAccount> SipAccounts => Set<SipAccount>();
 
-    /// <summary>Callable lines under accounts.</summary>
-    public DbSet<SipLine> SipLines => Set<SipLine>();
 
     /// <summary>Call history (metadata only).</summary>
     public DbSet<CallLog> CallLogs => Set<CallLog>();

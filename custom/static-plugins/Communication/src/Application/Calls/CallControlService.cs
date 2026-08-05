@@ -174,7 +174,6 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
             id: call.CallId,
             workspaceKey: workspaceKey,
             accountId: channel.ChannelId,
-            lineId: null,
             direction: direction,
             remoteParty: remoteParty,
             localIdentity: channel.DisplayName,

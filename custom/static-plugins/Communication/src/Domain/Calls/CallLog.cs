@@ -14,7 +14,6 @@ public sealed class CallLog
         string id,
         string workspaceKey,
         string? accountId,
-        string? lineId,
         CallDirection direction,
         string remoteParty,
         string localIdentity,
@@ -26,7 +25,6 @@ public sealed class CallLog
         Id = id;
         WorkspaceKey = workspaceKey;
         AccountId = accountId;
-        LineId = lineId;
         Direction = direction;
         RemoteParty = remoteParty;
         LocalIdentity = localIdentity;
@@ -41,7 +39,6 @@ public sealed class CallLog
         string id,
         string workspaceKey,
         string? accountId,
-        string? lineId,
         CallDirection direction,
         string remoteParty,
         string localIdentity,
@@ -55,7 +52,7 @@ public sealed class CallLog
         ArgumentException.ThrowIfNullOrWhiteSpace(localIdentity);
 
         return new CallLog(
-            Guid.CreateVersion7(), id, workspaceKey, accountId, lineId, direction, remoteParty,
+            Guid.CreateVersion7(), id, workspaceKey, accountId, direction, remoteParty,
             localIdentity, handledBy, correlationId, startedAt);
     }
 
@@ -81,9 +78,6 @@ public sealed class CallLog
 
     /// <summary>Account the call ran on (when known).</summary>
     public string? AccountId { get; }
-
-    /// <summary>Line the call ran on (when known).</summary>
-    public string? LineId { get; }
 
     /// <summary>Call direction.</summary>
     public CallDirection Direction { get; }

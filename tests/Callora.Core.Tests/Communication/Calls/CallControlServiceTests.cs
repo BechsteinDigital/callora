@@ -612,4 +612,10 @@ internal sealed class RecordingCallLogStore : ICallLogStore
 
     public Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default) =>
         Task.FromResult(0);
+
+    public Task<int> PurgeEndedBeforeAsync(DateTimeOffset cutoff, CancellationToken cancellationToken = default)
+    {
+        var purged = Added.RemoveAll(log => log.EndedAt is { } endedAt && endedAt <= cutoff);
+        return Task.FromResult(purged);
+    }
 }
