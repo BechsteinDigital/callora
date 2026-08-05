@@ -1,10 +1,8 @@
-using System.Security.Cryptography;
 using System.Text;
 using Callora.Core.Application.Options;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Security;
 using Callora.Core.Domain.Plugins;
-using Microsoft.AspNetCore.DataProtection;
 
 namespace Callora.Core.Application.Plugins;
 
@@ -19,25 +17,20 @@ namespace Callora.Core.Application.Plugins;
 /// standing bearer credential, and an unbounded payload makes the ticket table a document store.
 /// </para>
 /// <para>
-/// The payload is encrypted at rest. It is opaque to the host, which means the host cannot judge how
-/// sensitive it is: a conference seat carries technical ids, a care-coordination session might carry
-/// a patient reference. Protecting it unconditionally costs one round of data protection and removes
-/// the question. The protector's purpose carries the plugin id, so the plugin binding holds
-/// cryptographically and not only as a query predicate.
+/// The payload is encrypted at rest through <see cref="IPluginPayloadProtector"/>. It is opaque to
+/// the host, which means the host cannot judge how sensitive it is: a conference seat carries
+/// technical ids, a care-coordination session might carry a patient reference. Protecting it
+/// unconditionally removes the question. The protector separates plugins cryptographically, so the
+/// plugin binding is more than a query predicate.
 /// </para>
 /// </remarks>
 internal sealed class PluginSessionResumeService(
     ISessionResumeTicketStore store,
-    IDataProtectionProvider dataProtectionProvider,
+    IPluginPayloadProtector payloadProtector,
     TimeProvider timeProvider,
     CalloraHostingOptions options,
     string pluginId) : IHostSessionResumeService
 {
-    /// <summary>Purpose prefix; the plugin id is appended so one plugin cannot read another's payload.</summary>
-    private const string ProtectorPurposePrefix = "Callora.SessionResume.v1:";
-
-    private readonly IDataProtector _protector =
-        dataProtectionProvider.CreateProtector(ProtectorPurposePrefix + pluginId);
 
     public async Task<HostSessionResumeTicket> IssueAsync(
         string sessionKind,
@@ -78,7 +71,7 @@ internal sealed class PluginSessionResumeService(
                 PluginId = pluginId,
                 SessionKind = sessionKind,
                 WorkspaceKey = workspaceKey ?? string.Empty,
-                Payload = _protector.Protect(payload),
+                Payload = payloadProtector.Protect(pluginId, payload),
                 IssuedAtUtc = issuedAt,
                 ExpiresAtUtc = expiresAt,
             },
@@ -111,17 +104,12 @@ internal sealed class PluginSessionResumeService(
             return null;
         }
 
-        string payload;
-        try
+        // A payload this host can no longer read — rotated keys, a restored database from another
+        // deployment, a row protected for a different plugin — answers the same null as every other
+        // failure. A probe learns nothing from which one it hit, and the caller's client rejoins
+        // instead of being restored from something unverifiable.
+        if (!payloadProtector.TryUnprotect(pluginId, record.Payload, out var payload))
         {
-            payload = _protector.Unprotect(record.Payload);
-        }
-        catch (CryptographicException)
-        {
-            // A payload this host can no longer read: rotated keys, a restored database from another
-            // deployment, or a row written under a different purpose. Answering null is the same
-            // answer as every other failure, so a probe learns nothing, and the caller's client
-            // rejoins instead of being seated from something unverifiable.
             return null;
         }
 
