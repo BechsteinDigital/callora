@@ -100,7 +100,7 @@ MVC controllers.
 | `role.update` | `RoleUpdate` | `PUT /api/rbac/roles/{role}`, `DELETE /api/rbac/roles/{role}`, `PUT /api/rbac/users/{userId}`, `DELETE /api/rbac/users/{userId}` |
 | `user.create` | `UserCreate` | `POST /api/users` — **platform operators only** |
 | `user.read` | `UserRead` | `GET /api/users`, `GET /api/users/{userId}` (workspace-filtered), `GET /api/users/{userId}/data-export` (**platform operators only**) |
-| `user.update` | `UserUpdate` | `PUT /api/users/{userId}` — **platform operators only** |
+| `user.update` | `UserUpdate` | `PUT /api/users/{userId}`, `PUT /api/users/{userId}/activation` — **platform operators only** |
 | `user.delete` | `UserDelete` | `DELETE /api/users/{userId}` — **platform operators only** |
 | `membership.read` | `MembershipRead` | `GET /api/workspaces/{wk}/members` |
 | `membership.update` | `MembershipUpdate` | `PUT /api/workspaces/{wk}/members/{userId}` |

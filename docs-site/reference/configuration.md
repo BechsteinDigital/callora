@@ -66,6 +66,7 @@ it is shown as a relative fragment.
 | `JwtAudience` | `string` | `callora-host-api` | Audience claim for host-issued JWTs. |
 | `JwtSigningKey` | `string` | `BackendSecretHygiene.DefaultJwtSigningKey` | HMAC signing key for JWTs. **Override in production.** |
 | `OidcAuthority` | `string?` | `null` | Optional external OIDC authority. |
+| `RequireExternalIdentityForOperators` | `bool` | `false` | Refuses the local password login for platform operators, so privileged sign-in goes through `OidcAuthority` (which enforces MFA). Requires `OidcAuthority`. |
 | `AuthCookieName` | `string` | `callora_admin_auth` | Name of the auth cookie carrying the JWT. |
 | `AuthCookieRequireHttps` | `bool` | `false` | Marks the auth cookie `Secure` (HTTPS-only). |
 | `EnableBootstrapApiKeys` | `bool` | `true` | Enables the break-glass bootstrap credential. Set `false` to reject bootstrap keys entirely. |

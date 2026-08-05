@@ -68,6 +68,19 @@ public sealed class BackendHostOptions
 
     public string? OidcAuthority { get; set; }
 
+    /// <summary>
+    /// Refuses the local password login for <em>platform operators</em>, so their
+    /// sessions can only come from <see cref="OidcAuthority"/> (#104).
+    /// <para>
+    /// Callora issues no second factor of its own. This is the enforceable
+    /// alternative: privileged operators authenticate at an identity provider that
+    /// does — MFA, conditional access, device trust — while workspace logins keep
+    /// working locally. Requires <see cref="OidcAuthority"/> to be configured;
+    /// otherwise the host refuses to start rather than locking every operator out.
+    /// </para>
+    /// </summary>
+    public bool RequireExternalIdentityForOperators { get; set; }
+
     public string AuthCookieName { get; set; } = "callora_admin_auth";
 
     public bool AuthCookieRequireHttps { get; set; }

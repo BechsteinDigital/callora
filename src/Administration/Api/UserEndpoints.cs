@@ -1,4 +1,5 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Audit;
 using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Security;
 using Callora.Core.Application.Security.Events;
@@ -171,6 +172,43 @@ public static class UserEndpoints
         }).WithName("Users_Delete")
             .RequirePermission(BackendPermissionKeys.UserDelete);
 
+        // Deactivation is the non-destructive counterpart to DELETE (#104): the
+        // account keeps its data, memberships and audit trail but stops
+        // authenticating, and its live sessions are rejected at once (#105).
+        group.MapPut("/{userId}/activation", async (
+            string userId,
+            SetBackendUserActivationApiRequest request,
+            HttpContext httpContext,
+            IBackendUserStore userStore,
+            IHostAuditStore auditStore,
+            CancellationToken cancellationToken) =>
+        {
+            if (!WorkspaceScopeEvaluator.IsOperator(httpContext.User))
+            {
+                return Results.Forbid();
+            }
+
+            if (!await userStore.SetEnabledAsync(userId, request.IsActive, cancellationToken).ConfigureAwait(false))
+            {
+                return ApiProblems.NotFound($"User '{userId}' not found.");
+            }
+
+            await auditStore.AppendAsync(
+                new HostAuditEntry(
+                    OccurredAtUtc: DateTimeOffset.UtcNow,
+                    Action: request.IsActive ? "user.enable" : "user.disable",
+                    PluginId: null,
+                    IsSuccess: true,
+                    RequestedBy: ResolveActor(httpContext.User),
+                    Message: $"Account '{userId}' was {(request.IsActive ? "enabled" : "disabled")}."),
+                cancellationToken).ConfigureAwait(false);
+
+            var user = await userStore.GetByExternalIdAsync(userId, cancellationToken).ConfigureAwait(false);
+            return user is null ? Results.NotFound() : Results.Ok(ToResponse(user));
+        }).WithName("Users_SetActivation")
+            .Produces<BackendUserApiResponse>()
+            .RequirePermission(BackendPermissionKeys.UserUpdate);
+
         group.MapGet("/{userId}/data-export", async (
             string userId,
             HttpContext httpContext,
@@ -204,6 +242,12 @@ public static class UserEndpoints
     /// Reads the caller's operator status and bound workspace from its claims.
     /// Operators act platform-wide; everyone else is confined to a workspace.
     /// </summary>
+    /// <summary>Identity recorded in the audit trail for a security-state change.</summary>
+    private static string? ResolveActor(System.Security.Claims.ClaimsPrincipal user) =>
+        user.FindFirst("sub")?.Value
+        ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        ?? user.Identity?.Name;
+
     private static (bool IsOperator, string? WorkspaceKey) ResolveScope(HttpContext httpContext)
     {
         var isOperator = WorkspaceScopeEvaluator.IsOperator(httpContext.User);
@@ -241,6 +285,8 @@ public static class UserEndpoints
             DisplayName: user.DisplayName,
             HasPassword: !string.IsNullOrWhiteSpace(user.PasswordHash),
             PasswordHashAlgorithm: user.PasswordHashAlgorithm,
+            IsDisabled: user.IsDisabled,
+            IsLockedOut: user.LockoutEndsAtUtc is { } until && until > DateTimeOffset.UtcNow,
             CreatedAtUtc: user.CreatedAtUtc,
             UpdatedAtUtc: user.UpdatedAtUtc);
     }

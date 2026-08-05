@@ -39,10 +39,19 @@ public static class AuthEndpoints
             .RequireSameOriginLogin()
             .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
 
-        apiGroup.MapPost("/logout", (
+        // Logout is anonymous by design (an expired cookie must still be clearable),
+        // but it revokes server-side whatever valid session it was given (#105) —
+        // clearing the browser cookie alone would leave a copied token usable.
+        apiGroup.MapPost("/logout", async (
             BackendHostOptions options,
-            HttpContext httpContext) =>
+            HttpContext httpContext,
+            IBackendSessionRevocationStore revocationStore,
+            CancellationToken cancellationToken) =>
         {
+            await BackendSessionRevocation
+                .RevokeCurrentSessionAsync(httpContext, revocationStore, cancellationToken)
+                .ConfigureAwait(false);
+
             BackendAuthCookieService.ClearAuthCookie(
                 httpContext.Response,
                 options,
@@ -126,10 +135,22 @@ public static class AuthEndpoints
             return Results.Forbid();
         }
 
+        // Operator sessions may be restricted to the external identity provider, so
+        // the second factor lives where one exists (#104). Workspace logins are
+        // unaffected.
+        if (options.RequireExternalIdentityForOperators &&
+            string.Equals(grant.Scope, BackendAuthScopes.Platform, StringComparison.Ordinal))
+        {
+            return Results.Forbid();
+        }
+
         var roles = string.IsNullOrWhiteSpace(grant.Role) ? Array.Empty<string>() : [grant.Role];
         var customClaims = new Dictionary<string, string>
         {
-            [BackendClaimTypes.CalloraScope] = grant.Scope
+            [BackendClaimTypes.CalloraScope] = grant.Scope,
+            // Binds the session to the account state it was issued under: rotating the
+            // stamp (password change, deactivation, RBAC change) revokes it (#105).
+            [BackendClaimTypes.SecurityStamp] = user.SecurityStamp
         };
         if (!string.IsNullOrWhiteSpace(grant.WorkspaceKey))
         {

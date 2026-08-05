@@ -1,4 +1,5 @@
 using Callora.Administration.Api;
+using Callora.Core.Application.Audit;
 using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Security;
@@ -212,6 +213,7 @@ public sealed class WorkspaceAdminIdentityBoundaryTests
         builder.Services.AddSingleton<IWorkspaceDataPurgeService>(
             new InMemoryWorkspaceDataPurgeService(workspaceStore));
         builder.Services.AddSingleton<IBusinessEventBus>(new RecordingBusinessEventBus());
+        builder.Services.AddSingleton<IHostAuditStore, InMemoryHostAuditStore>();
 
         var app = builder.Build();
         app.UseAuthentication();
