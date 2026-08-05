@@ -145,6 +145,17 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
             tenant = new { key = context.TenantKey },
             locale = context.Locale,
             tokens = context.Tokens,
+            caller = context.Caller is null
+                ? null
+                : new
+                {
+                    state = context.Caller.State,
+                    issuer = context.Caller.Issuer,
+                    subjectId = context.Caller.SubjectId,
+                    displayName = context.Caller.DisplayName,
+                    claims = context.Caller.Claims,
+                    claimsJson = context.Caller.ClaimsJson,
+                },
         };
         return JsonSerializer.Serialize(model);
     }

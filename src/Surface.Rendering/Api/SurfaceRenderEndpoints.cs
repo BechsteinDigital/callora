@@ -1,6 +1,7 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Workspaces;
+using Callora.Core.Infrastructure.Surfaces;
 using Callora.Surface.Rendering.Rendering;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -15,8 +16,10 @@ namespace Callora.Surface.Rendering.Api;
 /// the full plugin chain in scope, so a real installed template plugin's Nunjucks
 /// views (extends/block/include) render at its surface. A workspace that publishes no
 /// entry falls back to the built-in SPA shell. The resolved surface is gated on its own
-/// access mode (Public/Authenticated/Mixed): an Authenticated surface redirects an
-/// anonymous caller to log in, Public and Mixed render anonymously.
+/// access mode (Public/Authenticated/Mixed) against the established caller
+/// (ADR-017 §6.1): Public and Mixed render anonymously, an Authenticated surface
+/// refuses without an identity, and one whose assigned identity provider cannot be
+/// consulted closes rather than degrading to anonymous.
 /// </summary>
 public static class SurfaceRenderEndpoints
 {
@@ -64,6 +67,9 @@ public static class SurfaceRenderEndpoints
         // The effective theme values are wired in when the theme subsystem is
         // composed; a minimal host without it still renders (unthemed) — optional.
         [FromServices] WorkspacePublicThemeResolver? themeResolver,
+        // Identity is composed with the surface session subsystem; a host without it
+        // keeps the pre-ADR-017 behaviour (backend principal or anonymous) — optional.
+        [FromServices] SurfaceRequestCallerResolver? callerResolver,
         CancellationToken cancellationToken)
     {
         var host = httpContext.Request.Host.Host;
@@ -79,17 +85,28 @@ public static class SurfaceRenderEndpoints
             return Results.NotFound();
         }
 
-        // Access mode (ADR-014 §6.1) is gated per surface. Authenticated redirects an
-        // anonymous caller to log in; Public and Mixed serve the shell anonymously
-        // (Mixed's per-route protection is not this endpoint's concern). This is the
-        // authoritative boundary; client-side UI hiding is never a substitute.
-        if (surface.AccessMode == SurfaceAccessMode.Authenticated &&
-            httpContext.User.Identity?.IsAuthenticated != true)
+        var locale = string.IsNullOrWhiteSpace(surface.Locale) ? "de" : surface.Locale;
+
+        SurfaceCallerView? caller = null;
+        if (callerResolver is not null)
         {
-            var returnUrl = httpContext.Request.Path + httpContext.Request.QueryString;
-            return Results.Redirect(
-                $"/login?workspaceKey={Uri.EscapeDataString(surface.WorkspaceKey)}" +
-                $"&returnUrl={Uri.EscapeDataString(returnUrl)}");
+            var establishment = await callerResolver
+                .EstablishAsync(httpContext, surface, locale, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (SurfaceAccessGate.Reject(surface, establishment, httpContext) is { } rejection)
+            {
+                return rejection;
+            }
+
+            caller = SurfaceCallerViewFactory.Create(establishment.Caller);
+        }
+        else if (surface.AccessMode == SurfaceAccessMode.Authenticated &&
+                 httpContext.User.Identity?.IsAuthenticated != true)
+        {
+            // Composition without the identity subsystem: the pre-ADR-017 behaviour
+            // stays exactly as it was, so an existing host is unaffected.
+            return SurfaceAccessGate.LoginRedirect(surface, httpContext);
         }
 
         // The effective, secret-filtered theme values (defaults + workspace
@@ -113,9 +130,12 @@ public static class SurfaceRenderEndpoints
             WorkspaceKey: surface.WorkspaceKey,
             SurfaceKey: surface.SurfaceKey,
             SurfaceType: surface.SurfaceType,
-            Locale: string.IsNullOrWhiteSpace(surface.Locale) ? "de" : surface.Locale,
+            Locale: locale,
             Tokens: SurfaceThemeTokens.Compose(
-                surface.ThemePluginId, surface.ThemeVersion, effectiveTheme));
+                surface.ThemePluginId, surface.ThemeVersion, effectiveTheme))
+        {
+            Caller = caller,
+        };
 
         var html = await RenderSurfaceAsync(
                 renderer,

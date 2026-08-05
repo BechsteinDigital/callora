@@ -25,6 +25,27 @@ public interface IWorkspaceSurfaceStore
         WorkspaceSurfaceInput input,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Assigns or clears the surface's identity provider and stamps the audit fields
+    /// in one write (ADR-017 §5.2). Separate from <see cref="UpsertAsync"/> on purpose:
+    /// a surface edit carries no identity fields, so it can never clear the binding as
+    /// a side effect, and every assignment records who did it and when.
+    /// </summary>
+    /// <param name="workspaceKey">Workspace owning the surface.</param>
+    /// <param name="surfaceKey">Surface to assign.</param>
+    /// <param name="pluginId">Plugin to assign, or null to clear the binding.</param>
+    /// <param name="version">Version of that plugin, or null when clearing.</param>
+    /// <param name="assignedBy">Operator performing the assignment.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The stored snapshot, or null when workspace or surface does not exist.</returns>
+    Task<WorkspaceSurfaceSnapshot?> AssignIdentityProviderAsync(
+        string workspaceKey,
+        string surfaceKey,
+        string? pluginId,
+        string? version,
+        string? assignedBy,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Removes a surface. True when a surface was removed.</summary>
     Task<bool> DeleteAsync(
         string workspaceKey,

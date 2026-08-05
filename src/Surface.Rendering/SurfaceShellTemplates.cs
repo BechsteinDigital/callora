@@ -22,7 +22,14 @@ public static class SurfaceShellTemplates
           <link rel="stylesheet" href="/surface-app/surface.css" />
         </head>
         <body>
-          <div id="callora-app" data-workspace="{{ workspace.key }}" data-surface="{{ surface.key }}"></div>
+          <div id="callora-app"
+               data-workspace="{{ workspace.key }}"
+               data-surface="{{ surface.key }}"
+               data-caller-state="{{ caller.state }}"
+               data-caller-issuer="{{ caller.issuer }}"
+               data-caller-subject="{{ caller.subjectId }}"
+               data-caller-name="{{ caller.displayName }}"
+               data-caller-claims="{{ caller.claimsJson }}"></div>
           <script src="/surface-app/surface.js" defer></script>
         </body>
         </html>

@@ -10,6 +10,11 @@ import {
   type PluginManifest,
 } from './plugin-loader'
 
+const guestCaller = {
+  state: 'guest' as const,
+  subject: { issuer: 'callora.surface-guest', subjectId: '' },
+}
+
 // The environment (vite.config: disableCSSFileLoading/disableJavaScriptFileLoading)
 // keeps injected tags inert; clear the head so each injection test starts clean.
 beforeEach(() => {
@@ -138,7 +143,7 @@ describe('injectPluginScript', () => {
 })
 
 describe('loadSurfacePlugins', () => {
-  const context = { workspaceKey: 'acme', surfaceKey: 'portal' }
+  const context = { workspaceKey: 'acme', surfaceKey: 'portal', caller: guestCaller }
   // A loader that behaves like the browser's: it injects the script (so DOM order is
   // observable) and resolves, unless the src is in `failing`, where it rejects.
   const injectingLoader = (failing: string[] = []) =>
@@ -193,7 +198,7 @@ describe('loadSurfacePlugins', () => {
     )
 
     await loadSurfacePlugins(
-      { workspaceKey: 'acme', surfaceKey: '' },
+      { workspaceKey: 'acme', surfaceKey: '', caller: guestCaller },
       {},
       { fetchJson, doc: document, loadScript: injectingLoader() },
     )
@@ -207,7 +212,7 @@ describe('loadSurfacePlugins', () => {
     )
 
     await loadSurfacePlugins(
-      { workspaceKey: 'acme', surfaceKey: 'a b/c' },
+      { workspaceKey: 'acme', surfaceKey: 'a b/c', caller: guestCaller },
       {},
       { fetchJson, doc: document, loadScript: injectingLoader() },
     )

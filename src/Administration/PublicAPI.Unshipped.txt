@@ -465,6 +465,46 @@ Callora.Administration.Api.SurfaceApiResponse.UpdatedAtUtc.init -> void
 Callora.Administration.Api.SurfaceApiResponse.WorkspaceKey.get -> string!
 Callora.Administration.Api.SurfaceApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.SurfaceEndpoints
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse!
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.AssignedAtUtc.get -> System.DateTimeOffset?
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.AssignedAtUtc.init -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.AssignedBy.get -> string?
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.AssignedBy.init -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.Deconstruct(out string! WorkspaceKey, out string! SurfaceKey, out string? IdentityPluginId, out string? IdentityVersion, out string? AssignedBy, out System.DateTimeOffset? AssignedAtUtc, out bool IsAvailable) -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.Equals(Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse? other) -> bool
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.IdentityPluginId.get -> string?
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.IdentityPluginId.init -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.IdentityVersion.get -> string?
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.IdentityVersion.init -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.IsAvailable.get -> bool
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.IsAvailable.init -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.SurfaceIdentityAssignmentApiResponse(string! WorkspaceKey, string! SurfaceKey, string? IdentityPluginId, string? IdentityVersion, string? AssignedBy, System.DateTimeOffset? AssignedAtUtc, bool IsAvailable) -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.SurfaceKey.get -> string!
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.SurfaceKey.init -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.WorkspaceKey.get -> string!
+Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.WorkspaceKey.init -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest
+Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.<Clone>$() -> Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest!
+Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.Deconstruct(out string? IdentityPluginId) -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.Equals(Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest? other) -> bool
+Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.IdentityPluginId.get -> string?
+Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.IdentityPluginId.init -> void
+Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.SurfaceIdentityAssignmentUpsertApiRequest(string? IdentityPluginId) -> void
+Callora.Administration.Api.SurfaceIdentityEndpoints
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse!
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.Deconstruct(out string! PluginId, out string! DisplayName, out string? Version, out bool IsAvailable) -> void
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.DisplayName.get -> string!
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.DisplayName.init -> void
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.Equals(Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse? other) -> bool
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.IsAvailable.get -> bool
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.IsAvailable.init -> void
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.PluginId.get -> string!
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.PluginId.init -> void
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.SurfaceIdentityProviderCandidateApiResponse(string! PluginId, string! DisplayName, string? Version, bool IsAvailable) -> void
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.Version.get -> string?
+Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.Version.init -> void
 Callora.Administration.Api.SurfaceThemeAssignmentApiResponse
 Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceThemeAssignmentApiResponse!
 Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.Deconstruct(out string! WorkspaceKey, out string! SurfaceKey, out string? ThemePluginId, out string? ThemeVersion, out bool InheritedFromWorkspace) -> void
@@ -963,6 +1003,15 @@ override Callora.Administration.Api.SetEntitlementApiRequest.ToString() -> strin
 override Callora.Administration.Api.SurfaceApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.SurfaceApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.SurfaceApiResponse.ToString() -> string!
+override Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.ToString() -> string!
+override Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.ToString() -> string!
+override Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.ToString() -> string!
 override Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.ToString() -> string!
@@ -1120,6 +1169,13 @@ static Callora.Administration.Api.SetEntitlementApiRequest.operator ==(Callora.A
 static Callora.Administration.Api.SurfaceApiResponse.operator !=(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
 static Callora.Administration.Api.SurfaceApiResponse.operator ==(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
 static Callora.Administration.Api.SurfaceEndpoints.MapSurfaceEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.operator !=(Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse? left, Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse.operator ==(Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse? left, Callora.Administration.Api.SurfaceIdentityAssignmentApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.operator !=(Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest? left, Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest? right) -> bool
+static Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest.operator ==(Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest? left, Callora.Administration.Api.SurfaceIdentityAssignmentUpsertApiRequest? right) -> bool
+static Callora.Administration.Api.SurfaceIdentityEndpoints.MapSurfaceIdentityEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
+static Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.operator !=(Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse? left, Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse? right) -> bool
+static Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse.operator ==(Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse? left, Callora.Administration.Api.SurfaceIdentityProviderCandidateApiResponse? right) -> bool
 static Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.operator !=(Callora.Administration.Api.SurfaceThemeAssignmentApiResponse? left, Callora.Administration.Api.SurfaceThemeAssignmentApiResponse? right) -> bool
 static Callora.Administration.Api.SurfaceThemeAssignmentApiResponse.operator ==(Callora.Administration.Api.SurfaceThemeAssignmentApiResponse? left, Callora.Administration.Api.SurfaceThemeAssignmentApiResponse? right) -> bool
 static Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest.operator !=(Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest? left, Callora.Administration.Api.SurfaceThemeAssignmentUpsertApiRequest? right) -> bool

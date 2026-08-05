@@ -1,10 +1,46 @@
 #nullable enable
+Callora.Surface.Rendering.Api.SurfaceAccessGate
 Callora.Surface.Rendering.Api.SurfaceRenderEndpoints
 Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions
+Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider
+Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider.DirectorySurfaceTemplateBundleProvider(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! bundleRoots) -> void
+Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
 Callora.Surface.Rendering.ISurfaceRenderer
 Callora.Surface.Rendering.ISurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context) -> string!
+Callora.Surface.Rendering.ISurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
+Callora.Surface.Rendering.ISurfaceTemplateBundleProvider
+Callora.Surface.Rendering.ISurfaceTemplateBundleProvider.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
+Callora.Surface.Rendering.PublishedSurfaceTemplateBundles
+Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.PublishedSurfaceTemplateBundles(Microsoft.AspNetCore.Hosting.IWebHostEnvironment! environment) -> void
+Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
+Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryReadEntryTemplate(string! bundleId) -> string?
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer() -> void
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer(Callora.Surface.Rendering.ISurfaceTemplateBundleProvider! bundleProvider) -> void
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context) -> string!
+Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
+Callora.Surface.Rendering.SurfaceCallerView
+Callora.Surface.Rendering.SurfaceCallerView.<Clone>$() -> Callora.Surface.Rendering.SurfaceCallerView!
+Callora.Surface.Rendering.SurfaceCallerView.Claims.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<string!>!>!
+Callora.Surface.Rendering.SurfaceCallerView.Claims.init -> void
+Callora.Surface.Rendering.SurfaceCallerView.ClaimsJson.get -> string!
+Callora.Surface.Rendering.SurfaceCallerView.ClaimsJson.init -> void
+Callora.Surface.Rendering.SurfaceCallerView.Deconstruct(out string! State, out string! Issuer, out string! SubjectId, out string! DisplayName, out System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<string!>!>! Claims, out string! ClaimsJson) -> void
+Callora.Surface.Rendering.SurfaceCallerView.DisplayName.get -> string!
+Callora.Surface.Rendering.SurfaceCallerView.DisplayName.init -> void
+Callora.Surface.Rendering.SurfaceCallerView.Equals(Callora.Surface.Rendering.SurfaceCallerView? other) -> bool
+Callora.Surface.Rendering.SurfaceCallerView.Issuer.get -> string!
+Callora.Surface.Rendering.SurfaceCallerView.Issuer.init -> void
+Callora.Surface.Rendering.SurfaceCallerView.State.get -> string!
+Callora.Surface.Rendering.SurfaceCallerView.State.init -> void
+Callora.Surface.Rendering.SurfaceCallerView.SubjectId.get -> string!
+Callora.Surface.Rendering.SurfaceCallerView.SubjectId.init -> void
+Callora.Surface.Rendering.SurfaceCallerView.SurfaceCallerView(string! State, string! Issuer, string! SubjectId, string! DisplayName, System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<string!>!>! Claims, string! ClaimsJson) -> void
+Callora.Surface.Rendering.SurfaceCallerViewFactory
 Callora.Surface.Rendering.SurfaceRenderContext
 Callora.Surface.Rendering.SurfaceRenderContext.<Clone>$() -> Callora.Surface.Rendering.SurfaceRenderContext!
+Callora.Surface.Rendering.SurfaceRenderContext.Caller.get -> Callora.Surface.Rendering.SurfaceCallerView?
+Callora.Surface.Rendering.SurfaceRenderContext.Caller.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.Deconstruct(out string! TenantKey, out string! WorkspaceKey, out string! SurfaceKey, out string! SurfaceType, out string! Locale, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Tokens) -> void
 Callora.Surface.Rendering.SurfaceRenderContext.Equals(Callora.Surface.Rendering.SurfaceRenderContext? other) -> bool
 Callora.Surface.Rendering.SurfaceRenderContext.Locale.get -> string!
@@ -22,34 +58,29 @@ Callora.Surface.Rendering.SurfaceRenderContext.WorkspaceKey.get -> string!
 Callora.Surface.Rendering.SurfaceRenderContext.WorkspaceKey.init -> void
 Callora.Surface.Rendering.SurfaceShellTemplates
 Callora.Surface.Rendering.SurfaceTemplateException
-Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message, System.Exception! innerException) -> void
-Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message) -> void
 Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException() -> void
-const Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot = "<!doctype html>\n<html lang=\"{{ locale }}\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <title>{{ surface.key }}</title>\n  <link rel=\"stylesheet\" href=\"/surface-app/surface.css\" />\n</head>\n<body>\n  <div id=\"callora-app\" data-workspace=\"{{ workspace.key }}\" data-surface=\"{{ surface.key }}\"></div>\n  <script src=\"/surface-app/surface.js\" defer></script>\n</body>\n</html>" -> string!
+Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message) -> void
+Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message, System.Exception! innerException) -> void
+Callora.Surface.Rendering.SurfaceThemeTokens
+const Callora.Surface.Rendering.SurfaceCallerView.AuthenticatedState = "authenticated" -> string!
+const Callora.Surface.Rendering.SurfaceCallerView.GuestState = "guest" -> string!
+const Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot = "<!doctype html>\n<html lang=\"{{ locale }}\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <title>{{ surface.key }}</title>\n  <link rel=\"stylesheet\" href=\"/surface-app/surface.css\" />\n</head>\n<body>\n  <div id=\"callora-app\"\n       data-workspace=\"{{ workspace.key }}\"\n       data-surface=\"{{ surface.key }}\"\n       data-caller-state=\"{{ caller.state }}\"\n       data-caller-issuer=\"{{ caller.issuer }}\"\n       data-caller-subject=\"{{ caller.subjectId }}\"\n       data-caller-name=\"{{ caller.displayName }}\"\n       data-caller-claims=\"{{ caller.claimsJson }}\"></div>\n  <script src=\"/surface-app/surface.js\" defer></script>\n</body>\n</html>" -> string!
+const Callora.Surface.Rendering.SurfaceThemeTokens.ThemePluginIdKey = "themePluginId" -> string!
+const Callora.Surface.Rendering.SurfaceThemeTokens.ThemeVersionKey = "themeVersion" -> string!
+override Callora.Surface.Rendering.SurfaceCallerView.Equals(object? obj) -> bool
+override Callora.Surface.Rendering.SurfaceCallerView.GetHashCode() -> int
+override Callora.Surface.Rendering.SurfaceCallerView.ToString() -> string!
 override Callora.Surface.Rendering.SurfaceRenderContext.Equals(object? obj) -> bool
 override Callora.Surface.Rendering.SurfaceRenderContext.GetHashCode() -> int
 override Callora.Surface.Rendering.SurfaceRenderContext.ToString() -> string!
+static Callora.Surface.Rendering.Api.SurfaceAccessGate.LoginRedirect(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot! surface, Microsoft.AspNetCore.Http.HttpContext! httpContext) -> Microsoft.AspNetCore.Http.IResult!
+static Callora.Surface.Rendering.Api.SurfaceAccessGate.Reject(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot! surface, Callora.Core.Application.Surfaces.SurfaceSessionEstablishment! establishment, Microsoft.AspNetCore.Http.HttpContext! httpContext) -> Microsoft.AspNetCore.Http.IResult?
 static Callora.Surface.Rendering.Api.SurfaceRenderEndpoints.MapSurfaceRenderEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.AddCalloraSurfaceRendering(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.MapCalloraSurfaceRendering(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
+static Callora.Surface.Rendering.SurfaceCallerView.operator !=(Callora.Surface.Rendering.SurfaceCallerView? left, Callora.Surface.Rendering.SurfaceCallerView? right) -> bool
+static Callora.Surface.Rendering.SurfaceCallerView.operator ==(Callora.Surface.Rendering.SurfaceCallerView? left, Callora.Surface.Rendering.SurfaceCallerView? right) -> bool
+static Callora.Surface.Rendering.SurfaceCallerViewFactory.Create(Callora.Core.Application.Surfaces.SurfaceCaller! caller) -> Callora.Surface.Rendering.SurfaceCallerView!
 static Callora.Surface.Rendering.SurfaceRenderContext.operator !=(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
 static Callora.Surface.Rendering.SurfaceRenderContext.operator ==(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
-Callora.Surface.Rendering.ISurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
-Callora.Surface.Rendering.ISurfaceTemplateBundleProvider
-Callora.Surface.Rendering.ISurfaceTemplateBundleProvider.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
-Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer
-Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer() -> void
-Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer(Callora.Surface.Rendering.ISurfaceTemplateBundleProvider! bundleProvider) -> void
-Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context) -> string!
-Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.Render(string! templateText, Callora.Surface.Rendering.SurfaceRenderContext! context, System.Collections.Generic.IReadOnlyList<string!>! bundleChain) -> string!
-Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider
-Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider.DirectorySurfaceTemplateBundleProvider(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! bundleRoots) -> void
-Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
-Callora.Surface.Rendering.PublishedSurfaceTemplateBundles
-Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.PublishedSurfaceTemplateBundles(Microsoft.AspNetCore.Hosting.IWebHostEnvironment! environment) -> void
-Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
-Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryReadEntryTemplate(string! bundleId) -> string?
-Callora.Surface.Rendering.SurfaceThemeTokens
-const Callora.Surface.Rendering.SurfaceThemeTokens.ThemePluginIdKey = "themePluginId" -> string!
-const Callora.Surface.Rendering.SurfaceThemeTokens.ThemeVersionKey = "themeVersion" -> string!
 static Callora.Surface.Rendering.SurfaceThemeTokens.Compose(string? themePluginId, string? themeVersion, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? effectiveValues) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
