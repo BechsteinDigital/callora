@@ -45,6 +45,35 @@ Callora.Administration.Api.BackendUserApiResponse.PasswordHashAlgorithm.init -> 
 Callora.Administration.Api.BackendUserApiResponse.UpdatedAtUtc.get -> System.DateTimeOffset
 Callora.Administration.Api.BackendUserApiResponse.UpdatedAtUtc.init -> void
 Callora.Administration.Api.BusinessEventEndpoints
+Callora.Administration.Api.ContractCatalogApiResponse
+Callora.Administration.Api.ContractCatalogApiResponse.<Clone>$() -> Callora.Administration.Api.ContractCatalogApiResponse!
+Callora.Administration.Api.ContractCatalogApiResponse.AssemblyName.get -> string!
+Callora.Administration.Api.ContractCatalogApiResponse.AssemblyName.init -> void
+Callora.Administration.Api.ContractCatalogApiResponse.ContractCatalogApiResponse(string! AssemblyName, string! Version, string? DeclaringPluginId, bool IsHostProvided, bool RequiresRestartToChange, System.Collections.Generic.IReadOnlyList<Callora.Administration.Api.ContractDependentApiResponse!>! Dependents) -> void
+Callora.Administration.Api.ContractCatalogApiResponse.DeclaringPluginId.get -> string?
+Callora.Administration.Api.ContractCatalogApiResponse.DeclaringPluginId.init -> void
+Callora.Administration.Api.ContractCatalogApiResponse.Deconstruct(out string! AssemblyName, out string! Version, out string? DeclaringPluginId, out bool IsHostProvided, out bool RequiresRestartToChange, out System.Collections.Generic.IReadOnlyList<Callora.Administration.Api.ContractDependentApiResponse!>! Dependents) -> void
+Callora.Administration.Api.ContractCatalogApiResponse.Dependents.get -> System.Collections.Generic.IReadOnlyList<Callora.Administration.Api.ContractDependentApiResponse!>!
+Callora.Administration.Api.ContractCatalogApiResponse.Dependents.init -> void
+Callora.Administration.Api.ContractCatalogApiResponse.Equals(Callora.Administration.Api.ContractCatalogApiResponse? other) -> bool
+Callora.Administration.Api.ContractCatalogApiResponse.IsHostProvided.get -> bool
+Callora.Administration.Api.ContractCatalogApiResponse.IsHostProvided.init -> void
+Callora.Administration.Api.ContractCatalogApiResponse.RequiresRestartToChange.get -> bool
+Callora.Administration.Api.ContractCatalogApiResponse.RequiresRestartToChange.init -> void
+Callora.Administration.Api.ContractCatalogApiResponse.Version.get -> string!
+Callora.Administration.Api.ContractCatalogApiResponse.Version.init -> void
+Callora.Administration.Api.ContractCatalogEndpoints
+Callora.Administration.Api.ContractDependentApiResponse
+Callora.Administration.Api.ContractDependentApiResponse.<Clone>$() -> Callora.Administration.Api.ContractDependentApiResponse!
+Callora.Administration.Api.ContractDependentApiResponse.ContractDependentApiResponse(string! PluginId, string! RequiredRange, bool IsSatisfied) -> void
+Callora.Administration.Api.ContractDependentApiResponse.Deconstruct(out string! PluginId, out string! RequiredRange, out bool IsSatisfied) -> void
+Callora.Administration.Api.ContractDependentApiResponse.Equals(Callora.Administration.Api.ContractDependentApiResponse? other) -> bool
+Callora.Administration.Api.ContractDependentApiResponse.IsSatisfied.get -> bool
+Callora.Administration.Api.ContractDependentApiResponse.IsSatisfied.init -> void
+Callora.Administration.Api.ContractDependentApiResponse.PluginId.get -> string!
+Callora.Administration.Api.ContractDependentApiResponse.PluginId.init -> void
+Callora.Administration.Api.ContractDependentApiResponse.RequiredRange.get -> string!
+Callora.Administration.Api.ContractDependentApiResponse.RequiredRange.init -> void
 Callora.Administration.Api.CreateBackendUserApiRequest
 Callora.Administration.Api.CreateBackendUserApiRequest.<Clone>$() -> Callora.Administration.Api.CreateBackendUserApiRequest!
 Callora.Administration.Api.CreateBackendUserApiRequest.CreateBackendUserApiRequest(string! ExternalId, string? Email, string? DisplayName, string! Password) -> void
@@ -924,6 +953,12 @@ Callora.Administration.CalloraAdministrationExtensions
 override Callora.Administration.Api.BackendUserApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.BackendUserApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.BackendUserApiResponse.ToString() -> string!
+override Callora.Administration.Api.ContractCatalogApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.ContractCatalogApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.ContractCatalogApiResponse.ToString() -> string!
+override Callora.Administration.Api.ContractDependentApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.ContractDependentApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.ContractDependentApiResponse.ToString() -> string!
 override Callora.Administration.Api.CreateBackendUserApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.CreateBackendUserApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.CreateBackendUserApiRequest.ToString() -> string!
@@ -1105,6 +1140,11 @@ static Callora.Administration.Api.AdminContextEndpoints.MapAdminContextEndpoints
 static Callora.Administration.Api.BackendUserApiResponse.operator !=(Callora.Administration.Api.BackendUserApiResponse? left, Callora.Administration.Api.BackendUserApiResponse? right) -> bool
 static Callora.Administration.Api.BackendUserApiResponse.operator ==(Callora.Administration.Api.BackendUserApiResponse? left, Callora.Administration.Api.BackendUserApiResponse? right) -> bool
 static Callora.Administration.Api.BusinessEventEndpoints.MapBusinessEventEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
+static Callora.Administration.Api.ContractCatalogApiResponse.operator !=(Callora.Administration.Api.ContractCatalogApiResponse? left, Callora.Administration.Api.ContractCatalogApiResponse? right) -> bool
+static Callora.Administration.Api.ContractCatalogApiResponse.operator ==(Callora.Administration.Api.ContractCatalogApiResponse? left, Callora.Administration.Api.ContractCatalogApiResponse? right) -> bool
+static Callora.Administration.Api.ContractCatalogEndpoints.MapContractCatalogEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.ContractDependentApiResponse.operator !=(Callora.Administration.Api.ContractDependentApiResponse? left, Callora.Administration.Api.ContractDependentApiResponse? right) -> bool
+static Callora.Administration.Api.ContractDependentApiResponse.operator ==(Callora.Administration.Api.ContractDependentApiResponse? left, Callora.Administration.Api.ContractDependentApiResponse? right) -> bool
 static Callora.Administration.Api.CreateBackendUserApiRequest.operator !=(Callora.Administration.Api.CreateBackendUserApiRequest? left, Callora.Administration.Api.CreateBackendUserApiRequest? right) -> bool
 static Callora.Administration.Api.CreateBackendUserApiRequest.operator ==(Callora.Administration.Api.CreateBackendUserApiRequest? left, Callora.Administration.Api.CreateBackendUserApiRequest? right) -> bool
 static Callora.Administration.Api.CreateTenantApiRequest.operator !=(Callora.Administration.Api.CreateTenantApiRequest? left, Callora.Administration.Api.CreateTenantApiRequest? right) -> bool

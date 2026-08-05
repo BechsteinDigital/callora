@@ -354,7 +354,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
         try
         {
-            RegisterDeclaredContracts(record.AssemblyPath);
+            RegisterDeclaredContracts(record.AssemblyPath, record.PluginId);
             loadContext = new PluginAssemblyLoadContext(record.AssemblyPath, _sharedContracts);
             var assembly = loadContext.LoadFromAssemblyPath(record.AssemblyPath);
             var pluginType = ResolvePluginType(assembly, record.EntryTypeName);
@@ -593,7 +593,14 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         return null;
     }
 
-    private void RegisterDeclaredContracts(string pluginAssemblyPath)
+    /// <summary>
+    /// The contract assemblies shared across plugin load contexts. Exposed so the catalog can
+    /// report them and the dependency version gate can check against what plugins actually brought,
+    /// not only against what the host itself ships.
+    /// </summary>
+    public SharedContractAssemblyRegistry SharedContracts => _sharedContracts;
+
+    private void RegisterDeclaredContracts(string pluginAssemblyPath, string? declaringPluginId = null)
     {
         var declaredContracts = PluginContractManifestReader.ReadDeclaredContracts(pluginAssemblyPath);
         if (declaredContracts.Count == 0)
@@ -603,7 +610,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
         var pluginDirectory = Path.GetDirectoryName(Path.GetFullPath(pluginAssemblyPath))
             ?? throw new InvalidOperationException($"Plugin path '{pluginAssemblyPath}' has no directory.");
-        _sharedContracts.RegisterContracts(pluginDirectory, declaredContracts);
+        _sharedContracts.RegisterContracts(pluginDirectory, declaredContracts, declaringPluginId);
     }
 
     private static Type? ResolvePluginType(Assembly assembly, string? entryTypeName)
