@@ -320,6 +320,9 @@ internal sealed class FakeSdkCall : NativeCall
 
     public bool RejectCalled { get; private set; }
 
+    /// <summary>Status the last reject carried. Matters for the drain path, which must not use 486.</summary>
+    public int RejectStatusCode { get; private set; }
+
     public SdkDtmfTone? LastDtmf { get; private set; }
 
     public bool HasStateChangedSubscribers => StateChanged is not null;
@@ -362,6 +365,7 @@ internal sealed class FakeSdkCall : NativeCall
     public Task<CallActionResult> RejectAsync(int statusCode = 486, string? reasonPhrase = null, CancellationToken ct = default)
     {
         RejectCalled = true;
+        RejectStatusCode = statusCode;
         return Task.FromResult(RejectResult);
     }
 

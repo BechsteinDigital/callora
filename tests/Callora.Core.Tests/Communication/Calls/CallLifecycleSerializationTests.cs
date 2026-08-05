@@ -140,7 +140,9 @@ public sealed class CallLifecycleSerializationTests
         await service.DisposeAsync();
 
         Assert.NotNull(store.Added[0].EndedAt);
-        Assert.Equal(CallOutcome.Failed, store.Added[0].Outcome);
+        // Interrupted rather than Failed since ADR-018: the call did not fail, the host went away
+        // underneath it, and a deployment must not read as a wave of failed calls.
+        Assert.Equal(CallOutcome.Interrupted, store.Added[0].Outcome);
         Assert.Contains(store.OutboxEntries, x => x.EventName == CallEventTypes.Ended);
     }
 

@@ -1,6 +1,9 @@
 using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugin.Communication.Application.Voice;
 using CalloraVoipSdk.Core.Application.Media;
 using CalloraVoipSdk.Core.Domain.Lines;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SdkIncomingCallEventArgs = CalloraVoipSdk.Core.Domain.Events.IncomingCallEventArgs;
 using SdkLineStateChangedEventArgs = CalloraVoipSdk.Core.Domain.Events.LineStateChangedEventArgs;
 
@@ -14,15 +17,24 @@ namespace Callora.Plugin.Communication.Infrastructure.Sdk;
 /// <see cref="IVoipCall"/> backed by the injected media tap factory, so consumers can open the
 /// B4-deep-1 audio bridge on it.
 /// </summary>
-public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
+public sealed class SdkVoiceChannel : IVoiceChannel, IQuiescableChannel, IDisposable
 {
+    /// <summary>
+    /// SIP status the channel answers with once it has been quiesced. Deliberately not the SDK's
+    /// default 486 Busy Here: 503 tells the carrier this line is out of service right now, which sends
+    /// the call down the next route in the trunk group instead of giving the caller a busy tone.
+    /// </summary>
+    private const int ServiceUnavailableStatus = 503;
+
     private static readonly IReadOnlyCollection<string> VoiceCapability = [CommunicationCapabilities.Voice];
 
     private readonly IPhoneLine _line;
     private readonly Func<(IMediaReceiver Receiver, IMediaSender Sender)> _mediaTapFactory;
     private readonly int _maxConcurrentCalls;
+    private readonly ILogger _logger;
     private int _activeCalls;
     private int _disposed;
+    private int _quiesced;
 
     /// <summary>
     /// Wraps <paramref name="line"/> as a channel. <paramref name="mediaTapFactory"/> creates the
@@ -36,7 +48,8 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
         string pluginId,
         IPhoneLine line,
         Func<(IMediaReceiver Receiver, IMediaSender Sender)> mediaTapFactory,
-        int maxConcurrentCalls)
+        int maxConcurrentCalls,
+        ILogger? logger = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
@@ -51,6 +64,7 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
         _line = line;
         _mediaTapFactory = mediaTapFactory;
         _maxConcurrentCalls = maxConcurrentCalls;
+        _logger = logger ?? NullLogger.Instance;
         _line.IncomingCall += OnSdkIncomingCall;
         _line.StateChanged += OnLineStateChanged;
     }
@@ -77,9 +91,48 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
     public event EventHandler<IncomingCallEventArgs>? IncomingCall;
 
     /// <inheritdoc />
+    public int ActiveCalls => Volatile.Read(ref _activeCalls);
+
+    /// <inheritdoc />
+    public async ValueTask QuiesceAsync(CancellationToken cancellationToken = default)
+    {
+        if (Interlocked.Exchange(ref _quiesced, 1) != 0)
+        {
+            return;
+        }
+
+        // Withdrawing the registration is what actually stops the traffic: the carrier stops routing
+        // to this line instead of us rejecting call after call. The reject path below only covers the
+        // race — an INVITE already on the wire when we unregistered.
+        try
+        {
+            await _line.UnregisterAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation(
+                "Channel {ChannelId} quiesced; its SIP registration was withdrawn with {ActiveCalls} call(s) still up.",
+                ChannelId,
+                ActiveCalls);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // A line that cannot unregister is still quiesced: the flag is set, so inbound calls are
+            // refused from here on. Worth reporting, not worth failing the drain over.
+            _logger.LogWarning(
+                ex, "Channel {ChannelId} could not withdraw its SIP registration while quiescing.", ChannelId);
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<ICall> PlaceCallAsync(CallTarget target, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(target);
+
+        // A quiesced channel refuses in both directions. Dialing out of a line whose registration is
+        // gone would fail at the carrier anyway; failing here says why.
+        if (Volatile.Read(ref _quiesced) != 0)
+        {
+            throw new InvalidOperationException(
+                $"Channel '{ChannelId}' is draining and does not accept new calls.");
+        }
 
         // Reserve a slot atomically before dialing; release on Terminated or on Dial failure.
         if (Interlocked.Increment(ref _activeCalls) > _maxConcurrentCalls)
@@ -106,6 +159,14 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
 
     private void OnSdkIncomingCall(object? sender, SdkIncomingCallEventArgs e)
     {
+        // Draining: this INVITE was already on the wire when the registration went away. Answering it
+        // would restart the clock on a channel that is trying to run empty.
+        if (Volatile.Read(ref _quiesced) != 0)
+        {
+            _ = RejectQuiescedAsync(e.Call);
+            return;
+        }
+
         var handler = IncomingCall;
         if (handler is null)
         {
@@ -113,7 +174,7 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
         }
 
         // Inbound calls count against the concurrent-call ceiling so outbound gating reflects the real
-        // trunk load.  Inbound calls are NOT rejected here (requires a SDK-level reject path, follow-up).
+        // trunk load.
         Interlocked.Increment(ref _activeCalls);
 
         // Wrap the SDK call so consumers only ever see the foundation contract (and can open audio).
@@ -171,6 +232,29 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IDisposable
             }
 
             call.StateChanged -= OnStateChanged;
+        }
+    }
+
+    /// <summary>
+    /// Turns an INVITE that arrived during the drain away with 503. Fire-and-forget on purpose: the
+    /// SDK raises the arrival synchronously, and nothing downstream is waiting on the answer.
+    /// </summary>
+    private async Task RejectQuiescedAsync(CalloraVoipSdk.Core.Domain.Calls.ICall call)
+    {
+        try
+        {
+            await call.RejectAsync(ServiceUnavailableStatus, "Service Unavailable").ConfigureAwait(false);
+            _logger.LogInformation(
+                "Channel {ChannelId} refused an inbound call with {Status} while draining.",
+                ChannelId,
+                ServiceUnavailableStatus);
+        }
+        catch (Exception ex)
+        {
+            // The caller hearing nothing is bad; a background exception tearing down the process is
+            // worse. The carrier times the invitation out either way.
+            _logger.LogWarning(
+                ex, "Channel {ChannelId} failed to refuse an inbound call while draining.", ChannelId);
         }
     }
 

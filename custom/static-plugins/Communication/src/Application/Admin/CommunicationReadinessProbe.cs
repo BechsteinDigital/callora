@@ -27,6 +27,16 @@ public sealed class CommunicationReadinessProbe(
     private const string Down = "down";
     private const string NotConfigured = "not-configured";
 
+    private int _draining;
+
+    /// <summary>
+    /// Records that the plugin has started running its work dry (ADR-018 §2.1). From here on the
+    /// aggregate reports <see cref="CommunicationReadiness.Draining"/>, which is what stops the
+    /// surfaces that gate on readiness from handing out new sessions. One-way: there is no path back
+    /// from draining, the plugin is stopped afterwards.
+    /// </summary>
+    public void MarkDraining() => Interlocked.Exchange(ref _draining, 1);
+
     /// <summary>Evaluates every dependency and folds them into one readiness answer.</summary>
     public async Task<CommunicationStatus> ProbeAsync(CancellationToken cancellationToken = default)
     {
@@ -36,7 +46,15 @@ public sealed class CommunicationReadinessProbe(
         var webRtc = ProbeWebRtc();
 
         IReadOnlyList<CommunicationDependencyStatus> dependencies = [database, channels, sip, webRtc];
-        return new CommunicationStatus(CommunicationPlugin.Id, Aggregate(dependencies), dependencies);
+
+        // Draining outranks the dependency fold. A quiesced line reports itself as down, and letting
+        // that surface as "unavailable" would tell an operator something is broken during what is in
+        // fact an orderly shutdown.
+        var aggregate = Volatile.Read(ref _draining) != 0
+            ? CommunicationReadiness.Draining
+            : Aggregate(dependencies);
+
+        return new CommunicationStatus(CommunicationPlugin.Id, aggregate, dependencies);
     }
 
     /// <summary>
