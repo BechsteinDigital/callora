@@ -92,8 +92,7 @@ public static class SurfaceRenderEndpoints
         var locale = string.IsNullOrWhiteSpace(surface.Locale) ? "de" : surface.Locale;
 
         SurfaceCallerView? caller = null;
-        IReadOnlyDictionary<string, IReadOnlyList<SurfaceSlotView>> slots =
-            new Dictionary<string, IReadOnlyList<SurfaceSlotView>>(StringComparer.Ordinal);
+        var composition = SurfaceComposition.Empty;
         if (callerResolver is not null)
         {
             var establishment = await callerResolver
@@ -111,7 +110,7 @@ public static class SurfaceRenderEndpoints
             // are filtered here, not hidden in the browser.
             if (slotResolver is not null)
             {
-                slots = await slotResolver
+                composition = await slotResolver
                     .ResolveAsync(
                         surface.WorkspaceKey, surface.SurfaceKey, establishment.Caller, cancellationToken)
                     .ConfigureAwait(false);
@@ -151,7 +150,8 @@ public static class SurfaceRenderEndpoints
                 surface.ThemePluginId, surface.ThemeVersion, effectiveTheme))
         {
             Caller = caller,
-            Slots = slots,
+            Slots = composition.Slots,
+            Navigation = composition.Navigation,
         };
 
         var html = await RenderSurfaceAsync(

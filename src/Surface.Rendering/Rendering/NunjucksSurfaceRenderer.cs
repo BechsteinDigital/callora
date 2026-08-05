@@ -139,6 +139,11 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
             env.addGlobal('callora_has_slot', function (name) {
                 return (slots[name] || []).length > 0;
             });
+
+            var navigation = (context && context.navigation) || [];
+            env.addGlobal('callora_navigation', function () {
+                return navigation;
+            });
         }
         """;
 
@@ -237,6 +242,7 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
             locale = context.Locale,
             tokens = context.Tokens,
             slots = context.Slots,
+            navigation = context.Navigation,
             caller = context.Caller is null
                 ? null
                 : new

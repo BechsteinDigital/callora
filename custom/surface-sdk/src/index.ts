@@ -61,10 +61,61 @@ export interface SurfaceView {
   surfaceKeys?: readonly string[]
 }
 
+/** Whether a context key tolerates more than one publisher at a time. */
+export type SurfaceContextCardinality = 'single' | 'multiple'
+
+/** What a publisher declares before it may write to a context key. */
+export interface SurfaceContextDescriptor {
+  /** Namespaced and versioned, for example `crm.lead-selection/v1`. */
+  key: string
+  /** Plugin claiming the key, so diagnostics can name it. */
+  publisherPluginId: string
+  /** Defaults to `single`: most workplace contexts have exactly one owner. */
+  cardinality?: SurfaceContextCardinality
+  /** Optional value check; a rejected value is not published. */
+  validate?: (value: unknown) => boolean
+}
+
+/** A registered publisher's handle. Disposing it releases the key. */
+export interface SurfaceContextPublisher<T = unknown> {
+  readonly accepted: boolean
+  publish(value: T): void
+  clear(): void
+  dispose(): void
+}
+
+/** What the channel is currently doing, for a diagnostics panel. */
+export interface SurfaceContextKeyDiagnostics {
+  key: string
+  publishers: readonly string[]
+  subscriberCount: number
+  hasValue: boolean
+  rejectedPublishers: readonly string[]
+  rejectedValues: number
+}
+
+/**
+ * The channel islands collaborate over. Two plugins share a documented vocabulary
+ * rather than knowing each other: a CRM list publishes `crm.lead-selection/v1`, a
+ * phone panel consumes it, neither imports the other.
+ *
+ * It carries UI state, never authority. Anything that must be enforced goes through
+ * an authorised API: a value here came from another script on the same page.
+ */
+export interface SurfaceContextChannel {
+  readonly workspaceKey: string
+  readonly surfaceKey: string
+  providePublisher<T = unknown>(descriptor: SurfaceContextDescriptor): SurfaceContextPublisher<T>
+  read<T = unknown>(key: string): T | undefined
+  subscribe<T = unknown>(key: string, handler: (value: T | undefined) => void): () => void
+  diagnostics(): readonly SurfaceContextKeyDiagnostics[]
+}
+
 /** The runtime registry plugins dock into (window.calloraSurface). */
 export interface SurfaceRegistry {
   readonly views: SurfaceView[]
   registerView(view: SurfaceView): void
+  readonly contextChannel: SurfaceContextChannel
 }
 
 declare global {
@@ -92,4 +143,62 @@ export function registerSurfaceView(view: SurfaceView): void {
   }
 
   registry.registerView(view)
+}
+
+/**
+ * The surface's context channel, or undefined when the runtime has not initialised.
+ * Returned rather than thrown for the same reason a missing registry warns instead of
+ * crashing: a plugin must never break the shell it is a guest in.
+ */
+export function surfaceContextChannel(): SurfaceContextChannel | undefined {
+  const channel = window.calloraSurface?.contextChannel
+  if (!channel) {
+    console.warn('[callora-surface-sdk] surface runtime not initialised; no context channel.')
+  }
+
+  return channel
+}
+
+/** Collects everything a view took from the channel, so one call gives it all back. */
+export interface SurfaceContextScope {
+  /** Publishes under a key this scope now owns until it is disposed. */
+  publish<T = unknown>(descriptor: SurfaceContextDescriptor): SurfaceContextPublisher<T>
+  /** Subscribes for as long as this scope lives. */
+  subscribe<T = unknown>(key: string, handler: (value: T | undefined) => void): void
+  /** Releases every publisher and subscription taken through this scope. */
+  dispose(): void
+}
+
+/**
+ * A scope for one view's use of the channel. Call it in `setup()` and hand `dispose`
+ * to `onUnmounted`: a view that leaves the page must not keep a key claimed or keep
+ * receiving values into a component that no longer exists.
+ */
+export function createSurfaceContextScope(): SurfaceContextScope {
+  const channel = surfaceContextChannel()
+  const publishers: SurfaceContextPublisher[] = []
+  const unsubscribes: (() => void)[] = []
+
+  return {
+    publish<T>(descriptor: SurfaceContextDescriptor): SurfaceContextPublisher<T> {
+      const publisher = channel?.providePublisher<T>(descriptor) ?? {
+        accepted: false,
+        publish: () => {},
+        clear: () => {},
+        dispose: () => {},
+      }
+      publishers.push(publisher as SurfaceContextPublisher)
+      return publisher
+    },
+    subscribe<T>(key: string, handler: (value: T | undefined) => void): void {
+      const unsubscribe = channel?.subscribe<T>(key, handler)
+      if (unsubscribe) {
+        unsubscribes.push(unsubscribe)
+      }
+    },
+    dispose(): void {
+      unsubscribes.splice(0).forEach((unsubscribe) => unsubscribe())
+      publishers.splice(0).forEach((publisher) => publisher.dispose())
+    },
+  }
 }

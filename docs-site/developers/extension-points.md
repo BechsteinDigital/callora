@@ -99,6 +99,30 @@ hidden in the browser, and the claim match is on presence only: what a claim mea
 with the plugin that issued it.
 :::
 
+::: tip Islands collaborate over a versioned context channel
+Each island is its own Vue app and stays that way. What two plugins share is a
+vocabulary, not an app: a CRM list publishes `crm.lead-selection/v1`, a phone panel and
+a video block consume it, and none of the three imports the others.
+
+Deliberately not an event bus. Keys are namespaced and versioned, every publisher
+declares itself, and `channel.diagnostics()` answers who publishes what and who is
+listening. A key defaults to a single owner; a second claimant is refused and recorded
+rather than silently overwriting.
+
+```ts
+import { createSurfaceContextScope } from '@callora/surface-sdk'
+
+const scope = createSurfaceContextScope()
+const leads = scope.publish({ key: 'crm.lead-selection/v1', publisherPluginId: 'crm' })
+scope.subscribe('crm.lead-selection/v1', (lead) => { /* … */ })
+onUnmounted(() => scope.dispose())
+```
+
+The channel carries UI state, never authority. A value on it arrived from another
+script on the same page and proves nothing, so anything that must be enforced still
+goes through an authorised surface API route.
+:::
+
 ::: warning Surface API routes
 This is the seam between the two that existed before: the Admin API speaks for an
 operator, the public HTTP seam is anonymous, and neither lets you act in the name of an
