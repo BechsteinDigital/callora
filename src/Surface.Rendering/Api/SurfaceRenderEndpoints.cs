@@ -1,4 +1,5 @@
 using Callora.Core.Application.Extensions;
+using Callora.Core.Application.Surfaces;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Workspaces;
 using Callora.Core.Infrastructure.Surfaces;
@@ -70,6 +71,9 @@ public static class SurfaceRenderEndpoints
         // Identity is composed with the surface session subsystem; a host without it
         // keeps the pre-ADR-017 behaviour (backend principal or anonymous) — optional.
         [FromServices] SurfaceRequestCallerResolver? callerResolver,
+        // Slot composition is opt-in with the plugin catalog; a host without it renders
+        // the template with empty slots rather than failing (#125 block C).
+        [FromServices] SurfaceSlotResolver? slotResolver,
         CancellationToken cancellationToken)
     {
         var host = httpContext.Request.Host.Host;
@@ -88,6 +92,7 @@ public static class SurfaceRenderEndpoints
         var locale = string.IsNullOrWhiteSpace(surface.Locale) ? "de" : surface.Locale;
 
         SurfaceCallerView? caller = null;
+        var composition = SurfaceComposition.Empty;
         if (callerResolver is not null)
         {
             var establishment = await callerResolver
@@ -100,6 +105,16 @@ public static class SurfaceRenderEndpoints
             }
 
             caller = SurfaceCallerViewFactory.Create(establishment.Caller);
+
+            // Resolved per request because it depends on the caller: claim-gated views
+            // are filtered here, not hidden in the browser.
+            if (slotResolver is not null)
+            {
+                composition = await slotResolver
+                    .ResolveAsync(
+                        surface.WorkspaceKey, surface.SurfaceKey, establishment.Caller, cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
         else if (surface.AccessMode == SurfaceAccessMode.Authenticated &&
                  httpContext.User.Identity?.IsAuthenticated != true)
@@ -135,6 +150,8 @@ public static class SurfaceRenderEndpoints
                 surface.ThemePluginId, surface.ThemeVersion, effectiveTheme))
         {
             Caller = caller,
+            Slots = composition.Slots,
+            Navigation = composition.Navigation,
         };
 
         var html = await RenderSurfaceAsync(

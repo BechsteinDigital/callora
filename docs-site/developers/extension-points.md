@@ -78,6 +78,50 @@ workspace-scoped (plugin-wide status, for example). It is an explicit opt-out.
 | **IHostSurfaceIdentityProvider** | Contributable | Authenticate a surface's own visitors (leads, customers, patients). Bound per surface by operator assignment. |
 | **IHostSurfaceApiContributor** | Contributable | Contribute HTTP routes a surface's visitors may call, under `/surface-api/{pluginId}/…`. |
 | **IHostSurfaceApiRouteHandler** | Contributable | Handle one surface API route — owns the business authorization for the calling subject. |
+| **IHostSurfaceViewContributor** | Contributable | Contribute composable views to surface slots; the browser bundle registers the component under the same view id. |
+
+::: tip Surface slots ride on Nunjucks inheritance
+A view declares the semantic role it fills (`workspace.main`, `lead.detail.panel`), not
+the place it occupies. A theme decides where a role appears by calling
+`{{ callora_slot('workspace.main') }}` inside one of its own blocks, so `extends`,
+`block` and `super()` keep working and a child theme can wrap, move or replace a slot
+like any other markup. `callora_view('vc.room')` embeds a single view,
+`callora_has_slot(...)` branches on whether anything filled it, and
+`callora_slot_views(...)` iterates the resolved views to build your own chrome.
+
+Pass instance parameters at the call site — `{{ callora_slot('lead.detail.panel', { leadId: lead.id }) }}` —
+and they reach the Vue component as its `params` prop, so an embedded view can point at
+a concrete lead or room instead of deriving everything from the URL.
+
+Ordering, cardinality, surface scoping and `RequiredClaims` are resolved on the server
+before any markup exists. A view a visitor may not see is never emitted rather than
+hidden in the browser, and the claim match is on presence only: what a claim means stays
+with the plugin that issued it.
+:::
+
+::: tip Islands collaborate over a versioned context channel
+Each island is its own Vue app and stays that way. What two plugins share is a
+vocabulary, not an app: a CRM list publishes `crm.lead-selection/v1`, a phone panel and
+a video block consume it, and none of the three imports the others.
+
+Deliberately not an event bus. Keys are namespaced and versioned, every publisher
+declares itself, and `channel.diagnostics()` answers who publishes what and who is
+listening. A key defaults to a single owner; a second claimant is refused and recorded
+rather than silently overwriting.
+
+```ts
+import { createSurfaceContextScope } from '@callora/surface-sdk'
+
+const scope = createSurfaceContextScope()
+const leads = scope.publish({ key: 'crm.lead-selection/v1', publisherPluginId: 'crm' })
+scope.subscribe('crm.lead-selection/v1', (lead) => { /* … */ })
+onUnmounted(() => scope.dispose())
+```
+
+The channel carries UI state, never authority. A value on it arrived from another
+script on the same page and proves nothing, so anything that must be enforced still
+goes through an authorised surface API route.
+:::
 
 ::: warning Surface API routes
 This is the seam between the two that existed before: the Admin API speaks for an

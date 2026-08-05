@@ -140,6 +140,7 @@ public static class CalloraHostCompositionExtensions
             .GetSection(Callora.Core.Application.Surfaces.SurfaceApiOptions.SectionName)
             .Bind(surfaceApiOptions);
         builder.Services.AddSingleton(surfaceApiOptions);
+        builder.Services.AddScoped<Callora.Core.Application.Surfaces.SurfaceSlotResolver>();
         builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
         builder.Services.AddScoped<MarketplaceEntitlementApplier>();
 

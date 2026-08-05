@@ -1,4 +1,15 @@
 import { markRaw, reactive, type Component } from 'vue'
+import {
+  createSurfaceContextChannel,
+  type SurfaceContextChannel,
+} from './surface-context-channel'
+
+/**
+ * Instance parameters an island carries: what the SSR template passed at the slot's
+ * call site, so an embedded view can point at a concrete lead, room or appointment
+ * instead of deriving everything from the URL.
+ */
+export type SurfaceViewParams = Readonly<Record<string, unknown>>
 
 /**
  * A view a plugin contributes to the surface. The runtime ships NO views of its own
@@ -8,7 +19,10 @@ import { markRaw, reactive, type Component } from 'vue'
 export interface SurfaceView {
   /** Stable id, unique per surface; a second registration with the same id is ignored. */
   id: string
-  /** The Vue component rendered for this view. Receives the SurfaceContext as a prop. */
+  /**
+   * The Vue component rendered for this view. Receives the SurfaceContext as a
+   * `context` prop and the island's instance parameters as a `params` prop.
+   */
   component: Component
   /** Ascending render order; unset sorts as 0. */
   order?: number
@@ -24,13 +38,22 @@ export interface SurfaceView {
 export interface SurfaceRegistry {
   readonly views: SurfaceView[]
   registerView(view: SurfaceView): void
+  /**
+   * The channel islands collaborate over. Bound to this surface: it is created with
+   * the page and never shared across surfaces or workspaces.
+   */
+  readonly contextChannel: SurfaceContextChannel
 }
 
-export function createSurfaceRegistry(): SurfaceRegistry {
+export function createSurfaceRegistry(
+  workspaceKey = 'default',
+  surfaceKey = 'default',
+): SurfaceRegistry {
   const views = reactive<SurfaceView[]>([])
 
   return {
     views,
+    contextChannel: createSurfaceContextChannel(workspaceKey, surfaceKey),
     registerView(view: SurfaceView): void {
       if (views.some((existing) => existing.id === view.id)) {
         return
