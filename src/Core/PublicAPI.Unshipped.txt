@@ -1468,6 +1468,10 @@ Callora.Core.Application.Options.CalloraHostingOptions.PluginDrainTimeout.get ->
 Callora.Core.Application.Options.CalloraHostingOptions.PluginDrainTimeout.set -> void
 Callora.Core.Application.Options.CalloraHostingOptions.RuntimeCapabilityGracePeriod.get -> System.TimeSpan
 Callora.Core.Application.Options.CalloraHostingOptions.RuntimeCapabilityGracePeriod.set -> void
+Callora.Core.Application.Options.CalloraHostingOptions.SessionResumeMaxLifetime.get -> System.TimeSpan
+Callora.Core.Application.Options.CalloraHostingOptions.SessionResumeMaxLifetime.set -> void
+Callora.Core.Application.Options.CalloraHostingOptions.SessionResumeMaxPayloadBytes.get -> int
+Callora.Core.Application.Options.CalloraHostingOptions.SessionResumeMaxPayloadBytes.set -> void
 Callora.Core.Application.Options.CalloraHostingOptions.StaticPluginDirectory.get -> string!
 Callora.Core.Application.Options.CalloraHostingOptions.StaticPluginDirectory.set -> void
 Callora.Core.Application.Persistence.Contracts.IPluginDbContextFactory<TContext>
@@ -1689,6 +1693,28 @@ Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Metho
 Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Method.init -> void
 Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.RouteTemplate.get -> string!
 Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.RouteTemplate.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResume
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostSessionResume!
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.Deconstruct(out string! SessionKind, out string! Payload, out string? WorkspaceKey, out System.DateTimeOffset IssuedAtUtc) -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.Equals(Callora.Core.Application.Plugins.Contracts.HostSessionResume? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.HostSessionResume(string! SessionKind, string! Payload, string? WorkspaceKey, System.DateTimeOffset IssuedAtUtc) -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.IssuedAtUtc.get -> System.DateTimeOffset
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.IssuedAtUtc.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.Payload.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.Payload.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.SessionKind.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.SessionKind.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.WorkspaceKey.get -> string?
+Callora.Core.Application.Plugins.Contracts.HostSessionResume.WorkspaceKey.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket
+Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket!
+Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.Deconstruct(out string! Token, out System.DateTimeOffset ExpiresAtUtc) -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.Equals(Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.ExpiresAtUtc.get -> System.DateTimeOffset
+Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.ExpiresAtUtc.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.HostSessionResumeTicket(string! Token, System.DateTimeOffset ExpiresAtUtc) -> void
+Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.Token.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.Token.init -> void
 Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest
 Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest!
 Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Body.get -> System.Text.Json.JsonElement?
@@ -1888,6 +1914,10 @@ Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor.Pl
 Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor.PublicHttpRoutes.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration!>!
 Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler
 Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse!>
+Callora.Core.Application.Plugins.Contracts.IHostSessionResumeService
+Callora.Core.Application.Plugins.Contracts.IHostSessionResumeService.IssueAsync(string! sessionKind, string! payload, System.TimeSpan lifetime, string? workspaceKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket!>!
+Callora.Core.Application.Plugins.Contracts.IHostSessionResumeService.RedeemAsync(string! token, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.Contracts.HostSessionResume?>!
+Callora.Core.Application.Plugins.Contracts.IHostSessionResumeService.RevokeAsync(string! token, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor
 Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor.PluginId.get -> string!
 Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor.Routes.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration!>!
@@ -2015,6 +2045,11 @@ Callora.Core.Application.Plugins.IPluginUiAssetPublisher
 Callora.Core.Application.Plugins.IPluginUiAssetPublisher.PublishAllAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Plugins.IProvidedContractVersionProvider
 Callora.Core.Application.Plugins.IProvidedContractVersionProvider.Resolve(string! contractId) -> Semver.SemVersion?
+Callora.Core.Application.Plugins.ISessionResumeTicketStore
+Callora.Core.Application.Plugins.ISessionResumeTicketStore.ConsumeAsync(string! tokenHash, string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Plugins.SessionResumeTicketRecord?>!
+Callora.Core.Application.Plugins.ISessionResumeTicketStore.CreateAsync(Callora.Core.Domain.Plugins.SessionResumeTicketRecord! record, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Plugins.ISessionResumeTicketStore.DeleteAsync(string! tokenHash, string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Application.Plugins.ISessionResumeTicketStore.PurgeExpiredAsync(System.DateTimeOffset nowUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
 Callora.Core.Application.Plugins.IWorkspacePluginActivationReader
 Callora.Core.Application.Plugins.IWorkspacePluginActivationReader.ListActivePluginIdsAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
 Callora.Core.Application.Plugins.IWorkspacePluginActivationStore
@@ -2353,6 +2388,13 @@ Callora.Core.Application.Plugins.RuntimePluginUninstallStatus
 Callora.Core.Application.Plugins.RuntimePluginUninstallStatus.Failed = 2 -> Callora.Core.Application.Plugins.RuntimePluginUninstallStatus
 Callora.Core.Application.Plugins.RuntimePluginUninstallStatus.NotInstalled = 1 -> Callora.Core.Application.Plugins.RuntimePluginUninstallStatus
 Callora.Core.Application.Plugins.RuntimePluginUninstallStatus.Uninstalled = 0 -> Callora.Core.Application.Plugins.RuntimePluginUninstallStatus
+Callora.Core.Application.Plugins.SessionResumePurgeJobHandler
+Callora.Core.Application.Plugins.SessionResumePurgeJobHandler.ExecuteAsync(Callora.Core.Application.Jobs.Contracts.BackgroundJobExecutionContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Plugins.SessionResumePurgeJobHandler.JobType.get -> string!
+Callora.Core.Application.Plugins.SessionResumePurgeJobHandler.SessionResumePurgeJobHandler(Callora.Core.Application.Plugins.ISessionResumeTicketStore! tickets, System.TimeProvider! timeProvider) -> void
+Callora.Core.Application.Plugins.SessionResumePurgeRecurringJobProvider
+Callora.Core.Application.Plugins.SessionResumePurgeRecurringJobProvider.GetDefinitions() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Jobs.Contracts.RecurringJobDefinition!>!
+Callora.Core.Application.Plugins.SessionResumePurgeRecurringJobProvider.SessionResumePurgeRecurringJobProvider() -> void
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.ListRegistrations() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.SharedContractRegistration!>!
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.RegisterContracts(string! pluginDirectory, System.Collections.Generic.IReadOnlyCollection<string!>! contractFileNames, string? declaringPluginId = null) -> void
@@ -2745,6 +2787,7 @@ Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.SessionRevoca
 Callora.Core.Application.Security.SessionRevocationPurgeRecurringJobProvider
 Callora.Core.Application.Security.SessionRevocationPurgeRecurringJobProvider.GetDefinitions() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Jobs.Contracts.RecurringJobDefinition!>!
 Callora.Core.Application.Security.SessionRevocationPurgeRecurringJobProvider.SessionRevocationPurgeRecurringJobProvider() -> void
+Callora.Core.Application.Security.SingleUseSecret
 Callora.Core.Application.Security.UserDataExport
 Callora.Core.Application.Security.UserDataExport.<Clone>$() -> Callora.Core.Application.Security.UserDataExport!
 Callora.Core.Application.Security.UserDataExport.AuditTrail.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Security.UserDataExportAuditEntry!>!
@@ -4003,6 +4046,24 @@ Callora.Core.Domain.Plugins.PluginMigrationRecord.PluginId.set -> void
 Callora.Core.Domain.Plugins.PluginMigrationRecord.PluginMigrationRecord() -> void
 Callora.Core.Domain.Plugins.PluginMigrationRecord.Version.get -> int
 Callora.Core.Domain.Plugins.PluginMigrationRecord.Version.set -> void
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.ExpiresAtUtc.get -> System.DateTimeOffset
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.ExpiresAtUtc.set -> void
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.Id.get -> System.Guid
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.Id.set -> void
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.IssuedAtUtc.get -> System.DateTimeOffset
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.IssuedAtUtc.set -> void
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.Payload.get -> string!
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.Payload.set -> void
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.PluginId.get -> string!
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.PluginId.set -> void
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.SessionKind.get -> string!
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.SessionKind.set -> void
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.SessionResumeTicketRecord() -> void
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.TokenHash.get -> string!
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.TokenHash.set -> void
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.WorkspaceKey.get -> string!
+Callora.Core.Domain.Plugins.SessionResumeTicketRecord.WorkspaceKey.set -> void
 Callora.Core.Domain.Plugins.WorkspacePluginActivation
 Callora.Core.Domain.Plugins.WorkspacePluginActivation.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Domain.Plugins.WorkspacePluginActivation.CreatedAtUtc.set -> void
@@ -4492,6 +4553,9 @@ Callora.Core.Infrastructure.Persistence.Configurations.PluginInstallationEntityT
 Callora.Core.Infrastructure.Persistence.Configurations.PluginMigrationRecordEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.PluginMigrationRecordEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Plugins.PluginMigrationRecord!>! builder) -> void
 Callora.Core.Infrastructure.Persistence.Configurations.PluginMigrationRecordEntityTypeConfiguration.PluginMigrationRecordEntityTypeConfiguration() -> void
+Callora.Core.Infrastructure.Persistence.Configurations.SessionResumeTicketRecordEntityTypeConfiguration
+Callora.Core.Infrastructure.Persistence.Configurations.SessionResumeTicketRecordEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Plugins.SessionResumeTicketRecord!>! builder) -> void
+Callora.Core.Infrastructure.Persistence.Configurations.SessionResumeTicketRecordEntityTypeConfiguration.SessionResumeTicketRecordEntityTypeConfiguration() -> void
 Callora.Core.Infrastructure.Persistence.Configurations.SurfaceHandoffTicketRecordEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.SurfaceHandoffTicketRecordEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Surfaces.SurfaceHandoffTicketRecord!>! builder) -> void
 Callora.Core.Infrastructure.Persistence.Configurations.SurfaceHandoffTicketRecordEntityTypeConfiguration.SurfaceHandoffTicketRecordEntityTypeConfiguration() -> void
@@ -4641,6 +4705,12 @@ Callora.Core.Infrastructure.Persistence.EfPluginInstallationRepository.ListAsync
 Callora.Core.Infrastructure.Persistence.EfPluginSchemaDropper
 Callora.Core.Infrastructure.Persistence.EfPluginSchemaDropper.DropAsync(string! schemaName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfPluginSchemaDropper.EfPluginSchemaDropper(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
+Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore
+Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore.ConsumeAsync(string! tokenHash, string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Plugins.SessionResumeTicketRecord?>!
+Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore.CreateAsync(Callora.Core.Domain.Plugins.SessionResumeTicketRecord! record, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore.DeleteAsync(string! tokenHash, string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore.EfSessionResumeTicketStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
+Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore.PurgeExpiredAsync(System.DateTimeOffset nowUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
 Callora.Core.Infrastructure.Persistence.EfSurfaceHandoffTicketStore
 Callora.Core.Infrastructure.Persistence.EfSurfaceHandoffTicketStore.ConsumeAsync(string! tokenHash, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.SurfaceHandoffTicket?>!
 Callora.Core.Infrastructure.Persistence.EfSurfaceHandoffTicketStore.CreateAsync(Callora.Core.Application.Surfaces.SurfaceHandoffTicket! ticket, string! tokenHash, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
@@ -4745,6 +4815,7 @@ Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.PluginDataDocum
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.PluginEntitlements.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Entitlements.PluginEntitlement!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.PluginInstallations.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Plugins.PluginInstallation!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.PluginMigrations.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Plugins.PluginMigrationRecord!>!
+Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SessionResumeTickets.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Plugins.SessionResumeTicketRecord!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SurfaceHandoffTickets.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Surfaces.SurfaceHandoffTicketRecord!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SurfaceSessions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Surfaces.SurfaceSessionRecord!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SystemConfigDefinitions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Configuration.SystemConfigDefinition!>!
@@ -4777,6 +4848,12 @@ Callora.Core.Infrastructure.Persistence.ScopedPluginDataStore.ListWorkspaceKeysA
 Callora.Core.Infrastructure.Persistence.ScopedPluginDataStore.RemoveAsync(Callora.Core.Application.Data.Contracts.PluginDataKey! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Persistence.ScopedPluginDataStore.ScopedPluginDataStore(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory) -> void
 Callora.Core.Infrastructure.Persistence.ScopedPluginDataStore.SetAsync(Callora.Core.Application.Data.Contracts.PluginDataKey! key, string! jsonDocument, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Persistence.ScopedSessionResumeTicketStore
+Callora.Core.Infrastructure.Persistence.ScopedSessionResumeTicketStore.ConsumeAsync(string! tokenHash, string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Plugins.SessionResumeTicketRecord?>!
+Callora.Core.Infrastructure.Persistence.ScopedSessionResumeTicketStore.CreateAsync(Callora.Core.Domain.Plugins.SessionResumeTicketRecord! record, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Persistence.ScopedSessionResumeTicketStore.DeleteAsync(string! tokenHash, string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Persistence.ScopedSessionResumeTicketStore.PurgeExpiredAsync(System.DateTimeOffset nowUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Callora.Core.Infrastructure.Persistence.ScopedSessionResumeTicketStore.ScopedSessionResumeTicketStore(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory) -> void
 Callora.Core.Infrastructure.Persistence.WorkspaceDataPurgeService
 Callora.Core.Infrastructure.Persistence.WorkspaceDataPurgeService.PurgeAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Persistence.WorkspaceDataPurgeService.WorkspaceDataPurgeService(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext, Callora.Core.Application.Media.IMediaStorage! mediaStorage, Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger! pluginPurger, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Persistence.WorkspaceDataPurgeService!>! logger) -> void
@@ -5103,6 +5180,7 @@ const Callora.Core.Application.Plugins.PluginSignatureStates.NotSigned = "unsign
 const Callora.Core.Application.Plugins.PluginSignatureStates.Revoked = "revoked" -> string!
 const Callora.Core.Application.Plugins.PluginSignatureStates.SignedTrusted = "signed-trusted" -> string!
 const Callora.Core.Application.Plugins.PluginSignatureStates.Untrusted = "untrusted" -> string!
+const Callora.Core.Application.Plugins.SessionResumePurgeJobHandler.JobTypeName = "plugins.session-resume-purge" -> string!
 const Callora.Core.Application.Plugins.Signing.PluginContentHasher.SignatureFileName = "plugin.signature.json" -> string!
 const Callora.Core.Application.Plugins.Signing.PluginSignatureAlgorithms.EcdsaP256Sha256 = "ECDSA-P256-SHA256" -> string!
 const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultApiKey = "callora-local-dev-key-change-me" -> string!
@@ -5432,6 +5510,12 @@ override Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.ToStr
 override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.GetHashCode() -> int
 override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.HostSessionResume.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostSessionResume.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostSessionResume.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.ToString() -> string!
 override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.GetHashCode() -> int
 override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.ToString() -> string!
@@ -5918,6 +6002,10 @@ static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.operato
 static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.operator ==(Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.operator !=(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.operator ==(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSessionResume.operator !=(Callora.Core.Application.Plugins.Contracts.HostSessionResume? left, Callora.Core.Application.Plugins.Contracts.HostSessionResume? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSessionResume.operator ==(Callora.Core.Application.Plugins.Contracts.HostSessionResume? left, Callora.Core.Application.Plugins.Contracts.HostSessionResume? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.operator !=(Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket? left, Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket.operator ==(Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket? left, Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.operator !=(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.operator ==(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.operator !=(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse? right) -> bool
@@ -6035,6 +6123,8 @@ static Callora.Core.Application.Security.BackendUserException.PasswordRequired()
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Created(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Deleted(string! externalId) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Updated(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
+static Callora.Core.Application.Security.SingleUseSecret.Create() -> string!
+static Callora.Core.Application.Security.SingleUseSecret.Hash(string! secret) -> string!
 static Callora.Core.Application.Security.UserDataExport.operator !=(Callora.Core.Application.Security.UserDataExport? left, Callora.Core.Application.Security.UserDataExport? right) -> bool
 static Callora.Core.Application.Security.UserDataExport.operator ==(Callora.Core.Application.Security.UserDataExport? left, Callora.Core.Application.Security.UserDataExport? right) -> bool
 static Callora.Core.Application.Security.UserDataExportAuditEntry.operator !=(Callora.Core.Application.Security.UserDataExportAuditEntry? left, Callora.Core.Application.Security.UserDataExportAuditEntry? right) -> bool
