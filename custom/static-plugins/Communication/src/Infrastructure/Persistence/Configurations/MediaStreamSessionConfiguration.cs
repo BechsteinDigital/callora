@@ -17,7 +17,7 @@ public sealed class MediaStreamSessionConfiguration : IEntityTypeConfiguration<M
         builder.Property(x => x.CallId).HasMaxLength(64).IsRequired();
         builder.Property(x => x.WorkspaceKey).HasMaxLength(120).IsRequired();
         builder.Property(x => x.ConsumerRef).HasMaxLength(200).IsRequired();
-        builder.Property(x => x.ConnectToken).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.ConnectTokenHash).HasMaxLength(64).IsRequired();
         builder.Property(x => x.Direction).HasConversion<string>().HasMaxLength(15).IsRequired();
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(15).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
@@ -32,7 +32,7 @@ public sealed class MediaStreamSessionConfiguration : IEntityTypeConfiguration<M
         // Single-use connect token → unique lookup key for WS-connect authorization. Atomic
         // single-use under a concurrent double-connect is enforced by a conditional UPDATE in the
         // store (EfMediaStreamSessionStore.TryActivateByConnectTokenAsync), not a mapping concern.
-        builder.HasIndex(x => x.ConnectToken).IsUnique();
+        builder.HasIndex(x => x.ConnectTokenHash).IsUnique();
         builder.HasIndex(x => x.WorkspaceKey);
     }
 }
