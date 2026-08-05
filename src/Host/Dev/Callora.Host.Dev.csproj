@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Callora.Host.Dev</RootNamespace>
+    <AssemblyName>Callora.Host.Dev</AssemblyName>
+    <!-- Never packed: this is the repository's own runnable composition, not a
+         product. Distributions compose the packages themselves (callora-production). -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Project references, not packages, on purpose: a change to a module has to
+         show up here on the next F5 without a pack-and-restore round trip. That is
+         the whole reason this host exists next to the distribution one. -->
+    <ProjectReference Include="../../Core/Callora.Core.csproj" />
+    <ProjectReference Include="../../Administration/Callora.Administration.csproj" />
+    <ProjectReference Include="../../Workspace/Callora.Workspace.csproj" />
+    <ProjectReference Include="../../Surface.Rendering/Callora.Surface.Rendering.csproj" />
+    <!-- Communication's contract in the host's default load context, so host and
+         plugins share ICommunicationChannelRegistry as ONE type. Without it, type
+         identity breaks the moment a Communication plugin loads. -->
+    <ProjectReference Include="../../../custom/static-plugins/Communication/src/Abstractions/Callora.Plugin.Communication.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
