@@ -123,7 +123,7 @@ API ist danach erreichbar unter:
 
 ## Communication Plugin (System-Tier)
 - Projekt: `custom/static-plugins/Communication/Callora.Plugin.Communication.csproj`
-- Entrypoint: `Callora.Plugin.Communication.Application.CommunicationPlugin`
+- Entrypoint: `Callora.Plugin.Communication.CommunicationPlugin`
 - Registry: `custom/static-plugins/Communication/registry.json` (pluginId `communication`, tier `system`)
 - Öffentliche Verträge: `custom/static-plugins/Communication/Abstractions` (`Callora.Plugin.Communication.Abstractions`)
 
