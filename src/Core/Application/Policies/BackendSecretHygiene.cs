@@ -69,6 +69,18 @@ public static class BackendSecretHygiene
                 "BackendHost.ApiKeys contains the development bootstrap key — replace it before exposing the host.");
         }
 
+        // Not a secret, but the same class of mistake and the same consequence. A plugin runs as host
+        // code: package signatures are the entire basis for trusting it (ADR-013), so accepting an
+        // unsigned one outside development means running code of unestablished origin with the
+        // process's full rights. The trust model calls this tier "production: always blocked"; until
+        // now that was advice, and the development compose file sets the flag.
+        if (options.AllowUnsignedPlugins)
+        {
+            violations.Add(
+                "BackendHost.AllowUnsignedPlugins is enabled — plugins run as host code, so an unsigned "
+                + "package is code of unestablished origin. Sign the packages and configure TrustedSigners.");
+        }
+
         return violations;
     }
 }
