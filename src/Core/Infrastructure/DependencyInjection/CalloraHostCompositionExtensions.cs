@@ -83,6 +83,10 @@ public static class CalloraHostCompositionExtensions
         // Data-Store, weil ein Plugin sie aus WebSocket-Handlern ohne Request-Scope ausstellt.
         builder.Services.AddSingleton<Callora.Core.Application.Plugins.ISessionResumeTicketStore,
             ScopedSessionResumeTicketStore>();
+        // Port -> Adapter im Composition Root: die Application-Schicht kennt nur
+        // IPluginPayloadProtector, Data Protection bleibt Infrastruktur.
+        builder.Services.AddSingleton<Callora.Core.Application.Plugins.IPluginPayloadProtector,
+            Callora.Core.Infrastructure.Security.DataProtectionPluginPayloadProtector>();
         // Plugin-eigene EF-Datenbanken (PLAT-260): Plugins bringen echte Entities +
         // EF-Migrationen in ihrem eigenen Schema mit.
         builder.Services.AddSingleton<Callora.Core.Application.Plugins.IPluginDbContextProvider,

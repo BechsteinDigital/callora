@@ -1,6 +1,7 @@
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Tests.Support;
+using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,7 +43,7 @@ public sealed class PluginContextTests
         var store = new InMemorySessionResumeTicketStore();
         var services = new ServiceCollection()
             .AddSingleton<ISessionResumeTicketStore>(store)
-            .AddSingleton<IDataProtectionProvider>(new EphemeralDataProtectionProvider())
+            .AddSingleton<IPluginPayloadProtector>(new DataProtectionPluginPayloadProtector(new EphemeralDataProtectionProvider()))
             .BuildServiceProvider();
 
         var mine = Resume(services, "videoconference");
@@ -58,14 +59,14 @@ public sealed class PluginContextTests
     {
         // A minimal host without persistence degrades to "no resume" rather than to a broken one.
         var services = new ServiceCollection()
-            .AddSingleton<IDataProtectionProvider>(new EphemeralDataProtectionProvider())
+            .AddSingleton<IPluginPayloadProtector>(new DataProtectionPluginPayloadProtector(new EphemeralDataProtectionProvider()))
             .BuildServiceProvider();
 
         Assert.Null(Context(services, "videoconference").Services.GetService(typeof(IHostSessionResumeService)));
     }
 
     [Fact]
-    public void SessionResume_IsAbsentWithoutDataProtection()
+    public void SessionResume_IsAbsentWithoutAPayloadProtector()
     {
         // Rather than storing the payload in the clear. The host never reads it, so it cannot judge
         // how sensitive it is, and a host that cannot protect it should not offer resume at all.

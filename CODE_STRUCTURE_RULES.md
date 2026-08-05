@@ -57,6 +57,11 @@ Struktur ist verbindlich fuer den Host und fuer alle Plugin-Entwicklungen.
 ### Api-Konvention
 
 - Controller, keine Minimal-API-Endpoints. Host und Plugin einheitlich.
+  Der Bestand widerspricht dieser Regel noch an vielen Stellen. Er ist in
+  `ArchitectureRulesTests.MinimalApiBaseline` erfasst und eingefroren: neue
+  Verstoesse scheitern im Test, und wer eine Datei auf Controller umstellt,
+  streicht ihren Eintrag. Ein Eintrag ohne Verstoss laesst den Test ebenfalls
+  scheitern — die Liste kann also nur schrumpfen.
 - Oberste Api-Ebene trennt `Workspace/` (mandanten-scoped) von `Admin/`
   (operator-scoped).
 - Request-/Response-DTOs sind eigene top-level Typen (siehe Pflichtregeln),
