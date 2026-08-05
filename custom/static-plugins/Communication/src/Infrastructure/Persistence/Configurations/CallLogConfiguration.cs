@@ -11,9 +11,14 @@ public sealed class CallLogConfiguration : IEntityTypeConfiguration<CallLog>
     public void Configure(EntityTypeBuilder<CallLog> builder)
     {
         builder.ToTable("call_logs");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.RecordId);
 
-        builder.Property(x => x.Id).HasMaxLength(64);
+        // The provider's call id is unique within its channel, not globally (#113). Scoping the
+        // uniqueness to workspace and channel is what lets two channels report the same id.
+        // A record without a channel (AccountId null) is outside this constraint, because
+        // PostgreSQL treats nulls as distinct; no production path writes one.
+        builder.Property(x => x.Id).HasMaxLength(64).IsRequired();
+        builder.HasIndex(x => new { x.WorkspaceKey, x.AccountId, x.Id }).IsUnique();
         builder.Property(x => x.WorkspaceKey).HasMaxLength(120).IsRequired();
         builder.Property(x => x.AccountId).HasMaxLength(64);
         builder.Property(x => x.LineId).HasMaxLength(64);
