@@ -193,6 +193,17 @@ public sealed class BackendHostOptions
     /// </summary>
     public string[] RevokedContentHashes { get; set; } = [];
 
+    /// <summary>
+    /// Content-Security-Policy sent with every response. Defaults to
+    /// <see cref="BackendContentSecurityPolicy.Default"/>; set to an empty string to send none.
+    /// </summary>
+    /// <remarks>
+    /// Configurable because a distribution may serve assets from a CDN or embed the shells somewhere
+    /// this policy forbids. Overriding it is a deliberate widening of what plugin UI code can reach,
+    /// so it belongs in configuration where an operator owns it, not in a plugin's manifest.
+    /// </remarks>
+    public string ContentSecurityPolicy { get; set; } = BackendContentSecurityPolicy.Default;
+
     public BackendDemoAdminUserOptions DemoAdminUser { get; set; } = new();
 
     /// <summary>

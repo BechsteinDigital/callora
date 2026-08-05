@@ -378,10 +378,21 @@ public static class CalloraHostCompositionExtensions
         app.UseExceptionHandler();
 
         app.MapBackendOpenApi();
+        var contentSecurityPolicy = backendOptions.ContentSecurityPolicy;
         app.Use(async (context, next) =>
         {
             // Browsers must not MIME-sniff plugin assets or media streams.
             context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+
+            // Plugin admin bundles run inside the shell's document with its DOM, origin and session.
+            // The trust model accepts that for reviewed, signed packages and names a strict CSP as
+            // one of the conditions; this is that condition. It bounds where a bundle may pull code
+            // from and where it may talk to — not what it does with what it already has.
+            if (!string.IsNullOrWhiteSpace(contentSecurityPolicy))
+            {
+                context.Response.Headers.Append("Content-Security-Policy", contentSecurityPolicy);
+            }
+
             await next();
         });
         app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions
