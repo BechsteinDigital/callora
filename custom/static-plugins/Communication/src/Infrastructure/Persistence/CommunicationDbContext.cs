@@ -27,6 +27,12 @@ public sealed class CommunicationDbContext(DbContextOptions<CommunicationDbConte
     /// <summary>Call history (metadata only).</summary>
     public DbSet<CallLog> CallLogs => Set<CallLog>();
 
+    /// <summary>
+    /// Call events awaiting delivery. Written in the same transaction as the call-log change
+    /// that produced them, so an event never describes a state the database does not hold (#113).
+    /// </summary>
+    public DbSet<CallEventOutboxEntry> CallEventOutbox => Set<CallEventOutboxEntry>();
+
     /// <summary>WebSocket media-stream bindings (metadata only).</summary>
     public DbSet<MediaStreamSession> MediaStreamSessions => Set<MediaStreamSession>();
 

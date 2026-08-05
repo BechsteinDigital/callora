@@ -104,14 +104,26 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         IReadOnlyList<HostAdminApiRouteRegistration> callRoutes = [];
         if (dbContextFactory is not null)
         {
+            var callLogStore = new EfCallLogStore(dbContextFactory);
             _callControlService = new CallControlService(
                 _channelRegistry,
-                new EfCallLogStore(dbContextFactory),
-                context.Services.GetService(typeof(IBusinessEventBus)) as IBusinessEventBus,
+                callLogStore,
                 ResolveLogger<CallControlService>(context.Services),
                 TimeProvider.System);
             context.Export<ICallControlService>(_callControlService);
             callRoutes = CallAdminRoutes.Build(_callControlService);
+
+            // Call events are written to the outbox with the log change and delivered by this
+            // job, so a bus outage delays them instead of losing them (#113).
+            if (context.Services.GetService(typeof(IBusinessEventBus)) is IBusinessEventBus eventBus)
+            {
+                context.Export<IBackgroundJobHandler>(new CallEventOutboxDrainJobHandler(
+                    callLogStore,
+                    eventBus,
+                    TimeProvider.System,
+                    ResolveLogger<CallEventOutboxDrainJobHandler>(context.Services)));
+                context.Export<IRecurringJobProvider>(new CallEventOutboxRecurringJobProvider());
+            }
 
             // Contribute the call-control primitives as MCP tools so out-of-process AI agents can place
             // and control calls over the host's /mcp surface — the same service, an additional face. The
@@ -248,7 +260,12 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
 
         // Stop observing inbound calls before disposing the service it feeds.
         _incomingCallObserver?.Dispose();
-        _callControlService?.Dispose();
+        if (_callControlService is not null)
+        {
+            // Finalizes calls still in progress rather than leaving them in-progress forever (#113).
+            await _callControlService.DisposeAsync().ConfigureAwait(false);
+        }
+
         _capabilitySource?.Dispose();
 
         // Dispose the voice client only if the plugin built it (config-enabled path); an injected
