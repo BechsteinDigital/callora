@@ -97,7 +97,7 @@ Whoever holds the token can attempt to redeem it inside its window. The plugin b
 *plugin* from redeeming it; it does not stop another *client* of yours.
 
 So on redemption, check the payload against the caller in front of you. `HostWebSocketConnectRequest.Caller`
-carries the surface caller when the upgrade had one — including a recognised guest, who has a stable
+carries the surface caller when the upgrade had one — including a recognized guest, who has a stable
 subject too (ADR-017 §3). If the seat was issued to a subject, the returning connection must present
 the same one:
 
