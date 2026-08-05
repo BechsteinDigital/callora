@@ -29,6 +29,27 @@ interface SipAccount {
   status: string
   enabled: boolean
   lastError: string | null
+  lastStatusChangeAt: string | null
+  lastRegisteredAt: string | null
+}
+
+// SipAccountStatus on the backend. The distinction matters operationally: Connecting is
+// still coming up, Degraded still carries calls, Failed does not, and Disabled is a
+// deliberate choice rather than a fault (#112).
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  Disabled: { label: 'Deaktiviert', color: 'var(--cal-color-text-muted, #777)' },
+  Connecting: { label: 'Verbindet', color: 'var(--cal-color-warning, #b26a00)' },
+  Up: { label: 'Registriert', color: 'var(--cal-color-success, #2e7d32)' },
+  Degraded: { label: 'Eingeschränkt', color: 'var(--cal-color-warning, #b26a00)' },
+  Failed: { label: 'Fehlgeschlagen', color: 'var(--cal-color-danger, #c0392b)' },
+}
+
+function statusOf(account: SipAccount): { label: string; color: string } {
+  return STATUS_LABELS[account.status] ?? { label: account.status, color: 'inherit' }
+}
+
+function formatMoment(value: string | null): string {
+  return value ? new Date(value).toLocaleString() : '-'
 }
 
 const workspaceKey = ref(new URLSearchParams(window.location.search).get('workspaceKey') ?? '')
@@ -228,7 +249,15 @@ onMounted(() => {
             <td style="padding: 0.4rem">{{ a.displayName }}</td>
             <td style="padding: 0.4rem">{{ a.host }}:{{ a.port }} {{ a.transport }}</td>
             <td style="padding: 0.4rem">{{ a.mode }}</td>
-            <td style="padding: 0.4rem">{{ a.status }}<span v-if="a.lastError"> ({{ a.lastError }})</span></td>
+            <td style="padding: 0.4rem">
+              <span :style="{ color: statusOf(a).color }">{{ statusOf(a).label }}</span>
+              <span v-if="a.lastError" style="display: block; font-size: 0.8rem; color: var(--cal-color-danger, #c0392b)">
+                {{ a.lastError }}
+              </span>
+              <span style="display: block; font-size: 0.75rem; color: var(--cal-color-text-muted, #777)">
+                zuletzt registriert: {{ formatMoment(a.lastRegisteredAt) }}
+              </span>
+            </td>
             <td style="padding: 0.4rem">{{ a.enabled ? 'ja' : 'nein' }}</td>
             <td style="padding: 0.4rem; display: flex; gap: 0.4rem">
               <button :disabled="busy" @click="toggle(a)">{{ a.enabled ? 'Deaktivieren' : 'Aktivieren' }}</button>

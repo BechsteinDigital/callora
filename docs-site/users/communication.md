@@ -93,6 +93,33 @@ An account of an unsupported kind created before this refusal existed stays in
 the database and is reported as **failed** with that reason on startup, instead
 of sitting on `Connecting` forever.
 
+### Account status and readiness
+
+Each account carries the state the voice provider last reported, so the admin
+list distinguishes a deliberate choice from a fault:
+
+| Status | Meaning |
+|---|---|
+| `Disabled` | Switched off by an operator. Not a fault. |
+| `Connecting` | Provisioned, no registration reported yet. |
+| `Up` | Registered; calls can be placed and received. |
+| `Degraded` | Impaired but still carrying calls. |
+| `Failed` | Not registered. `lastError` says why. |
+
+`lastRegisteredAt` keeps the moment of the last successful registration even
+after a failure, so "never worked" and "worked until an hour ago" are
+distinguishable. `lastError` is redacted before it is stored: a provider message
+that quotes `sip:user:password@host` or an `Authorization` header is stripped of
+the credential and truncated.
+
+`GET /api/ext/admin/plugins/communication/status` aggregates the dependencies
+that gate a call (`database`, `channels`, `sip`, `webrtc`) and answers `200`
+while calls are possible, `503` when they are not. A dependency the deployment
+does not use reports `not-configured` and never drags the verdict down, so a
+voice-only install is `ready` without WebRTC. This is readiness only. Host
+liveness stays separate, so a carrier outage never gets a healthy process
+restarted.
+
 ## Current scope — an honest note
 
 The call stack, dialer UI, call events, consent handling, and Flow call-control

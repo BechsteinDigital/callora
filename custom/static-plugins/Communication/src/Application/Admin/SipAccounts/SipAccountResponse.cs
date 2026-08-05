@@ -5,6 +5,11 @@ namespace Callora.Plugin.Communication.Application.Admin.SipAccounts;
 /// <summary>
 /// Operator-facing view of a <see cref="SipAccount"/>. Deliberately omits the credential: only the
 /// digest username is shown, never the password (which lives protected in the secret store).
+/// <para>
+/// <c>Status</c>, <c>LastError</c>, <c>LastStatusChangeAt</c> and <c>LastRegisteredAt</c> come from
+/// what the provider last reported (#112), so an operator can tell a never-connected account from
+/// one that worked until a given moment. <c>LastError</c> is redacted in the domain.
+/// </para>
 /// </summary>
 public sealed record SipAccountResponse(
     string Id,
@@ -23,7 +28,8 @@ public sealed record SipAccountResponse(
     bool Enabled,
     string Status,
     string? LastError,
-    DateTimeOffset? LastStatusChangeAt)
+    DateTimeOffset? LastStatusChangeAt,
+    DateTimeOffset? LastRegisteredAt)
 {
     /// <summary>Projects a domain account to its operator view (never exposes the password).</summary>
     public static SipAccountResponse FromDomain(SipAccount account)
@@ -50,6 +56,7 @@ public sealed record SipAccountResponse(
             account.Enabled,
             account.Status.ToString(),
             account.LastError,
-            account.LastStatusChangeAt);
+            account.LastStatusChangeAt,
+            account.LastRegisteredAt);
     }
 }

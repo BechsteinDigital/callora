@@ -133,7 +133,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         var audioStreamProvider = new SdkCallAudioStreamProvider();
         _audioRegistrar = new SdkCallAudioRegistrar(
             audioStreamProvider, ResolveLogger<SdkCallAudioRegistrar>(context.Services));
-        _sipRuntimeReconciler = TryCreateSipRuntimeReconciler(context, dataProtector);
+        _sipRuntimeReconciler = TryCreateSipRuntimeReconciler(context, dataProtector, dbContextFactory);
 
         // Operator Admin-API: the status route always; the SIP-account management routes only when
         // persistence and a data protector are present (credentials must be protectable) plus the
@@ -143,8 +143,14 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
                 ? SipAccountAdminRoutes.Build(
                     new EfSipAccountStore(dbContextFactory), dataProtector, Id, _sipRuntimeReconciler)
                 : [];
+
+        // The status route answers a real dependency aggregate rather than a constant (#112).
+        var readinessProbe = new CommunicationReadinessProbe(
+            _channelRegistry,
+            dbContextFactory is null ? null : new EfSipAccountStore(dbContextFactory),
+            IsWebRtcEnabled(context.PluginConfiguration));
         context.Export<IHostAdminApiExtensionContributor>(
-            new CommunicationAdminApiExtensionContributor([.. accountRoutes, .. callRoutes]));
+            new CommunicationAdminApiExtensionContributor([.. accountRoutes, .. callRoutes], readinessProbe));
 
         // The channel registry is where the voice bridge registers channels and consumers resolve
         // them; exported unconditionally since it needs no database.
@@ -271,7 +277,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     // Without both the plugin serves the foundation surface only — no voice channels.
     private SipAccountRuntimeReconciler? TryCreateSipRuntimeReconciler(
         IHostPluginContext context,
-        IPluginDataProtector? dataProtector)
+        IPluginDataProtector? dataProtector,
+        IPluginDbContextFactory<CommunicationDbContext>? dbContextFactory)
     {
         if (dataProtector is null)
         {
@@ -290,11 +297,21 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             Id,
             ResolveLogger<SdkVoiceChannelConnector>(context.Services));
 
+        // Without a database there is no account row to write a status onto, so the reconciler
+        // runs without a projector rather than with a no-op one (#112).
+        var statusProjector = dbContextFactory is null
+            ? null
+            : new EfSipAccountStatusProjector(
+                new EfSipAccountStore(dbContextFactory),
+                TimeProvider.System,
+                ResolveLogger<EfSipAccountStatusProjector>(context.Services));
+
         return new SipAccountRuntimeReconciler(
             connector,
             _channelRegistry,
             _audioRegistrar!,
-            ResolveLogger<SipAccountRuntimeReconciler>(context.Services));
+            ResolveLogger<SipAccountRuntimeReconciler>(context.Services),
+            statusProjector);
     }
 
     // Startup uses the same reconciler as the admin mutations, so there is one provisioning
