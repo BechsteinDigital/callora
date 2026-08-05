@@ -440,6 +440,9 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         WeakReference loadContextReference;
         try
         {
+            // Draining comes first and runs with the exports still in place, because work that is
+            // still finishing may depend on them (ADR-018 §2.1).
+            await DrainAsync(handle.Plugin, pluginId, cancellationToken).ConfigureAwait(false);
             RemoveExportsByPlugin(pluginId);
             await SafeStopAsync(handle.Plugin, cancellationToken).ConfigureAwait(false);
             loadContextReference = UnloadAndTrack(handle);
@@ -785,6 +788,51 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
     private static RuntimePluginDescriptor ToDescriptor(InstalledPluginRecord record) =>
         new(record.PluginId, record.DisplayName, record.AssemblyPath, record.EntryTypeName, record.State);
+
+    /// <summary>
+    /// Gives a plugin that carries long-running work the chance to run dry before it is taken apart
+    /// (ADR-018 §2.1). The host owns the deadline: an expired one is reported and the stop proceeds,
+    /// because a drain may delay a deactivation but never prevent it. A plugin that does not
+    /// implement the contract is unaffected.
+    /// </summary>
+    private async Task DrainAsync(IHostManagedPlugin plugin, string pluginId, CancellationToken cancellationToken)
+    {
+        if (plugin is not IDrainablePlugin drainable || _options.PluginDrainTimeout <= TimeSpan.Zero)
+        {
+            return;
+        }
+
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(_options.PluginDrainTimeout);
+
+        try
+        {
+            await drainable.DrainAsync(deadline.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Two distinct situations reach this point and an operator needs to tell them apart: the
+            // caller pulling the plug ("stop now") versus a plugin that could not finish in time.
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogInformation(
+                    "Draining plugin {PluginId} was cancelled by the caller; stopping it now.",
+                    pluginId);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Plugin {PluginId} did not finish draining within {DrainTimeout}; stopping it anyway.",
+                    pluginId,
+                    _options.PluginDrainTimeout);
+            }
+        }
+        catch (Exception ex)
+        {
+            // A failed drain must not block the stop — the plugin is going away either way.
+            _logger.LogWarning(ex, "Draining plugin {PluginId} failed; stopping it anyway.", pluginId);
+        }
+    }
 
     private static async Task SafeStopAsync(IHostManagedPlugin plugin, CancellationToken cancellationToken)
     {

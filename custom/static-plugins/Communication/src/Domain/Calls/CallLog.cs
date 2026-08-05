@@ -181,14 +181,20 @@ public sealed class CallLog
         DurationSeconds = wasAnswered ? (int)(endedAt - AnsweredAt!.Value).TotalSeconds : 0;
     }
 
-    /// <summary>Outcomes valid only for a call that was answered.</summary>
+    /// <summary>Outcomes a call that was answered may end with.</summary>
     private static bool IsAnsweredOutcome(CallOutcome outcome) =>
-        outcome is CallOutcome.Completed or CallOutcome.Failed;
+        outcome is CallOutcome.Completed or CallOutcome.Failed or CallOutcome.Interrupted;
 
-    /// <summary>Outcomes valid only for a call that was never answered.</summary>
+    /// <summary>Outcomes a call that was never answered may end with.</summary>
+    /// <remarks>
+    /// <see cref="CallOutcome.Interrupted"/> is the one outcome valid on both sides, and for a
+    /// reason: it says nothing about the conversation, only that the host went away. A call can be
+    /// cut short mid-sentence or while it was still ringing, and both are the same event.
+    /// </remarks>
     private static bool IsUnansweredOutcome(CallOutcome outcome) =>
         outcome is CallOutcome.Missed or CallOutcome.Rejected or CallOutcome.Busy
-            or CallOutcome.NoAnswer or CallOutcome.Canceled or CallOutcome.Failed;
+            or CallOutcome.NoAnswer or CallOutcome.Canceled or CallOutcome.Failed
+            or CallOutcome.Interrupted;
 
     /// <summary>Replaces the remote party with a pseudonym for GDPR erasure.</summary>
     public void Pseudonymize(string pseudonym)

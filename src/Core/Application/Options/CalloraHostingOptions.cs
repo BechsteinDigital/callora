@@ -34,4 +34,17 @@ public sealed class CalloraHostingOptions
     /// immediately (no damping).
     /// </summary>
     public TimeSpan RuntimeCapabilityGracePeriod { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// How long the host waits for a plugin implementing
+    /// <see cref="Domain.Plugins.Contracts.IDrainablePlugin"/> to run its outstanding work dry before
+    /// stopping it anyway (ADR-018 §2.1). <see cref="TimeSpan.Zero"/> skips draining entirely.
+    /// </summary>
+    /// <remarks>
+    /// The default matches ASP.NET Core's shutdown timeout, because on process shutdown that timeout
+    /// bounds the wait regardless of what is configured here. Raising this value without raising
+    /// <c>HostOptions.ShutdownTimeout</c> only helps a deactivation through the operator API, not a
+    /// restart.
+    /// </remarks>
+    public TimeSpan PluginDrainTimeout { get; set; } = TimeSpan.FromSeconds(30);
 }
