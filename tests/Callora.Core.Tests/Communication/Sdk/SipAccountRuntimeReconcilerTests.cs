@@ -130,7 +130,13 @@ public sealed class SipAccountRuntimeReconcilerTests
 
         account.Reconfigure(
             "Account a1",
-            new SipConnection("other.example.com", 5060, SipTransport.Udp, SipAccountMode.Trunk, IpAuthentication.Instance, registrationExpirySeconds: null),
+            new SipConnection(
+                "other.example.com",
+                5060,
+                SipTransport.Udp,
+                SipAccountMode.Register,
+                new DigestAuthentication("user-a1", null, "secret-ref"),
+                registrationExpirySeconds: 300),
             maxConcurrentCalls: 1);
         var result = await reconciler.ApplyAsync(account);
 
@@ -207,12 +213,21 @@ public sealed class SipAccountRuntimeReconcilerTests
             new SdkCallAudioRegistrar(new SdkCallAudioStreamProvider(), NullLogger<SdkCallAudioRegistrar>.Instance),
             NullLogger<SipAccountRuntimeReconciler>.Instance);
 
+    // Digest is the only method the provider connects (#111); an IP-authenticated account
+    // would be refused by the reconciler before it ever reached the connector, which would
+    // make these provisioning assertions vacuous.
     private static SipAccount Account(string id, string workspaceKey) =>
         new(
             id,
             workspaceKey,
             $"Account {id}",
-            new SipConnection("sip.example.com", 5060, SipTransport.Udp, SipAccountMode.Trunk, IpAuthentication.Instance, registrationExpirySeconds: null),
+            new SipConnection(
+                "sip.example.com",
+                5060,
+                SipTransport.Udp,
+                SipAccountMode.Register,
+                new DigestAuthentication($"user-{id}", null, "secret-ref"),
+                registrationExpirySeconds: 300),
             maxConcurrentCalls: 1,
             enabled: true);
 }

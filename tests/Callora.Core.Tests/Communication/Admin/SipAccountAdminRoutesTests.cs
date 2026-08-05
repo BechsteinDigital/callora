@@ -265,7 +265,7 @@ public sealed class SipAccountAdminRoutesTests
     }
 
     [Fact]
-    public async Task Create_IpAuthenticatedTrunk_PersistsWithoutCredentials()
+    public async Task Create_IpAuthenticatedTrunk_IsRefusedAsUnsupported()
     {
         var store = new InMemorySipAccountStore();
         var handler = new CreateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
@@ -274,18 +274,19 @@ public sealed class SipAccountAdminRoutesTests
         {
             displayName = "Trunk",
             host = "trunk.example.com",
-            authMethod = "IpAuthenticated", // defaults to Trunk mode, no credentials
+            authMethod = "IpAuthenticated",
         }));
 
-        Assert.Equal(201, response.StatusCode);
-        var persisted = Assert.Single(await store.ListAsync("ws-a"));
-        Assert.IsType<IpAuthentication>(persisted.Connection.Authentication);
-        Assert.Equal(SipAccountMode.Trunk, persisted.Connection.Mode);
-        Assert.Null(persisted.Connection.RegistrationExpirySeconds);
+        // 422, not 400: the request is well-formed and IP-authenticated trunks are a real SIP
+        // deployment — the provider just cannot connect one yet (#111).
+        Assert.Equal(422, response.StatusCode);
+        Assert.Contains("callora-voip-sdk#104", JsonSerializer.Serialize(response.Payload), StringComparison.Ordinal);
+        // Nothing is persisted, so no account can sit unprovisioned on "Connecting".
+        Assert.Empty(await store.ListAsync("ws-a"));
     }
 
     [Fact]
-    public async Task Create_MutualTls_ProtectsCertificate_NeverEchoed()
+    public async Task Create_MutualTls_IsRefusedAsUnsupported_WithoutProtectingTheCertificate()
     {
         var store = new InMemorySipAccountStore();
         var protector = new CapturingDataProtector();
@@ -300,30 +301,13 @@ public sealed class SipAccountAdminRoutesTests
             clientCertificate = "-----BEGIN CERTIFICATE-----abc-----END CERTIFICATE-----",
         }));
 
-        Assert.Equal(201, response.StatusCode);
-        var persisted = Assert.Single(await store.ListAsync("ws-a"));
-        var mtls = Assert.IsType<MutualTlsAuthentication>(persisted.Connection.Authentication);
-        Assert.True(protector.TryUnprotect(PluginId, mtls.ClientCertificateSecretRef, out var recovered));
-        Assert.Contains("BEGIN CERTIFICATE", recovered); // the cert was protected...
+        Assert.Equal(422, response.StatusCode);
         var json = JsonSerializer.Serialize(response.Payload);
-        Assert.DoesNotContain("BEGIN CERTIFICATE", json); // ...and never echoed in the response
-    }
-
-    [Fact]
-    public async Task Create_RegisterModeWithIpAuth_IsRejected()
-    {
-        var handler = new CreateSipAccountRouteHandler(new InMemorySipAccountStore(), new CapturingDataProtector(), PluginId);
-
-        // A registering connection cannot use IP authentication (domain invariant) → 400, not 500.
-        var response = await handler.HandleAsync(Request("POST", "sip-accounts", "ws-a", body: new
-        {
-            displayName = "Bad",
-            host = "h",
-            authMethod = "IpAuthenticated",
-            mode = "Register",
-        }));
-
-        Assert.Equal(400, response.StatusCode);
+        Assert.Contains("callora-voip-sdk#183", json, StringComparison.Ordinal);
+        // The refusal happens before the certificate is written anywhere — a rejected request
+        // must not leave secret material in the store.
+        Assert.DoesNotContain("BEGIN CERTIFICATE", json, StringComparison.Ordinal);
+        Assert.Empty(await store.ListAsync("ws-a"));
     }
 
     [Fact]
@@ -376,32 +360,14 @@ public sealed class SipAccountAdminRoutesTests
     }
 
     [Fact]
-    public async Task Create_TrunkWithExpiry_IsRejected()
-    {
-        var handler = new CreateSipAccountRouteHandler(new InMemorySipAccountStore(), new CapturingDataProtector(), PluginId);
-
-        // A trunk does not register and must not carry a registration expiry (domain invariant) → 400.
-        var response = await handler.HandleAsync(Request("POST", "sip-accounts", "ws-a", body: new
-        {
-            displayName = "Trunk",
-            host = "trunk.example.com",
-            authMethod = "IpAuthenticated",
-            mode = "Trunk",
-            registrationExpirySeconds = 300,
-        }));
-
-        Assert.Equal(400, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Update_SwitchesDigestToMutualTlsAndBack()
+    public async Task Update_CannotMoveASupportedAccountOntoAnUnsupportedMethod()
     {
         var store = new InMemorySipAccountStore();
         store.Seed(Account("a1", "ws-a"));
         var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
         var route = new Dictionary<string, string> { ["accountId"] = "a1" };
 
-        await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a", routeValues: route, body: new
+        var toMutualTls = await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a", routeValues: route, body: new
         {
             displayName = "mTLS",
             host = "tls.example.com",
@@ -409,34 +375,36 @@ public sealed class SipAccountAdminRoutesTests
             authMethod = "MutualTls",
             clientCertificate = "-----BEGIN CERTIFICATE-----abc-----END CERTIFICATE-----",
         }));
-        Assert.IsType<MutualTlsAuthentication>((await store.GetAsync("ws-a", "a1"))!.Connection.Authentication);
-
-        // Switching back to digest requires fresh credentials (no digest secret to fall back to).
-        await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a", routeValues: route, body: new
+        var toIpTrunk = await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a", routeValues: route, body: new
         {
-            displayName = "Back to digest",
-            host = "sip.example.com",
-            authMethod = "Digest",
-            username = "user",
-            password = "s3cret",
+            displayName = "Now a trunk",
+            host = "trunk.example.com",
+            authMethod = "IpAuthenticated",
+            mode = "Trunk",
         }));
-        Assert.IsType<DigestAuthentication>((await store.GetAsync("ws-a", "a1"))!.Connection.Authentication);
+
+        Assert.Equal(422, toMutualTls.StatusCode);
+        Assert.Equal(422, toIpTrunk.StatusCode);
+        // The working account is left exactly as it was — a refused update changes nothing.
+        var unchanged = await store.GetAsync("ws-a", "a1");
+        Assert.IsType<DigestAuthentication>(unchanged!.Connection.Authentication);
+        Assert.Equal("Account a1", unchanged.DisplayName);
     }
 
     [Fact]
-    public async Task Update_CanSwitchDigestAccountToIpTrunk()
+    public async Task Update_KeepingTheStoredMethod_StillWorks()
     {
+        // An omitted authMethod must not be read as "unsupported"; a digest account stays editable.
         var store = new InMemorySipAccountStore();
         store.Seed(Account("a1", "ws-a"));
         var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
 
         var response = await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a",
             routeValues: new() { ["accountId"] = "a1" },
-            body: new { displayName = "Now a trunk", host = "trunk.example.com", authMethod = "IpAuthenticated", mode = "Trunk" }));
+            body: new { displayName = "Renamed", host = "sip.example.com" }));
 
         Assert.Equal(200, response.StatusCode);
-        var updated = await store.GetAsync("ws-a", "a1");
-        Assert.IsType<IpAuthentication>(updated!.Connection.Authentication);
+        Assert.Equal("Renamed", (await store.GetAsync("ws-a", "a1"))!.DisplayName);
     }
 
     private static SipAccount Account(string id, string workspaceKey, bool enabled = true)

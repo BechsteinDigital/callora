@@ -298,7 +298,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
     }
 
     // Startup uses the same reconciler as the admin mutations, so there is one provisioning
-    // path rather than two that can disagree (#110).
+    // path rather than two that can disagree (#110). A failure is written back onto the account,
+    // so an operator sees why it is dark instead of a permanent "Connecting" (#111/#112).
     private async Task ProvisionVoiceChannelsAsync(
         IPluginDbContextFactory<CommunicationDbContext> dbContextFactory,
         CancellationToken cancellationToken)
@@ -308,10 +309,22 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
             return;
         }
 
-        var enabledAccounts = await new EfSipAccountStore(dbContextFactory)
-            .ListEnabledAsync(cancellationToken)
-            .ConfigureAwait(false);
-        await _sipRuntimeReconciler.ApplyAllAsync(enabledAccounts, cancellationToken).ConfigureAwait(false);
+        var store = new EfSipAccountStore(dbContextFactory);
+        var enabledAccounts = await store.ListEnabledAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (var account in enabledAccounts)
+        {
+            var result = await _sipRuntimeReconciler.ApplyAsync(account, cancellationToken).ConfigureAwait(false);
+            if (result.IsSuccess)
+            {
+                continue;
+            }
+
+            // Accounts created before the unsupported-method guard existed live on in the
+            // database; this is where they stop being invisible (#111).
+            account.ReportStatus(SipAccountStatus.Failed, result.Error, DateTimeOffset.UtcNow);
+            await store.UpdateAsync(account, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     // An explicitly injected runtime (tests/custom hosts) always wins. Otherwise, when the deployment

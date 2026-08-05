@@ -66,6 +66,14 @@ public sealed class UpdateSipAccountRouteHandler(
             return Bad("displayName is required.");
         }
 
+        // An update must not move an account onto an unsupported method either (#111). An
+        // omitted method keeps the stored one, so an already-unsupported account can still be
+        // edited towards a supported configuration.
+        if (SipAuthMethodValidation.Reject(body.AuthMethod ?? account.Connection.Authentication.Method) is { } unsupported)
+        {
+            return unsupported;
+        }
+
         // Reuse the existing authentication so omitted secrets are kept rather than dropped.
         if (!_connectionFactory.TryBuild(body, account.Connection.Authentication, out var connection, out var error))
         {
