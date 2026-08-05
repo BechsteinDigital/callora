@@ -110,6 +110,8 @@ plugin discovery is configured.
 | `AutoBootstrapModules` | `bool` | *see options class* | Auto-bootstraps host modules at startup. |
 | `PluginRegistryFilePath` | `string` | `custom/plugins/registry.json` (env default) | Path to the plugin registry file. |
 | `PluginDrainTimeout` | `TimeSpan` | `00:00:30` | How long a plugin implementing `IDrainablePlugin` may take to run its outstanding work dry before it is stopped anyway. `00:00:00` skips draining. |
+| `SessionResumeMaxLifetime` | `TimeSpan` | `00:15:00` | Longest a session resume promise may hold. A plugin asking for more is clamped to this. |
+| `SessionResumeMaxPayloadBytes` | `int` | `4096` | Largest resume payload a plugin may store, in UTF-8 bytes. Issuing a larger one is refused rather than truncated. |
 
 ::: warning Raising `PluginDrainTimeout` alone does not lengthen a restart
 On process shutdown the wait is bounded by ASP.NET Core's `HostOptions.ShutdownTimeout`
@@ -119,6 +121,11 @@ applies to deactivations through the operator API.
 The value is a ceiling on how long an operator waits, and it is what a plugin carrying live work
 spends finishing it. For Communication that means existing calls run out while new ones are
 refused — see [Communication](../users/communication.md).
+:::
+
+::: tip `SessionResumeMaxLifetime` is a security boundary, not a convenience
+It is the line between a reconnect window and a standing bearer credential. Fifteen minutes covers a
+tunnel, a WiFi handover and a host restart; a window measured in hours mostly covers a stolen token.
 :::
 
 > **Status:** Property-level defaults for `CalloraHostingOptions` are read from the

@@ -49,6 +49,9 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddScoped<IWorkspaceSurfaceStore, EfWorkspaceSurfaceStore>();
         services.AddScoped<Callora.Core.Application.Surfaces.ISurfaceSessionStore, EfSurfaceSessionStore>();
         services.AddScoped<Callora.Core.Application.Surfaces.ISurfaceHandoffTicketStore, EfSurfaceHandoffTicketStore>();
+        // Registered as the concrete type only: plugins reach resume tickets from outside any request
+        // scope, so the contract itself is served by the singleton facade in host composition.
+        services.AddScoped<EfSessionResumeTicketStore>();
         services.AddScoped<WorkspaceSurfaceProvisioner>();
         services.AddSingleton<
             Callora.Core.Application.Workspaces.Contracts.IWorkspaceSurfaceProvisioner,
