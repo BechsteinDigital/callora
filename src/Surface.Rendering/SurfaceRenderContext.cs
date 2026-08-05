@@ -1,3 +1,5 @@
+using Callora.Core.Application.Surfaces;
+
 namespace Callora.Surface.Rendering;
 
 /// <summary>
@@ -20,4 +22,20 @@ public sealed record SurfaceRenderContext(
     /// may read the caller, but must not be able to pass their session on.
     /// </summary>
     public SurfaceCallerView? Caller { get; init; }
+
+    /// <summary>
+    /// What each surface slot holds for this request, keyed by slot name (#125 block C).
+    /// Already filtered by surface, caller claims and plugin availability, and already
+    /// ordered, so a template renders what it is given and re-decides nothing. Read
+    /// through <c>callora_slot()</c> rather than directly in most templates.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<SurfaceSlotView>> Slots { get; init; } =
+        new Dictionary<string, IReadOnlyList<SurfaceSlotView>>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Navigation entries the plugins contributed for this caller (#125 block C),
+    /// filtered and ordered by the host. Meaning only: whether the theme renders them
+    /// as a sidebar, tabs, a launcher or a menu is the theme's decision.
+    /// </summary>
+    public IReadOnlyList<SurfaceNavigationEntry> Navigation { get; init; } = [];
 }

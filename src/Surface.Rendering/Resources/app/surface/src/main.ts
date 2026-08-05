@@ -18,7 +18,15 @@ declare global {
 // run components inside this same instance instead of shipping their own.
 window.CalloraVue = Vue
 
-const registry = window.calloraSurface ?? createSurfaceRegistry()
+// The channel inside the registry is bound to the surface this page renders, so read
+// the context before creating it rather than after.
+const rootElement =
+  document.getElementById('callora-app') ?? document.querySelector<HTMLElement>('[data-workspace]')
+const rootContext = rootElement ? resolveSurfaceContext(rootElement) : null
+
+const registry =
+  window.calloraSurface ??
+  createSurfaceRegistry(rootContext?.workspaceKey, rootContext?.surfaceKey)
 window.calloraSurface = registry
 
 // Mount whichever surface shape the SSR output rendered — whole app (#callora-app)
@@ -28,8 +36,6 @@ mountSurface(registry)
 // Then load the workspace's plugin bundles; they register into calloraSurface and the
 // reactive mounts pick them up. Loading is fire-and-forget and self-tolerant, so it
 // never blocks or breaks the already-mounted shell.
-const contextRoot =
-  document.getElementById('callora-app') ?? document.querySelector<HTMLElement>('[data-workspace]')
-if (contextRoot) {
-  void loadSurfacePlugins(resolveSurfaceContext(contextRoot))
+if (rootContext) {
+  void loadSurfacePlugins(rootContext)
 }

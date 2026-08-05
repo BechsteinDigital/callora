@@ -86,6 +86,56 @@ describe('mountSurface — islands mode', () => {
   })
 })
 
+// A view that renders whatever instance parameters the island carried, so a test can
+// assert the SSR call site reached the component.
+function paramProbe(id: string) {
+  return defineComponent({
+    props: { context: { type: Object, required: true }, params: { type: Object, required: true } },
+    setup: (props) => () => h('span', { 'data-testid': id }, JSON.stringify(props.params)),
+  })
+}
+
+describe('mountSurface — island instance parameters', () => {
+  it('hands the island data-callora-props to the view as its params prop', () => {
+    document.body.innerHTML =
+      '<main data-workspace="acme" data-surface="portal">' +
+      '  <div data-callora-island="crm.lead-panel" data-callora-props=\'{"leadId":42}\'></div>' +
+      '</main>'
+    const registry = createSurfaceRegistry()
+    registry.registerView({ id: 'crm.lead-panel', component: paramProbe('crm.lead-panel') })
+
+    mountSurface(registry, document)
+
+    expect(document.querySelector('[data-testid="crm.lead-panel"]')?.textContent).toBe(
+      '{"leadId":42}',
+    )
+  })
+
+  it('renders an island without parameters with an empty params object', () => {
+    document.body.innerHTML =
+      '<main data-workspace="acme"><div data-callora-island="crm.lead-panel"></div></main>'
+    const registry = createSurfaceRegistry()
+    registry.registerView({ id: 'crm.lead-panel', component: paramProbe('crm.lead-panel') })
+
+    mountSurface(registry, document)
+
+    expect(document.querySelector('[data-testid="crm.lead-panel"]')?.textContent).toBe('{}')
+  })
+
+  it('survives a malformed parameter payload rather than losing the view', () => {
+    document.body.innerHTML =
+      '<main data-workspace="acme">' +
+      '  <div data-callora-island="crm.lead-panel" data-callora-props="{not json"></div>' +
+      '</main>'
+    const registry = createSurfaceRegistry()
+    registry.registerView({ id: 'crm.lead-panel', component: paramProbe('crm.lead-panel') })
+
+    mountSurface(registry, document)
+
+    expect(document.querySelector('[data-testid="crm.lead-panel"]')?.textContent).toBe('{}')
+  })
+})
+
 describe('mountSurface — no mount points', () => {
   it('does nothing when neither #callora-app nor an island is present', () => {
     document.body.innerHTML = '<p>plain</p>'

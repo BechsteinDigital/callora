@@ -23,6 +23,15 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
     // The Nunjucks bundle source, loaded once and executed on each fresh engine.
     private static readonly string NunjucksSource = LoadNunjucksSource();
 
+    // Templates address the context in JavaScript spelling ({{ view.displayName }}),
+    // so records serialize camelCase and enums as their names rather than ordinals.
+    // Dictionary keys (theme tokens, slot names) are left exactly as declared.
+    private static readonly JsonSerializerOptions ContextSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
+    };
+
     // Binds the UMD bundle's global lookups, installs the render harness, and (when
     // includes are enabled) a callback loader that defers file access to .NET.
     private const string RenderHarness =
@@ -48,8 +57,94 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
             } else {
                 env = new nunjucks.Environment(null, options);
             }
-            return env.renderString(__templateText, JSON.parse(__contextJson));
+            var context = JSON.parse(__contextJson);
+            installCalloraComposition(env, context);
+            return env.renderString(__templateText, context);
         })();
+        """;
+
+    // Composition rides on Nunjucks' own inheritance rather than beside it: a theme
+    // declares slots inside its blocks, so extends/block/super() keep working and a
+    // child theme can wrap, move or replace a slot the way it does any other markup.
+    // The globals only read what the host already resolved into the context.
+    private const string CompositionScript =
+        """
+        function calloraAttr(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function calloraProps(props) {
+            if (props === undefined || props === null || typeof props !== 'object') {
+                return null;
+            }
+            var copy = {};
+            var empty = true;
+            for (var key in props) {
+                // Nunjucks appends this marker when a call uses keyword arguments.
+                if (key === '__keywords' || !Object.prototype.hasOwnProperty.call(props, key)) {
+                    continue;
+                }
+                copy[key] = props[key];
+                empty = false;
+            }
+            return empty ? null : copy;
+        }
+
+        function calloraIsland(view, slot, props) {
+            var markup = '<div class="callora-island"'
+                + ' data-callora-island="' + calloraAttr(view.viewId) + '"'
+                + ' data-callora-slot="' + calloraAttr(slot) + '"'
+                + ' data-callora-plugin="' + calloraAttr(view.pluginId) + '"';
+            var payload = calloraProps(props);
+            if (payload !== null) {
+                markup += ' data-callora-props="' + calloraAttr(JSON.stringify(payload)) + '"';
+            }
+            return markup + '></div>';
+        }
+
+        function installCalloraComposition(env, context) {
+            var slots = (context && context.slots) || {};
+            var safe = function (html) { return new nunjucks.runtime.SafeString(html); };
+
+            env.addGlobal('callora_slot', function (name, props) {
+                var views = slots[name] || [];
+                var html = '';
+                for (var i = 0; i < views.length; i++) {
+                    html += calloraIsland(views[i], name, props);
+                }
+                return safe(html);
+            });
+
+            env.addGlobal('callora_view', function (viewId, props) {
+                for (var name in slots) {
+                    var views = slots[name];
+                    for (var i = 0; i < views.length; i++) {
+                        if (views[i].viewId === viewId) {
+                            return safe(calloraIsland(views[i], name, props));
+                        }
+                    }
+                }
+                return safe('');
+            });
+
+            env.addGlobal('callora_slot_views', function (name) {
+                return slots[name] || [];
+            });
+
+            env.addGlobal('callora_has_slot', function (name) {
+                return (slots[name] || []).length > 0;
+            });
+
+            var navigation = (context && context.navigation) || [];
+            env.addGlobal('callora_navigation', function () {
+                return navigation;
+            });
+        }
         """;
 
     private readonly ISurfaceTemplateBundleProvider? _bundleProvider;
@@ -94,6 +189,7 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
         {
             engine.Execute(RenderHarness);
             engine.Execute(NunjucksSource);
+            engine.Execute(CompositionScript);
 
             if (loader is not null)
             {
@@ -145,6 +241,8 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
             tenant = new { key = context.TenantKey },
             locale = context.Locale,
             tokens = context.Tokens,
+            slots = context.Slots,
+            navigation = context.Navigation,
             caller = context.Caller is null
                 ? null
                 : new
@@ -157,7 +255,7 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
                     claimsJson = context.Caller.ClaimsJson,
                 },
         };
-        return JsonSerializer.Serialize(model);
+        return JsonSerializer.Serialize(model, ContextSerializerOptions);
     }
 
     private static string LoadNunjucksSource()
