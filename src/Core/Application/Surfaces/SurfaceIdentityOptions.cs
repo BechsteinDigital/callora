@@ -56,4 +56,13 @@ public sealed class SurfaceIdentityOptions
 
     /// <summary>Maximum length of issuer, subject id, display name and authentication method.</summary>
     public int MaxIdentifierLength { get; set; } = 200;
+
+    /// <summary>
+    /// Name of the cookie carrying the surface context. Not prefixed with
+    /// <c>__Host-</c>: that prefix mandates <c>Secure</c>, which would make local
+    /// HTTP development impossible. The binding it would buy is enforced explicitly
+    /// instead — the envelope carries its own tenant, workspace, surface and audience
+    /// and is checked against the resolved surface on every read (ADR-017 §8.2).
+    /// </summary>
+    public string CookieName { get; set; } = "callora_surface";
 }

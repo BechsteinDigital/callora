@@ -4,7 +4,12 @@ import { describe, it, expect } from 'vitest'
 import App from './App.vue'
 import { createSurfaceRegistry } from './surface-registry'
 
-const context = { workspaceKey: 'acme', surfaceKey: 'portal' }
+const guestCaller = {
+  state: 'guest' as const,
+  subject: { issuer: 'callora.surface-guest', subjectId: '' },
+}
+
+const context = { workspaceKey: 'acme', surfaceKey: 'portal', caller: guestCaller }
 
 describe('surface host (grundgerüst)', () => {
   it('shows a neutral empty state when no plugin registered a view', () => {

@@ -2686,6 +2686,8 @@ Callora.Core.Application.Surfaces.SurfaceIdentityIssuers
 Callora.Core.Application.Surfaces.SurfaceIdentityOptions
 Callora.Core.Application.Surfaces.SurfaceIdentityOptions.ClockSkew.get -> System.TimeSpan
 Callora.Core.Application.Surfaces.SurfaceIdentityOptions.ClockSkew.set -> void
+Callora.Core.Application.Surfaces.SurfaceIdentityOptions.CookieName.get -> string!
+Callora.Core.Application.Surfaces.SurfaceIdentityOptions.CookieName.set -> void
 Callora.Core.Application.Surfaces.SurfaceIdentityOptions.GuestContextLifetime.get -> System.TimeSpan
 Callora.Core.Application.Surfaces.SurfaceIdentityOptions.GuestContextLifetime.set -> void
 Callora.Core.Application.Surfaces.SurfaceIdentityOptions.MaxClaimCount.get -> int
@@ -4553,6 +4555,19 @@ Callora.Core.Infrastructure.Startup.PluginUiAssetPublishHostedService.StartAsync
 Callora.Core.Infrastructure.Startup.PluginUiAssetPublishHostedService.StopAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Startup.RecurringJobSchedulerHostedService
 Callora.Core.Infrastructure.Startup.RecurringJobSchedulerHostedService.RecurringJobSchedulerHostedService(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Callora.Core.Application.Jobs.RecurringJobEnqueuer! enqueuer, Callora.Core.Application.Jobs.BackgroundJobOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Startup.RecurringJobSchedulerHostedService!>! logger) -> void
+Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource
+Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource.AuthenticateAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult!>
+Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource.BackendPrincipalSurfaceIdentitySource(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor, System.TimeProvider! timeProvider) -> void
+Callora.Core.Infrastructure.Surfaces.HttpContextSurfaceCredentialReader
+Callora.Core.Infrastructure.Surfaces.HttpContextSurfaceCredentialReader.HttpContextSurfaceCredentialReader(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor) -> void
+Callora.Core.Infrastructure.Surfaces.HttpContextSurfaceCredentialReader.Read(Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredentialKind kind, string! name) -> string?
+Callora.Core.Infrastructure.Surfaces.SurfaceRequestCallerResolver
+Callora.Core.Infrastructure.Surfaces.SurfaceRequestCallerResolver.EstablishAsync(Microsoft.AspNetCore.Http.HttpContext! httpContext, Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot! surface, string! locale, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.SurfaceSessionEstablishment!>!
+Callora.Core.Infrastructure.Surfaces.SurfaceRequestCallerResolver.SurfaceRequestCallerResolver(Callora.Core.Application.Surfaces.SurfaceIdentityResolver! identityResolver, Callora.Core.Application.Surfaces.SurfaceSessionService! sessions, Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor! cookies, Callora.Core.Application.Surfaces.ISurfaceCredentialReader! credentials) -> void
+Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor
+Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor.Read(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> string?
+Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor.SurfaceSessionCookieAccessor(Callora.Core.Application.Surfaces.SurfaceIdentityOptions! options) -> void
+Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor.Write(Microsoft.AspNetCore.Http.HttpContext! httpContext, Callora.Core.Application.Surfaces.SurfaceSessionEstablishment! establishment) -> void
 Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService
 Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ClearPlugin(string! pluginId) -> void
 Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.RegistrySensitiveFieldSyncService(Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry! registry) -> void
@@ -4750,6 +4765,7 @@ const Callora.Core.Infrastructure.Mail.SmtpMailSender.ConfigPluginId = "host" ->
 const Callora.Core.Infrastructure.Security.ApiKeyAuthenticationDefaults.Scheme = "ApiKey" -> string!
 const Callora.Core.Infrastructure.Security.BackendRateLimiting.ApiPolicy = "api" -> string!
 const Callora.Core.Infrastructure.Security.BackendRateLimiting.AuthPolicy = "auth" -> string!
+const Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource.WorkspaceClaim = "host.workspace-key" -> string!
 override Callora.Core.Api.AuthMeApiResponse.Equals(object? obj) -> bool
 override Callora.Core.Api.AuthMeApiResponse.GetHashCode() -> int
 override Callora.Core.Api.AuthMeApiResponse.ToString() -> string!

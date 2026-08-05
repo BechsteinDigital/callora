@@ -22,12 +22,12 @@ public sealed class CalloraContractRegistrationTests
     }
 
     [Theory]
-    [InlineData(typeof(IBackgroundJobHandler), 6, ServiceLifetime.Scoped)]
-    [InlineData(typeof(IRecurringJobProvider), 2, ServiceLifetime.Singleton)]
+    [InlineData(typeof(IBackgroundJobHandler), 7, ServiceLifetime.Scoped)]
+    [InlineData(typeof(IRecurringJobProvider), 3, ServiceLifetime.Singleton)]
     [InlineData(typeof(IRuleConditionEvaluator), 4, ServiceLifetime.Singleton)]
     [InlineData(typeof(IFlowActionHandler), 3, ServiceLifetime.Singleton)]
     [InlineData(typeof(IBusinessEventListener), 2, ServiceLifetime.Singleton)]
-    [InlineData(typeof(IBusinessEventProvider), 3, ServiceLifetime.Singleton)]
+    [InlineData(typeof(IBusinessEventProvider), 4, ServiceLifetime.Singleton)]
     public void Registers_ExpectedCount_AndLifetime(Type contract, int expectedCount, ServiceLifetime lifetime)
     {
         var descriptors = Register().Where(descriptor => descriptor.ServiceType == contract).ToList();
