@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
-using System.Linq;
-using Callora.Core.Application.Events.Contracts;
+using System.Text.Json;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Domain.Calls;
 using Microsoft.Extensions.Logging;
@@ -10,33 +9,38 @@ namespace Callora.Plugin.Communication.Application.Calls;
 /// <summary>
 /// Default <see cref="ICallControlService"/>: resolves the workspace's voice channel from the
 /// <see cref="ICommunicationChannelRegistry"/>, places the call, tracks it channel-neutrally via
-/// <see cref="ICall"/>, records <see cref="CallLog"/> history and publishes <c>call.*</c> business
+/// <see cref="ICall"/>, records <see cref="CallLog"/> history and emits <c>call.*</c> business
 /// events on each lifecycle transition. It owns no dialer/PBX/agent behaviour — that lives in the
 /// plugins built on top of this primitive.
+/// <para>
+/// Three properties make the tracking trustworthy (#113). Calls are keyed by workspace, channel
+/// and call id, because a provider's call id is unique only inside its own channel. Each call's
+/// transitions run under its own gate and advance a forward-only stage, so overlapping or
+/// reordered provider callbacks cannot interleave into an answered-after-ended history. Events
+/// are written to the outbox in the same transaction as the log change they describe, so a bus
+/// outage delays delivery instead of losing it.
+/// </para>
 /// </summary>
-public sealed class CallControlService : ICallControlService, IDisposable
+public sealed class CallControlService : ICallControlService, IAsyncDisposable
 {
     private readonly ICommunicationChannelRegistry _channels;
     private readonly ICallLogStore _callLogStore;
-    private readonly IBusinessEventBus? _eventBus;
     private readonly ILogger<CallControlService> _logger;
     private readonly TimeProvider _timeProvider;
 
-    // Keyed by callId (unique per channel). WorkspaceKey on the entry scopes hangup/get so one
-    // workspace can never touch another's call.
-    private readonly ConcurrentDictionary<string, TrackedCall> _active = new(StringComparer.Ordinal);
+    private static readonly JsonSerializerOptions PayloadOptions = new(JsonSerializerDefaults.Web);
 
-    /// <summary>Creates the service over the channel registry, call-log store and (optional) event bus.</summary>
+    private readonly ConcurrentDictionary<ActiveCallKey, TrackedCall> _active = new();
+
+    /// <summary>Creates the service over the channel registry and call-log store.</summary>
     public CallControlService(
         ICommunicationChannelRegistry channels,
         ICallLogStore callLogStore,
-        IBusinessEventBus? eventBus,
         ILogger<CallControlService> logger,
         TimeProvider timeProvider)
     {
         _channels = channels ?? throw new ArgumentNullException(nameof(channels));
         _callLogStore = callLogStore ?? throw new ArgumentNullException(nameof(callLogStore));
-        _eventBus = eventBus;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
@@ -51,16 +55,31 @@ public sealed class CallControlService : ICallControlService, IDisposable
             .PlaceCallAsync(new CallTarget(command.To, command.DisplayName), cancellationToken)
             .ConfigureAwait(false);
 
-        // Log the operator's verbatim target for an outbound call (not the SDK's normalized remote party).
-        await StartTrackingAsync(command.WorkspaceKey, channel, call, CallDirection.Outbound, command.To, cancellationToken)
-            .ConfigureAwait(false);
+        try
+        {
+            // Log the operator's verbatim target for an outbound call, not the provider's
+            // normalized remote party.
+            await StartTrackingAsync(
+                    command.WorkspaceKey, channel, call, CallDirection.Outbound, command.To, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // The call is already live at the carrier. Leaving it up while the API reports a
+            // failure would bill the customer for a call nobody can see or hang up, so it is
+            // compensated and the attempt is recorded (#113).
+            await CompensateUntrackedCallAsync(command, channel, call, ex).ConfigureAwait(false);
+            throw;
+        }
+
         return Snapshot(call);
     }
 
     /// <summary>
-    /// Begins tracking one inbound call arriving on a channel: records history, publishes
-    /// <c>call.ringing</c> and follows its lifecycle. Does not answer or route the call — that is a
-    /// consumer's (e.g. a PBX plugin's) decision. Called by the inbound-call observer, not consumers.
+    /// Begins tracking one inbound call arriving on a channel: records history, emits
+    /// <c>call.ringing</c> and follows its lifecycle. Does not answer or route the call — that is
+    /// a consumer's (for example a PBX plugin's) decision. Called by the inbound-call observer,
+    /// not by consumers.
     /// </summary>
     public async Task ObserveIncomingAsync(
         string workspaceKey, ICommunicationChannel channel, ICall call, CancellationToken cancellationToken = default)
@@ -71,8 +90,8 @@ public sealed class CallControlService : ICallControlService, IDisposable
 
         try
         {
-            // Invoked fire-and-forget from the channel's IncomingCall event — swallow and log failures
-            // so a recording error never propagates back into the channel's event dispatch.
+            // Invoked fire-and-forget from the channel's IncomingCall event, so a recording
+            // failure is logged rather than propagated back into the channel's event dispatch.
             // For an inbound call the remote party is only known from the call itself.
             await StartTrackingAsync(workspaceKey, channel, call, CallDirection.Inbound, call.Target.Value, cancellationToken)
                 .ConfigureAwait(false);
@@ -80,41 +99,6 @@ public sealed class CallControlService : ICallControlService, IDisposable
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to observe inbound call {CallId} on channel {ChannelId}.", call.CallId, channel.ChannelId);
-        }
-    }
-
-    // Shared tracking for both directions: record the start, publish the initial event before wiring
-    // the lifecycle (so consumers see placed/ringing ahead of any state-changed/ended), then re-check
-    // once for a call that already advanced past its initial state before we subscribed.
-    private async Task StartTrackingAsync(
-        string workspaceKey, ICommunicationChannel channel, ICall call, CallDirection direction, string remoteParty, CancellationToken cancellationToken)
-    {
-        var startedAt = _timeProvider.GetUtcNow();
-        var log = CallLog.Start(
-            id: call.CallId,
-            workspaceKey: workspaceKey,
-            accountId: channel.ChannelId,
-            lineId: null,
-            direction: direction,
-            remoteParty: remoteParty,
-            localIdentity: channel.DisplayName,
-            handledBy: null,
-            correlationId: null,
-            startedAt: startedAt);
-        await _callLogStore.AddAsync(log, cancellationToken).ConfigureAwait(false);
-
-        void Handler(object? sender, CallStateChangedEventArgs e) => _ = HandleStateChangeAsync(call.CallId, e.CurrentState);
-        _active[call.CallId] = new TrackedCall(workspaceKey, call, log, Handler);
-
-        var initial = direction == CallDirection.Outbound
-            ? CallBusinessEvent.Placed(workspaceKey, call.CallId, direction, remoteParty, call.State, startedAt)
-            : CallBusinessEvent.Ringing(workspaceKey, call.CallId, direction, remoteParty, call.State, startedAt);
-        await PublishAsync(initial, cancellationToken).ConfigureAwait(false);
-
-        call.StateChanged += Handler;
-        if (call.State is CallState.Connected or CallState.Terminated)
-        {
-            await HandleStateChangeAsync(call.CallId, call.State).ConfigureAwait(false);
         }
     }
 
@@ -143,15 +127,115 @@ public sealed class CallControlService : ICallControlService, IDisposable
         return [.. logs.Select(CallHistoryEntryMapper.FromDomain)];
     }
 
-    /// <summary>Detaches every live handler so no tracked call outlives the service (plugin stop/unload).</summary>
-    public void Dispose()
+    /// <summary>
+    /// Finalizes every call still tracked, rather than only detaching handlers (#113). A call
+    /// left in progress would stay that way in history forever, because nothing after shutdown
+    /// knows it existed.
+    /// </summary>
+    public async ValueTask DisposeAsync()
     {
-        foreach (var tracked in _active.Values)
+        foreach (var key in _active.Keys.ToArray())
         {
-            tracked.Call.StateChanged -= tracked.Handler;
+            if (!_active.TryGetValue(key, out var tracked))
+            {
+                continue;
+            }
+
+            try
+            {
+                await FinalizeAsync(tracked, CallOutcome.Failed, "The host shut down while the call was active.")
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Finalizing call {CallId} during shutdown failed.", key.CallId);
+                Detach(tracked);
+            }
         }
 
         _active.Clear();
+    }
+
+    // Shared tracking for both directions: record the start together with the initial event in
+    // one transaction, then wire the lifecycle and re-check once for a call that already advanced
+    // past its initial state before the handler was attached.
+    private async Task StartTrackingAsync(
+        string workspaceKey,
+        ICommunicationChannel channel,
+        ICall call,
+        CallDirection direction,
+        string remoteParty,
+        CancellationToken cancellationToken)
+    {
+        var startedAt = _timeProvider.GetUtcNow();
+        var key = new ActiveCallKey(workspaceKey, channel.ChannelId, call.CallId);
+
+        var log = CallLog.Start(
+            id: call.CallId,
+            workspaceKey: workspaceKey,
+            accountId: channel.ChannelId,
+            lineId: null,
+            direction: direction,
+            remoteParty: remoteParty,
+            localIdentity: channel.DisplayName,
+            handledBy: null,
+            correlationId: null,
+            startedAt: startedAt);
+
+        var initial = direction == CallDirection.Outbound
+            ? CallBusinessEvent.Placed(workspaceKey, call.CallId, direction, remoteParty, call.State, startedAt)
+            : CallBusinessEvent.Ringing(workspaceKey, call.CallId, direction, remoteParty, call.State, startedAt);
+
+        await _callLogStore.AddAsync(log, ToOutboxEntry(initial, startedAt), cancellationToken).ConfigureAwait(false);
+
+        void Handler(object? sender, CallStateChangedEventArgs e) => _ = HandleStateChangeAsync(key, e.CurrentState);
+
+        var tracked = new TrackedCall(key, call, log, Handler);
+        if (!_active.TryAdd(key, tracked))
+        {
+            // The same call is already tracked (a duplicated inbound notification); keep the
+            // first registration rather than replacing a live one.
+            tracked.Dispose();
+            return;
+        }
+
+        call.StateChanged += Handler;
+        if (call.State is CallState.Connected or CallState.Terminated)
+        {
+            await HandleStateChangeAsync(key, call.State).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Hangs up a call that could not be tracked and records the attempt. Best effort by
+    /// necessity: if the hangup also fails there is nothing further this process can do, and the
+    /// log line is the only evidence an operator will have.
+    /// </summary>
+    private async Task CompensateUntrackedCallAsync(
+        PlaceCallCommand command,
+        ICommunicationChannel channel,
+        ICall call,
+        Exception cause)
+    {
+        _logger.LogError(
+            cause,
+            "Tracking the outbound call {CallId} on channel {ChannelId} in workspace {WorkspaceKey} failed; hanging it up.",
+            call.CallId,
+            channel.ChannelId,
+            command.WorkspaceKey);
+
+        try
+        {
+            await call.HangupAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception hangupFailure)
+        {
+            _logger.LogError(
+                hangupFailure,
+                "Compensating hangup for the untracked call {CallId} on channel {ChannelId} failed; the call may still be live.",
+                call.CallId,
+                channel.ChannelId);
+        }
     }
 
     private ICommunicationChannel ResolveChannel(PlaceCallCommand command)
@@ -171,68 +255,112 @@ public sealed class CallControlService : ICallControlService, IDisposable
                 $"No voice-capable channel is registered for workspace '{command.WorkspaceKey}'.");
     }
 
-    private async Task HandleStateChangeAsync(string callId, CallState state)
+    private async Task HandleStateChangeAsync(ActiveCallKey key, CallState state)
     {
+        if (state is not (CallState.Connected or CallState.Terminated))
+        {
+            // Connecting and Ringing carry no history change for either direction.
+            return;
+        }
+
+        if (!_active.TryGetValue(key, out var tracked))
+        {
+            return;
+        }
+
+        // One call's transitions are serialized; unrelated calls never wait on each other.
+        await tracked.Gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            switch (state)
+            if (state == CallState.Connected)
             {
-                case CallState.Connected:
-                    await OnConnectedAsync(callId).ConfigureAwait(false);
-                    break;
-                case CallState.Terminated:
-                    await OnTerminatedAsync(callId).ConfigureAwait(false);
-                    break;
-                default:
-                    break; // Connecting/Ringing carry no history change for either direction.
+                await OnConnectedAsync(tracked).ConfigureAwait(false);
+            }
+            else
+            {
+                var (outcome, disconnectCause) = ResolveOutcome(tracked);
+                await FinalizeAsync(tracked, outcome, disconnectCause).ConfigureAwait(false);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to record state {State} for call {CallId}.", state, callId);
+            _logger.LogWarning(ex, "Failed to record state {State} for call {CallId}.", state, key.CallId);
+        }
+        finally
+        {
+            tracked.Gate.Release();
         }
     }
 
-    private async Task OnConnectedAsync(string callId)
+    private async Task OnConnectedAsync(TrackedCall tracked)
     {
-        // Guard against a double fire (handler + race re-check): only the first Connected records.
-        if (!_active.TryGetValue(callId, out var tracked) || tracked.Log.AnsweredAt is not null)
+        // A repeated or late Connected (handler plus the post-subscribe re-check) does not
+        // advance the stage, so the answer is recorded exactly once.
+        if (!tracked.TryAdvanceTo(CallLifecycleStage.Connected))
         {
             return;
         }
 
         var answeredAt = _timeProvider.GetUtcNow();
         tracked.Log.MarkAnswered(answeredAt);
-        await _callLogStore.UpdateAsync(tracked.Log).ConfigureAwait(false);
-        await PublishAsync(
-            CallBusinessEvent.StateChanged(
-                tracked.WorkspaceKey, callId, tracked.Log.Direction, tracked.Log.RemoteParty, CallState.Connected, answeredAt),
-            CancellationToken.None).ConfigureAwait(false);
+
+        var connected = CallBusinessEvent.StateChanged(
+            tracked.WorkspaceKey,
+            tracked.Key.CallId,
+            tracked.Log.Direction,
+            tracked.Log.RemoteParty,
+            CallState.Connected,
+            answeredAt);
+        await _callLogStore.UpdateAsync(tracked.Log, ToOutboxEntry(connected, answeredAt)).ConfigureAwait(false);
     }
 
-    private async Task OnTerminatedAsync(string callId)
+    /// <summary>
+    /// Ends the call exactly once: advances the stage, detaches the handler, finalizes the log
+    /// and enqueues <c>call.ended</c> in the same transaction. Callers hold the call's gate.
+    /// </summary>
+    private async Task FinalizeAsync(TrackedCall tracked, CallOutcome outcome, string? disconnectCause)
     {
-        // TryRemove makes finalization run exactly once even if Terminated fires twice.
-        if (!_active.TryRemove(callId, out var tracked))
+        if (!tracked.TryAdvanceTo(CallLifecycleStage.Terminated))
         {
             return;
         }
 
-        tracked.Call.StateChanged -= tracked.Handler;
+        Detach(tracked);
 
         var endedAt = _timeProvider.GetUtcNow();
-        var (outcome, disconnectCause) = ResolveOutcome(tracked);
         tracked.Log.End(endedAt, outcome, disconnectCause);
-        await _callLogStore.UpdateAsync(tracked.Log).ConfigureAwait(false);
-        await PublishAsync(
-            CallBusinessEvent.Ended(tracked.WorkspaceKey, callId, tracked.Log.Direction, tracked.Log.RemoteParty, endedAt),
-            CancellationToken.None).ConfigureAwait(false);
+
+        var ended = CallBusinessEvent.Ended(
+            tracked.WorkspaceKey, tracked.Key.CallId, tracked.Log.Direction, tracked.Log.RemoteParty, endedAt);
+        await _callLogStore.UpdateAsync(tracked.Log, ToOutboxEntry(ended, endedAt)).ConfigureAwait(false);
     }
 
-    // Derives the terminal outcome + disconnect cause, reconciled with whether the call was answered
-    // (CallLog.End enforces answered→{Completed,Failed}, unanswered→{Missed,Rejected,Busy,NoAnswer,
-    // Canceled,Failed}). Uses the SDK-supplied termination reason when present; otherwise falls back
-    // to the coarse heuristic (answered→Completed, unanswered inbound→Missed / outbound→Failed).
+    /// <summary>Removes the call from tracking and unhooks its handler. Safe to call twice.</summary>
+    private void Detach(TrackedCall tracked)
+    {
+        if (_active.TryRemove(tracked.Key, out _))
+        {
+            tracked.Call.StateChanged -= tracked.Handler;
+            tracked.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Wraps a business event as an outbox entry. The payload is the event's own data, so the
+    /// drainer republishes exactly what an in-process listener would have seen.
+    /// </summary>
+    private static CallEventOutboxEntry ToOutboxEntry(CallBusinessEvent businessEvent, DateTimeOffset occurredAt) =>
+        CallEventOutboxEntry.Pending(
+            Guid.NewGuid(),
+            businessEvent.EventName,
+            businessEvent.WorkspaceKey ?? string.Empty,
+            JsonSerializer.Serialize(businessEvent.ToEventData(), PayloadOptions),
+            occurredAt);
+
+    // Derives the terminal outcome and disconnect cause, reconciled with whether the call was
+    // answered (CallLog.End enforces answered→{Completed,Failed}, unanswered→{Missed,Rejected,
+    // Busy,NoAnswer,Canceled,Failed}). Uses the provider's termination reason when present;
+    // otherwise falls back to the coarse heuristic.
     private static (CallOutcome Outcome, string? DisconnectCause) ResolveOutcome(TrackedCall tracked)
     {
         var wasAnswered = tracked.Log.AnsweredAt is not null;
@@ -281,35 +409,25 @@ public sealed class CallControlService : ICallControlService, IDisposable
         return cause is { Length: > 200 } ? cause[..200] : cause;
     }
 
+    /// <summary>
+    /// Resolves a call the workspace owns. Scans by workspace and call id because a consumer
+    /// names the call, not the channel it happens to run on; the channel is part of the tracking
+    /// key so two channels' identical call ids stay distinct entries.
+    /// </summary>
     private bool TryGetOwned(string workspaceKey, string callId, out TrackedCall tracked)
     {
-        if (_active.TryGetValue(callId, out var found) &&
-            string.Equals(found.WorkspaceKey, workspaceKey, StringComparison.OrdinalIgnoreCase))
+        foreach (var (key, candidate) in _active)
         {
-            tracked = found;
-            return true;
+            if (string.Equals(key.WorkspaceKey, workspaceKey, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(key.CallId, callId, StringComparison.Ordinal))
+            {
+                tracked = candidate;
+                return true;
+            }
         }
 
         tracked = null!;
         return false;
-    }
-
-    private async Task PublishAsync(CallBusinessEvent businessEvent, CancellationToken cancellationToken)
-    {
-        if (_eventBus is null)
-        {
-            return;
-        }
-
-        try
-        {
-            await _eventBus.PublishAsync(businessEvent, cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            // Event delivery is a best-effort side effect; a failing bus must not break call control.
-            _logger.LogWarning(ex, "Failed to publish {EventName}.", businessEvent.EventName);
-        }
     }
 
     private static CallSnapshot Snapshot(ICall call) =>

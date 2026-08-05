@@ -27,6 +27,11 @@ public sealed class CallLogConfiguration : IEntityTypeConfiguration<CallLog>
         builder.Property(x => x.Outcome).HasConversion<string>().HasMaxLength(20).IsRequired();
         builder.Property(x => x.DisconnectCause).HasMaxLength(200);
 
+        // Optimistic concurrency over PostgreSQL's xmin system column: a second writer for the
+        // same call loses with DbUpdateConcurrencyException instead of silently overwriting a
+        // finalized record (#113). A system column, so it costs no schema and no migration.
+        builder.Property<uint>("xmin").IsRowVersion();
+
         builder.HasIndex(x => new { x.WorkspaceKey, x.StartedAt });
     }
 }
