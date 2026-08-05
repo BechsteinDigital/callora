@@ -24,11 +24,15 @@ public sealed class CommunicationAdminApiExtensionContributor : IHostAdminApiExt
 
         _routes =
         [
+            // Plugin-wide health, deliberately not workspace-scoped: it reports
+            // whether Communication itself is usable, which an operator must be
+            // able to read even while no workspace is entitled (#109).
             new HostAdminApiRouteRegistration(
                 "GET",
                 "status",
                 CommunicationPermissionKeys.AccountsRead,
-                new CommunicationStatusRouteHandler()),
+                new CommunicationStatusRouteHandler(),
+                HostAdminApiRouteScope.Global),
             .. accountRoutes,
         ];
     }

@@ -69,24 +69,36 @@ public static class PluginAdminExtensionEndpoints
             return Results.Forbid();
         }
 
-        // A permitted caller still only reaches the plugin when it is effectively
-        // available in the caller's workspace (REV2 §13): an entitlement lapse,
-        // missing capability, unhealthy runtime or inactive workspace returns 403
-        // rather than routing into a plugin that should be dark. Ordered after the
-        // permission check so unavailability is never disclosed to callers who
-        // lack the permission. Platform operators (WorkspaceKey == null) carry no
-        // per-workspace scope and so are not gated, mirroring the API data source.
-        var workspaceKey = workspaceScope.WorkspaceKey;
-        if (!string.IsNullOrWhiteSpace(workspaceKey) &&
-            httpContext.RequestServices.GetService<IPluginAvailabilityEvaluator>() is { } availabilityEvaluator)
+        // The effective workspace — the caller's bound one, or the one a platform
+        // operator selected via ?workspaceKey=. Resolving it here, before the
+        // availability gate, is the point of #109: a query-selected workspace used
+        // to reach the plugin ungated because only the token-bound value was read.
+        var workspaceKey = PluginAdminWorkspaceResolver.Resolve(httpContext, workspaceScope.WorkspaceKey);
+
+        if (match.Route.Scope == HostAdminApiRouteScope.Workspace)
         {
-            var availability = await availabilityEvaluator
-                .EvaluateAsync(match.Contributor.PluginId, workspaceKey, cancellationToken)
-                .ConfigureAwait(false);
-            if (!availability.IsAvailable)
+            if (string.IsNullOrWhiteSpace(workspaceKey))
             {
-                // Generic response — no internal availability detail is leaked.
-                return Results.Forbid();
+                return ApiProblems.BadRequest(
+                    "A workspace is required. Platform operators select one with ?workspaceKey=.");
+            }
+
+            // A permitted caller still only reaches the plugin when it is effectively
+            // available in that workspace (REV2 §13): an entitlement lapse, missing
+            // capability, unhealthy runtime or inactive workspace returns 403 rather
+            // than routing into a plugin that should be dark. Ordered after the
+            // permission check so unavailability is never disclosed to callers who
+            // lack the permission.
+            if (httpContext.RequestServices.GetService<IPluginAvailabilityEvaluator>() is { } availabilityEvaluator)
+            {
+                var availability = await availabilityEvaluator
+                    .EvaluateAsync(match.Contributor.PluginId, workspaceKey, cancellationToken)
+                    .ConfigureAwait(false);
+                if (!availability.IsAvailable)
+                {
+                    // Generic response — no internal availability detail is leaked.
+                    return Results.Forbid();
+                }
             }
         }
 
@@ -98,8 +110,6 @@ public static class PluginAdminExtensionEndpoints
             HttpQueryValues.Read(httpContext.Request.Query),
             await ReadJsonBodyAsync(httpContext, cancellationToken).ConfigureAwait(false),
             ResolveUserId(httpContext.User),
-            // Authoritative workspace scope from the caller's token: the caller's own workspace for a
-            // workspace-scoped operator, null for a platform operator (super-admin/global).
             workspaceKey);
 
         var response = await match.Route.Handler.HandleAsync(request, cancellationToken).ConfigureAwait(false);

@@ -107,7 +107,7 @@ public sealed class CallAdminRoutesTests
     }
 
     [Fact]
-    public async Task Place_PlatformOperator_UsesQueryWorkspace()
+    public async Task Place_PlatformOperator_UsesTheHostResolvedWorkspace()
     {
         var service = new FakeCallControlService
         {
@@ -115,12 +115,28 @@ public sealed class CallAdminRoutesTests
         };
         var handler = new PlaceCallRouteHandler(service);
 
+        // The host resolves ?workspaceKey= into WorkspaceKey and gates availability
+        // there before dispatching (#109); the handler reads only that value.
         await handler.HandleAsync(Request(
+            "POST", "calls", Body(new { to = "+49301234567" }),
+            workspaceKey: "ws-query"));
+
+        Assert.Equal("ws-query", service.LastPlaced!.WorkspaceKey);
+    }
+
+    [Fact]
+    public async Task Place_WithoutAHostResolvedWorkspace_Returns400()
+    {
+        var handler = new PlaceCallRouteHandler(new FakeCallControlService());
+
+        // A raw query value never substitutes for the host-resolved workspace —
+        // honouring it here would bypass the availability gate (#109).
+        var response = await handler.HandleAsync(Request(
             "POST", "calls", Body(new { to = "+49301234567" }),
             workspaceKey: null,
             query: new() { ["workspaceKey"] = ["ws-query"] }));
 
-        Assert.Equal("ws-query", service.LastPlaced!.WorkspaceKey);
+        Assert.Equal(400, response.StatusCode);
     }
 
     // --- Get ---

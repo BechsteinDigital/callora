@@ -90,18 +90,32 @@ public sealed class SipAccountAdminRoutesTests
     }
 
     [Fact]
-    public async Task PlatformOperator_TargetsWorkspaceViaQuery()
+    public async Task PlatformOperator_TargetsTheHostResolvedWorkspace()
     {
         var store = new InMemorySipAccountStore();
         var handler = new CreateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
 
-        // No bound workspace (platform operator) → explicit ?workspaceKey= is honoured.
-        var response = await handler.HandleAsync(Request("POST", "sip-accounts", workspaceKey: null,
-            query: new() { ["workspaceKey"] = ["ws-target"] },
+        // The host resolved ?workspaceKey= into WorkspaceKey and gated availability
+        // there before dispatching (#109).
+        var response = await handler.HandleAsync(Request("POST", "sip-accounts", workspaceKey: "ws-target",
             body: new { displayName = "Alice", host = "h", username = "alice", password = "s3cret" }));
 
         Assert.Equal(201, response.StatusCode);
         Assert.Single(await store.ListAsync("ws-target"));
+    }
+
+    [Fact]
+    public async Task WithoutAHostResolvedWorkspace_TheQueryValueIsIgnored()
+    {
+        var store = new InMemorySipAccountStore();
+        var handler = new CreateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        var response = await handler.HandleAsync(Request("POST", "sip-accounts", workspaceKey: null,
+            query: new() { ["workspaceKey"] = ["ws-target"] },
+            body: new { displayName = "Alice", host = "h", username = "alice", password = "s3cret" }));
+
+        Assert.Equal(400, response.StatusCode);
+        Assert.Empty(await store.ListAsync("ws-target"));
     }
 
     [Fact]
