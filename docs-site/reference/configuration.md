@@ -128,6 +128,11 @@ It is the line between a reconnect window and a standing bearer credential. Fift
 tunnel, a WiFi handover and a host restart; a window measured in hours mostly covers a stolen token.
 :::
 
+All four values above are validated when the host is configured, not when they are first used. A
+non-positive resume lifetime, a payload limit of zero or above 64 KB, and negative timeouts throw at
+startup — every one of them otherwise fails silently, and "no client ever reconnects" reads like a
+plugin bug rather than a typo.
+
 > **Status:** Property-level defaults for `CalloraHostingOptions` are read from the
 > class initializers and the `.env.example` / `docker-compose.yml` defaults; the exact
 > initializer default for `AutoBootstrapModules` was not pinned here — the compose/env

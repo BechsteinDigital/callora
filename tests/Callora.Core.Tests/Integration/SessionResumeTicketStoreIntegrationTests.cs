@@ -71,6 +71,29 @@ public sealed class SessionResumeTicketStoreIntegrationTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task TwoConcurrentConnectionsCannotBothWalkAwayWithIt()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        await using var writer = await ContextAsync();
+        var secret = SingleUseSecret.Create();
+        await new EfSessionResumeTicketStore(writer).CreateAsync(Ticket(secret));
+
+        // Two connections, genuinely in flight at once. The sequential case above only shows the
+        // second read finds nothing; what makes single use a property rather than a hope is that the
+        // delete's affected-row count settles the race, and that needs two contexts to be visible.
+        await using var first = await ContextAsync();
+        await using var second = await ContextAsync();
+        var hash = SingleUseSecret.Hash(secret);
+
+        var results = await Task.WhenAll(
+            new EfSessionResumeTicketStore(first).ConsumeAsync(hash, "videoconference"),
+            new EfSessionResumeTicketStore(second).ConsumeAsync(hash, "videoconference"));
+
+        Assert.Single(results, result => result is not null);
+        Assert.Single(results, result => result is null);
+    }
+
+    [SkippableFact]
     public async Task AForeignPluginNeitherReadsNorConsumesIt()
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
