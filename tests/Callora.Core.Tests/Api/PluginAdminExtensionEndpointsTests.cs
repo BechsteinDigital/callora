@@ -55,7 +55,7 @@ public sealed class PluginAdminExtensionEndpointsTests
         var client = app.GetTestClient();
         client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
 
-        var response = await client.GetAsync("/api/ext/admin/plugins/voip/sip-accounts/sip-main");
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/sip-accounts/sip-main?workspaceKey=ws-42");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
@@ -89,7 +89,7 @@ public sealed class PluginAdminExtensionEndpointsTests
     }
 
     [Fact]
-    public async Task ProxyRoute_PlatformOperator_HasNoBoundWorkspace()
+    public async Task ProxyRoute_PlatformOperator_MustSelectAWorkspace()
     {
         await using var app = await CreateAppAsync();
         var client = app.GetTestClient();
@@ -97,10 +97,54 @@ public sealed class PluginAdminExtensionEndpointsTests
         client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
 
         var response = await client.GetAsync("/api/ext/admin/plugins/voip/whoami");
+
+        // A workspace-scoped route without a resolvable workspace is a bad request,
+        // not an ungated pass into the plugin (#109).
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ProxyRoute_PlatformOperator_QuerySelectedWorkspace_ReachesTheHandler()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/whoami?workspaceKey=ws-9");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
-        Assert.Equal("(null)", payload!["workspaceKey"]);
+        Assert.Equal("ws-9", payload!["workspaceKey"]);
+    }
+
+    [Fact]
+    public async Task ProxyRoute_WorkspaceBoundCaller_CannotOverrideItsWorkspaceByQuery()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "ws-42");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/whoami?workspaceKey=ws-9");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.Equal("ws-42", payload!["workspaceKey"]);
+    }
+
+    [Fact]
+    public async Task ProxyRoute_GlobalRoute_NeedsNoWorkspaceAndSkipsTheGate()
+    {
+        var evaluatorQueried = false;
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new RecordingPluginAvailabilityEvaluator(() => evaluatorQueried = true));
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/status");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(evaluatorQueried); // an explicitly global route opts out of the workspace gate
     }
 
     [Fact]
@@ -153,19 +197,36 @@ public sealed class PluginAdminExtensionEndpointsTests
     }
 
     [Fact]
-    public async Task ProxyRoute_PlatformOperator_SkipsAvailabilityGate()
+    public async Task ProxyRoute_PlatformOperator_QuerySelectedWorkspace_IsAvailabilityGated()
     {
-        var evaluatorQueried = false;
+        var gatedWorkspaces = new List<string>();
         await using var app = await CreateAppAsync(
-            availabilityEvaluator: new RecordingPluginAvailabilityEvaluator(() => evaluatorQueried = true));
+            availabilityEvaluator: new RecordingPluginAvailabilityEvaluator(gatedWorkspaces.Add));
         var client = app.GetTestClient();
-        // No workspace key → platform operator (WorkspaceKey == null): no per-workspace gate.
+        // A platform operator selects the target workspace; it must be gated exactly
+        // like a token-bound one (#109).
         client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
 
-        var response = await client.GetAsync("/api/ext/admin/plugins/voip/sip-accounts/sip-main");
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/sip-accounts/sip-main?workspaceKey=ws-9");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.False(evaluatorQueried); // no workspace scope → availability is skipped entirely
+        Assert.Equal(["ws-9"], gatedWorkspaces);
+    }
+
+    [Fact]
+    public async Task ProxyRoute_PlatformOperator_UnentitledWorkspace_IsForbidden()
+    {
+        var handlerCalls = 0;
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new StaticPluginAvailabilityEvaluator("voip"),
+            onHandlerInvoked: () => Interlocked.Increment(ref handlerCalls));
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
+
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/sip-accounts/sip-main?workspaceKey=ws-9");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(0, handlerCalls);
     }
 
     [Fact]
@@ -177,8 +238,8 @@ public sealed class PluginAdminExtensionEndpointsTests
         client.DefaultRequestHeaders.Add("X-Test-Permissions", "sipaccount.read");
         client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "ws-42");
 
-        // No matching route → 404, unchanged and reached before any availability gate.
-        var response = await client.GetAsync("/api/ext/admin/plugins/voip/does-not-exist");
+        // No matching route → 404, unchanged and reached before any workspace gate.
+        var response = await client.GetAsync("/api/ext/admin/plugins/voip/does-not-exist?workspaceKey=ws-42");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -248,7 +309,18 @@ public sealed class PluginAdminExtensionEndpointsTests
                         new HostAdminApiResponse(200, new Dictionary<string, string>
                         {
                             ["workspaceKey"] = req.WorkspaceKey ?? "(null)"
-                        }), request)))
+                        }), request))),
+                // Explicitly global: plugin-wide status that carries no workspace (#109).
+                new HostAdminApiRouteRegistration(
+                    "GET",
+                    "status",
+                    "sipaccount.read",
+                    new StaticHostAdminApiRouteHandler(request => RunHandler(req =>
+                        new HostAdminApiResponse(200, new Dictionary<string, string>
+                        {
+                            ["workspaceKey"] = req.WorkspaceKey ?? "(null)"
+                        }), request)),
+                    HostAdminApiRouteScope.Global)
             ]
         };
 
@@ -283,14 +355,19 @@ public sealed class PluginAdminExtensionEndpointsTests
     /// Records whether the availability gate queried it, so ordering assertions
     /// can prove the gate is (or is not) reached for a given caller.
     /// </summary>
-    private sealed class RecordingPluginAvailabilityEvaluator(Action onEvaluated) : IPluginAvailabilityEvaluator
+    private sealed class RecordingPluginAvailabilityEvaluator(Action<string> onEvaluated) : IPluginAvailabilityEvaluator
     {
+        public RecordingPluginAvailabilityEvaluator(Action onEvaluated)
+            : this(_ => onEvaluated())
+        {
+        }
+
         public Task<PluginAvailability> EvaluateAsync(
             string pluginId,
             string workspaceKey,
             CancellationToken cancellationToken = default)
         {
-            onEvaluated();
+            onEvaluated(workspaceKey);
             return Task.FromResult(new PluginAvailability(true, Array.Empty<PluginAvailabilityFactor>()));
         }
     }

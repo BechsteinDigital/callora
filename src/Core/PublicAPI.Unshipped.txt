@@ -1531,17 +1531,22 @@ Callora.Core.Application.Plugins.Contracts.HostAdminApiResponse.StatusCode.get -
 Callora.Core.Application.Plugins.Contracts.HostAdminApiResponse.StatusCode.init -> void
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration!
-Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.Deconstruct(out string! HttpMethod, out string! RouteTemplate, out string! RequiredPermission, out Callora.Core.Application.Plugins.Contracts.IHostAdminApiRouteHandler! Handler) -> void
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.Deconstruct(out string! HttpMethod, out string! RouteTemplate, out string! RequiredPermission, out Callora.Core.Application.Plugins.Contracts.IHostAdminApiRouteHandler! Handler, out Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteScope Scope) -> void
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.Equals(Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration? other) -> bool
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.Handler.get -> Callora.Core.Application.Plugins.Contracts.IHostAdminApiRouteHandler!
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.Handler.init -> void
-Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.HostAdminApiRouteRegistration(string! HttpMethod, string! RouteTemplate, string! RequiredPermission, Callora.Core.Application.Plugins.Contracts.IHostAdminApiRouteHandler! Handler) -> void
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.HostAdminApiRouteRegistration(string! HttpMethod, string! RouteTemplate, string! RequiredPermission, Callora.Core.Application.Plugins.Contracts.IHostAdminApiRouteHandler! Handler, Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteScope Scope = Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteScope.Workspace) -> void
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.HttpMethod.get -> string!
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.HttpMethod.init -> void
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.RequiredPermission.get -> string!
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.RequiredPermission.init -> void
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.RouteTemplate.get -> string!
 Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.RouteTemplate.init -> void
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.Scope.get -> Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteScope
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration.Scope.init -> void
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteScope
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteScope.Global = 1 -> Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteScope
+Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteScope.Workspace = 0 -> Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteScope
 Callora.Core.Application.Plugins.Contracts.HostAdminNavigationItem
 Callora.Core.Application.Plugins.Contracts.HostAdminNavigationItem.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostAdminNavigationItem!
 Callora.Core.Application.Plugins.Contracts.HostAdminNavigationItem.Deconstruct(out string! Id, out string! Label, out string! To, out string? Icon, out int Order, out string? RequiredPermission) -> void
