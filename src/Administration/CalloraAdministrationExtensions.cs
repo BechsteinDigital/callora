@@ -43,6 +43,8 @@ public static class CalloraAdministrationExtensions
         app.MapThemeEndpoints();
         app.MapSurfaceThemeEndpoints();
         app.MapSurfaceIdentityEndpoints();
+        app.MapPluginSurfaceApiEndpoints(
+            Callora.Core.Infrastructure.Security.BackendRateLimiting.ApiPolicy);
 
         // Operator /api/* surface: workspace administration plus the cross-cutting
         // resource endpoints. All are backend-permission gated (some additionally

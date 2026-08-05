@@ -65,19 +65,11 @@ public static class PluginPublicHttpEndpoints
         var logger = loggerFactory.CreateLogger("Callora.Administration.Api.PluginPublicHttpEndpoints");
         var method = httpContext.Request.Method;
 
-        // Fast-path optimisation: reject an obviously oversized declared body without
-        // reading a byte. Chunked requests carry no ContentLength, so the capped read
-        // below is the real safeguard against unbounded reads on this anonymous seam.
-        if (httpContext.Request.ContentLength > BodySizeLimitBytes)
-        {
-            httpContext.Response.StatusCode = StatusCodes.Status413RequestEntityTooLarge;
-            return;
-        }
-
         // Hard byte-cap the body read regardless of ContentLength / Transfer-Encoding.
         // Runs before the matcher/handler so an oversized payload never reaches plugin code.
-        var (body, tooLarge) = await ReadBodyCappedAsync(
-            httpContext.Request.Body, BodySizeLimitBytes, cancellationToken).ConfigureAwait(false);
+        var (body, tooLarge) = await CappedRequestBody
+            .ReadAsync(httpContext, BodySizeLimitBytes, cancellationToken)
+            .ConfigureAwait(false);
         if (tooLarge)
         {
             httpContext.Response.StatusCode = StatusCodes.Status413RequestEntityTooLarge;
@@ -144,31 +136,6 @@ public static class PluginPublicHttpEndpoints
     /// chunked payload never fully materialises. Returns <c>(null, false)</c> for an
     /// empty body (for example: a GET request), otherwise the UTF-8 decoded body.
     /// </summary>
-    private static async Task<(string? Body, bool TooLarge)> ReadBodyCappedAsync(
-        Stream body, int limit, CancellationToken ct)
-    {
-        var buffer = new byte[8 * 1024];
-        using var ms = new MemoryStream();
-
-        int read;
-        while ((read = await body.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
-        {
-            if (ms.Length + read > limit)
-            {
-                return (null, true);
-            }
-
-            ms.Write(buffer, 0, read);
-        }
-
-        if (ms.Length == 0)
-        {
-            return (null, false);
-        }
-
-        return (Encoding.UTF8.GetString(ms.ToArray()), false);
-    }
-
     private static IReadOnlyDictionary<string, string?> FlattenRouteValues(
         IReadOnlyDictionary<string, string> routeValues)
     {

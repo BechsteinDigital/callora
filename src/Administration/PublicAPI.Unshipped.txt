@@ -326,6 +326,17 @@ Callora.Administration.Api.PluginSignatureStatusApiResponse.SignerFingerprint.ge
 Callora.Administration.Api.PluginSignatureStatusApiResponse.SignerFingerprint.init -> void
 Callora.Administration.Api.PluginSignatureStatusApiResponse.State.get -> string!
 Callora.Administration.Api.PluginSignatureStatusApiResponse.State.init -> void
+Callora.Administration.Api.PluginSurfaceApiEndpoints
+Callora.Administration.Api.PluginSurfaceApiRouteMatch
+Callora.Administration.Api.PluginSurfaceApiRouteMatch.<Clone>$() -> Callora.Administration.Api.PluginSurfaceApiRouteMatch!
+Callora.Administration.Api.PluginSurfaceApiRouteMatch.Deconstruct(out Callora.Core.Application.Surfaces.SurfaceApiMountedRoute! Mounted, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginSurfaceApiRouteMatch.Equals(Callora.Administration.Api.PluginSurfaceApiRouteMatch? other) -> bool
+Callora.Administration.Api.PluginSurfaceApiRouteMatch.Mounted.get -> Callora.Core.Application.Surfaces.SurfaceApiMountedRoute!
+Callora.Administration.Api.PluginSurfaceApiRouteMatch.Mounted.init -> void
+Callora.Administration.Api.PluginSurfaceApiRouteMatch.PluginSurfaceApiRouteMatch(Callora.Core.Application.Surfaces.SurfaceApiMountedRoute! Mounted, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues) -> void
+Callora.Administration.Api.PluginSurfaceApiRouteMatch.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Administration.Api.PluginSurfaceApiRouteMatch.RouteValues.init -> void
+Callora.Administration.Api.PluginSurfaceApiRouteMatcher
 Callora.Administration.Api.PluginWebSocketEndpoints
 Callora.Administration.Api.PluginWebSocketRouteMatch
 Callora.Administration.Api.PluginWebSocketRouteMatch.<Clone>$() -> Callora.Administration.Api.PluginWebSocketRouteMatch!
@@ -970,6 +981,9 @@ override Callora.Administration.Api.PluginPublicHttpRouteMatch.ToString() -> str
 override Callora.Administration.Api.PluginSignatureStatusApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.PluginSignatureStatusApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.PluginSignatureStatusApiResponse.ToString() -> string!
+override Callora.Administration.Api.PluginSurfaceApiRouteMatch.Equals(object? obj) -> bool
+override Callora.Administration.Api.PluginSurfaceApiRouteMatch.GetHashCode() -> int
+override Callora.Administration.Api.PluginSurfaceApiRouteMatch.ToString() -> string!
 override Callora.Administration.Api.PluginWebSocketRouteMatch.Equals(object? obj) -> bool
 override Callora.Administration.Api.PluginWebSocketRouteMatch.GetHashCode() -> int
 override Callora.Administration.Api.PluginWebSocketRouteMatch.ToString() -> string!
@@ -1143,6 +1157,10 @@ static Callora.Administration.Api.PluginPublicHttpRouteMatch.operator ==(Callora
 static Callora.Administration.Api.PluginPublicHttpRouteMatcher.FindMatch(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor!>! contributors, string! pluginId, string! httpMethod, string! routePath) -> Callora.Administration.Api.PluginPublicHttpRouteMatch?
 static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator !=(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool
 static Callora.Administration.Api.PluginSignatureStatusApiResponse.operator ==(Callora.Administration.Api.PluginSignatureStatusApiResponse? left, Callora.Administration.Api.PluginSignatureStatusApiResponse? right) -> bool
+static Callora.Administration.Api.PluginSurfaceApiEndpoints.MapPluginSurfaceApiEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string? rateLimitingPolicy = null) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Administration.Api.PluginSurfaceApiRouteMatch.operator !=(Callora.Administration.Api.PluginSurfaceApiRouteMatch? left, Callora.Administration.Api.PluginSurfaceApiRouteMatch? right) -> bool
+static Callora.Administration.Api.PluginSurfaceApiRouteMatch.operator ==(Callora.Administration.Api.PluginSurfaceApiRouteMatch? left, Callora.Administration.Api.PluginSurfaceApiRouteMatch? right) -> bool
+static Callora.Administration.Api.PluginSurfaceApiRouteMatcher.FindMatch(Callora.Core.Application.Surfaces.SurfaceApiRouteInventory! inventory, string! pluginId, string! httpMethod, string! routePath) -> Callora.Administration.Api.PluginSurfaceApiRouteMatch?
 static Callora.Administration.Api.PluginWebSocketEndpoints.MapPluginWebSocketEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.PluginWebSocketRouteMatch.operator !=(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool
 static Callora.Administration.Api.PluginWebSocketRouteMatch.operator ==(Callora.Administration.Api.PluginWebSocketRouteMatch? left, Callora.Administration.Api.PluginWebSocketRouteMatch? right) -> bool

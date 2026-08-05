@@ -1656,6 +1656,55 @@ Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Metho
 Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Method.init -> void
 Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.RouteTemplate.get -> string!
 Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.RouteTemplate.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Body.get -> System.Text.Json.JsonElement?
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Body.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Caller.get -> Callora.Core.Application.Surfaces.SurfaceCaller!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Caller.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Deconstruct(out string! PluginId, out string! HttpMethod, out string! RoutePath, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues, out System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>! Query, out System.Text.Json.JsonElement? Body, out string! RequestId, out string! TenantKey, out string! WorkspaceKey, out string! SurfaceKey, out Callora.Core.Application.Surfaces.SurfaceCaller! Caller) -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Equals(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.HostSurfaceApiRequest(string! PluginId, string! HttpMethod, string! RoutePath, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RouteValues, System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>! Query, System.Text.Json.JsonElement? Body, string! RequestId, string! TenantKey, string! WorkspaceKey, string! SurfaceKey, Callora.Core.Application.Surfaces.SurfaceCaller! Caller) -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.HttpMethod.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.HttpMethod.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.PluginId.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.PluginId.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Query.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Query.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.RequestId.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.RequestId.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.RoutePath.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.RoutePath.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.RouteValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.RouteValues.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.SurfaceKey.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.SurfaceKey.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.TenantKey.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.TenantKey.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.WorkspaceKey.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.WorkspaceKey.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.Deconstruct(out int StatusCode, out object? Payload) -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.Equals(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.HostSurfaceApiResponse(int StatusCode, object? Payload = null) -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.Payload.get -> object?
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.Payload.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.StatusCode.get -> int
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.StatusCode.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.Audience.get -> Callora.Core.Application.Plugins.Contracts.SurfaceApiRouteAudience
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.Audience.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.Deconstruct(out string! HttpMethod, out string! RouteTemplate, out Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiRouteHandler! Handler, out Callora.Core.Application.Plugins.Contracts.SurfaceApiRouteAudience Audience) -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.Equals(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration? other) -> bool
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.Handler.get -> Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiRouteHandler!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.Handler.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.HostSurfaceApiRouteRegistration(string! HttpMethod, string! RouteTemplate, Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiRouteHandler! Handler, Callora.Core.Application.Plugins.Contracts.SurfaceApiRouteAudience Audience = Callora.Core.Application.Plugins.Contracts.SurfaceApiRouteAudience.Authenticated) -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.HttpMethod.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.HttpMethod.init -> void
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.RouteTemplate.get -> string!
+Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.RouteTemplate.init -> void
 Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest
 Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest!
 Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest.Credential(Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredentialKind kind, string! name) -> string?
@@ -1760,6 +1809,11 @@ Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor.Pl
 Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor.PublicHttpRoutes.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration!>!
 Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler
 Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse!>
+Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor
+Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor.PluginId.get -> string!
+Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor.Routes.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration!>!
+Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiRouteHandler
+Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiRouteHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse!>
 Callora.Core.Application.Plugins.Contracts.IHostSurfaceIdentityProvider
 Callora.Core.Application.Plugins.Contracts.IHostSurfaceIdentityProvider.AuthenticateAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult!>
 Callora.Core.Application.Plugins.Contracts.IHostSurfaceIdentityProvider.CredentialSources.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredentialSource!>!
@@ -1794,6 +1848,9 @@ Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.Equals(Callora
 Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.RuntimeCapabilityGrant(string! Capability, string? WorkspaceKey) -> void
 Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.WorkspaceKey.get -> string?
 Callora.Core.Application.Plugins.Contracts.RuntimeCapabilityGrant.WorkspaceKey.init -> void
+Callora.Core.Application.Plugins.Contracts.SurfaceApiRouteAudience
+Callora.Core.Application.Plugins.Contracts.SurfaceApiRouteAudience.Authenticated = 0 -> Callora.Core.Application.Plugins.Contracts.SurfaceApiRouteAudience
+Callora.Core.Application.Plugins.Contracts.SurfaceApiRouteAudience.GuestOrAuthenticated = 1 -> Callora.Core.Application.Plugins.Contracts.SurfaceApiRouteAudience
 Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredential
 Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredential.<Clone>$() -> Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredential!
 Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredential.Deconstruct(out Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredentialKind Kind, out string! Name, out string! Value) -> void
@@ -2668,6 +2725,42 @@ Callora.Core.Application.Surfaces.ISurfaceSessionStore.PurgeExpiredAsync(System.
 Callora.Core.Application.Surfaces.ISurfaceSessionStore.RevokeAsync(System.Guid sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Surfaces.ISurfaceSessionStore.RevokeForSurfaceAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
 Callora.Core.Application.Surfaces.ISurfaceSessionStore.TouchAsync(System.Guid sessionId, System.DateTimeOffset seenAtUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Surfaces.SurfaceApiMountedRoute
+Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceApiMountedRoute!
+Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.Deconstruct(out string! PluginId, out Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration! Route) -> void
+Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.Equals(Callora.Core.Application.Surfaces.SurfaceApiMountedRoute? other) -> bool
+Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.PluginId.get -> string!
+Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.PluginId.init -> void
+Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.Route.get -> Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration!
+Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.Route.init -> void
+Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.SurfaceApiMountedRoute(string! PluginId, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration! Route) -> void
+Callora.Core.Application.Surfaces.SurfaceApiOptions
+Callora.Core.Application.Surfaces.SurfaceApiOptions.HandlerTimeout.get -> System.TimeSpan
+Callora.Core.Application.Surfaces.SurfaceApiOptions.HandlerTimeout.set -> void
+Callora.Core.Application.Surfaces.SurfaceApiOptions.MaxRequestBodyBytes.get -> int
+Callora.Core.Application.Surfaces.SurfaceApiOptions.MaxRequestBodyBytes.set -> void
+Callora.Core.Application.Surfaces.SurfaceApiOptions.SurfaceApiOptions() -> void
+Callora.Core.Application.Surfaces.SurfaceApiRouteInventory
+Callora.Core.Application.Surfaces.SurfaceApiRouteInventory.Rejections.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SurfaceApiRouteRejection!>!
+Callora.Core.Application.Surfaces.SurfaceApiRouteInventory.Routes.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SurfaceApiMountedRoute!>!
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceApiRouteRejection!
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.Deconstruct(out string! PluginId, out string! HttpMethod, out string! RouteTemplate, out Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason Reason) -> void
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.Equals(Callora.Core.Application.Surfaces.SurfaceApiRouteRejection? other) -> bool
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.HttpMethod.get -> string!
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.HttpMethod.init -> void
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.PluginId.get -> string!
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.PluginId.init -> void
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.Reason.get -> Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.Reason.init -> void
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.RouteTemplate.get -> string!
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.RouteTemplate.init -> void
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.SurfaceApiRouteRejection(string! PluginId, string! HttpMethod, string! RouteTemplate, Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason Reason) -> void
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason.DuplicateRoute = 2 -> Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason.InvalidTemplate = 1 -> Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason
+Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason.ReservedPluginId = 0 -> Callora.Core.Application.Surfaces.SurfaceApiRouteRejectionReason
+Callora.Core.Application.Surfaces.SurfaceApiRouteRules
 Callora.Core.Application.Surfaces.SurfaceCaller
 Callora.Core.Application.Surfaces.SurfaceCaller.Subject.get -> Callora.Core.Application.Surfaces.SurfaceSubject!
 Callora.Core.Application.Surfaces.SurfaceCaller.SurfaceCaller(Callora.Core.Application.Surfaces.SurfaceCaller! original) -> void
@@ -4754,6 +4847,7 @@ Callora.Core.Infrastructure.Surfaces.HttpContextSurfaceCredentialReader.Read(Cal
 Callora.Core.Infrastructure.Surfaces.SurfaceRequestCallerResolver
 Callora.Core.Infrastructure.Surfaces.SurfaceRequestCallerResolver.EstablishAsync(Microsoft.AspNetCore.Http.HttpContext! httpContext, Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot! surface, string! locale, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.SurfaceSessionEstablishment!>!
 Callora.Core.Infrastructure.Surfaces.SurfaceRequestCallerResolver.SurfaceRequestCallerResolver(Callora.Core.Application.Surfaces.SurfaceIdentityResolver! identityResolver, Callora.Core.Application.Surfaces.SurfaceSessionService! sessions, Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor! cookies, Callora.Core.Application.Surfaces.ISurfaceCredentialReader! credentials) -> void
+Callora.Core.Infrastructure.Surfaces.SurfaceRequestOrigin
 Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor
 Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor.Read(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> string?
 Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor.SurfaceSessionCookieAccessor(Callora.Core.Application.Surfaces.SurfaceIdentityOptions! options) -> void
@@ -4925,6 +5019,8 @@ const Callora.Core.Application.Security.Events.UserEventTypes.Deleted = "user.de
 const Callora.Core.Application.Security.Events.UserEventTypes.Updated = "user.updated" -> string!
 const Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.JobTypeName = "security.session-revocation-purge" -> string!
 const Callora.Core.Application.Surfaces.Events.SurfaceCallerEventTypes.Promoted = "surface.caller-promoted" -> string!
+const Callora.Core.Application.Surfaces.SurfaceApiOptions.SectionName = "Callora:SurfaceApi" -> string!
+const Callora.Core.Application.Surfaces.SurfaceApiRouteRules.Prefix = "/surface-api" -> string!
 const Callora.Core.Application.Surfaces.SurfaceIdentityCapability.Key = "surface.identity" -> string!
 const Callora.Core.Application.Surfaces.SurfaceIdentityIssuers.Guest = "callora.surface-guest" -> string!
 const Callora.Core.Application.Surfaces.SurfaceIdentityIssuers.Host = "callora.host" -> string!
@@ -5175,6 +5271,15 @@ override Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.ToStr
 override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.GetHashCode() -> int
 override Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.ToString() -> string!
+override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.GetHashCode() -> int
+override Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.ToString() -> string!
 override Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest.GetHashCode() -> int
 override Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest.ToString() -> string!
@@ -5284,6 +5389,12 @@ override Callora.Core.Application.Surfaces.GuestSurfaceCaller.<Clone>$() -> Call
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.ToString() -> string!
+override Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.ToString() -> string!
+override Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.ToString() -> string!
 override Callora.Core.Application.Surfaces.SurfaceCaller.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.SurfaceCaller.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.SurfaceCaller.ToString() -> string!
@@ -5624,6 +5735,12 @@ static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.operato
 static Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse.operator ==(Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.operator !=(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration.operator ==(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.operator !=(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest.operator ==(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.operator !=(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse.operator ==(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.operator !=(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration? right) -> bool
+static Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration.operator ==(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest.operator !=(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest.operator ==(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest? left, Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest? right) -> bool
 static Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult.Anonymous.get -> Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult!
@@ -5743,6 +5860,13 @@ static Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.operator ==(
 static Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent.Promoted(string! workspaceKey, string! surfaceKey, Callora.Core.Application.Surfaces.SurfaceSubject! previous, Callora.Core.Application.Surfaces.SurfaceSubject! current) -> Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent!
 static Callora.Core.Application.Surfaces.GuestSurfaceCaller.operator !=(Callora.Core.Application.Surfaces.GuestSurfaceCaller? left, Callora.Core.Application.Surfaces.GuestSurfaceCaller? right) -> bool
 static Callora.Core.Application.Surfaces.GuestSurfaceCaller.operator ==(Callora.Core.Application.Surfaces.GuestSurfaceCaller? left, Callora.Core.Application.Surfaces.GuestSurfaceCaller? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.operator !=(Callora.Core.Application.Surfaces.SurfaceApiMountedRoute? left, Callora.Core.Application.Surfaces.SurfaceApiMountedRoute? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.operator ==(Callora.Core.Application.Surfaces.SurfaceApiMountedRoute? left, Callora.Core.Application.Surfaces.SurfaceApiMountedRoute? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceApiRouteInventory.Build(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor!>! contributors) -> Callora.Core.Application.Surfaces.SurfaceApiRouteInventory!
+static Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.operator !=(Callora.Core.Application.Surfaces.SurfaceApiRouteRejection? left, Callora.Core.Application.Surfaces.SurfaceApiRouteRejection? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceApiRouteRejection.operator ==(Callora.Core.Application.Surfaces.SurfaceApiRouteRejection? left, Callora.Core.Application.Surfaces.SurfaceApiRouteRejection? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceApiRouteRules.IsAllowedPluginId(string? pluginId) -> bool
+static Callora.Core.Application.Surfaces.SurfaceApiRouteRules.IsAllowedTemplate(string? routeTemplate) -> bool
 static Callora.Core.Application.Surfaces.SurfaceCaller.operator !=(Callora.Core.Application.Surfaces.SurfaceCaller? left, Callora.Core.Application.Surfaces.SurfaceCaller? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceCaller.operator ==(Callora.Core.Application.Surfaces.SurfaceCaller? left, Callora.Core.Application.Surfaces.SurfaceCaller? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceCallerContext.operator !=(Callora.Core.Application.Surfaces.SurfaceCallerContext? left, Callora.Core.Application.Surfaces.SurfaceCallerContext? right) -> bool
@@ -5889,6 +6013,7 @@ static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.Requ
 static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.UserHasPermission(System.Security.Claims.ClaimsPrincipal! user, string! permissionKey) -> bool
 static Callora.Core.Infrastructure.Security.IntegrationPrincipalFactory.Create(Callora.Core.Domain.Integrations.IntegrationCredential! integration) -> System.Security.Claims.ClaimsPrincipal!
 static Callora.Core.Infrastructure.Security.WorkspaceScopeAuthorizationExtensions.RequireWorkspaceScope<TBuilder>(this TBuilder builder) -> TBuilder
+static Callora.Core.Infrastructure.Surfaces.SurfaceRequestOrigin.IsSameOrigin(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> bool
 static Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ParseSensitiveFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<string!>!
 static readonly Callora.Core.Application.Security.BackendLockoutPolicy.LockoutDuration -> System.TimeSpan
 static readonly Callora.Core.Application.Security.BackendPermissionActions.All -> string![]!
