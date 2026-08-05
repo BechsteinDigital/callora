@@ -2323,6 +2323,8 @@ Callora.Core.Application.Policies.BackendHostOptions.RequireAllowlistForActivati
 Callora.Core.Application.Policies.BackendHostOptions.RequireAllowlistForActivation.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.RequireApiKeyAuthentication.get -> bool
 Callora.Core.Application.Policies.BackendHostOptions.RequireApiKeyAuthentication.set -> void
+Callora.Core.Application.Policies.BackendHostOptions.RequireExternalIdentityForOperators.get -> bool
+Callora.Core.Application.Policies.BackendHostOptions.RequireExternalIdentityForOperators.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.RevokedContentHashes.get -> string![]!
 Callora.Core.Application.Policies.BackendHostOptions.RevokedContentHashes.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.RevokedSignerFingerprints.get -> string![]!
@@ -2454,12 +2456,15 @@ Callora.Core.Application.Security.AdminLoginGrant.WorkspaceKey.init -> void
 Callora.Core.Application.Security.AdminLoginResolver
 Callora.Core.Application.Security.BackendAuthScopes
 Callora.Core.Application.Security.BackendClaimTypes
+Callora.Core.Application.Security.BackendLockoutPolicy
+Callora.Core.Application.Security.BackendPasswordPolicy
 Callora.Core.Application.Security.BackendPermissionActions
 Callora.Core.Application.Security.BackendPermissionKeyValidator
 Callora.Core.Application.Security.BackendPermissionKeys
 Callora.Core.Application.Security.BackendRbacException
 Callora.Core.Application.Security.BackendRbacPermissionCatalog
 Callora.Core.Application.Security.BackendRoles
+Callora.Core.Application.Security.BackendSecurityStamp
 Callora.Core.Application.Security.BackendUserException
 Callora.Core.Application.Security.Events.UserBusinessEvent
 Callora.Core.Application.Security.Events.UserBusinessEvent.EventName.get -> string!
@@ -2478,6 +2483,12 @@ Callora.Core.Application.Security.IBackendRbacStore.RemoveRoleAsync(string! role
 Callora.Core.Application.Security.IBackendRbacStore.RemoveUserRoleAsync(string! userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Security.IBackendRbacStore.UpsertRoleAsync(string! role, System.Collections.Generic.IReadOnlyCollection<string!>! permissions, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Security.IBackendRbacStore.UpsertUserRoleAsync(string! userId, string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Security.IBackendSessionRevocationStore
+Callora.Core.Application.Security.IBackendSessionRevocationStore.IsRevokedAsync(string! tokenId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Application.Security.IBackendSessionRevocationStore.PurgeExpiredAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Callora.Core.Application.Security.IBackendSessionRevocationStore.RevokeAsync(string! tokenId, System.DateTimeOffset expiresAtUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Security.IBackendSessionValidator
+Callora.Core.Application.Security.IBackendSessionValidator.ValidateAsync(System.Security.Claims.ClaimsPrincipal! principal, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string?>!
 Callora.Core.Application.Security.IBackendUserStore
 Callora.Core.Application.Security.IBackendUserStore.AuthenticateAsync(string! login, string! password, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser?>!
 Callora.Core.Application.Security.IBackendUserStore.GetByExternalIdAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser?>!
@@ -2486,6 +2497,8 @@ Callora.Core.Application.Security.IBackendUserStore.IsWorkspaceMemberAsync(strin
 Callora.Core.Application.Security.IBackendUserStore.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Security.BackendUser!>!>!
 Callora.Core.Application.Security.IBackendUserStore.ListByWorkspaceAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Security.BackendUser!>!>!
 Callora.Core.Application.Security.IBackendUserStore.RemoveAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Application.Security.IBackendUserStore.RevokeSessionsAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Application.Security.IBackendUserStore.SetEnabledAsync(string! externalId, bool enabled, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Security.IBackendUserStore.UpsertCredentialsAsync(string! externalId, string? email, string? displayName, string? password, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser!>!
 Callora.Core.Application.Security.IUserDataSubjectService
 Callora.Core.Application.Security.IUserDataSubjectService.EraseAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
@@ -2493,6 +2506,13 @@ Callora.Core.Application.Security.IUserDataSubjectService.ExportAsync(string! ex
 Callora.Core.Application.Security.IWorkspaceScopeContext
 Callora.Core.Application.Security.IWorkspaceScopeContext.IsWorkspaceScoped.get -> bool
 Callora.Core.Application.Security.IWorkspaceScopeContext.WorkspaceKey.get -> string?
+Callora.Core.Application.Security.SessionRevocationPurgeJobHandler
+Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.ExecuteAsync(Callora.Core.Application.Jobs.Contracts.BackgroundJobExecutionContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.JobType.get -> string!
+Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.SessionRevocationPurgeJobHandler(Callora.Core.Application.Security.IBackendSessionRevocationStore! store) -> void
+Callora.Core.Application.Security.SessionRevocationPurgeRecurringJobProvider
+Callora.Core.Application.Security.SessionRevocationPurgeRecurringJobProvider.GetDefinitions() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Jobs.Contracts.RecurringJobDefinition!>!
+Callora.Core.Application.Security.SessionRevocationPurgeRecurringJobProvider.SessionRevocationPurgeRecurringJobProvider() -> void
 Callora.Core.Application.Security.UserDataExport
 Callora.Core.Application.Security.UserDataExport.<Clone>$() -> Callora.Core.Application.Security.UserDataExport!
 Callora.Core.Application.Security.UserDataExport.AuditTrail.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Security.UserDataExportAuditEntry!>!
@@ -3362,6 +3382,16 @@ Callora.Core.Domain.Security.BackendRbacUserRole.User.get -> Callora.Core.Domain
 Callora.Core.Domain.Security.BackendRbacUserRole.User.set -> void
 Callora.Core.Domain.Security.BackendRbacUserRole.UserId.get -> System.Guid
 Callora.Core.Domain.Security.BackendRbacUserRole.UserId.set -> void
+Callora.Core.Domain.Security.BackendRevokedSession
+Callora.Core.Domain.Security.BackendRevokedSession.BackendRevokedSession() -> void
+Callora.Core.Domain.Security.BackendRevokedSession.ExpiresAtUtc.get -> System.DateTimeOffset
+Callora.Core.Domain.Security.BackendRevokedSession.ExpiresAtUtc.set -> void
+Callora.Core.Domain.Security.BackendRevokedSession.RevokedAtUtc.get -> System.DateTimeOffset
+Callora.Core.Domain.Security.BackendRevokedSession.RevokedAtUtc.set -> void
+Callora.Core.Domain.Security.BackendRevokedSession.Subject.get -> string?
+Callora.Core.Domain.Security.BackendRevokedSession.Subject.set -> void
+Callora.Core.Domain.Security.BackendRevokedSession.TokenId.get -> string!
+Callora.Core.Domain.Security.BackendRevokedSession.TokenId.set -> void
 Callora.Core.Domain.Security.BackendUser
 Callora.Core.Domain.Security.BackendUser.BackendUser() -> void
 Callora.Core.Domain.Security.BackendUser.CreatedAtUtc.get -> System.DateTimeOffset
@@ -3372,14 +3402,22 @@ Callora.Core.Domain.Security.BackendUser.Email.get -> string?
 Callora.Core.Domain.Security.BackendUser.Email.set -> void
 Callora.Core.Domain.Security.BackendUser.ExternalId.get -> string!
 Callora.Core.Domain.Security.BackendUser.ExternalId.set -> void
+Callora.Core.Domain.Security.BackendUser.FailedAccessCount.get -> int
+Callora.Core.Domain.Security.BackendUser.FailedAccessCount.set -> void
 Callora.Core.Domain.Security.BackendUser.Id.get -> System.Guid
 Callora.Core.Domain.Security.BackendUser.Id.set -> void
+Callora.Core.Domain.Security.BackendUser.IsDisabled.get -> bool
+Callora.Core.Domain.Security.BackendUser.IsDisabled.set -> void
+Callora.Core.Domain.Security.BackendUser.LockoutEndsAtUtc.get -> System.DateTimeOffset?
+Callora.Core.Domain.Security.BackendUser.LockoutEndsAtUtc.set -> void
 Callora.Core.Domain.Security.BackendUser.PasswordHash.get -> string?
 Callora.Core.Domain.Security.BackendUser.PasswordHash.set -> void
 Callora.Core.Domain.Security.BackendUser.PasswordHashAlgorithm.get -> string?
 Callora.Core.Domain.Security.BackendUser.PasswordHashAlgorithm.set -> void
 Callora.Core.Domain.Security.BackendUser.RoleAssignments.get -> System.Collections.Generic.ICollection<Callora.Core.Domain.Security.BackendRbacUserRole!>!
 Callora.Core.Domain.Security.BackendUser.RoleAssignments.set -> void
+Callora.Core.Domain.Security.BackendUser.SecurityStamp.get -> string!
+Callora.Core.Domain.Security.BackendUser.SecurityStamp.set -> void
 Callora.Core.Domain.Security.BackendUser.UpdatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Domain.Security.BackendUser.UpdatedAtUtc.set -> void
 Callora.Core.Domain.Security.BackendUser.WorkspaceMemberships.get -> System.Collections.Generic.ICollection<Callora.Core.Domain.Workspaces.WorkspaceMembership!>!
@@ -3656,6 +3694,9 @@ Callora.Core.Infrastructure.Persistence.Configurations.BackendRbacRoleGrantEntit
 Callora.Core.Infrastructure.Persistence.Configurations.BackendRbacUserRoleEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.BackendRbacUserRoleEntityTypeConfiguration.BackendRbacUserRoleEntityTypeConfiguration() -> void
 Callora.Core.Infrastructure.Persistence.Configurations.BackendRbacUserRoleEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Security.BackendRbacUserRole!>! builder) -> void
+Callora.Core.Infrastructure.Persistence.Configurations.BackendRevokedSessionEntityTypeConfiguration
+Callora.Core.Infrastructure.Persistence.Configurations.BackendRevokedSessionEntityTypeConfiguration.BackendRevokedSessionEntityTypeConfiguration() -> void
+Callora.Core.Infrastructure.Persistence.Configurations.BackendRevokedSessionEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Security.BackendRevokedSession!>! builder) -> void
 Callora.Core.Infrastructure.Persistence.Configurations.BackendUserEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.BackendUserEntityTypeConfiguration.BackendUserEntityTypeConfiguration() -> void
 Callora.Core.Infrastructure.Persistence.Configurations.BackendUserEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Security.BackendUser!>! builder) -> void
@@ -3746,6 +3787,11 @@ Callora.Core.Infrastructure.Persistence.EfBackendRbacStore.RemoveRoleAsync(strin
 Callora.Core.Infrastructure.Persistence.EfBackendRbacStore.RemoveUserRoleAsync(string! userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Persistence.EfBackendRbacStore.UpsertRoleAsync(string! role, System.Collections.Generic.IReadOnlyCollection<string!>! permissions, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfBackendRbacStore.UpsertUserRoleAsync(string! userId, string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Persistence.EfBackendSessionRevocationStore
+Callora.Core.Infrastructure.Persistence.EfBackendSessionRevocationStore.EfBackendSessionRevocationStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
+Callora.Core.Infrastructure.Persistence.EfBackendSessionRevocationStore.IsRevokedAsync(string! tokenId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Persistence.EfBackendSessionRevocationStore.PurgeExpiredAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Callora.Core.Infrastructure.Persistence.EfBackendSessionRevocationStore.RevokeAsync(string! tokenId, System.DateTimeOffset expiresAtUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfBackendUserStore
 Callora.Core.Infrastructure.Persistence.EfBackendUserStore.AuthenticateAsync(string! login, string! password, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser?>!
 Callora.Core.Infrastructure.Persistence.EfBackendUserStore.EfBackendUserStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext, Microsoft.AspNetCore.Identity.IPasswordHasher<Callora.Core.Domain.Security.BackendUser!>! passwordHasher) -> void
@@ -3755,6 +3801,8 @@ Callora.Core.Infrastructure.Persistence.EfBackendUserStore.IsWorkspaceMemberAsyn
 Callora.Core.Infrastructure.Persistence.EfBackendUserStore.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Security.BackendUser!>!>!
 Callora.Core.Infrastructure.Persistence.EfBackendUserStore.ListByWorkspaceAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Security.BackendUser!>!>!
 Callora.Core.Infrastructure.Persistence.EfBackendUserStore.RemoveAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Persistence.EfBackendUserStore.RevokeSessionsAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Persistence.EfBackendUserStore.SetEnabledAsync(string! externalId, bool enabled, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Persistence.EfBackendUserStore.UpsertCredentialsAsync(string! externalId, string? email, string? displayName, string? password, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser!>!
 Callora.Core.Infrastructure.Persistence.EfBackgroundJobStore
 Callora.Core.Infrastructure.Persistence.EfBackgroundJobStore.AddAsync(Callora.Core.Domain.Jobs.BackgroundJob! job, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
@@ -3907,6 +3955,7 @@ Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.BackendRbacRoleGrants.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Security.BackendRbacRoleGrant!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.BackendRbacRoles.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Security.BackendRbacRole!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.BackendRbacUserRoles.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Security.BackendRbacUserRole!>!
+Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.BackendRevokedSessions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Security.BackendRevokedSession!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.BackendUsers.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Security.BackendUser!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.BackgroundJobs.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Jobs.BackgroundJob!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.CustomFieldDefinitions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.CustomFields.CustomFieldDefinition!>!
@@ -4077,6 +4126,25 @@ Callora.Core.Infrastructure.Security.BackendJwtTokenIssuer
 Callora.Core.Infrastructure.Security.BackendLoginCsrfProtection
 Callora.Core.Infrastructure.Security.BackendRateLimiting
 Callora.Core.Infrastructure.Security.BackendSecurityServiceCollectionExtensions
+Callora.Core.Infrastructure.Security.BackendSessionAccountState
+Callora.Core.Infrastructure.Security.BackendSessionAccountState.<Clone>$() -> Callora.Core.Infrastructure.Security.BackendSessionAccountState!
+Callora.Core.Infrastructure.Security.BackendSessionAccountState.BackendSessionAccountState(string! SecurityStamp, bool IsDisabled) -> void
+Callora.Core.Infrastructure.Security.BackendSessionAccountState.Deconstruct(out string! SecurityStamp, out bool IsDisabled) -> void
+Callora.Core.Infrastructure.Security.BackendSessionAccountState.Equals(Callora.Core.Infrastructure.Security.BackendSessionAccountState? other) -> bool
+Callora.Core.Infrastructure.Security.BackendSessionAccountState.IsDisabled.get -> bool
+Callora.Core.Infrastructure.Security.BackendSessionAccountState.IsDisabled.init -> void
+Callora.Core.Infrastructure.Security.BackendSessionAccountState.SecurityStamp.get -> string!
+Callora.Core.Infrastructure.Security.BackendSessionAccountState.SecurityStamp.init -> void
+Callora.Core.Infrastructure.Security.BackendSessionRevocation
+Callora.Core.Infrastructure.Security.BackendSessionStateCache
+Callora.Core.Infrastructure.Security.BackendSessionStateCache.BackendSessionStateCache() -> void
+Callora.Core.Infrastructure.Security.BackendSessionStateCache.Dispose() -> void
+Callora.Core.Infrastructure.Security.BackendSessionStateCache.Invalidate(string! subject) -> void
+Callora.Core.Infrastructure.Security.BackendSessionStateCache.Set(string! subject, Callora.Core.Infrastructure.Security.BackendSessionAccountState? state) -> void
+Callora.Core.Infrastructure.Security.BackendSessionStateCache.TryGet(string! subject, out Callora.Core.Infrastructure.Security.BackendSessionAccountState? state) -> bool
+Callora.Core.Infrastructure.Security.BackendSessionValidator
+Callora.Core.Infrastructure.Security.BackendSessionValidator.BackendSessionValidator(Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendSessionRevocationStore! revocationStore, Callora.Core.Infrastructure.Security.BackendSessionStateCache! stateCache) -> void
+Callora.Core.Infrastructure.Security.BackendSessionValidator.ValidateAsync(System.Security.Claims.ClaimsPrincipal! principal, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string?>!
 Callora.Core.Infrastructure.Security.CalloraPermissionAttribute
 Callora.Core.Infrastructure.Security.CalloraPermissionAttribute.CalloraPermissionAttribute(string! permissionKey) -> void
 Callora.Core.Infrastructure.Security.CalloraPermissionAttribute.OnAuthorization(Microsoft.AspNetCore.Mvc.Filters.AuthorizationFilterContext! context) -> void
@@ -4110,6 +4178,18 @@ Callora.Core.Infrastructure.Security.InMemoryBackendRbacStore.RemoveUserRoleAsyn
 Callora.Core.Infrastructure.Security.InMemoryBackendRbacStore.UpsertRoleAsync(string! role, System.Collections.Generic.IReadOnlyCollection<string!>! permissions, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Security.InMemoryBackendRbacStore.UpsertUserRoleAsync(string! userId, string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Security.IntegrationPrincipalFactory
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.AuthenticateAsync(string! login, string! password, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser?>!
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.GetByExternalIdAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser?>!
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.GetWorkspaceRoleAsync(string! externalId, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string?>!
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.IsWorkspaceMemberAsync(string! externalId, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Security.BackendUser!>!>!
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.ListByWorkspaceAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Security.BackendUser!>!>!
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.RemoveAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.RevokeSessionsAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.SessionStateInvalidatingUserStore(Callora.Core.Application.Security.IBackendUserStore! inner, Callora.Core.Infrastructure.Security.BackendSessionStateCache! stateCache) -> void
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.SetEnabledAsync(string! externalId, bool enabled, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.UpsertCredentialsAsync(string! externalId, string? email, string? displayName, string? password, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser!>!
 Callora.Core.Infrastructure.Security.WorkspaceScopeAuthorizationExtensions
 Callora.Core.Infrastructure.Startup.BackgroundJobWorkerHostedService
 Callora.Core.Infrastructure.Startup.BackgroundJobWorkerHostedService.BackgroundJobWorkerHostedService(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Callora.Core.Application.Jobs.BackgroundJobOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Startup.BackgroundJobWorkerHostedService!>! logger) -> void
@@ -4229,7 +4309,7 @@ const Callora.Core.Application.Plugins.PluginSignatureStates.Untrusted = "untrus
 const Callora.Core.Application.Plugins.Signing.PluginContentHasher.SignatureFileName = "plugin.signature.json" -> string!
 const Callora.Core.Application.Plugins.Signing.PluginSignatureAlgorithms.EcdsaP256Sha256 = "ECDSA-P256-SHA256" -> string!
 const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultApiKey = "callora-local-dev-key-change-me" -> string!
-const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultDemoAdminPassword = "admin123!" -> string!
+const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultDemoAdminPassword = "callora-demo-admin!" -> string!
 const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultJwtSigningKey = "callora-local-dev-signing-key-change-me" -> string!
 const Callora.Core.Application.Retention.RetentionCleanupJobHandler.JobTypeName = "host.retention.cleanup" -> string!
 const Callora.Core.Application.Security.BackendAuthScopes.Platform = "platform" -> string!
@@ -4237,7 +4317,12 @@ const Callora.Core.Application.Security.BackendAuthScopes.Workspace = "workspace
 const Callora.Core.Application.Security.BackendClaimTypes.CalloraScope = "callora_scope" -> string!
 const Callora.Core.Application.Security.BackendClaimTypes.Permission = "permission" -> string!
 const Callora.Core.Application.Security.BackendClaimTypes.Scope = "scope" -> string!
+const Callora.Core.Application.Security.BackendClaimTypes.SecurityStamp = "sst" -> string!
+const Callora.Core.Application.Security.BackendClaimTypes.TokenId = "jti" -> string!
 const Callora.Core.Application.Security.BackendClaimTypes.WorkspaceKey = "workspace_key" -> string!
+const Callora.Core.Application.Security.BackendLockoutPolicy.MaxFailedAttempts = 10 -> int
+const Callora.Core.Application.Security.BackendPasswordPolicy.MaximumLength = 256 -> int
+const Callora.Core.Application.Security.BackendPasswordPolicy.MinimumLength = 12 -> int
 const Callora.Core.Application.Security.BackendPermissionActions.Create = "create" -> string!
 const Callora.Core.Application.Security.BackendPermissionActions.Delete = "delete" -> string!
 const Callora.Core.Application.Security.BackendPermissionActions.Execute = "execute" -> string!
@@ -4290,6 +4375,7 @@ const Callora.Core.Application.Security.BackendUserException.PasswordRequiredCod
 const Callora.Core.Application.Security.Events.UserEventTypes.Created = "user.created" -> string!
 const Callora.Core.Application.Security.Events.UserEventTypes.Deleted = "user.deleted" -> string!
 const Callora.Core.Application.Security.Events.UserEventTypes.Updated = "user.updated" -> string!
+const Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.JobTypeName = "security.session-revocation-purge" -> string!
 const Callora.Core.Application.Webhooks.WebhookDeliveryJobHandler.HttpClientName = "callora-webhooks" -> string!
 const Callora.Core.Application.Webhooks.WebhookDispatcher.DeliveryJobType = "webhook.deliver" -> string!
 const Callora.Core.Application.Webhooks.WebhookSignature.EventHeaderName = "X-Callora-Event" -> string!
@@ -4704,6 +4790,9 @@ override Callora.Core.Infrastructure.Plugins.PluginUiStyleManifestEntry.ToString
 override Callora.Core.Infrastructure.Plugins.PluginWorkspaceTemplateManifestEntry.Equals(object? obj) -> bool
 override Callora.Core.Infrastructure.Plugins.PluginWorkspaceTemplateManifestEntry.GetHashCode() -> int
 override Callora.Core.Infrastructure.Plugins.PluginWorkspaceTemplateManifestEntry.ToString() -> string!
+override Callora.Core.Infrastructure.Security.BackendSessionAccountState.Equals(object? obj) -> bool
+override Callora.Core.Infrastructure.Security.BackendSessionAccountState.GetHashCode() -> int
+override Callora.Core.Infrastructure.Security.BackendSessionAccountState.ToString() -> string!
 static Callora.Core.Api.ApiProblems.BadRequest(string! detail) -> Microsoft.AspNetCore.Http.IResult!
 static Callora.Core.Api.ApiProblems.Conflict(string! detail) -> Microsoft.AspNetCore.Http.IResult!
 static Callora.Core.Api.ApiProblems.FromException(Callora.Core.CalloraException! exception) -> Microsoft.AspNetCore.Http.IResult!
@@ -4993,11 +5082,15 @@ static Callora.Core.Application.Security.AdminContextView.operator ==(Callora.Co
 static Callora.Core.Application.Security.AdminLoginGrant.operator !=(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
 static Callora.Core.Application.Security.AdminLoginGrant.operator ==(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
 static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!
+static Callora.Core.Application.Security.BackendPasswordPolicy.IsAcceptable(string? password) -> bool
+static Callora.Core.Application.Security.BackendPasswordPolicy.Validate(string? password) -> string?
 static Callora.Core.Application.Security.BackendPermissionKeyValidator.IsValid(string! permissionKey) -> bool
 static Callora.Core.Application.Security.BackendRbacException.PermissionInvalid(string! permission, string! role) -> Callora.Core.Application.Security.BackendRbacException!
 static Callora.Core.Application.Security.BackendRbacException.RoleFixed(string! roleName) -> Callora.Core.Application.Security.BackendRbacException!
 static Callora.Core.Application.Security.BackendRbacException.RoleNotFound(string! role) -> Callora.Core.Application.Security.BackendRbacException!
 static Callora.Core.Application.Security.BackendRbacPermissionCatalog.Build(Callora.Core.Application.Policies.BackendHostOptions! options) -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyCollection<string!>!>!
+static Callora.Core.Application.Security.BackendSecurityStamp.Matches(string? storedStamp, string? sessionStamp) -> bool
+static Callora.Core.Application.Security.BackendSecurityStamp.New() -> string!
 static Callora.Core.Application.Security.BackendUserException.PasswordRequired() -> Callora.Core.Application.Security.BackendUserException!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Created(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Deleted(string! externalId) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
@@ -5110,13 +5203,18 @@ static Callora.Core.Infrastructure.Security.BackendLoginCsrfProtection.RequireSa
 static Callora.Core.Infrastructure.Security.BackendRateLimiting.AddBackendRateLimiting(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.Security.BackendRateLimiting.ResolveClientKey(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> string!
 static Callora.Core.Infrastructure.Security.BackendSecurityServiceCollectionExtensions.AddBackendApiSecurity(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Callora.Core.Infrastructure.Security.BackendSessionAccountState.operator !=(Callora.Core.Infrastructure.Security.BackendSessionAccountState? left, Callora.Core.Infrastructure.Security.BackendSessionAccountState? right) -> bool
+static Callora.Core.Infrastructure.Security.BackendSessionAccountState.operator ==(Callora.Core.Infrastructure.Security.BackendSessionAccountState? left, Callora.Core.Infrastructure.Security.BackendSessionAccountState? right) -> bool
+static Callora.Core.Infrastructure.Security.BackendSessionRevocation.RevokeCurrentSessionAsync(Microsoft.AspNetCore.Http.HttpContext! httpContext, Callora.Core.Application.Security.IBackendSessionRevocationStore! revocationStore, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.RequireAnyPermission<TBuilder>(this TBuilder builder, params string![]! permissionKeys) -> TBuilder
 static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.RequirePermission<TBuilder>(this TBuilder builder, string! permissionKey) -> TBuilder
 static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.UserHasPermission(System.Security.Claims.ClaimsPrincipal! user, string! permissionKey) -> bool
 static Callora.Core.Infrastructure.Security.IntegrationPrincipalFactory.Create(Callora.Core.Domain.Integrations.IntegrationCredential! integration) -> System.Security.Claims.ClaimsPrincipal!
 static Callora.Core.Infrastructure.Security.WorkspaceScopeAuthorizationExtensions.RequireWorkspaceScope<TBuilder>(this TBuilder builder) -> TBuilder
 static Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ParseSensitiveFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<string!>!
+static readonly Callora.Core.Application.Security.BackendLockoutPolicy.LockoutDuration -> System.TimeSpan
 static readonly Callora.Core.Application.Security.BackendPermissionActions.All -> string![]!
+static readonly Callora.Core.Infrastructure.Security.BackendSessionStateCache.Lifetime -> System.TimeSpan
 virtual Callora.Core.Application.Events.HostApplicationEventPublishNext<TEvent>.Invoke(TEvent appEvent, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 ~override Callora.Core.Application.Plugins.PluginActivationDecision.Equals(object obj) -> bool
 ~override Callora.Core.Application.Plugins.PluginActivationDecision.ToString() -> string

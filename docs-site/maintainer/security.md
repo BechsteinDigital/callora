@@ -99,8 +99,50 @@ untrusted content executes — plugin *code* is trusted by provenance, but templ
   own workspace instead — see [Permissions](../reference/permissions.md).
 - Permission keys follow `<function>.<action>` (`create/read/update/delete/execute`);
   effective rights are the union of a principal's roles.
-- The bootstrap operator password policy refuses initial passwords shorter than
-  **12 characters**.
+
+## Local accounts
+
+One `BackendPasswordPolicy` governs every local credential — the bootstrap
+operator seed, the demo admin, operator-created accounts and later password
+changes. A password below **12 characters** is refused everywhere; a seed that
+violates it is skipped with a warning instead of creating a weak super-admin.
+
+- **Lockout**: 10 consecutive failures lock the account for 15 minutes. A success
+  clears the counter. The lock is account-scoped and time-bounded; per-IP
+  throttling stays with the rate limiter.
+- **Deactivation instead of deletion**: `PUT /api/users/{id}/activation` disables
+  an account. It keeps its data, memberships and audit trail, authenticates
+  nowhere, and its live sessions stop working immediately. Both directions are
+  written to the audit trail.
+- **MFA**: Callora issues no second factor of its own. Set
+  `BackendHost__RequireExternalIdentityForOperators=true` (together with
+  `OidcAuthority`) to refuse the local password login for **platform operators**,
+  so privileged sign-in happens at an identity provider that does enforce MFA.
+  Workspace logins keep working locally.
+
+## Session revocation
+
+Every session this host issues carries a `jti` and the account's **security
+stamp**. On each request the stamp is compared against the stored one, so a
+change to the account invalidates outstanding tokens instead of waiting out their
+one-hour lifetime:
+
+| Event | Effect |
+|---|---|
+| Password change | All sessions of the account |
+| Deactivate / re-enable | All sessions of the account |
+| Account deletion | All sessions of the account |
+| RBAC role assigned/removed | All sessions of that account |
+| Role grants changed/deleted | All sessions of every member of that role |
+| Logout | Exactly the session that was used |
+
+Logout records the `jti` in a durable revocation list (an in-memory list would
+resurrect logged-out tokens on restart); an hourly job purges entries whose
+tokens have expired. Account state is cached for 15 seconds on the request path
+and dropped the moment a stamp rotates, so revocation is immediate, not eventual.
+
+Tokens without a security stamp — external OIDC sessions and named integration
+credentials — are governed by their own issuer, not by this mechanism.
 
 ## CSRF, rate limiting, and API auth
 

@@ -29,6 +29,13 @@ public static class BackendSecurityServiceCollectionExtensions
                 "Either BackendHost.OidcAuthority or BackendHost.JwtSigningKey must be configured for JWT authentication.");
         }
 
+        if (options.RequireExternalIdentityForOperators && string.IsNullOrWhiteSpace(options.OidcAuthority))
+        {
+            // Otherwise the setting would lock every operator out with no way back in.
+            throw new InvalidOperationException(
+                "BackendHost.RequireExternalIdentityForOperators needs BackendHost.OidcAuthority — otherwise no operator can sign in at all.");
+        }
+
         // The repository-known dev signing key is rejected outside Development by
         // the unified BackendSecretHygiene gate in the composition root.
 
@@ -95,6 +102,28 @@ public static class BackendSecurityServiceCollectionExtensions
                         }
 
                         return Task.CompletedTask;
+                    },
+                    // A valid signature is not enough: the session must still exist
+                    // (#105). Password changes, deactivation, deletion, RBAC changes
+                    // and logout all invalidate an otherwise-valid token here.
+                    OnTokenValidated = async context =>
+                    {
+                        var validator = context.HttpContext.RequestServices
+                            .GetService<IBackendSessionValidator>();
+                        if (validator is null)
+                        {
+                            // Composition always registers one; a host without local
+                            // accounts (pure OIDC) has nothing to revoke.
+                            return;
+                        }
+
+                        var reason = await validator
+                            .ValidateAsync(context.Principal!, context.HttpContext.RequestAborted)
+                            .ConfigureAwait(false);
+                        if (reason is not null)
+                        {
+                            context.Fail(reason);
+                        }
                     }
                 };
             })

@@ -1,5 +1,6 @@
 using Callora.Administration.Api;
 using Callora.Core.Api;
+using Callora.Core.Application.Audit;
 using Callora.Core.Application.Events.Contracts;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Security;
@@ -338,6 +339,7 @@ public sealed class AuthAndUserEndpointsTests
         builder.Services.AddSingleton<IUserDataSubjectService>(new InMemoryUserDataSubjectService(userStore));
         builder.Services.AddSingleton<IBackendRbacStore>(new InMemoryBackendRbacStore(options));
         builder.Services.AddSingleton<IBusinessEventBus>(new RecordingBusinessEventBus());
+        builder.Services.AddSingleton<IHostAuditStore, InMemoryHostAuditStore>();
 
         var app = builder.Build();
         app.UseAuthentication();
