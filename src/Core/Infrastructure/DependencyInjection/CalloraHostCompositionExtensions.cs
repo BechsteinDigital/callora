@@ -108,6 +108,10 @@ public static class CalloraHostCompositionExtensions
             // importiert der DB-Init-Service einmalig (PLAT-232).
             .PersistKeysToDbContext<HostPersistenceDbContext>();
         builder.Services.AddSingleton<IPluginDataProtector, DataProtectionPluginDataProtector>();
+        // Surface-Kontext-Cookie (ADR-017 §8.2): läuft über denselben Keyring, damit
+        // ein Gast-Kontext client-seitig liegen kann, ohne fälschbar zu sein.
+        builder.Services.AddSingleton<Callora.Core.Application.Surfaces.ISurfaceSessionCookieCodec,
+            DataProtectionSurfaceSessionCookieCodec>();
         builder.Services.AddScoped<IMarketplaceEntitlementEventStore, EfMarketplaceEntitlementEventStore>();
         builder.Services.AddScoped<MarketplaceEntitlementApplier>();
 
