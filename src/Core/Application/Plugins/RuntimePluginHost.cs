@@ -25,6 +25,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     private readonly RuntimeCapabilityRegistry? _runtimeCapabilities;
     private readonly Callora.Core.Infrastructure.Mcp.McpToolRegistry? _mcpTools;
     private long _exportSequence;
+    private int _disposed;
 
     /// <summary>
     /// Creates a runtime plugin host.
@@ -328,8 +329,20 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Idempotent, and that matters most when something else already went wrong. A host that fails
+    /// during startup tears its container down along a path that can reach this twice; the second
+    /// pass used to throw <see cref="ObjectDisposedException"/> on the already-disposed lock and
+    /// replace the original failure with a meaningless one, which is expensive to diagnose exactly
+    /// when diagnosis is what is needed.
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
         await _mutationLock.WaitAsync().ConfigureAwait(false);
         try
         {

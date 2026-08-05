@@ -132,10 +132,22 @@ public Community Edition (Settings → Pages → Source: GitHub Actions, then se
 
 ### `.github/workflows/release.yml`
 
-Runs on a pushed tag matching `v*`. It builds and tests in Release, publishes the
-host backend (`dotnet publish src/Core/Callora.Core.csproj`), generates a
-CycloneDX SBOM for .NET, packages the host as `callora-host.tar.gz`, and creates a
-GitHub release with generated notes and the SBOM + tarball attached.
+Runs on a pushed tag matching `v*`. It builds and tests in Release, packs the
+framework packages, generates a CycloneDX SBOM for .NET, writes `SHA256SUMS` over
+everything it attaches, and creates a GitHub release with generated notes, the
+`.nupkg`/`.snupkg` files, the SBOM and the checksums.
+
+A second job then composes those modules into `src/Host/Dev` and starts it against
+a real Postgres, waiting for `/ready`. A release that publishes packages should
+prove they are more than files, and readiness is the honest claim: the host
+composed **and** reached its database.
+
+::: info This repository does not release a runnable host
+It used to publish `src/Core` as `callora-host.tar.gz`. Core has been
+`OutputType=Library` since the module split, so that artifact had no entry point
+and could not start. The runnable composition belongs to a distribution
+(`callora-production`), which assembles these packages.
+:::
 
 ## Versioning and releases
 
