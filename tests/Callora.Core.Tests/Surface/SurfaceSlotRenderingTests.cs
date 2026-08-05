@@ -107,6 +107,43 @@ public sealed class SurfaceSlotRenderingTests
         Assert.Equal("[Leads]", html);
     }
 
+    [Fact]
+    public void ATemplateRendersNavigationInWhateverShapeItWants()
+    {
+        var html = RenderWithNavigation(
+            "<nav>{% for item in callora_navigation() %}<a href=\"{{ item.to }}\">{{ item.label }}</a>{% endfor %}</nav>",
+            new SurfaceNavigationEntry("crm.leads", "crm", "Leads", "/leads", null, 0),
+            new SurfaceNavigationEntry("comm.phone", "comm", "Phone", "/phone", null, 10));
+
+        // The host contributes meaning; sidebar, tabs or launcher is the theme's call.
+        Assert.Equal(
+            "<nav><a href=\"/leads\">Leads</a><a href=\"/phone\">Phone</a></nav>", html);
+    }
+
+    [Fact]
+    public void ATemplateWithoutContributedNavigationRendersNothing()
+    {
+        Assert.Equal(
+            "<nav></nav>",
+            Render("<nav>{% for item in callora_navigation() %}x{% endfor %}</nav>"));
+    }
+
+    private static string RenderWithNavigation(string template, params SurfaceNavigationEntry[] navigation)
+    {
+        var context = new SurfaceRenderContext(
+            "tenant-a",
+            "workspace-a",
+            "portal",
+            "spa",
+            "de",
+            new Dictionary<string, string>(StringComparer.Ordinal))
+        {
+            Navigation = navigation,
+        };
+
+        return new NunjucksSurfaceRenderer().Render(template, context);
+    }
+
     private static string Render(
         string template,
         params (string Slot, IReadOnlyList<SurfaceSlotView> Views)[] slots)

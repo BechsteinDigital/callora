@@ -1,4 +1,8 @@
 import { markRaw, reactive, type Component } from 'vue'
+import {
+  createSurfaceContextChannel,
+  type SurfaceContextChannel,
+} from './surface-context-channel'
 
 /**
  * Instance parameters an island carries: what the SSR template passed at the slot's
@@ -34,13 +38,22 @@ export interface SurfaceView {
 export interface SurfaceRegistry {
   readonly views: SurfaceView[]
   registerView(view: SurfaceView): void
+  /**
+   * The channel islands collaborate over. Bound to this surface: it is created with
+   * the page and never shared across surfaces or workspaces.
+   */
+  readonly contextChannel: SurfaceContextChannel
 }
 
-export function createSurfaceRegistry(): SurfaceRegistry {
+export function createSurfaceRegistry(
+  workspaceKey = 'default',
+  surfaceKey = 'default',
+): SurfaceRegistry {
   const views = reactive<SurfaceView[]>([])
 
   return {
     views,
+    contextChannel: createSurfaceContextChannel(workspaceKey, surfaceKey),
     registerView(view: SurfaceView): void {
       if (views.some((existing) => existing.id === view.id)) {
         return

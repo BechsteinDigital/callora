@@ -20,4 +20,11 @@ public interface IHostSurfaceViewContributor
 
     /// <summary>Declared views and the slots they fill.</summary>
     IReadOnlyList<HostSurfaceViewRegistration> Views { get; }
+
+    /// <summary>
+    /// Navigation entries this plugin contributes to the surface. Empty for a plugin
+    /// that only fills slots. The theme decides how these are presented, so what is
+    /// declared here is meaning rather than placement.
+    /// </summary>
+    IReadOnlyList<HostSurfaceNavigationItem> NavigationItems => [];
 }

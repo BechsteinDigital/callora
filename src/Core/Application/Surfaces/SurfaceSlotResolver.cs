@@ -4,7 +4,8 @@ using Callora.Core.Application.Plugins.Contracts;
 namespace Callora.Core.Application.Surfaces;
 
 /// <summary>
-/// Decides what each surface slot holds for one request (#125 block C).
+/// Decides what the plugins compose into one surface render (#125 block C): what fills
+/// each slot, and what belongs in the navigation.
 /// <para>
 /// Every filter runs here, on the server, before any markup exists. A view a visitor
 /// may not see is not emitted at all rather than hidden by CSS, and the order a theme
@@ -17,13 +18,13 @@ public sealed class SurfaceSlotResolver(
     IPluginAvailabilityEvaluator availabilityEvaluator)
 {
     /// <summary>
-    /// Resolves the slot contents for a surface and caller.
+    /// Resolves slots and navigation for a surface and caller.
     /// </summary>
     /// <param name="workspaceKey">Workspace the surface belongs to.</param>
     /// <param name="surfaceKey">Surface being rendered.</param>
     /// <param name="caller">Who is looking at the page.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task<IReadOnlyDictionary<string, IReadOnlyList<SurfaceSlotView>>> ResolveAsync(
+    public async Task<SurfaceComposition> ResolveAsync(
         string workspaceKey,
         string surfaceKey,
         SurfaceCaller caller,
@@ -35,6 +36,7 @@ public sealed class SurfaceSlotResolver(
 
         var claims = ClaimsOf(caller);
         var bySlot = new Dictionary<string, List<SurfaceSlotView>>(StringComparer.Ordinal);
+        var navigation = new List<SurfaceNavigationEntry>();
         var availability = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var export in pluginCatalog.GetOwnedExports(typeof(IHostSurfaceViewContributor)))
@@ -78,9 +80,39 @@ public sealed class SurfaceSlotResolver(
                     view.ProvidesContexts ?? [],
                     view.RequiresContexts ?? []));
             }
+
+            foreach (var item in contributor.NavigationItems ?? [])
+            {
+                if (IsEligible(item, surfaceKey, claims))
+                {
+                    navigation.Add(new SurfaceNavigationEntry(
+                        item.Id, pluginId, item.Label, item.To, item.Icon, item.Order));
+                }
+            }
         }
 
-        return Finalize(bySlot);
+        return new SurfaceComposition(
+            Finalize(bySlot),
+            navigation.OrderBy(static entry => entry.Order).ToArray());
+    }
+
+    private static bool IsEligible(
+        HostSurfaceNavigationItem item,
+        string surfaceKey,
+        IReadOnlySet<string> claims)
+    {
+        if (string.IsNullOrWhiteSpace(item.Id) || string.IsNullOrWhiteSpace(item.Label))
+        {
+            return false;
+        }
+
+        if (item.SurfaceKeys is { Count: > 0 } &&
+            !item.SurfaceKeys.Contains(surfaceKey, StringComparer.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return item.RequiredClaims is not { Count: > 0 } || item.RequiredClaims.All(claims.Contains);
     }
 
     private static IReadOnlyDictionary<string, IReadOnlyList<SurfaceSlotView>> Finalize(

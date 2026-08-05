@@ -31,4 +31,11 @@ public sealed record SurfaceRenderContext(
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<SurfaceSlotView>> Slots { get; init; } =
         new Dictionary<string, IReadOnlyList<SurfaceSlotView>>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Navigation entries the plugins contributed for this caller (#125 block C),
+    /// filtered and ordered by the host. Meaning only: whether the theme renders them
+    /// as a sidebar, tabs, a launcher or a menu is the theme's decision.
+    /// </summary>
+    public IReadOnlyList<SurfaceNavigationEntry> Navigation { get; init; } = [];
 }
