@@ -72,6 +72,19 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
                 return SipRuntimeReconciliation.Removed;
             }
 
+            // An account the provider cannot connect fails here rather than at the connector,
+            // with the reason an operator can act on (#111). Accounts predating the edge
+            // validation reach this path on startup and get that reason persisted.
+            if (SipAuthMethodSupport.DescribeUnsupported(account.Connection.Authentication.Method) is { } unsupported)
+            {
+                TearDown(key);
+                _logger.LogWarning(
+                    "SIP account {AccountId} uses unsupported authentication {Method}; it stays unprovisioned.",
+                    account.Id,
+                    account.Connection.Authentication.Method);
+                return SipRuntimeReconciliation.Failed(unsupported);
+            }
+
             var fingerprint = Fingerprint(account);
             if (_provisioned.TryGetValue(key, out var existing))
             {

@@ -58,6 +58,13 @@ public sealed class CreateSipAccountRouteHandler(
             return Bad("displayName is required.");
         }
 
+        // Refuse an authentication method the provider cannot connect before anything is
+        // persisted (#111) — accepting it would create an account that is silently skipped.
+        if (SipAuthMethodValidation.Reject(body.AuthMethod) is { } unsupported)
+        {
+            return unsupported;
+        }
+
         if (!_connectionFactory.TryBuild(body, existing: null, out var connection, out var error))
         {
             return Bad(error!);
