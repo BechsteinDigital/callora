@@ -29,7 +29,7 @@ public sealed class StreamResourceBoundTests
         channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(oversized)));
         channel.EnqueueInbound(MediaStreamMessage.ForMark("done"));
 
-        var run = new MediaBridge(audio, channel, clock).RunAsync(Start, CancellationToken.None);
+        var run = new MediaBridge(audio, channel, MediaStreamDirection.Bidirectional, clock).RunAsync(Start, CancellationToken.None);
         await channel.MarkEchoed("done").WaitAsync(TimeSpan.FromSeconds(5));
 
         clock.Tick();
@@ -50,7 +50,7 @@ public sealed class StreamResourceBoundTests
         channel.EnqueueInbound(MediaStreamMessage.Media(Convert.ToBase64String(new byte[FrameBytes - 1])));
         channel.EnqueueInbound(MediaStreamMessage.ForMark("done"));
 
-        var run = new MediaBridge(audio, channel, clock).RunAsync(Start, CancellationToken.None);
+        var run = new MediaBridge(audio, channel, MediaStreamDirection.Bidirectional, clock).RunAsync(Start, CancellationToken.None);
         await channel.MarkEchoed("done").WaitAsync(TimeSpan.FromSeconds(5));
 
         clock.Tick();

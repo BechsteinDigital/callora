@@ -20,7 +20,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task PlaceCall_WithoutVoiceChannel_Throws()
     {
-        var (service, _, _, _) = CreateService();
+        var (service, _, _) = CreateService();
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567")));
@@ -29,7 +29,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task PlaceCall_RecordsStartLog_AndPublishesPlaced()
     {
-        var (service, registry, store, bus) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
 
@@ -46,7 +46,7 @@ public sealed class CallControlServiceTests
         Assert.Null(log.AnsweredAt);
         Assert.Null(log.EndedAt);
 
-        var published = Assert.Single(bus.Published);
+        var published = Assert.Single(store.OutboxEntries);
         Assert.Equal(CallEventTypes.Placed, published.EventName);
         Assert.Equal(Workspace, published.WorkspaceKey);
     }
@@ -54,7 +54,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task PlaceCall_LogsVerbatimOperatorTarget_NotTheChannelReportedTarget()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         // The channel/SDK may report a normalized remote party; the history + call.placed must keep the
         // operator's verbatim "to", while the live snapshot reflects the call's actual target.
         var call = new ControllableCall("call-1", target: "sip:+49301234567@sbc.example.com");
@@ -69,7 +69,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task PlaceCall_WithExplicitChannelId_UsesThatChannel()
     {
-        var (service, registry, _, _) = CreateService();
+        var (service, registry, _) = CreateService();
         var chOne = new FakeCommunicationChannel { ChannelId = "ch-1", NextCall = new ControllableCall("a") };
         var chTwo = new FakeCommunicationChannel { ChannelId = "ch-2", NextCall = new ControllableCall("b") };
         registry.Register(Workspace, chOne);
@@ -85,7 +85,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task PlaceCall_WithUnknownChannelId_Throws()
     {
-        var (service, registry, _, _) = CreateService();
+        var (service, registry, _) = CreateService();
         registry.Register(Workspace, new FakeCommunicationChannel { ChannelId = "ch-1", NextCall = new ControllableCall("a") });
 
         await Assert.ThrowsAsync<InvalidOperationException>(
@@ -95,7 +95,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Connected_MarksAnswered_AndPublishesStateChanged()
     {
-        var (service, registry, store, bus) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
@@ -103,13 +103,13 @@ public sealed class CallControlServiceTests
         call.Transition(CallState.Connected);
 
         Assert.NotNull(store.Added[0].AnsweredAt);
-        Assert.Contains(bus.Published, e => e.EventName == CallEventTypes.StateChanged);
+        Assert.Contains(store.OutboxEntries, e => e.EventName == CallEventTypes.StateChanged);
     }
 
     [Fact]
     public async Task Terminated_AfterAnswer_EndsCompleted_PublishesEnded_AndUntracks()
     {
-        var (service, registry, store, bus) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
@@ -119,14 +119,14 @@ public sealed class CallControlServiceTests
 
         Assert.Equal(CallOutcome.Completed, store.Added[0].Outcome);
         Assert.NotNull(store.Added[0].EndedAt);
-        Assert.Contains(bus.Published, e => e.EventName == CallEventTypes.Ended);
+        Assert.Contains(store.OutboxEntries, e => e.EventName == CallEventTypes.Ended);
         Assert.Null(service.Get(Workspace, "call-1")); // finalized calls are no longer tracked
     }
 
     [Fact]
     public async Task Terminated_WithoutAnswer_EndsFailed()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
@@ -142,7 +142,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_Unanswered_Busy_EndsBusy_WithSipDisconnectCause()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1")
         {
             TerminationReason = Reason(CallTerminationCategory.Busy, sipStatusCode: 486, reasonPhrase: "Busy Here"),
@@ -160,7 +160,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_Unanswered_NoAnswer_EndsNoAnswer()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1")
         {
             TerminationReason = Reason(CallTerminationCategory.NoAnswer, sipStatusCode: 408, reasonPhrase: "Request Timeout"),
@@ -176,7 +176,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_UnansweredInbound_Rejected_EndsRejected()
     {
-        var (service, _, store, _) = CreateService();
+        var (service, _, store) = CreateService();
         var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound)
         {
             TerminationReason = Reason(CallTerminationCategory.Rejected, sipStatusCode: 603, reasonPhrase: "Decline"),
@@ -191,7 +191,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_Unanswered_Canceled_EndsCanceled()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1")
         {
             TerminationReason = Reason(CallTerminationCategory.Canceled, sipStatusCode: 487, reasonPhrase: "Request Terminated"),
@@ -207,7 +207,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_Answered_Completed_EndsCompleted_WithDisconnectCause()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1")
         {
             TerminationReason = Reason(CallTerminationCategory.Completed, sipStatusCode: null, reasonPhrase: "Normal Clearing"),
@@ -225,7 +225,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_Answered_Failed_EndsFailed()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1")
         {
             TerminationReason = Reason(CallTerminationCategory.Failed, sipStatusCode: 500, reasonPhrase: "Server Internal Error"),
@@ -243,7 +243,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_Answered_ReasonBusy_ReconciledToFailed()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         // An answered call that reports an unanswered-style category is a protocol anomaly → Failed, never Busy.
         var call = new ControllableCall("call-1")
         {
@@ -263,7 +263,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_NoReason_UnansweredInbound_FallsBackToMissed()
     {
-        var (service, _, store, _) = CreateService();
+        var (service, _, store) = CreateService();
         var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound);
         await service.ObserveIncomingAsync(Workspace, new FakeCommunicationChannel(), call);
 
@@ -276,7 +276,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_NoReason_UnansweredOutbound_FallsBackToFailed()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
@@ -290,7 +290,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_NoReason_Answered_FallsBackToCompleted()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
@@ -309,7 +309,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task PlaceCall_WhenCallAlreadyConnected_RecordsAnsweredViaRaceRecheck()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1", initial: CallState.Connected);
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
 
@@ -321,7 +321,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Hangup_TrackedCall_EndsCall_AndReturnsTrue()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
@@ -337,7 +337,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Hangup_UnknownCall_ReturnsFalse()
     {
-        var (service, _, _, _) = CreateService();
+        var (service, _, _) = CreateService();
 
         Assert.False(await service.HangupAsync(Workspace, "unknown"));
     }
@@ -345,7 +345,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Hangup_FromAnotherWorkspace_ReturnsFalse_AndDoesNotTouchCall()
     {
-        var (service, registry, _, _) = CreateService();
+        var (service, registry, _) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
@@ -359,7 +359,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Get_IsWorkspaceScoped()
     {
-        var (service, registry, _, _) = CreateService();
+        var (service, registry, _) = CreateService();
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = new ControllableCall("call-1") });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
 
@@ -373,7 +373,7 @@ public sealed class CallControlServiceTests
         var registry = new CommunicationChannelRegistry();
         var store = new RecordingCallLogStore();
         var service = new CallControlService(
-            registry, store, eventBus: null, NullLogger<CallControlService>.Instance, TimeProvider.System);
+            registry, store, NullLogger<CallControlService>.Instance, TimeProvider.System);
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
 
@@ -389,7 +389,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task ObserveIncoming_RecordsRingingLog_AndPublishesRinging()
     {
-        var (service, _, store, bus) = CreateService();
+        var (service, _, store) = CreateService();
         var channel = new FakeCommunicationChannel();
         var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound);
 
@@ -398,14 +398,14 @@ public sealed class CallControlServiceTests
         var log = Assert.Single(store.Added);
         Assert.Equal(CallDirection.Inbound, log.Direction);
         Assert.Equal(CallOutcome.InProgress, log.Outcome);
-        Assert.Contains(bus.Published, e => e.EventName == CallEventTypes.Ringing);
+        Assert.Contains(store.OutboxEntries, e => e.EventName == CallEventTypes.Ringing);
         Assert.NotNull(service.Get(Workspace, "in-1")); // tracked until it ends
     }
 
     [Fact]
     public async Task ObserveIncoming_Answered_MarksAnswered()
     {
-        var (service, _, store, _) = CreateService();
+        var (service, _, store) = CreateService();
         var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound);
         await service.ObserveIncomingAsync(Workspace, new FakeCommunicationChannel(), call);
 
@@ -417,7 +417,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task ObserveIncoming_UnansweredThenEnded_RecordsMissed()
     {
-        var (service, _, store, _) = CreateService();
+        var (service, _, store) = CreateService();
         var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound);
         await service.ObserveIncomingAsync(Workspace, new FakeCommunicationChannel(), call);
 
@@ -429,7 +429,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task ObserveIncoming_AnsweredThenEnded_RecordsCompleted()
     {
-        var (service, _, store, _) = CreateService();
+        var (service, _, store) = CreateService();
         var call = new ControllableCall("in-1", initial: CallState.Ringing, direction: CallDirection.Inbound);
         await service.ObserveIncomingAsync(Workspace, new FakeCommunicationChannel(), call);
 
@@ -442,7 +442,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Terminated_FiredTwice_FinalizesExactlyOnce()
     {
-        var (service, registry, store, _) = CreateService();
+        var (service, registry, store) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
@@ -457,7 +457,7 @@ public sealed class CallControlServiceTests
     [Fact]
     public async Task Hangup_AfterCallAlreadyEnded_ReturnsFalse()
     {
-        var (service, registry, _, _) = CreateService();
+        var (service, registry, _) = CreateService();
         var call = new ControllableCall("call-1");
         registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
         await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
@@ -466,15 +466,14 @@ public sealed class CallControlServiceTests
         Assert.False(await service.HangupAsync(Workspace, "call-1"));
     }
 
-    private static (CallControlService Service, CommunicationChannelRegistry Registry, RecordingCallLogStore Store, RecordingBusinessEventBus Bus)
+    private static (CallControlService Service, CommunicationChannelRegistry Registry, RecordingCallLogStore Store)
         CreateService()
     {
         var registry = new CommunicationChannelRegistry();
         var store = new RecordingCallLogStore();
-        var bus = new RecordingBusinessEventBus();
         var service = new CallControlService(
-            registry, store, bus, NullLogger<CallControlService>.Instance, TimeProvider.System);
-        return (service, registry, store, bus);
+            registry, store, NullLogger<CallControlService>.Instance, TimeProvider.System);
+        return (service, registry, store);
     }
 }
 
@@ -550,9 +549,26 @@ internal sealed class ControllableCall : ICall
         StateChanged?.Invoke(this, new CallStateChangedEventArgs(previous, next));
     }
 
-    public Task AcceptAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public bool AcceptCalled { get; private set; }
 
-    public Task RejectAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public bool RejectCalled { get; private set; }
+
+    /// <summary>Tones passed to <see cref="SendDtmfAsync"/>, in order.</summary>
+    public List<char> SentTones { get; } = [];
+
+    public Task AcceptAsync(CancellationToken cancellationToken = default)
+    {
+        AcceptCalled = true;
+        Transition(CallState.Connected);
+        return Task.CompletedTask;
+    }
+
+    public Task RejectAsync(CancellationToken cancellationToken = default)
+    {
+        RejectCalled = true;
+        Transition(CallState.Terminated);
+        return Task.CompletedTask;
+    }
 
     public Task HangupAsync(CancellationToken cancellationToken = default)
     {
@@ -561,26 +577,55 @@ internal sealed class ControllableCall : ICall
         return Task.CompletedTask;
     }
 
-    public Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default)
+    {
+        SentTones.Add(tone);
+        return Task.CompletedTask;
+    }
 }
 
-/// <summary>Records call-log writes in memory; the stored <see cref="CallLog"/> is the live mutated object.</summary>
+/// <summary>
+/// Records call-log writes in memory; the stored <see cref="CallLog"/> is the live mutated
+/// object. Also captures the outbox entries written alongside them, which is where call events
+/// live now that publishing is transactional rather than best effort (#113).
+/// </summary>
 internal sealed class RecordingCallLogStore : ICallLogStore
 {
     public List<CallLog> Added { get; } = [];
 
+    /// <summary>Outbox entries written with a log change, in write order.</summary>
+    public List<CallEventOutboxEntry> OutboxEntries { get; } = [];
+
     public int UpdateCount { get; private set; }
 
-    public Task AddAsync(CallLog log, CancellationToken cancellationToken = default)
+    /// <summary>Set to throw on the next add, to exercise the compensation path.</summary>
+    public Exception? AddFailure { get; set; }
+
+    public Task AddAsync(CallLog log, CallEventOutboxEntry? outboxEntry = null, CancellationToken cancellationToken = default)
     {
+        if (AddFailure is not null)
+        {
+            return Task.FromException(AddFailure);
+        }
+
         Added.Add(log);
+        Capture(outboxEntry);
         return Task.CompletedTask;
     }
 
-    public Task UpdateAsync(CallLog log, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(CallLog log, CallEventOutboxEntry? outboxEntry = null, CancellationToken cancellationToken = default)
     {
         UpdateCount++;
+        Capture(outboxEntry);
         return Task.CompletedTask;
+    }
+
+    private void Capture(CallEventOutboxEntry? entry)
+    {
+        if (entry is not null)
+        {
+            OutboxEntries.Add(entry);
+        }
     }
 
     public Task<IReadOnlyList<CallLog>> ListRecentAsync(string workspaceKey, int limit, CancellationToken cancellationToken = default) =>
@@ -588,4 +633,10 @@ internal sealed class RecordingCallLogStore : ICallLogStore
 
     public Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default) =>
         Task.FromResult(0);
+
+    public Task<int> PurgeEndedBeforeAsync(DateTimeOffset cutoff, CancellationToken cancellationToken = default)
+    {
+        var purged = Added.RemoveAll(log => log.EndedAt is { } endedAt && endedAt <= cutoff);
+        return Task.FromResult(purged);
+    }
 }

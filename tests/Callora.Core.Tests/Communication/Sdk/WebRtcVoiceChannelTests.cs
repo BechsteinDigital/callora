@@ -15,14 +15,18 @@ namespace Callora.Core.Tests.Communication.Sdk;
 public sealed class WebRtcVoiceChannelTests
 {
     [Fact]
-    public void Identity_AndCapabilities_AreVoice()
+    public void Identity_AndCapabilities_CoverVoiceAndWebRtc()
     {
         var channel = NewChannel();
 
         Assert.Equal("webrtc-1", channel.ChannelId);
         Assert.Equal("Browser Voice", channel.DisplayName);
         Assert.Equal("communication", channel.PluginId);
-        Assert.Equal([CommunicationCapabilities.Voice], channel.Capabilities);
+        // The channel is the WebRTC surface, so it publishes that capability too — the manifest
+        // declared it conditionally while nothing reported it, leaving it unsatisfiable (#115).
+        Assert.Equal(
+            [CommunicationCapabilities.Voice, CommunicationCapabilities.WebRtc],
+            channel.Capabilities);
     }
 
     [Fact]

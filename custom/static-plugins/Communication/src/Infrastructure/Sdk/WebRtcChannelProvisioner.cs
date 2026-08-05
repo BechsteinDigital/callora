@@ -1,4 +1,5 @@
 using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugin.Communication.Infrastructure.Channels;
 using CalloraVoipSdk.WebRtc;
 using Microsoft.Extensions.Logging;
 
@@ -22,6 +23,8 @@ internal sealed class WebRtcChannelProvisioner
     // Protects _channels and _registrations from concurrent get-or-create/teardown calls.
     private readonly object _gate = new();
     private readonly Dictionary<string, WebRtcVoiceChannel> _channels =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, ConferenceChannel> _conferenceChannels =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly List<IDisposable> _registrations = [];
 
@@ -57,6 +60,18 @@ internal sealed class WebRtcChannelProvisioner
     public IWebRtcClient Client => _client;
 
     /// <summary>
+    /// The conference channel of a workspace, once provisioned. Exposed so a reachability source
+    /// can move its health and thereby grant or revoke the video capability (#115).
+    /// </summary>
+    public ConferenceChannel? GetConferenceChannel(string workspaceKey)
+    {
+        lock (_gate)
+        {
+            return _conferenceChannels.GetValueOrDefault(workspaceKey);
+        }
+    }
+
+    /// <summary>
     /// Returns the <see cref="WebRtcVoiceChannel"/> for <paramref name="workspaceKey"/>, creating and
     /// registering one if none exists yet. Idempotent: subsequent calls with the same key return the
     /// same instance.
@@ -74,13 +89,23 @@ internal sealed class WebRtcChannelProvisioner
 
             var channelId = $"webrtc-{workspaceKey}";
             var channel = new WebRtcVoiceChannel(channelId, "WebRTC", _pluginId, _client, _externallyReachable);
-            var registration = _registry.Register(workspaceKey, channel);
-            _registrations.Add(registration);
+            _registrations.Add(_registry.Register(workspaceKey, channel));
             _channels[workspaceKey] = channel;
 
+            // The SFU rides the same client and the same NAT traversal, so the conference
+            // surface exists exactly where the WebRTC one does. Registering it here is what
+            // makes communication.video satisfiable at all (#115): capabilities are derived
+            // from channels, and exporting IConferenceService as a service published nothing.
+            var conferenceChannelId = $"conference-{workspaceKey}";
+            var conferenceChannel = new ConferenceChannel(
+                conferenceChannelId, "Conference", _pluginId, _externallyReachable);
+            _registrations.Add(_registry.Register(workspaceKey, conferenceChannel));
+            _conferenceChannels[workspaceKey] = conferenceChannel;
+
             _logger.LogInformation(
-                "WebRTC channel '{ChannelId}' provisioned for workspace '{WorkspaceKey}'.",
+                "WebRTC channel '{ChannelId}' and conference channel '{ConferenceChannelId}' provisioned for workspace '{WorkspaceKey}'.",
                 channelId,
+                conferenceChannelId,
                 workspaceKey);
 
             return channel;
@@ -102,6 +127,7 @@ internal sealed class WebRtcChannelProvisioner
 
             _registrations.Clear();
             _channels.Clear();
+            _conferenceChannels.Clear();
         }
 
         _logger.LogInformation("WebRTC channel provisioner torn down.");

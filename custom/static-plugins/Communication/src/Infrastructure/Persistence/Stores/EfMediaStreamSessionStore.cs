@@ -99,6 +99,29 @@ public sealed class EfMediaStreamSessionStore(IPluginDbContextFactory<Communicat
     }
 
     /// <inheritdoc />
+    public async Task<int> CloseByCallAsync(
+        string workspaceKey, string callId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(callId);
+
+        // One set-based UPDATE rather than load-modify-save: the call is already gone, so there is
+        // nothing to reconcile per row, and a hang-up must not wait on a page of sessions. Already
+        // closed rows are excluded so EndedAt keeps the time the stream actually stopped.
+        await using var db = dbContextFactory.CreateDbContext();
+        return await db.MediaStreamSessions
+            .Where(x => x.WorkspaceKey == workspaceKey
+                && x.CallId == callId
+                && x.Status != MediaStreamSessionStatus.Closed)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.Status, MediaStreamSessionStatus.Closed)
+                    .SetProperty(x => x.EndedAt, now),
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken cancellationToken = default)
     {
         await using var db = dbContextFactory.CreateDbContext();

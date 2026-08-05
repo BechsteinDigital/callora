@@ -6,7 +6,6 @@ using Callora.Core.Application.Persistence.Contracts;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Domain.Accounts;
 using Callora.Plugin.Communication.Domain.Calls;
-using Callora.Plugin.Communication.Domain.Lines;
 using Callora.Plugin.Communication.Domain.Streaming;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Callora.Plugin.Communication.Infrastructure.Persistence.Stores;
@@ -132,55 +131,12 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
     }
 
     [SkippableFact]
-    public async Task SipLine_Add_Count_Delete()
-    {
-        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
-
-        await AddAccountAsync("acc-1", "ws-b");
-        var store = new EfSipLineStore(_factory);
-        await store.AddAsync(new SipLine("l1", "acc-1", "ws-b", "Main", "sip:a@x", null, true, null));
-        await store.AddAsync(new SipLine("l2", "acc-1", "ws-b", "Alt", "sip:b@x", null, true, null));
-
-        Assert.Equal(2, await store.CountByWorkspaceAsync("ws-b"));
-        Assert.True(await store.DeleteAsync("ws-b", "l1"));
-        Assert.Equal(1, await store.CountByWorkspaceAsync("ws-b"));
-        Assert.False(await store.DeleteAsync("ws-b", "missing"));
-    }
-
-    [SkippableFact]
-    public async Task ListByAccount_IsWorkspaceScoped_NoCrossTenantLeak()
-    {
-        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
-
-        await AddAccountAsync("acc-scoped", "ws-owner");
-        var store = new EfSipLineStore(_factory);
-        await store.AddAsync(new SipLine("l-own", "acc-scoped", "ws-owner", "Main", "sip:o@x", null, true, null));
-
-        // The owning workspace sees its line; another workspace passing the same account id sees nothing.
-        Assert.Single(await store.ListByAccountAsync("ws-owner", "acc-scoped"));
-        Assert.Empty(await store.ListByAccountAsync("ws-intruder", "acc-scoped"));
-    }
-
-    [SkippableFact]
-    public async Task Line_CannotReferenceAccountInAnotherWorkspace()
-    {
-        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
-
-        await AddAccountAsync("acc-a", "ws-a");
-        var store = new EfSipLineStore(_factory);
-
-        // A line in ws-b referencing an account that lives in ws-a is rejected by the composite FK.
-        await Assert.ThrowsAsync<DbUpdateException>(() =>
-            store.AddAsync(new SipLine("l-cross", "acc-a", "ws-b", "Cross", "sip:x@x", null, true, null)));
-    }
-
-    [SkippableFact]
     public async Task CallLog_RoundTrips_ThenDeleteByWorkspacePurges()
     {
         Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
 
         var store = new EfCallLogStore(_factory);
-        var log = CallLog.Start("c1", "ws-c", "acc-1", "l1", CallDirection.Inbound,
+        var log = CallLog.Start("c1", "ws-c", "acc-1", CallDirection.Inbound,
             "+49309999999", "sip:alice@x", "ai-agent", null, DateTimeOffset.UnixEpoch);
         log.MarkAnswered(DateTimeOffset.UnixEpoch.AddSeconds(2));
         log.End(DateTimeOffset.UnixEpoch.AddSeconds(42), CallOutcome.Completed, "BYE");
@@ -248,12 +204,11 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
     }
 
     [SkippableFact]
-    public async Task WorkspaceDataPurger_AtomicallyErasesAllFourTables()
+    public async Task WorkspaceDataPurger_AtomicallyErasesEveryWorkspaceTable()
     {
         Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
 
         var accountStore = new EfSipAccountStore(_factory);
-        var lineStore = new EfSipLineStore(_factory);
         var callLogStore = new EfCallLogStore(_factory);
         var sessionStore = new EfMediaStreamSessionStore(_factory);
 
@@ -262,8 +217,7 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
             new SipConnection("h", 5060, SipTransport.Udp, SipAccountMode.Register,
                 new DigestAuthentication("u", null, "s://p"), 3600),
             maxConcurrentCalls: 2, enabled: true));
-        await lineStore.AddAsync(new SipLine("l-p", "acc-p", "ws-purge", "L", "sip:p@x", null, true, null));
-        var log = CallLog.Start("c-p", "ws-purge", "acc-p", "l-p", CallDirection.Inbound,
+        var log = CallLog.Start("c-p", "ws-purge", "acc-p", CallDirection.Inbound,
             "+49301111111", "sip:p@x", null, null, DateTimeOffset.UnixEpoch);
         log.End(DateTimeOffset.UnixEpoch.AddSeconds(5), CallOutcome.Missed, null);
         await callLogStore.AddAsync(log);
@@ -274,7 +228,6 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
         await new CommunicationWorkspaceDataPurger(_factory).PurgeAsync("ws-purge");
 
         Assert.Empty(await accountStore.ListAsync("ws-purge"));
-        Assert.Equal(0, await lineStore.CountByWorkspaceAsync("ws-purge"));
         Assert.Empty(await callLogStore.ListRecentAsync("ws-purge", 10));
         Assert.Null(await sessionStore.GetByConnectTokenAsync("tok-purge"));
     }

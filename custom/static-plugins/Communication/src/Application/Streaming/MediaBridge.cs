@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Application.Streaming.Pacing;
 using Callora.Plugin.Communication.Application.Streaming.Protocol;
+using Callora.Plugin.Communication.Domain.Streaming;
 
 namespace Callora.Plugin.Communication.Application.Streaming;
 
@@ -13,9 +14,24 @@ namespace Callora.Plugin.Communication.Application.Streaming;
 /// by a dedicated pump; the pumps run until either side ends, then all are torn down.
 /// The call→consumer buffer is bounded (drop-oldest, real-time), and consumer→call audio is paced
 /// through a <see cref="PacedAudioSender"/>; a <c>clear</c> frame flushes it for barge-in.
+/// <para>
+/// The session's <see cref="MediaStreamDirection"/> is enforced here rather than merely recorded
+/// (#114). It is the only place both audio paths are visible, so a listen-only consumer's frames
+/// are dropped and a speak-only consumer is never sent call audio — regardless of what it asks for
+/// once the socket is open. Control frames (<c>mark</c>, <c>clear</c>, <c>stop</c>) stay available
+/// in every direction; they carry no audio.
+/// </para>
 /// </summary>
-public sealed class MediaBridge(ICallAudioStream audioStream, IMediaFrameChannel channel, IPacingClock? pacingClock = null)
+public sealed class MediaBridge(
+    ICallAudioStream audioStream,
+    IMediaFrameChannel channel,
+    MediaStreamDirection direction = MediaStreamDirection.Bidirectional,
+    IPacingClock? pacingClock = null)
 {
+    // Relative to the consumer: Inbound means it listens, Outbound means it speaks.
+    private readonly bool _consumerMayListen = direction is MediaStreamDirection.Inbound or MediaStreamDirection.Bidirectional;
+    private readonly bool _consumerMaySpeak = direction is MediaStreamDirection.Outbound or MediaStreamDirection.Bidirectional;
+
     // Call → consumer buffer: bounded and drop-oldest so a slow consumer cannot grow it and stale
     // real-time frames are dropped rather than delaying fresh audio (~4 s at 20 ms frames).
     private const int InboundQueueCapacity = 200;
@@ -48,7 +64,14 @@ public sealed class MediaBridge(ICallAudioStream audioStream, IMediaFrameChannel
         }
 
         await channel.SendAsync(MediaStreamMessage.ForStart(start), token).ConfigureAwait(false);
-        audioStream.FrameReceived += OnFrameReceived;
+
+        // A speak-only consumer never subscribes to call audio in the first place, so no frame is
+        // copied or queued for a socket that is not allowed to receive it.
+        if (_consumerMayListen)
+        {
+            audioStream.FrameReceived += OnFrameReceived;
+        }
+
         try
         {
             var callToConsumer = PumpCallToConsumerAsync(inbound.Reader, token);
@@ -103,7 +126,9 @@ public sealed class MediaBridge(ICallAudioStream audioStream, IMediaFrameChannel
 
                 switch (message.Event)
                 {
-                    case MediaStreamEventType.Media when TryDecodePayload(
+                    // A listen-only consumer's audio is dropped, not forwarded and not fatal: the
+                    // socket stays open for its control frames, but nothing it says reaches the call.
+                    case MediaStreamEventType.Media when _consumerMaySpeak && TryDecodePayload(
                         message.Payload,
                         audioStream.Format.BytesPerFrame,
                         out var frame):

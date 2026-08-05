@@ -241,9 +241,89 @@ public sealed class CommunicationMcpToolContributorTests
         var tools = new CommunicationMcpToolContributor(new FakeCallControlService()).Tools;
 
         Assert.Equal(CommunicationPermissionKeys.CallsManage, Registration(tools, "place_call").RequiredPermission);
+        Assert.Equal(CommunicationPermissionKeys.CallsManage, Registration(tools, "accept_call").RequiredPermission);
+        Assert.Equal(CommunicationPermissionKeys.CallsManage, Registration(tools, "reject_call").RequiredPermission);
+        Assert.Equal(CommunicationPermissionKeys.CallsManage, Registration(tools, "send_dtmf").RequiredPermission);
         Assert.Equal(CommunicationPermissionKeys.CallsManage, Registration(tools, "hangup_call").RequiredPermission);
         Assert.Equal(CommunicationPermissionKeys.CallsRead, Registration(tools, "get_call").RequiredPermission);
+        Assert.Equal(CommunicationPermissionKeys.CallsRead, Registration(tools, "list_active_calls").RequiredPermission);
         Assert.Equal(CommunicationPermissionKeys.CallsRead, Registration(tools, "list_recent_calls").RequiredPermission);
+    }
+
+    [Fact]
+    public async Task AcceptCall_DelegatesWithTheResolvedWorkspace()
+    {
+        var fake = new FakeCallControlService { ControlResult = true };
+
+        var result = await HandlerFor(fake, "accept_call")(
+            Invocation("""{"callId":"call-1"}"""), CancellationToken.None);
+
+        Assert.False(result.IsError);
+        Assert.Equal((Workspace, "call-1"), Assert.Single(fake.Accepts));
+        Assert.Contains("accepted", result.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RejectCall_DelegatesWithTheResolvedWorkspace()
+    {
+        var fake = new FakeCallControlService { ControlResult = true };
+
+        await HandlerFor(fake, "reject_call")(Invocation("""{"callId":"call-1"}"""), CancellationToken.None);
+
+        Assert.Equal((Workspace, "call-1"), Assert.Single(fake.Rejects));
+    }
+
+    [Fact]
+    public async Task SendDtmf_PassesTheSequence()
+    {
+        var fake = new FakeCallControlService { ControlResult = true };
+
+        await HandlerFor(fake, "send_dtmf")(
+            Invocation("""{"callId":"call-1","tones":"123#"}"""), CancellationToken.None);
+
+        Assert.Equal((Workspace, "call-1", "123#"), Assert.Single(fake.Dtmf));
+    }
+
+    [Fact]
+    public async Task SendDtmf_WithoutTones_IsError_AndServiceNotCalled()
+    {
+        var fake = new FakeCallControlService { ControlResult = true };
+
+        var result = await HandlerFor(fake, "send_dtmf")(
+            Invocation("""{"callId":"call-1"}"""), CancellationToken.None);
+
+        Assert.True(result.IsError);
+        Assert.Empty(fake.Dtmf);
+    }
+
+    [Fact]
+    public async Task ARejectedStateTransition_IsAToolError_NotAnException()
+    {
+        // An agent has to be told it asked for something the call cannot do; a transport-level
+        // exception would tell it nothing it can act on.
+        var fake = new FakeCallControlService { ControlError = new InvalidOperationException("not ringing") };
+
+        var result = await HandlerFor(fake, "accept_call")(
+            Invocation("""{"callId":"call-1"}"""), CancellationToken.None);
+
+        Assert.True(result.IsError);
+        Assert.Contains("not ringing", result.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ListActiveCalls_ReturnsTheWorkspacesLiveCalls()
+    {
+        var fake = new FakeCallControlService
+        {
+            NextActive = [new CallSnapshot("call-1", CallDirection.Inbound, CallState.Ringing, "+49301234567")],
+        };
+
+        var result = await HandlerFor(fake, "list_active_calls")(Invocation("{}"), CancellationToken.None);
+
+        Assert.False(result.IsError);
+        Assert.Equal(Workspace, Assert.Single(fake.ActiveLists));
+        Assert.Contains("call-1", result.Content, StringComparison.Ordinal);
+        Assert.Contains("Ringing", result.Content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -251,7 +331,7 @@ public sealed class CommunicationMcpToolContributorTests
     {
         var tools = new CommunicationMcpToolContributor(new FakeCallControlService()).Tools;
 
-        Assert.Equal(4, tools.Count);
+        Assert.Equal(8, tools.Count);
         foreach (var tool in tools)
         {
             Assert.Equal(JsonValueKind.Object, tool.InputSchema.ValueKind);
@@ -296,10 +376,48 @@ public sealed class CommunicationMcpToolContributorTests
             return Task.FromResult(NextSnapshot!);
         }
 
+        public List<(string Workspace, string CallId)> Accepts { get; } = [];
+        public List<(string Workspace, string CallId)> Rejects { get; } = [];
+        public List<(string Workspace, string CallId, string Tones)> Dtmf { get; } = [];
+        public List<string> ActiveLists { get; } = [];
+
+        /// <summary>Outcome accept/reject/DTMF report; hang-up keeps its own flag.</summary>
+        public bool ControlResult { get; init; }
+
+        /// <summary>Set to make the next control operation report a rejected state transition.</summary>
+        public Exception? ControlError { get; init; }
+
+        public IReadOnlyList<CallSnapshot> NextActive { get; init; } = [];
+
         public Task<bool> HangupAsync(string workspaceKey, string callId, CancellationToken cancellationToken = default)
         {
             Hangups.Add((workspaceKey, callId));
             return Task.FromResult(HangupResult);
+        }
+
+        public Task<bool> AcceptAsync(string workspaceKey, string callId, CancellationToken cancellationToken = default)
+        {
+            Accepts.Add((workspaceKey, callId));
+            return ControlError is not null ? Task.FromException<bool>(ControlError) : Task.FromResult(ControlResult);
+        }
+
+        public Task<bool> RejectAsync(string workspaceKey, string callId, CancellationToken cancellationToken = default)
+        {
+            Rejects.Add((workspaceKey, callId));
+            return ControlError is not null ? Task.FromException<bool>(ControlError) : Task.FromResult(ControlResult);
+        }
+
+        public Task<bool> SendDtmfAsync(
+            string workspaceKey, string callId, string tones, CancellationToken cancellationToken = default)
+        {
+            Dtmf.Add((workspaceKey, callId, tones));
+            return ControlError is not null ? Task.FromException<bool>(ControlError) : Task.FromResult(ControlResult);
+        }
+
+        public IReadOnlyList<CallSnapshot> ListActive(string workspaceKey)
+        {
+            ActiveLists.Add(workspaceKey);
+            return NextActive;
         }
 
         public CallSnapshot? Get(string workspaceKey, string callId)

@@ -1,6 +1,5 @@
 using Callora.Plugin.Communication.Domain.Accounts;
 using Callora.Plugin.Communication.Domain.Calls;
-using Callora.Plugin.Communication.Domain.Lines;
 using Callora.Plugin.Communication.Domain.Streaming;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,11 +20,15 @@ public sealed class CommunicationDbContext(DbContextOptions<CommunicationDbConte
     /// <summary>Configured SIP accounts.</summary>
     public DbSet<SipAccount> SipAccounts => Set<SipAccount>();
 
-    /// <summary>Callable lines under accounts.</summary>
-    public DbSet<SipLine> SipLines => Set<SipLine>();
 
     /// <summary>Call history (metadata only).</summary>
     public DbSet<CallLog> CallLogs => Set<CallLog>();
+
+    /// <summary>
+    /// Call events awaiting delivery. Written in the same transaction as the call-log change
+    /// that produced them, so an event never describes a state the database does not hold (#113).
+    /// </summary>
+    public DbSet<CallEventOutboxEntry> CallEventOutbox => Set<CallEventOutboxEntry>();
 
     /// <summary>WebSocket media-stream bindings (metadata only).</summary>
     public DbSet<MediaStreamSession> MediaStreamSessions => Set<MediaStreamSession>();

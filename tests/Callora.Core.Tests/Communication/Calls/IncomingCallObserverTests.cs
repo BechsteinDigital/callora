@@ -78,7 +78,7 @@ public sealed class IncomingCallObserverTests
         var registry = new CommunicationChannelRegistry();
         var store = new RecordingCallLogStore();
         var service = new CallControlService(
-            registry, store, new RecordingBusinessEventBus(), NullLogger<CallControlService>.Instance, TimeProvider.System);
+            registry, store, NullLogger<CallControlService>.Instance, TimeProvider.System);
         return (new IncomingCallObserver(registry, service), registry, store);
     }
 

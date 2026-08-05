@@ -67,12 +67,43 @@ public sealed class SipAccount
     /// <summary>When the status last changed.</summary>
     public DateTimeOffset? LastStatusChangeAt { get; private set; }
 
-    /// <summary>Records a connectivity-status transition reported by the SDK bridge.</summary>
+    /// <summary>
+    /// When the account last reached <see cref="SipAccountStatus.Up"/>. Survives later
+    /// failures, so an operator can tell "never worked" from "worked until an hour ago" (#112).
+    /// </summary>
+    public DateTimeOffset? LastRegisteredAt { get; private set; }
+
+    /// <summary>
+    /// Records a connectivity-status transition reported by the provider bridge. Repeating the
+    /// current status is a no-op, so a flapping-but-unchanged registration does not rewrite the
+    /// transition timestamp on every heartbeat.
+    /// </summary>
+    /// <param name="status">The status the provider now reports.</param>
+    /// <param name="error">
+    /// Reason for a <see cref="SipAccountStatus.Failed"/> or <see cref="SipAccountStatus.Degraded"/>
+    /// transition. Redacted through <see cref="SipStatusError"/> before it is kept, because a
+    /// provider message can carry the credential that caused the failure.
+    /// </param>
+    /// <param name="at">When the provider observed the transition.</param>
     public void ReportStatus(SipAccountStatus status, string? error, DateTimeOffset at)
     {
+        var redacted = status is SipAccountStatus.Failed or SipAccountStatus.Degraded
+            ? SipStatusError.Redact(error)
+            : null;
+
+        if (Status == status && LastError == redacted)
+        {
+            return;
+        }
+
         Status = status;
-        LastError = status == SipAccountStatus.Failed ? error : null;
+        LastError = redacted;
         LastStatusChangeAt = at;
+
+        if (status == SipAccountStatus.Up)
+        {
+            LastRegisteredAt = at;
+        }
     }
 
     /// <summary>Enables the account so it is provisioned into a live channel. Idempotent; when it was
