@@ -1,0 +1,149 @@
+using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Plugins.Contracts;
+
+namespace Callora.Core.Application.Surfaces;
+
+/// <summary>
+/// Decides what each surface slot holds for one request (#125 block C).
+/// <para>
+/// Every filter runs here, on the server, before any markup exists. A view a visitor
+/// may not see is not emitted at all rather than hidden by CSS, and the order a theme
+/// renders is the order the host decided, so it cannot depend on which plugin bundle
+/// happened to load first.
+/// </para>
+/// </summary>
+public sealed class SurfaceSlotResolver(
+    ICalloraPluginCatalog pluginCatalog,
+    IPluginAvailabilityEvaluator availabilityEvaluator)
+{
+    /// <summary>
+    /// Resolves the slot contents for a surface and caller.
+    /// </summary>
+    /// <param name="workspaceKey">Workspace the surface belongs to.</param>
+    /// <param name="surfaceKey">Surface being rendered.</param>
+    /// <param name="caller">Who is looking at the page.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task<IReadOnlyDictionary<string, IReadOnlyList<SurfaceSlotView>>> ResolveAsync(
+        string workspaceKey,
+        string surfaceKey,
+        SurfaceCaller caller,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(surfaceKey);
+        ArgumentNullException.ThrowIfNull(caller);
+
+        var claims = ClaimsOf(caller);
+        var bySlot = new Dictionary<string, List<SurfaceSlotView>>(StringComparer.Ordinal);
+        var availability = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var export in pluginCatalog.GetOwnedExports(typeof(IHostSurfaceViewContributor)))
+        {
+            if (export.Service is not IHostSurfaceViewContributor contributor)
+            {
+                continue;
+            }
+
+            var pluginId = string.IsNullOrWhiteSpace(contributor.PluginId)
+                ? export.PluginId
+                : contributor.PluginId;
+            if (!await IsAvailableAsync(availability, pluginId, workspaceKey, cancellationToken)
+                    .ConfigureAwait(false))
+            {
+                continue;
+            }
+
+            foreach (var view in contributor.Views ?? [])
+            {
+                if (!IsEligible(view, surfaceKey, claims))
+                {
+                    continue;
+                }
+
+                var slot = view.Slot.Trim();
+                if (!bySlot.TryGetValue(slot, out var views))
+                {
+                    views = [];
+                    bySlot[slot] = views;
+                }
+
+                views.Add(new SurfaceSlotView(
+                    view.ViewId.Trim(),
+                    pluginId,
+                    slot,
+                    view.DisplayName,
+                    view.Weight,
+                    view.Cardinality,
+                    view.Icon,
+                    view.ProvidesContexts ?? [],
+                    view.RequiresContexts ?? []));
+            }
+        }
+
+        return Finalize(bySlot);
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<SurfaceSlotView>> Finalize(
+        Dictionary<string, List<SurfaceSlotView>> bySlot)
+    {
+        var resolved = new Dictionary<string, IReadOnlyList<SurfaceSlotView>>(StringComparer.Ordinal);
+        foreach (var (slot, views) in bySlot)
+        {
+            // Stable within equal weights: OrderBy is a stable sort, so declaration
+            // order decides only where weight does not. One island per view id, so a
+            // view declared Single cannot end up mounted twice into the same slot.
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            resolved[slot] = views
+                .OrderBy(static view => view.Weight)
+                .Where(view => seen.Add(view.ViewId))
+                .ToArray();
+        }
+
+        return resolved;
+    }
+
+    private static bool IsEligible(
+        HostSurfaceViewRegistration view,
+        string surfaceKey,
+        IReadOnlySet<string> claims)
+    {
+        if (string.IsNullOrWhiteSpace(view.ViewId) || string.IsNullOrWhiteSpace(view.Slot))
+        {
+            return false;
+        }
+
+        if (view.SurfaceKeys is { Count: > 0 } &&
+            !view.SurfaceKeys.Contains(surfaceKey, StringComparer.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // Presence only. What a claim means belongs to the plugin that issued it, so
+        // the host never compares values and never grants anything on their strength.
+        return view.RequiredClaims is not { Count: > 0 } ||
+               view.RequiredClaims.All(claims.Contains);
+    }
+
+    private async Task<bool> IsAvailableAsync(
+        Dictionary<string, bool> cache,
+        string pluginId,
+        string workspaceKey,
+        CancellationToken cancellationToken)
+    {
+        if (cache.TryGetValue(pluginId, out var cached))
+        {
+            return cached;
+        }
+
+        var availability = await availabilityEvaluator
+            .EvaluateAsync(pluginId, workspaceKey, cancellationToken)
+            .ConfigureAwait(false);
+        cache[pluginId] = availability.IsAvailable;
+        return availability.IsAvailable;
+    }
+
+    private static IReadOnlySet<string> ClaimsOf(SurfaceCaller caller) =>
+        caller is AuthenticatedSurfaceCaller authenticated
+            ? authenticated.Identity.Claims.Keys.ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
+}

@@ -12,13 +12,45 @@ import type { Component } from 'vue'
 export interface SurfaceContext {
   workspaceKey: string
   surfaceKey: string
+  caller: SurfaceCaller
 }
+
+/** Who a surface request belongs to. Stable identity is issuer + subjectId. */
+export interface SurfaceSubject {
+  issuer: string
+  subjectId: string
+}
+
+/**
+ * Who is using the surface. A caller always exists: between anonymous and logged in
+ * sits the recognised guest, which is what a cart or a multi-step form hangs off.
+ * The two states are a discriminated union so code cannot mistake the presence of a
+ * subject for authentication.
+ */
+export type SurfaceCaller =
+  | { state: 'guest'; subject: SurfaceSubject }
+  | {
+      state: 'authenticated'
+      subject: SurfaceSubject
+      displayName: string
+      claims: Record<string, string[]>
+    }
+
+/**
+ * Instance parameters an island carries: what the SSR template passed at the slot's
+ * call site, so an embedded view can point at a concrete lead, room or appointment
+ * instead of deriving everything from the URL.
+ */
+export type SurfaceViewParams = Readonly<Record<string, unknown>>
 
 /** A view a plugin contributes — rendered as the whole app or into a matching island. */
 export interface SurfaceView {
   /** Stable, unique id. Also the value of data-callora-island for island mounts. */
   id: string
-  /** The Vue component; receives the SurfaceContext as a `context` prop. */
+  /**
+   * The Vue component. Receives the SurfaceContext as a `context` prop and the
+   * island's instance parameters as a `params` prop.
+   */
   component: Component
   /** Ascending render order in app mode; unset sorts as 0. */
   order?: number

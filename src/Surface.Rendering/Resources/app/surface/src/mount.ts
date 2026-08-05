@@ -1,7 +1,11 @@
 import { computed, createApp, defineComponent, h } from 'vue'
 import App from './App.vue'
 import { readSurfaceContext, resolveSurfaceContext, type SurfaceContext } from './surface-context'
-import { isSurfaceViewVisible, type SurfaceRegistry } from './surface-registry'
+import {
+  isSurfaceViewVisible,
+  type SurfaceRegistry,
+  type SurfaceViewParams,
+} from './surface-registry'
 
 /**
  * Mounts the surface runtime in whichever mode the SSR output calls for — both are
@@ -28,7 +32,9 @@ export function mountSurface(registry: SurfaceRegistry, doc: Document = document
       return
     }
 
-    createApp(islandHost(registry, viewId, resolveSurfaceContext(island))).mount(island)
+    createApp(
+      islandHost(registry, viewId, resolveSurfaceContext(island), readIslandParams(island)),
+    ).mount(island)
   })
 }
 
@@ -37,7 +43,12 @@ export function mountSurface(registry: SurfaceRegistry, doc: Document = document
  * nothing until it registers. The lookup is reactive, so a view contributed after the
  * island mounted (a plugin bundle loading later) appears without re-scanning the DOM.
  */
-function islandHost(registry: SurfaceRegistry, viewId: string, context: SurfaceContext) {
+function islandHost(
+  registry: SurfaceRegistry,
+  viewId: string,
+  context: SurfaceContext,
+  params: SurfaceViewParams,
+) {
   return defineComponent({
     name: 'CalloraSurfaceIsland',
     setup() {
@@ -47,7 +58,31 @@ function islandHost(registry: SurfaceRegistry, viewId: string, context: SurfaceC
             candidate.id === viewId && isSurfaceViewVisible(candidate, context.surfaceKey),
         ),
       )
-      return () => (view.value ? h(view.value.component, { context }) : null)
+      return () => (view.value ? h(view.value.component, { context, params }) : null)
     },
   })
+}
+
+/**
+ * Instance parameters the server put on the island. They arrive as a separate `params`
+ * prop rather than spread onto the component, so a template can name a parameter
+ * freely without colliding with `context` or leaking into the element's attributes.
+ *
+ * A malformed payload yields no parameters instead of failing the mount: a broken
+ * attribute must not cost the visitor the whole view.
+ */
+export function readIslandParams(island: HTMLElement): SurfaceViewParams {
+  const raw = island.dataset.calloraProps
+  if (!raw) {
+    return {}
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as SurfaceViewParams)
+      : {}
+  } catch {
+    return {}
+  }
 }
