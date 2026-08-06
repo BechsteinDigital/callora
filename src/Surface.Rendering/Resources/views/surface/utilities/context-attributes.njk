@@ -1,0 +1,16 @@
+{#- The data-* attributes the surface runtime reads to know where it is and who is
+    looking. Two elements need them: the body, so an island finds them by walking up,
+    and an app root, whose own dataset readSurfaceContext reads directly.
+
+    An include rather than a macro, because a macro imported with {% from %} at
+    template level is NOT visible inside a block — Nunjucks compiles blocks as separate
+    functions — and it would render empty without saying so. An include reads the
+    surrounding context and works anywhere.
+-#}
+data-workspace="{{ workspace.key }}"
+  data-surface="{{ surface.key }}"
+  data-caller-state="{{ caller.state if caller else 'anonymous' }}"
+  data-caller-issuer="{{ caller.issuer if caller else '' }}"
+  data-caller-subject="{{ caller.subjectId if caller else '' }}"
+  data-caller-name="{{ caller.displayName if caller else '' }}"
+  data-caller-claims="{{ caller.claimsJson if caller else '' }}"

@@ -135,6 +135,39 @@ public sealed class HostBaseTemplateTests
     }
 
     [Fact]
+    public void TheDefaultShell_CarriesBothContributionPaths()
+    {
+        // Was der Host rendert, wenn kein Plugin ein SSR-Entry veröffentlicht. Beide Wege
+        // müssen offen bleiben: serverseitig aufgelöste Views als Inseln, clientseitig
+        // registrierte über den App-Root. mountSurface bedient beide in einem Durchlauf.
+        var html = Render(
+            SurfaceShellTemplates.SpaRoot,
+            slots: new Dictionary<string, IReadOnlyList<SurfaceSlotView>>(StringComparer.Ordinal)
+            {
+                ["surface.main"] = [View("crm.lead-list", "crm")],
+            });
+
+        Assert.Contains("id=\"callora-app\"", html, StringComparison.Ordinal);
+        Assert.Contains("data-callora-island=\"crm.lead-list\"", html, StringComparison.Ordinal);
+        // Und die Fläche sieht aus wie eine Fläche, nicht wie ein leeres div.
+        Assert.Contains("cal-header", html, StringComparison.Ordinal);
+        Assert.Contains("/surface-base/base.css", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheAppRoot_CarriesTheContextOnItself()
+    {
+        // readSurfaceContext liest den EIGENEN Datensatz des App-Roots, nicht den eines
+        // Vorfahren — stünden die Attribute nur am Body, mountete die App mit Defaults.
+        var html = Render(SurfaceShellTemplates.SpaRoot);
+
+        var root = html.IndexOf("id=\"callora-app\"", StringComparison.Ordinal);
+        Assert.True(root > 0, "Kein App-Root gerendert.");
+        var tagEnd = html.IndexOf('>', root);
+        Assert.Contains("data-workspace=\"workspace-a\"", html[root..tagEnd], StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Base_KeepsTheSkipLinkFirstInTheTabOrder()
     {
         var html = Render("""{% extends "@callora/layout/page.njk" %}""");
