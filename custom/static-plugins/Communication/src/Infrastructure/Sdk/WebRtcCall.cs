@@ -1,5 +1,6 @@
 using Callora.Plugin.Communication.Abstractions;
 using CalloraVoipSdk.WebRtc;
+using PeerDtmfTone = CalloraVoipSdk.WebRtc.DtmfTone;
 using SdkDtmfTone = CalloraVoipSdk.Core.Domain.Calls.DtmfTone;
 
 namespace Callora.Plugin.Communication.Infrastructure.Sdk;
@@ -43,6 +44,7 @@ internal sealed class WebRtcCall : ICall
         Target = target;
         _state = MapState(peer.State);
         _peer.ConnectionStateChanged += OnPeerStateChanged;
+        _peer.DtmfReceived += OnPeerDtmfReceived;
     }
 
     /// <inheritdoc />
@@ -62,6 +64,9 @@ internal sealed class WebRtcCall : ICall
 
     /// <inheritdoc />
     public event EventHandler<CallStateChangedEventArgs>? StateChanged;
+
+    /// <inheritdoc />
+    public event EventHandler<DtmfReceivedEventArgs>? DtmfReceived;
 
     /// <summary>
     /// Not supported: a WebRTC call is established via signalling, not accept/reject — there is no
@@ -144,7 +149,15 @@ internal sealed class WebRtcCall : ICall
 
         _detached = true;
         _peer.ConnectionStateChanged -= OnPeerStateChanged;
+        _peer.DtmfReceived -= OnPeerDtmfReceived;
     }
+
+    // The peer reports the RFC 4733 event code; the SIP DtmfTone owns the code↔character table, so
+    // decoding through it keeps both paths on one mapping instead of a second copy here.
+    private void OnPeerDtmfReceived(object? sender, PeerDtmfTone tone) =>
+        DtmfReceived?.Invoke(
+            this,
+            new DtmfReceivedEventArgs(SdkDtmfTone.FromCode(tone.ToneCode).Symbol, tone.DurationMs));
 
     private static CallState MapState(PeerConnectionState state) => state switch
     {
