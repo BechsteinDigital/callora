@@ -167,6 +167,26 @@ public sealed class HostBaseTemplateTests
         Assert.Contains("data-workspace=\"workspace-a\"", html[root..tagEnd], StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("surface.head")]
+    [InlineData("surface.overlay")]
+    [InlineData("surface.body.end")]
+    public void MoreThanOnePluginCanContributeToTheSameRegion(string slot)
+    {
+        // Der Grund, warum wir kein sw_extends brauchen: Wo mehrere beitragen wollen,
+        // steht ein Slot statt eines Blocks. Ein Block gehört genau einem Template —
+        // zwei Plugins, die etwas in den <head> wollen, würden einander verdrängen.
+        var html = Render(
+            """{% extends "@callora/layout/page.njk" %}""",
+            slots: new Dictionary<string, IReadOnlyList<SurfaceSlotView>>(StringComparer.Ordinal)
+            {
+                [slot] = [View("a.beitrag", "plugin-a"), View("b.beitrag", "plugin-b")],
+            });
+
+        Assert.Contains("data-callora-island=\"a.beitrag\"", html, StringComparison.Ordinal);
+        Assert.Contains("data-callora-island=\"b.beitrag\"", html, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Base_KeepsTheSkipLinkFirstInTheTabOrder()
     {
