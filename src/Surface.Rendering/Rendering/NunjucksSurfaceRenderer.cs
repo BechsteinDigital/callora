@@ -15,13 +15,16 @@ namespace Callora.Surface.Rendering.Rendering;
 /// </summary>
 public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
 {
-    // Wall-clock, so it measures elapsed time rather than work done: a render competing
-    // for CPU with fifteen others takes longer without doing more. The base chain renders
-    // in ~110 ms alone; sixteen of those serialised onto one core is already 1.8 s, which
-    // is why the old two-second limit no longer holds. Measured, not guessed: at two
-    // seconds the suite loses 11 to 19 tests per run, at five none across seven runs.
-    // It bounds an endless loop; it is not a performance budget.
-    private const int TimeoutSeconds = 5;
+    // Wall-clock, so it bounds elapsed time rather than work: an endless loop is what this
+    // stops, and an endless loop trips any value. It stays tight on purpose — a hostile template
+    // should not be able to hold a core for long.
+    //
+    // It briefly stood at five seconds because the test suite kept tripping it. That was
+    // starvation, not slowness: sixteen renders racing on one machine turn 110 ms of work into
+    // seconds of elapsed time. The renders are serialised in the suite now
+    // (SurfaceRenderingCollection), and the limit is back where it belongs — a production limit
+    // should not be set by how a test runner schedules.
+    private const int TimeoutSeconds = 2;
     private const long MemoryLimitBytes = 32L * 1024 * 1024;
     private const int RecursionLimit = 64;
     private const int MaxStatements = 2_000_000;

@@ -10,6 +10,7 @@ namespace Callora.Core.Tests.Surface;
 /// assembly rather than from published plugin assets, and needs no chain entry: a plugin
 /// that extends it does not have to declare a dependency on the host it already runs in.
 /// </summary>
+[Collection(SurfaceRenderingCollection.Name)]
 public sealed class HostBaseBundleTests
 {
     private static SurfaceRenderContext Context(

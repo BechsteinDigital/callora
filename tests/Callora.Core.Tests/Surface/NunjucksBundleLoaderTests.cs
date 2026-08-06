@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Callora.Core.Tests.Surface;
 
+[Collection(SurfaceRenderingCollection.Name)]
 public sealed class NunjucksBundleLoaderTests : IDisposable
 {
     private readonly DirectoryInfo _temp = Directory.CreateTempSubdirectory("callora-njk-");

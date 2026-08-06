@@ -11,6 +11,7 @@ namespace Callora.Core.Tests.Surface;
 /// slot inside a block, so <c>extends</c>, <c>block</c> and <c>super()</c> keep
 /// working and a child theme can wrap, move or replace a slot like any other markup.
 /// </summary>
+[Collection(SurfaceRenderingCollection.Name)]
 public sealed class SurfaceSlotRenderingTests
 {
     [Fact]

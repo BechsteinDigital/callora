@@ -24,6 +24,7 @@ namespace Callora.Core.Tests.Surface;
 /// visitor is decides whether the surface is served at all, and the answer travels
 /// into the rendered document so islands can read it without a second round-trip.
 /// </summary>
+[Collection(SurfaceRenderingCollection.Name)]
 public sealed class SurfaceIdentityRenderEndpointTests
 {
     private const string PluginId = "crm";
