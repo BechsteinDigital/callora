@@ -265,7 +265,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
         // Runtime-capability source: derives communication.voice honestly from live channel health.
         // Exported unconditionally (it just observes the registry — empty until channels register); the
         // host registers it into its runtime-capability registry via the plugin's IRuntimeCapabilitySource export.
-        _capabilitySource = new CommunicationRuntimeCapabilitySource(_channelRegistry);
+        // Conference telephony additionally depends on this composition actually offering the
+        // attachment (below), which needs both call control and WebRTC — the same two conditions, kept
+        // here so the capability cannot outlive the port that has to serve it.
+        var conferenceBridgingAvailable = dbContextFactory is not null && IsWebRtcEnabled(context.PluginConfiguration);
+        _capabilitySource = new CommunicationRuntimeCapabilitySource(_channelRegistry, conferenceBridgingAvailable);
         context.Export<IRuntimeCapabilitySource>(_capabilitySource);
 
         // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
