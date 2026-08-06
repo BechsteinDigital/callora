@@ -118,15 +118,17 @@ jobs:
             gates: test + build
             test: true
           - name: Communication Admin
-            path: custom/static-plugins/Communication/src/Resources/app/admin
+            path: custom/static-plugins/Communication
             gates: build
             test: false
+            # Consumes @callora/admin as a file: dependency — see the build step.
+            sdkPath: src/Administration/Resources/app/administration
           - name: SurfaceDemo
             path: custom/plugins/SurfaceDemo
             gates: build
             test: false
             # Consumes @callora/surface as a file: dependency — see the build step.
-            buildsSdkFirst: true
+            sdkPath: src/Surface.Rendering/Resources/app/surface
           - name: Docs Site
             path: docs-site
             gates: lint + build
@@ -150,8 +152,8 @@ jobs:
       # and the build then fails on ERR_MODULE_NOT_FOUND for the preset — which is how
       # this job failed on every run before it built its dependency first.
       - name: Build local package dependency
-        if: matrix.buildsSdkFirst
-        working-directory: src/Surface.Rendering/Resources/app/surface
+        if: matrix.sdkPath
+        working-directory: ${{ matrix.sdkPath }}
         run: |
           npm ci
           npm run build:lib
