@@ -1,5 +1,6 @@
 using Callora.Administration.Api;
 using Callora.Core.Api;
+using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Security;
@@ -260,9 +261,77 @@ public sealed class PluginAdminExtensionEndpointsTests
         Assert.Contains(payload!, permission => permission.PermissionKey == "sipaccount.create");
     }
 
+    // The admin UI chain (V1): which plugin bundles the admin shell may load for the
+    // caller's effective workspace. Until this endpoint existed the shell loaded every
+    // admin bundle in the manifest, so a plugin's UI appeared in workspaces it was never
+    // assigned to.
+
+    [Fact]
+    public async Task UiChain_BoundCaller_ReturnsOnlyAvailablePluginsOfOwnWorkspace()
+    {
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new AllowListPluginAvailabilityEvaluator("voip"),
+            activePluginIds: ["voip", "crm"]);
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "ws-42");
+
+        var response = await client.GetAsync("/api/ext/admin/ui-chain");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<UiChainApiResponse>();
+        Assert.NotNull(payload);
+        Assert.Equal(["voip"], payload!.Chain);
+    }
+
+    [Fact]
+    public async Task UiChain_BoundCaller_IgnoresForeignWorkspaceQuery()
+    {
+        // The same rule as the proxy route (#109): a bound session can never point the
+        // chain at another workspace by naming it in the query.
+        var queried = new List<string>();
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new RecordingPluginAvailabilityEvaluator(queried.Add),
+            activePluginIds: ["voip"]);
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Workspace-Key", "ws-42");
+
+        var response = await client.GetAsync("/api/ext/admin/ui-chain?workspaceKey=ws-victim");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        Assert.All(queried, workspaceKey => Assert.Equal("ws-42", workspaceKey));
+    }
+
+    [Fact]
+    public async Task UiChain_Operator_ResolvesTheSelectedWorkspace()
+    {
+        var queried = new List<string>();
+        await using var app = await CreateAppAsync(
+            availabilityEvaluator: new RecordingPluginAvailabilityEvaluator(queried.Add),
+            activePluginIds: ["voip"]);
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "platform.operate");
+
+        var response = await client.GetAsync("/api/ext/admin/ui-chain?workspaceKey=ws-7");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        Assert.Contains("ws-7", queried);
+    }
+
+    [Fact]
+    public async Task UiChain_WithoutResolvableWorkspace_ReturnsBadRequest()
+    {
+        await using var app = await CreateAppAsync(activePluginIds: ["voip"]);
+        var client = app.GetTestClient();
+
+        var response = await client.GetAsync("/api/ext/admin/ui-chain");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     private static async Task<WebApplication> CreateAppAsync(
         IPluginAvailabilityEvaluator? availabilityEvaluator = null,
-        Action? onHandlerInvoked = null)
+        Action? onHandlerInvoked = null,
+        IReadOnlyList<string>? activePluginIds = null)
     {
         HostAdminApiResponse RunHandler(Func<HostAdminApiRequest, HostAdminApiResponse> body, HostAdminApiRequest request)
         {
@@ -342,6 +411,14 @@ public sealed class PluginAdminExtensionEndpointsTests
             builder.Services.AddSingleton(availabilityEvaluator);
         }
 
+        // The UI chain resolver the admin chain endpoint reads. Templates stay empty here —
+        // the admin shell has a fixed structure and only the plugin part of the chain matters.
+        builder.Services.AddScoped(sp => new WorkspaceUiChainResolver(
+            new EmptyWorkspaceTemplateResolutionService(),
+            new StaticWorkspacePluginActivationReader(activePluginIds ?? []),
+            sp.GetService<IPluginAvailabilityEvaluator>() ?? new AllowListPluginAvailabilityEvaluator(
+                (activePluginIds ?? []).ToArray())));
+
         var app = builder.Build();
         app.UseAuthentication();
         app.UseAuthorization();
@@ -370,5 +447,18 @@ public sealed class PluginAdminExtensionEndpointsTests
             onEvaluated(workspaceKey);
             return Task.FromResult(new PluginAvailability(true, Array.Empty<PluginAvailabilityFactor>()));
         }
+    }
+
+    /// <summary>Availability fake that answers "available" only for an allowlist.</summary>
+    private sealed class AllowListPluginAvailabilityEvaluator(params string[] availablePluginIds)
+        : IPluginAvailabilityEvaluator
+    {
+        public Task<PluginAvailability> EvaluateAsync(
+            string pluginId,
+            string workspaceKey,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(new PluginAvailability(
+                availablePluginIds.Contains(pluginId, StringComparer.OrdinalIgnoreCase),
+                Array.Empty<PluginAvailabilityFactor>()));
     }
 }

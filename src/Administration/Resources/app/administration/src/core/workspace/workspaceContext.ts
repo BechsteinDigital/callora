@@ -51,6 +51,16 @@ function ensureLoaded(fixed: string | null): Promise<void> {
   return loadPromise
 }
 
+/**
+ * The persisted workspace selection, readable before the context is initialised.
+ * The bootstrap needs it synchronously: the plugin UI chain is requested before any
+ * component mounts, and a platform operator carries no workspace in their token.
+ */
+export function readStoredWorkspace(): string | null {
+  const stored = readStored()
+  return stored && stored.trim() !== '' ? stored : null
+}
+
 export function useWorkspaceContext() {
   const ctx = useAuthStore().context
   // A blank token workspaceKey means "operator" — treat it as not fixed.
@@ -63,9 +73,24 @@ export function useWorkspaceContext() {
   // The switcher is only meaningful for an operator with a choice.
   const canSwitch = computed(() => !fixedWorkspace.value && workspaces.value.length > 0)
 
-  function setActive(key: string): void {
+  /**
+   * Switches the active workspace.
+   *
+   * Reloads the shell afterwards, because plugin admin bundles are chained per workspace: the
+   * bundles currently in the document belong to the previous one, and a loaded script cannot be
+   * unloaded. Keeping them while switching would show a plugin's interface in a workspace it is
+   * not assigned to — exactly the state the chain exists to prevent. A reload is the only
+   * outcome that is not half-right.
+   *
+   * The reload is injectable so a test can observe it without navigating.
+   */
+  function setActive(key: string, reload: () => void = () => window.location.reload()): void {
+    if (key === activeWorkspace.value) {
+      return
+    }
     selected.value = key
     writeStored(key)
+    reload()
   }
 
   return {

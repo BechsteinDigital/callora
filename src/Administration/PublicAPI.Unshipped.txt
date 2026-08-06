@@ -681,6 +681,15 @@ Callora.Administration.Api.TrustedPluginSignerApiResponse.Source.init -> void
 Callora.Administration.Api.TrustedPluginSignerApiResponse.Thumbprint.get -> string!
 Callora.Administration.Api.TrustedPluginSignerApiResponse.Thumbprint.init -> void
 Callora.Administration.Api.TrustedPluginSignerApiResponse.TrustedPluginSignerApiResponse(string! PublisherId, string! DisplayName, string! Thumbprint, string! Source) -> void
+Callora.Administration.Api.UiChainApiResponse
+Callora.Administration.Api.UiChainApiResponse.<Clone>$() -> Callora.Administration.Api.UiChainApiResponse!
+Callora.Administration.Api.UiChainApiResponse.Chain.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Administration.Api.UiChainApiResponse.Chain.init -> void
+Callora.Administration.Api.UiChainApiResponse.Deconstruct(out string! WorkspaceKey, out System.Collections.Generic.IReadOnlyList<string!>! Chain) -> void
+Callora.Administration.Api.UiChainApiResponse.Equals(Callora.Administration.Api.UiChainApiResponse? other) -> bool
+Callora.Administration.Api.UiChainApiResponse.UiChainApiResponse(string! WorkspaceKey, System.Collections.Generic.IReadOnlyList<string!>! Chain) -> void
+Callora.Administration.Api.UiChainApiResponse.WorkspaceKey.get -> string!
+Callora.Administration.Api.UiChainApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.UpdateBackendUserApiRequest
 Callora.Administration.Api.UpdateBackendUserApiRequest.<Clone>$() -> Callora.Administration.Api.UpdateBackendUserApiRequest!
 Callora.Administration.Api.UpdateBackendUserApiRequest.Deconstruct(out string? Email, out string? DisplayName, out string? Password) -> void
@@ -1085,6 +1094,9 @@ override Callora.Administration.Api.ThemeDefinitionUpsertApiRequest.ToString() -
 override Callora.Administration.Api.TrustedPluginSignerApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.TrustedPluginSignerApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.TrustedPluginSignerApiResponse.ToString() -> string!
+override Callora.Administration.Api.UiChainApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.UiChainApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.UiChainApiResponse.ToString() -> string!
 override Callora.Administration.Api.UpdateBackendUserApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.UpdateBackendUserApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.UpdateBackendUserApiRequest.ToString() -> string!
@@ -1254,6 +1266,8 @@ static Callora.Administration.Api.ThemeDefinitionUpsertApiRequest.operator ==(Ca
 static Callora.Administration.Api.ThemeEndpoints.MapThemeEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
 static Callora.Administration.Api.TrustedPluginSignerApiResponse.operator !=(Callora.Administration.Api.TrustedPluginSignerApiResponse? left, Callora.Administration.Api.TrustedPluginSignerApiResponse? right) -> bool
 static Callora.Administration.Api.TrustedPluginSignerApiResponse.operator ==(Callora.Administration.Api.TrustedPluginSignerApiResponse? left, Callora.Administration.Api.TrustedPluginSignerApiResponse? right) -> bool
+static Callora.Administration.Api.UiChainApiResponse.operator !=(Callora.Administration.Api.UiChainApiResponse? left, Callora.Administration.Api.UiChainApiResponse? right) -> bool
+static Callora.Administration.Api.UiChainApiResponse.operator ==(Callora.Administration.Api.UiChainApiResponse? left, Callora.Administration.Api.UiChainApiResponse? right) -> bool
 static Callora.Administration.Api.UpdateBackendUserApiRequest.operator !=(Callora.Administration.Api.UpdateBackendUserApiRequest? left, Callora.Administration.Api.UpdateBackendUserApiRequest? right) -> bool
 static Callora.Administration.Api.UpdateBackendUserApiRequest.operator ==(Callora.Administration.Api.UpdateBackendUserApiRequest? left, Callora.Administration.Api.UpdateBackendUserApiRequest? right) -> bool
 static Callora.Administration.Api.UpdateLocalPluginRequest.operator !=(Callora.Administration.Api.UpdateLocalPluginRequest? left, Callora.Administration.Api.UpdateLocalPluginRequest? right) -> bool
