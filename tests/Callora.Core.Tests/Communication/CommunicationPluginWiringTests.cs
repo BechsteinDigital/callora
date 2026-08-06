@@ -40,6 +40,20 @@ public sealed class CommunicationPluginWiringTests
     }
 
     [Fact]
+    public async Task StartAsync_ExportsCallAccess_AlongsideCallControl()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // Both faces of the same tracked-call state: commands over DTOs, observation over the live
+        // call. Exporting only one of them would leave the other unreachable for other plugins.
+        Assert.Contains(typeof(ICallControlService), context.Exports.Keys);
+        Assert.Contains(typeof(ICallAccess), context.Exports.Keys);
+        Assert.Same(context.Exports[typeof(ICallControlService)], context.Exports[typeof(ICallAccess)]);
+    }
+
+    [Fact]
     public async Task StartAsync_WithoutDbFactory_ExportsAdminAndRegistry_AndDoesNotThrow()
     {
         var context = new CapturingHostPluginContext(hasDbFactory: false);

@@ -18,6 +18,56 @@ public sealed class CallControlServiceTests
     private const string Workspace = "ws-a";
 
     [Fact]
+    public async Task Find_ReturnsTheLiveCallOfTheOwningWorkspace()
+    {
+        var (service, registry, _) = CreateService();
+        var call = new ControllableCall("call-1");
+        registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
+        await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
+
+        var found = service.Find(Workspace, "call-1");
+
+        // The live object, not a snapshot — that is the whole point: a consumer can subscribe to it.
+        Assert.Same(call, found);
+    }
+
+    [Fact]
+    public async Task Find_DoesNotLeakACallAcrossWorkspaces()
+    {
+        var (service, registry, _) = CreateService();
+        var call = new ControllableCall("call-1");
+        registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
+        await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
+
+        Assert.Null(service.Find("ws-other", "call-1"));
+    }
+
+    [Fact]
+    public void Find_ReturnsNullForAnUnknownCall()
+    {
+        var (service, _, _) = CreateService();
+
+        Assert.Null(service.Find(Workspace, "no-such-call"));
+    }
+
+    [Fact]
+    public async Task Find_YieldsACallWhoseReceivedDtmfIsObservable()
+    {
+        var (service, registry, _) = CreateService();
+        var call = new ControllableCall("call-1");
+        registry.Register(Workspace, new FakeCommunicationChannel { NextCall = call });
+        await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567"));
+
+        // The reason this contract exists: a consumer resolves the call by id and listens for tones.
+        var tones = new List<char>();
+        service.Find(Workspace, "call-1")!.DtmfReceived += (_, e) => tones.Add(e.Tone);
+        call.ReceiveDtmf('4');
+        call.ReceiveDtmf('2');
+
+        Assert.Equal(['4', '2'], tones);
+    }
+
+    [Fact]
     public async Task PlaceCall_WithoutVoiceChannel_Throws()
     {
         var (service, _, _) = CreateService();
