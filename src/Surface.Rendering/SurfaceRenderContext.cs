@@ -40,6 +40,20 @@ public sealed record SurfaceRenderContext(
     public IReadOnlyList<SurfaceNavigationEntry> Navigation { get; init; } = [];
 
     /// <summary>
+    /// The path WITHIN this surface, with the public prefix removed: a surface mounted at
+    /// <c>/shop</c> sees <c>/produkt/schuhe</c>. Without it a template — and every data
+    /// contributor behind it — could only ever know WHICH surface it is, never which page.
+    /// </summary>
+    public string Path { get; init; } = "/";
+
+    /// <summary>
+    /// What the data contributors produced, by namespace: <c>{{ data.catalog.product }}</c>.
+    /// Namespaced like the slots are, so two plugins cannot overwrite each other.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, object?>> Data { get; init; } =
+        new Dictionary<string, IReadOnlyDictionary<string, object?>>(StringComparer.Ordinal);
+
+    /// <summary>
     /// The composed layout, already rendered to islands, or null when no layout is published for
     /// this surface. Read through <c>callora_composition()</c> rather than interpolated: it is
     /// markup, and a template that interpolated it would ship it escaped.
