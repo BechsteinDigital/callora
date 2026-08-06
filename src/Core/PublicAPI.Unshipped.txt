@@ -2858,6 +2858,8 @@ Callora.Core.Application.Surfaces.Events.SurfaceCallerEventTypes
 Callora.Core.Application.Surfaces.GuestSurfaceCaller
 Callora.Core.Application.Surfaces.GuestSurfaceCaller.Equals(Callora.Core.Application.Surfaces.GuestSurfaceCaller? other) -> bool
 Callora.Core.Application.Surfaces.GuestSurfaceCaller.GuestSurfaceCaller(Callora.Core.Application.Surfaces.SurfaceSubject! subject) -> void
+Callora.Core.Application.Surfaces.ISurfaceContextBroadcaster
+Callora.Core.Application.Surfaces.ISurfaceContextBroadcaster.Publish(Callora.Core.Application.Surfaces.SurfaceContextAddress! address, string! key, object? value) -> void
 Callora.Core.Application.Surfaces.ISurfaceCredentialReader
 Callora.Core.Application.Surfaces.ISurfaceCredentialReader.Read(Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredentialKind kind, string! name) -> string?
 Callora.Core.Application.Surfaces.ISurfaceHandoffTicketStore
@@ -2937,6 +2939,41 @@ Callora.Core.Application.Surfaces.SurfaceComposition.Navigation.init -> void
 Callora.Core.Application.Surfaces.SurfaceComposition.Slots.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SurfaceSlotView!>!>!
 Callora.Core.Application.Surfaces.SurfaceComposition.Slots.init -> void
 Callora.Core.Application.Surfaces.SurfaceComposition.SurfaceComposition(System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SurfaceSlotView!>!>! Slots, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SurfaceNavigationEntry!>! Navigation) -> void
+Callora.Core.Application.Surfaces.SurfaceContextAddress
+Callora.Core.Application.Surfaces.SurfaceContextAddress.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceContextAddress!
+Callora.Core.Application.Surfaces.SurfaceContextAddress.Covers(string! workspaceKey, string! surfaceKey, string? issuer, string? subjectId) -> bool
+Callora.Core.Application.Surfaces.SurfaceContextAddress.Deconstruct(out string! WorkspaceKey, out string? SurfaceKey, out string? Issuer, out string? SubjectId) -> void
+Callora.Core.Application.Surfaces.SurfaceContextAddress.Equals(Callora.Core.Application.Surfaces.SurfaceContextAddress? other) -> bool
+Callora.Core.Application.Surfaces.SurfaceContextAddress.Issuer.get -> string?
+Callora.Core.Application.Surfaces.SurfaceContextAddress.Issuer.init -> void
+Callora.Core.Application.Surfaces.SurfaceContextAddress.SubjectId.get -> string?
+Callora.Core.Application.Surfaces.SurfaceContextAddress.SubjectId.init -> void
+Callora.Core.Application.Surfaces.SurfaceContextAddress.SurfaceContextAddress(string! WorkspaceKey, string? SurfaceKey = null, string? Issuer = null, string? SubjectId = null) -> void
+Callora.Core.Application.Surfaces.SurfaceContextAddress.SurfaceKey.get -> string?
+Callora.Core.Application.Surfaces.SurfaceContextAddress.SurfaceKey.init -> void
+Callora.Core.Application.Surfaces.SurfaceContextAddress.WorkspaceKey.get -> string!
+Callora.Core.Application.Surfaces.SurfaceContextAddress.WorkspaceKey.init -> void
+Callora.Core.Application.Surfaces.SurfaceContextBroadcaster
+Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.Publish(Callora.Core.Application.Surfaces.SurfaceContextAddress! address, string! key, object? value) -> void
+Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.Subscribe(string! workspaceKey, string! surfaceKey, string? issuer, string? subjectId) -> Callora.Core.Application.Surfaces.SurfaceContextSubscription!
+Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.SubscriptionCount.get -> int
+Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.SurfaceContextBroadcaster() -> void
+Callora.Core.Application.Surfaces.SurfaceContextMessage
+Callora.Core.Application.Surfaces.SurfaceContextMessage.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceContextMessage!
+Callora.Core.Application.Surfaces.SurfaceContextMessage.Deconstruct(out string! Key, out object? Value) -> void
+Callora.Core.Application.Surfaces.SurfaceContextMessage.Equals(Callora.Core.Application.Surfaces.SurfaceContextMessage? other) -> bool
+Callora.Core.Application.Surfaces.SurfaceContextMessage.Key.get -> string!
+Callora.Core.Application.Surfaces.SurfaceContextMessage.Key.init -> void
+Callora.Core.Application.Surfaces.SurfaceContextMessage.SurfaceContextMessage(string! Key, object? Value) -> void
+Callora.Core.Application.Surfaces.SurfaceContextMessage.Value.get -> object?
+Callora.Core.Application.Surfaces.SurfaceContextMessage.Value.init -> void
+Callora.Core.Application.Surfaces.SurfaceContextSubscription
+Callora.Core.Application.Surfaces.SurfaceContextSubscription.Dispose() -> void
+Callora.Core.Application.Surfaces.SurfaceContextSubscription.Issuer.get -> string?
+Callora.Core.Application.Surfaces.SurfaceContextSubscription.Messages.get -> System.Threading.Channels.ChannelReader<Callora.Core.Application.Surfaces.SurfaceContextMessage!>!
+Callora.Core.Application.Surfaces.SurfaceContextSubscription.SubjectId.get -> string?
+Callora.Core.Application.Surfaces.SurfaceContextSubscription.SurfaceKey.get -> string!
+Callora.Core.Application.Surfaces.SurfaceContextSubscription.WorkspaceKey.get -> string!
 Callora.Core.Application.Surfaces.SurfaceGuestSubjectFactory
 Callora.Core.Application.Surfaces.SurfaceHandoffIssue
 Callora.Core.Application.Surfaces.SurfaceHandoffIssue.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceHandoffIssue!
@@ -5267,6 +5304,7 @@ const Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.JobType
 const Callora.Core.Application.Surfaces.Events.SurfaceCallerEventTypes.Promoted = "surface.caller-promoted" -> string!
 const Callora.Core.Application.Surfaces.SurfaceApiOptions.SectionName = "Callora:SurfaceApi" -> string!
 const Callora.Core.Application.Surfaces.SurfaceApiRouteRules.Prefix = "/surface-api" -> string!
+const Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.ConnectionQueueCapacity = 64 -> int
 const Callora.Core.Application.Surfaces.SurfaceIdentityCapability.Key = "surface.identity" -> string!
 const Callora.Core.Application.Surfaces.SurfaceIdentityIssuers.Guest = "callora.surface-guest" -> string!
 const Callora.Core.Application.Surfaces.SurfaceIdentityIssuers.Host = "callora.host" -> string!
@@ -5671,6 +5709,12 @@ override Callora.Core.Application.Surfaces.SurfaceCallerContext.ToString() -> st
 override Callora.Core.Application.Surfaces.SurfaceComposition.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.SurfaceComposition.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.SurfaceComposition.ToString() -> string!
+override Callora.Core.Application.Surfaces.SurfaceContextAddress.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SurfaceContextAddress.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SurfaceContextAddress.ToString() -> string!
+override Callora.Core.Application.Surfaces.SurfaceContextMessage.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SurfaceContextMessage.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SurfaceContextMessage.ToString() -> string!
 override Callora.Core.Application.Surfaces.SurfaceHandoffIssue.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.SurfaceHandoffIssue.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.SurfaceHandoffIssue.ToString() -> string!
@@ -6167,6 +6211,10 @@ static Callora.Core.Application.Surfaces.SurfaceCallerContext.operator ==(Callor
 static Callora.Core.Application.Surfaces.SurfaceComposition.Empty.get -> Callora.Core.Application.Surfaces.SurfaceComposition!
 static Callora.Core.Application.Surfaces.SurfaceComposition.operator !=(Callora.Core.Application.Surfaces.SurfaceComposition? left, Callora.Core.Application.Surfaces.SurfaceComposition? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceComposition.operator ==(Callora.Core.Application.Surfaces.SurfaceComposition? left, Callora.Core.Application.Surfaces.SurfaceComposition? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceContextAddress.operator !=(Callora.Core.Application.Surfaces.SurfaceContextAddress? left, Callora.Core.Application.Surfaces.SurfaceContextAddress? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceContextAddress.operator ==(Callora.Core.Application.Surfaces.SurfaceContextAddress? left, Callora.Core.Application.Surfaces.SurfaceContextAddress? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceContextMessage.operator !=(Callora.Core.Application.Surfaces.SurfaceContextMessage? left, Callora.Core.Application.Surfaces.SurfaceContextMessage? right) -> bool
+static Callora.Core.Application.Surfaces.SurfaceContextMessage.operator ==(Callora.Core.Application.Surfaces.SurfaceContextMessage? left, Callora.Core.Application.Surfaces.SurfaceContextMessage? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceGuestSubjectFactory.Create() -> Callora.Core.Application.Surfaces.SurfaceSubject!
 static Callora.Core.Application.Surfaces.SurfaceHandoffIssue.Refuse(Callora.Core.Application.Surfaces.SurfaceHandoffStatus status, string? detail = null) -> Callora.Core.Application.Surfaces.SurfaceHandoffIssue!
 static Callora.Core.Application.Surfaces.SurfaceHandoffIssue.operator !=(Callora.Core.Application.Surfaces.SurfaceHandoffIssue? left, Callora.Core.Application.Surfaces.SurfaceHandoffIssue? right) -> bool
