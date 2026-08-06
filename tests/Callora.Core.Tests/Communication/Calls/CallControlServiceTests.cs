@@ -542,12 +542,18 @@ internal sealed class ControllableCall : ICall
 
     public event EventHandler<CallStateChangedEventArgs>? StateChanged;
 
+    public event EventHandler<DtmfReceivedEventArgs>? DtmfReceived;
+
     public void Transition(CallState next)
     {
         var previous = State;
         State = next;
         StateChanged?.Invoke(this, new CallStateChangedEventArgs(previous, next));
     }
+
+    /// <summary>Raises one inbound tone, for tests that drive the receive half of DTMF.</summary>
+    public void ReceiveDtmf(char tone, int durationMs = 160) =>
+        DtmfReceived?.Invoke(this, new DtmfReceivedEventArgs(tone, durationMs));
 
     public bool AcceptCalled { get; private set; }
 
