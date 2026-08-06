@@ -252,6 +252,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
         {
             _callAudioPlayback = new CallAudioPlaybackService(_callControlService, audioStreamProvider);
             context.Export<ICallAudioPlayback>(_callAudioPlayback);
+
+            // Collecting a multi-digit entry (#160): the receive half of the same mechanics. Tones
+            // arrive duplicated and from two threads, and the end of an entry is ambiguous — every
+            // consumer would otherwise solve that again, slightly differently.
+            context.Export<ICallDtmfCollector>(new CallDtmfCollector(_callControlService, TimeProvider.System));
         }
 
         // Operator Admin-API: the status route always; the SIP-account management routes only when
