@@ -19,13 +19,15 @@ internal sealed class ConferenceCallAttachment : IConferenceCallAttachment
     private readonly ICallAccess _calls;
     private readonly IAudioTranscoderFactory _transcoders;
     private readonly ILogger _logger;
+    private readonly Func<string, bool>? _isAnnouncing;
 
     /// <summary>Creates the attachment over the conference topology, the call registry and the codecs.</summary>
     public ConferenceCallAttachment(
         ConferenceService conferences,
         ICallAccess calls,
         IAudioTranscoderFactory transcoders,
-        ILogger? logger = null)
+        ILogger? logger = null,
+        Func<string, bool>? isAnnouncing = null)
     {
         ArgumentNullException.ThrowIfNull(conferences);
         ArgumentNullException.ThrowIfNull(calls);
@@ -35,6 +37,7 @@ internal sealed class ConferenceCallAttachment : IConferenceCallAttachment
         _calls = calls;
         _transcoders = transcoders;
         _logger = logger ?? NullLogger.Instance;
+        _isAnnouncing = isAnnouncing;
     }
 
     /// <inheritdoc />
@@ -84,7 +87,8 @@ internal sealed class ConferenceCallAttachment : IConferenceCallAttachment
             mixer,
             audio,
             new PeriodicPacingClock(TimeSpan.FromMilliseconds(20)),
-            _logger);
+            _logger,
+            _isAnnouncing is null ? null : () => _isAnnouncing(callId));
     }
 
     private IVoipCall ResolveCall(string workspaceKey, string callId)

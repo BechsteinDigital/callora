@@ -67,6 +67,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
     // admin mutation go through it, so the runtime cannot drift from the database.
     private SipAccountRuntimeReconciler? _sipRuntimeReconciler;
     private CommunicationRuntimeCapabilitySource? _capabilitySource;
+    private CallAudioPlaybackService? _callAudioPlayback;
 
     // Call-control primitive, exported for in-process consumers (and the REST adapter); set when the
     // plugin has a database (it records call history). Disposed on stop so no call handler dangles.
@@ -243,6 +244,16 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
             audioStreamProvider, ResolveLogger<SdkCallAudioRegistrar>(context.Services));
         _sipRuntimeReconciler = TryCreateSipRuntimeReconciler(context, dataProtector, dbContextFactory);
 
+        // Playing audio into a live call (#156): the mechanics under every announcement — a dial-in
+        // asking for a PIN, an IVR, a voice agent. Turning text into audio is a separate plugin's job;
+        // this is the part each of them would otherwise rebuild. Needs call control for the workspace
+        // check, so it follows the same condition as the rest of the call surface.
+        if (_callControlService is not null)
+        {
+            _callAudioPlayback = new CallAudioPlaybackService(_callControlService, audioStreamProvider);
+            context.Export<ICallAudioPlayback>(_callAudioPlayback);
+        }
+
         // Operator Admin-API: the status route always; the SIP-account management routes only when
         // persistence and a data protector are present (credentials must be protectable) plus the
         // call-control routes above. These read/write the DB that this same StartAsync migrates below.
@@ -363,7 +374,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                     conferenceService,
                     _callControlService,
                     new SdkAudioTranscoderFactory(),
-                    ResolveLogger<ConferenceCallAttachment>(context.Services)));
+                    ResolveLogger<ConferenceCallAttachment>(context.Services),
+                    _callAudioPlayback is null ? null : _callAudioPlayback.IsPlaying));
             }
         }
 

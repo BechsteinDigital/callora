@@ -19,6 +19,7 @@ internal sealed class ConferenceDownlinkPump
     private readonly ConferenceDownlinkMixer _mixer;
     private readonly Func<ReadOnlyMemory<byte>, CancellationToken, ValueTask> _sendAsync;
     private readonly IPacingClock _clock;
+    private readonly Func<bool>? _isSuppressed;
     private readonly ILogger _logger;
 
     /// <summary>
@@ -28,7 +29,8 @@ internal sealed class ConferenceDownlinkPump
         ConferenceDownlinkMixer mixer,
         Func<ReadOnlyMemory<byte>, CancellationToken, ValueTask> sendAsync,
         IPacingClock clock,
-        ILogger? logger = null)
+        ILogger? logger = null,
+        Func<bool>? isSuppressed = null)
     {
         ArgumentNullException.ThrowIfNull(mixer);
         ArgumentNullException.ThrowIfNull(sendAsync);
@@ -37,6 +39,7 @@ internal sealed class ConferenceDownlinkPump
         _mixer = mixer;
         _sendAsync = sendAsync;
         _clock = clock;
+        _isSuppressed = isSuppressed;
         _logger = logger ?? NullLogger.Instance;
     }
 
@@ -50,7 +53,16 @@ internal sealed class ConferenceDownlinkPump
         {
             try
             {
-                await _sendAsync(_mixer.NextFrame(), cancellationToken).ConfigureAwait(false);
+                // An announcement owns this leg's send path while it plays: two senders on one stream
+                // interleave into something that is neither the room nor the announcement. The mix is
+                // still consumed, so the leg does not resume with a frame from before the interruption.
+                var frame = _mixer.NextFrame();
+                if (_isSuppressed?.Invoke() == true)
+                {
+                    continue;
+                }
+
+                await _sendAsync(frame, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

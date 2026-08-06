@@ -66,6 +66,36 @@ public sealed class ConferenceDownlinkPumpTests
     }
 
     [Fact]
+    public async Task WhileAnAnnouncementIsPlaying_ThePumpStandsStill()
+    {
+        var clock = new ManualPacingClock();
+        var sent = 0;
+        var announcing = true;
+        using var mixer = NewMixer();
+        var pump = new ConferenceDownlinkPump(
+            mixer, (_, _) => { sent++; return ValueTask.CompletedTask; }, clock, isSuppressed: () => announcing);
+        using var cts = new CancellationTokenSource();
+        var run = pump.RunAsync(cts.Token);
+
+        clock.Tick();
+        clock.Tick();
+        await Task.Delay(50);
+        var duringAnnouncement = sent;
+
+        announcing = false;
+        clock.Tick();
+        await WaitUntil(() => sent > duringAnnouncement);
+
+        await cts.CancelAsync();
+        await run;
+
+        // Two senders on one stream interleave their frames, and the result is neither the room nor
+        // the announcement — it is both, chopped. The announcement takes the path for its duration.
+        Assert.Equal(0, duringAnnouncement);
+        Assert.True(sent > 0);
+    }
+
+    [Fact]
     public async Task Cancellation_EndsTheLoopWithoutThrowing()
     {
         var clock = new ManualPacingClock();
