@@ -1,5 +1,7 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Surfaces;
+using Callora.Core.Application.Surfaces.Layout;
+using Callora.Surface.Rendering.Rendering.Composition;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Workspaces;
 using Callora.Core.Infrastructure.Surfaces;
@@ -92,7 +94,7 @@ public static class SurfaceRenderEndpoints
         var locale = string.IsNullOrWhiteSpace(surface.Locale) ? "de" : surface.Locale;
 
         SurfaceCallerView? caller = null;
-        var composition = SurfaceComposition.Empty;
+        var compositionSlots = SurfaceComposition.Empty;
         if (callerResolver is not null)
         {
             var establishment = await callerResolver
@@ -110,7 +112,7 @@ public static class SurfaceRenderEndpoints
             // are filtered here, not hidden in the browser.
             if (slotResolver is not null)
             {
-                composition = await slotResolver
+                compositionSlots = await slotResolver
                     .ResolveAsync(
                         surface.WorkspaceKey, surface.SurfaceKey, establishment.Caller, cancellationToken)
                     .ConfigureAwait(false);
@@ -140,6 +142,18 @@ public static class SurfaceRenderEndpoints
             effectiveTheme = theme?.ValuesByKey;
         }
 
+        // Resolved from the container rather than bound as a parameter: [FromServices] on an
+        // unregistered INTERFACE fails the binding and answers 400, where the intent is "no
+        // composer installed, carry on".
+        //
+        // GetPublishedAsync, and only that. There is no ?preview=true and no header that would
+        // reach a draft from here — on a Public surface such a hole would sit behind no
+        // authentication at all (design §7.3).
+        var layouts = httpContext.RequestServices.GetService<ISurfaceLayoutSource>();
+        var composition = layouts is null
+            ? null
+            : await RenderCompositionAsync(layouts, surface, cancellationToken).ConfigureAwait(false);
+
         var context = new SurfaceRenderContext(
             TenantKey: surface.TenantKey,
             WorkspaceKey: surface.WorkspaceKey,
@@ -150,8 +164,9 @@ public static class SurfaceRenderEndpoints
                 surface.ThemePluginId, surface.ThemeVersion, effectiveTheme))
         {
             Caller = caller,
-            Slots = composition.Slots,
-            Navigation = composition.Navigation,
+            Slots = compositionSlots.Slots,
+            Navigation = compositionSlots.Navigation,
+            CompositionHtml = composition,
         };
 
         var html = await RenderSurfaceAsync(
@@ -166,6 +181,28 @@ public static class SurfaceRenderEndpoints
         return Results.Content(html, "text/html; charset=utf-8");
     }
 
+    private static async Task<string?> RenderCompositionAsync(
+        ISurfaceLayoutSource layouts,
+        WorkspaceSurfaceSnapshot surface,
+        CancellationToken cancellationToken)
+    {
+        var document = await layouts
+            .GetPublishedAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
+            .ConfigureAwait(false);
+
+        return document is null ? null : new SurfaceCompositionRenderer().Render(document);
+    }
+
+    /// <summary>
+    /// Which shell renders this surface. The order is a decision, not an accident:
+    /// <list type="number">
+    /// <item>A COMPOSED layout wins. Somebody published it for this surface deliberately; a
+    /// template that quietly overrode it would make the editor unreliable.</item>
+    /// <item>Then a plugin's own SSR entry — a developer writing index.njk takes the surface
+    /// over, which is what that file means.</item>
+    /// <item>Otherwise the built-in shell, which is itself the host's base bundle.</item>
+    /// </list>
+    /// </summary>
     private static async Task<string> RenderSurfaceAsync(
         ISurfaceRenderer renderer,
         WorkspaceUiChainResolver? chainResolver,
@@ -175,6 +212,11 @@ public static class SurfaceRenderEndpoints
         SurfaceRenderContext context,
         CancellationToken cancellationToken)
     {
+        if (context.CompositionHtml is not null)
+        {
+            return renderer.Render(SurfaceShellTemplates.Composed, context);
+        }
+
         if (chainResolver is null)
         {
             return renderer.Render(SurfaceShellTemplates.SpaRoot, context);

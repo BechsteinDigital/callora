@@ -122,6 +122,17 @@ rather than leaving a reader to assume the ticket authenticated someone.
 | **ISurfaceContextBroadcaster** | Resolvable | Push a context value to the surfaces a visitor has open, so a server-side event reaches the views that declared they need it. |
 | **ISharedContextKeyContributor** | Contributable | Declare shared context keys — anchor, purpose, field visibility, time to live. Declaration is a precondition for publishing. |
 | **ISharedContextService** | Resolvable | Publish context that crosses surface boundaries, anchored to a subject or a conversation. |
+| **ISurfaceLayoutSource** | Contributable | Supply composed surface layouts. Implemented by the composer plugin; no composer installed means no layout, and a surface renders from `.njk` as before. |
+
+::: tip Two methods, not one with a flag
+`GetPublishedAsync` is the only method the public render path calls. `GetDraftAsync` exists
+for the editor and requires operator permission at its call site.
+
+The split is the guarantee: there is no `?preview=true`, no header, no parameter with which
+a draft could be requested from outside. On a `Public` surface such a hole would sit behind
+no authentication at all — and a single method with a boolean would put both behind one
+call, making the guarantee a matter of remembering to pass `false`.
+:::
 
 ::: tip The realtime bridge is one-way
 Resolve `ISurfaceContextBroadcaster` and publish under a namespaced, versioned key
