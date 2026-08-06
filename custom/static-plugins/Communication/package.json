@@ -1,0 +1,17 @@
+{
+  "name": "@callora/plugin-communication-admin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Admin UI for the Callora Communication plugin, built against @callora/admin.",
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "^6.0.7",
+    "vue": "^3.5.13"
+  },
+  "dependencies": {
+    "@callora/admin": "file:../../../src/Administration/Resources/app/administration"
+  }
+}
