@@ -1,0 +1,40 @@
+{#
+  The page header. Three regions, each its own block so a theme that overrides this
+  file can change one without restating the others: the brand, the slot plugins
+  contribute into, and the caller's state.
+
+  It renders no navigation — that is section/navigation.njk, so a surface can drop
+  one without the other.
+#}
+<header class="cal-header">
+  <div class="cal-header__inner">
+    {% block header_brand %}
+    <a class="cal-header__brand" href="/">
+      {% block header_brand_content %}{{ surface.key }}{% endblock %}
+    </a>
+    {% endblock %}
+
+    {#
+      Anything a plugin contributed for the header — a search box, a workspace
+      switcher, a call indicator. Empty renders nothing at all, so a surface without
+      contributions has no empty box sitting in its header.
+    #}
+    {% block header_slot %}
+    <div class="cal-header__slot">{{ callora_slot("surface.header") }}</div>
+    {% endblock %}
+
+    {% block header_caller %}
+    <div class="cal-header__caller">
+      {% if caller and caller.state == "authenticated" %}
+        {% block header_caller_authenticated %}
+        <span class="cal-header__caller-name">{{ caller.displayName }}</span>
+        {% endblock %}
+      {% else %}
+        {% block header_caller_anonymous %}
+        {{ callora_slot("surface.header.login") }}
+        {% endblock %}
+      {% endif %}
+    </div>
+    {% endblock %}
+  </div>
+</header>

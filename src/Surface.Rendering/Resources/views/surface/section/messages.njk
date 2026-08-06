@@ -1,0 +1,12 @@
+{#
+  Where page-level messages appear — validation errors, confirmations, warnings.
+
+  The host has no message store yet, so this renders a live region and nothing else.
+  That is deliberate: aria-live only announces content that arrives AFTER the region
+  exists, so a container added at the same moment as the message stays silent. Having
+  it in the base means a plugin can put a message here from script and have it
+  announced, without every theme having to know that rule.
+#}
+<div class="cal-messages" role="status" aria-live="polite" aria-atomic="false">
+  {% block messages_slot %}{{ callora_slot("surface.messages") }}{% endblock %}
+</div>
