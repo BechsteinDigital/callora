@@ -18,7 +18,7 @@ describe('calloraAdminPlugin', () => {
     const output = config.build?.rollupOptions?.output as Output
 
     expect(config.build?.rollupOptions?.external).toEqual(['vue'])
-    expect(output.globals.vue).toBe('CalloraAdmin.vue')
+    expect(output.globals.vue).toBe('CalloraVue')
   })
 
   it('outputs to the directory the host publishes for the admin surface', () => {
