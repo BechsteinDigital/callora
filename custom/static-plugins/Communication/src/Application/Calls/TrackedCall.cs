@@ -59,5 +59,18 @@ internal sealed class TrackedCall(
     }
 
     /// <inheritdoc />
-    public void Dispose() => Gate.Dispose();
+    /// <summary>
+    /// The line this call claimed from its origin's quota, given back when the call is untracked.
+    /// <see langword="null"/> when no quota applied.
+    /// </summary>
+    public IDisposable? QuotaReservation { get; set; }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        // Released here rather than on the Terminated transition: untracking is the one path every
+        // ending goes through, so a quota cannot drain through an ending nobody thought of.
+        QuotaReservation?.Dispose();
+        Gate.Dispose();
+    }
 }

@@ -68,6 +68,78 @@ public sealed class CallControlServiceTests
     }
 
     [Fact]
+    public async Task PlaceCall_WhoseOriginHasNoLinesLeft_DoesNotReachTheCarrier()
+    {
+        var quotas = new CallQuotaLedger();
+        quotas.Configure(Workspace, "ch-1", new Dictionary<string, int> { ["dialer:campaign-x"] = 1 });
+        var (service, registry, _) = CreateService(quotas);
+        var channel = new FakeCommunicationChannel { NextCall = new ControllableCall("call-1") };
+        registry.Register(Workspace, channel);
+        await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567", Origin: "dialer:campaign-x"));
+        channel.NextCall = new ControllableCall("call-2");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301230000", Origin: "dialer:campaign-x")));
+
+        // Refused before dialing, not after: a call placed and then torn down still rings at the other
+        // end and still appears on the bill.
+        Assert.Equal("+49301234567", channel.PlacedTarget!.Value);
+    }
+
+    [Fact]
+    public async Task PlaceCall_FromAnotherOrigin_StillGetsALine()
+    {
+        var quotas = new CallQuotaLedger();
+        quotas.Configure(Workspace, "ch-1", new Dictionary<string, int> { ["dialer:campaign-x"] = 1, ["crm"] = 1 });
+        var (service, registry, _) = CreateService(quotas);
+        var channel = new FakeCommunicationChannel { NextCall = new ControllableCall("call-1") };
+        registry.Register(Workspace, channel);
+        await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567", Origin: "dialer:campaign-x"));
+        channel.NextCall = new ControllableCall("call-2");
+
+        // The whole point: the campaign running dry must not cost the agent their call.
+        var snapshot = await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301230000", Origin: "crm"));
+
+        Assert.Equal("call-2", snapshot.CallId);
+    }
+
+    [Fact]
+    public async Task WhenACallEnds_ItsLineGoesBackToTheOrigin()
+    {
+        var quotas = new CallQuotaLedger();
+        quotas.Configure(Workspace, "ch-1", new Dictionary<string, int> { ["crm"] = 1 });
+        var (service, registry, _) = CreateService(quotas);
+        var first = new ControllableCall("call-1");
+        var channel = new FakeCommunicationChannel { NextCall = first };
+        registry.Register(Workspace, channel);
+        await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567", Origin: "crm"));
+
+        first.Transition(CallState.Terminated);
+        channel.NextCall = new ControllableCall("call-2");
+
+        // Without the release a quota drains over a shift until nobody can dial and nothing is wrong.
+        var snapshot = await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301230000", Origin: "crm"));
+        Assert.Equal("call-2", snapshot.CallId);
+    }
+
+    [Fact]
+    public async Task AFailedDial_DoesNotKeepTheLineClaimed()
+    {
+        var quotas = new CallQuotaLedger();
+        quotas.Configure(Workspace, "ch-1", new Dictionary<string, int> { ["crm"] = 1 });
+        var (service, registry, _) = CreateService(quotas);
+        var channel = new FakeCommunicationChannel();  // NextCall unset → the dial throws
+        registry.Register(Workspace, channel);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301234567", Origin: "crm")));
+
+        channel.NextCall = new ControllableCall("call-1");
+        var snapshot = await service.PlaceCallAsync(new PlaceCallCommand(Workspace, "+49301230000", Origin: "crm"));
+        Assert.Equal("call-1", snapshot.CallId);
+    }
+
+    [Fact]
     public async Task PlaceCall_WithoutVoiceChannel_Throws()
     {
         var (service, _, _) = CreateService();
@@ -517,12 +589,12 @@ public sealed class CallControlServiceTests
     }
 
     private static (CallControlService Service, CommunicationChannelRegistry Registry, RecordingCallLogStore Store)
-        CreateService()
+        CreateService(CallQuotaLedger? quotas = null)
     {
         var registry = new CommunicationChannelRegistry();
         var store = new RecordingCallLogStore();
         var service = new CallControlService(
-            registry, store, NullLogger<CallControlService>.Instance, TimeProvider.System);
+            registry, store, NullLogger<CallControlService>.Instance, TimeProvider.System, quotas: quotas);
         return (service, registry, store);
     }
 }

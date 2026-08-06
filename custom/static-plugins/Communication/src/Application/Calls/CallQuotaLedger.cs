@@ -16,7 +16,7 @@ namespace Callora.Plugin.Communication.Application.Calls;
 /// <para><b>An origin without a quota is unlimited.</b> Splitting a trunk is deliberate, and an
 /// operator who configured nothing wanted no split — not a silent limit of zero.</para>
 /// </remarks>
-internal sealed class CallQuotaLedger
+public sealed class CallQuotaLedger
 {
     private readonly ConcurrentDictionary<CallQuotaKey, int> _limits = new();
     private readonly ConcurrentDictionary<CallQuotaKey, int> _inUse = new();

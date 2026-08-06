@@ -10,7 +10,7 @@ namespace Callora.Plugin.Communication.Application.Calls;
 /// rather than derived: plugins run trusted in-process (ADR-013), so a quota is an operating limit,
 /// not a security boundary, and a plugin misnaming its own origin only misleads itself.
 /// </param>
-internal readonly record struct CallQuotaKey(string WorkspaceKey, string AccountId, string Origin)
+public readonly record struct CallQuotaKey(string WorkspaceKey, string AccountId, string Origin)
 {
     /// <summary>Whether this quota belongs to the given account — used when replacing its configuration.</summary>
     public bool Matches(string workspaceKey, string accountId) =>
