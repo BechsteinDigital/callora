@@ -38,4 +38,11 @@ public sealed record SurfaceRenderContext(
     /// as a sidebar, tabs, a launcher or a menu is the theme's decision.
     /// </summary>
     public IReadOnlyList<SurfaceNavigationEntry> Navigation { get; init; } = [];
+
+    /// <summary>
+    /// The composed layout, already rendered to islands, or null when no layout is published for
+    /// this surface. Read through <c>callora_composition()</c> rather than interpolated: it is
+    /// markup, and a template that interpolated it would ship it escaped.
+    /// </summary>
+    public string? CompositionHtml { get; init; }
 }

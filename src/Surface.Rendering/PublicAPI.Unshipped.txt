@@ -42,6 +42,10 @@ Callora.Surface.Rendering.PublishedSurfaceTemplateBundles
 Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.PublishedSurfaceTemplateBundles(Microsoft.AspNetCore.Hosting.IWebHostEnvironment! environment) -> void
 Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryGetBundleRoot(string! bundleId, out string? rootFullPath) -> bool
 Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryReadEntryTemplate(string! bundleId) -> string?
+Callora.Surface.Rendering.Rendering.Composition.SurfaceBlockPropsSerializer
+Callora.Surface.Rendering.Rendering.Composition.SurfaceCompositionRenderer
+Callora.Surface.Rendering.Rendering.Composition.SurfaceCompositionRenderer.Render(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument! document) -> string!
+Callora.Surface.Rendering.Rendering.Composition.SurfaceCompositionRenderer.SurfaceCompositionRenderer(System.Func<string!, bool>? blockIsAvailable = null, System.Func<string!, System.Collections.Generic.IReadOnlySet<string!>?>? confidentialControls = null) -> void
 Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer
 Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer() -> void
 Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer(Callora.Surface.Rendering.ISurfaceTemplateBundleProvider! bundleProvider) -> void
@@ -69,6 +73,8 @@ Callora.Surface.Rendering.SurfaceRenderContext
 Callora.Surface.Rendering.SurfaceRenderContext.<Clone>$() -> Callora.Surface.Rendering.SurfaceRenderContext!
 Callora.Surface.Rendering.SurfaceRenderContext.Caller.get -> Callora.Surface.Rendering.SurfaceCallerView?
 Callora.Surface.Rendering.SurfaceRenderContext.Caller.init -> void
+Callora.Surface.Rendering.SurfaceRenderContext.CompositionHtml.get -> string?
+Callora.Surface.Rendering.SurfaceRenderContext.CompositionHtml.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.Deconstruct(out string! TenantKey, out string! WorkspaceKey, out string! SurfaceKey, out string! SurfaceType, out string! Locale, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Tokens) -> void
 Callora.Surface.Rendering.SurfaceRenderContext.Equals(Callora.Surface.Rendering.SurfaceRenderContext? other) -> bool
 Callora.Surface.Rendering.SurfaceRenderContext.Locale.get -> string!
@@ -120,6 +126,7 @@ static Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.operator ==
 static Callora.Surface.Rendering.Api.SurfaceRenderEndpoints.MapSurfaceRenderEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.AddCalloraSurfaceRendering(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.MapCalloraSurfaceRendering(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
+static Callora.Surface.Rendering.Rendering.Composition.SurfaceBlockPropsSerializer.Serialize(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock! block, System.Collections.Generic.IReadOnlySet<string!>? confidentialControls = null) -> string?
 static Callora.Surface.Rendering.SurfaceCallerView.operator !=(Callora.Surface.Rendering.SurfaceCallerView? left, Callora.Surface.Rendering.SurfaceCallerView? right) -> bool
 static Callora.Surface.Rendering.SurfaceCallerView.operator ==(Callora.Surface.Rendering.SurfaceCallerView? left, Callora.Surface.Rendering.SurfaceCallerView? right) -> bool
 static Callora.Surface.Rendering.SurfaceCallerViewFactory.Create(Callora.Core.Application.Surfaces.SurfaceCaller! caller) -> Callora.Surface.Rendering.SurfaceCallerView!
@@ -127,5 +134,6 @@ static Callora.Surface.Rendering.SurfaceRenderContext.operator !=(Callora.Surfac
 static Callora.Surface.Rendering.SurfaceRenderContext.operator ==(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
 static Callora.Surface.Rendering.SurfaceThemeTokens.Compose(string? themePluginId, string? themeVersion, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? effectiveValues) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 static readonly Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextRevalidator.Interval -> System.TimeSpan
+static readonly Callora.Surface.Rendering.SurfaceShellTemplates.Composed -> string!
 static readonly Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot -> string!
 virtual Callora.Surface.Rendering.Api.SurfaceContext.SurfaceSessionProbe.Invoke(string! cookieValue, string! audience, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.SurfaceCallerContext?>!
