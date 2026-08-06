@@ -42,19 +42,18 @@ internal sealed class ConferenceMediaRouter
     /// gather is deferred to <see cref="ConferenceParticipant.StartSignalingAsync"/> the vertical calls) is
     /// driven by the service <em>after</em> this returns, so the offer reflects the wired topology.
     /// </summary>
-    public void ParticipantJoined(string conferenceId, string participantId, ConferenceParticipant session, CancellationToken ct = default)
+    public void ParticipantJoined(string conferenceId, string participantId, IConferenceEndpoint endpoint, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(conferenceId);
         ArgumentException.ThrowIfNullOrWhiteSpace(participantId);
-        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(endpoint);
 
-        var peer = session.Peer;
         var conference = _conferences.GetOrAdd(conferenceId, _ => new Conference());
 
         // Participants that gained a new outbound track for the joiner and therefore need a re-offer.
         // Collected under the lock, renegotiated/key-framed afterwards (network sends, no lock held).
         List<ConferenceParticipantEntry> affectedExisting;
-        var joiner = new ConferenceParticipantEntry(participantId, peer, session);
+        var joiner = new ConferenceParticipantEntry(participantId, endpoint);
 
         lock (conference.Gate)
         {
@@ -63,15 +62,15 @@ internal sealed class ConferenceMediaRouter
             foreach (var existing in affectedExisting)
             {
                 // Existing peer renders the joiner's media…
-                existing.Outbound[participantId] = AddOutboundTracks(existing.Peer, participantId);
+                existing.Outbound[participantId] = AddOutboundTracks(existing.Endpoint, participantId);
                 // …and the joiner's peer renders the existing participant's media.
-                joiner.Outbound[existing.ParticipantId] = AddOutboundTracks(peer, existing.ParticipantId);
+                joiner.Outbound[existing.ParticipantId] = AddOutboundTracks(endpoint, existing.ParticipantId);
             }
 
             joiner.TrackReceivedHandler = (_, remoteTrack) =>
                 remoteTrack.FrameReceived += (_, frame) =>
                     ForwardFrame(conferenceId, participantId, remoteTrack.Kind, frame);
-            peer.RemoteTrackReceived += joiner.TrackReceivedHandler;
+            endpoint.RemoteTrackReceived += joiner.TrackReceivedHandler;
 
             // On each remote track, forward its frames. The inner FrameReceived handlers are not detached
             // individually on leave: the peer owns its remote tracks and is disposed on leave, and
@@ -83,7 +82,7 @@ internal sealed class ConferenceMediaRouter
             // upstream of the joiner (coarse but correct — the SDK does not attribute the PLI to a track).
             joiner.KeyFrameRequestedHandler = (_, _) =>
                 RequestKeyFramesFromUpstreams(conferenceId, participantId);
-            peer.KeyFrameRequested += joiner.KeyFrameRequestedHandler;
+            endpoint.KeyFrameRequested += joiner.KeyFrameRequestedHandler;
 
             conference.Participants[participantId] = joiner;
         }
@@ -133,12 +132,12 @@ internal sealed class ConferenceMediaRouter
             // tracks other peers hold for the leaver go inert (tile removed via the vertical's roster).
             if (leaver.TrackReceivedHandler is not null)
             {
-                leaver.Peer.RemoteTrackReceived -= leaver.TrackReceivedHandler;
+                leaver.Endpoint.RemoteTrackReceived -= leaver.TrackReceivedHandler;
             }
 
             if (leaver.KeyFrameRequestedHandler is not null)
             {
-                leaver.Peer.KeyFrameRequested -= leaver.KeyFrameRequestedHandler;
+                leaver.Endpoint.KeyFrameRequested -= leaver.KeyFrameRequestedHandler;
             }
 
             remaining = [.. conference.Participants.Values];
@@ -203,7 +202,7 @@ internal sealed class ConferenceMediaRouter
             // been applied has no BUNDLE media session, so every send onto it faults ("apply a BUNDLE remote
             // description before exchanging media") — skip it until it reaches Connected rather than spooling a
             // per-frame exception storm at a consumer that cannot yet receive.
-            if (consumer.Peer.ConnectionState != MediaConnectionState.Connected)
+            if (consumer.Endpoint.ConnectionState != MediaConnectionState.Connected)
             {
                 continue;
             }
@@ -277,10 +276,10 @@ internal sealed class ConferenceMediaRouter
         }
     }
 
-    private static ConferenceOutboundTracks AddOutboundTracks(IMediaPeer peer, string sourceParticipantId)
+    private static ConferenceOutboundTracks AddOutboundTracks(IConferenceEndpoint endpoint, string sourceParticipantId)
     {
-        var video = peer.AddOutboundTrack(MediaTrackKind.Video, sourceParticipantId);
-        var audio = peer.AddOutboundTrack(MediaTrackKind.Audio, sourceParticipantId);
+        var video = endpoint.AddOutboundTrack(MediaTrackKind.Video, sourceParticipantId);
+        var audio = endpoint.AddOutboundTrack(MediaTrackKind.Audio, sourceParticipantId);
         return new ConferenceOutboundTracks(video, audio);
     }
 
@@ -293,7 +292,7 @@ internal sealed class ConferenceMediaRouter
     {
         try
         {
-            await participant.Session.RenegotiateAsync(ct).ConfigureAwait(false);
+            await participant.Endpoint.RenegotiateAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -312,7 +311,7 @@ internal sealed class ConferenceMediaRouter
     {
         try
         {
-            await upstream.Peer.RequestKeyFrameAsync(ct).ConfigureAwait(false);
+            await upstream.Endpoint.RequestKeyFrameAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
