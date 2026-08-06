@@ -4,6 +4,7 @@ import { createSurfaceRegistry, type SurfaceRegistry } from './surface-registry'
 import { mountSurface } from './mount'
 import { resolveSurfaceContext } from './surface-context'
 import { loadSurfacePlugins } from './plugin-loader'
+import { connectSurfaceContextBridge } from './context-bridge'
 
 declare global {
   interface Window {
@@ -38,4 +39,10 @@ mountSurface(registry)
 // never blocks or breaks the already-mounted shell.
 if (rootContext) {
   void loadSurfacePlugins(rootContext)
+
+  // And open the realtime bridge, so a server-side event reaches the views that declared
+  // they need it. Non-blocking and self-tolerant like the loader: a surface renders and
+  // stays usable whether or not the socket ever connects — it just stays as dynamic as a
+  // page without one.
+  connectSurfaceContextBridge(registry.contextChannel)
 }

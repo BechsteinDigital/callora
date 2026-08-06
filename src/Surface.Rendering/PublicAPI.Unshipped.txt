@@ -1,5 +1,8 @@
 #nullable enable
 Callora.Surface.Rendering.Api.SurfaceAccessGate
+Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextController
+Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextController.Connect(Callora.Core.Application.Workspaces.IWorkspaceManagementStore! workspaceStore, Callora.Core.Application.Surfaces.SurfaceContextBroadcaster! broadcaster, Microsoft.Extensions.Logging.ILoggerFactory! loggerFactory, Callora.Core.Infrastructure.Surfaces.SurfaceUpgradeCallerResolver? callerResolver, string? path, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextController.SurfaceContextController() -> void
 Callora.Surface.Rendering.Api.SurfaceHandoffEndpoints
 Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest
 Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.<Clone>$() -> Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest!

@@ -1,4 +1,6 @@
+using Callora.Core.Application.Surfaces;
 using Callora.Surface.Rendering.Api;
+using Callora.Surface.Rendering.Api.SurfaceContext;
 using Callora.Surface.Rendering.Rendering;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,6 +26,17 @@ public static class CalloraSurfaceRenderingExtensions
         services.AddSingleton<ISurfaceTemplateBundleProvider>(
             sp => sp.GetRequiredService<PublishedSurfaceTemplateBundles>());
         services.AddSingleton<ISurfaceRenderer, NunjucksSurfaceRenderer>();
+
+        // This module's controllers live in ITS assembly, and AddControllers() only scans the
+        // entry assembly. Without this part the context bridge route simply would not exist —
+        // no error, no log line, just a 404 nobody can explain.
+        services.AddControllers().AddApplicationPart(typeof(SurfaceContextController).Assembly);
+
+        // One broadcaster per process: a subscription belongs to the process that accepted
+        // its socket, and a value is published to the connections that process holds.
+        services.AddSingleton<SurfaceContextBroadcaster>();
+        services.AddSingleton<ISurfaceContextBroadcaster>(
+            sp => sp.GetRequiredService<SurfaceContextBroadcaster>());
         return services;
     }
 
