@@ -1,8 +1,12 @@
 #nullable enable
 Callora.Surface.Rendering.Api.SurfaceAccessGate
 Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextController
-Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextController.Connect(Callora.Core.Application.Workspaces.IWorkspaceManagementStore! workspaceStore, Callora.Core.Application.Surfaces.SurfaceContextBroadcaster! broadcaster, Microsoft.Extensions.Logging.ILoggerFactory! loggerFactory, Callora.Core.Infrastructure.Surfaces.SurfaceUpgradeCallerResolver? callerResolver, string? path, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextController.Connect(Callora.Core.Application.Workspaces.IWorkspaceManagementStore! workspaceStore, Callora.Core.Application.Surfaces.SurfaceContextBroadcaster! broadcaster, Microsoft.Extensions.Logging.ILoggerFactory! loggerFactory, Callora.Core.Infrastructure.Surfaces.SurfaceUpgradeCallerResolver? callerResolver, Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextRevalidator! revalidator, Callora.Core.Infrastructure.Surfaces.SurfaceSessionCookieAccessor? cookies, string? path, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
 Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextController.SurfaceContextController() -> void
+Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextRevalidator
+Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextRevalidator.SurfaceContextRevalidator(Callora.Surface.Rendering.Api.SurfaceContext.SurfaceSessionProbe? probe, System.TimeProvider? timeProvider = null) -> void
+Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextRevalidator.WatchAsync(string? cookieValue, string! audience, string? acceptedSubjectId, System.Threading.CancellationTokenSource! connection) -> System.Threading.Tasks.Task!
+Callora.Surface.Rendering.Api.SurfaceContext.SurfaceSessionProbe
 Callora.Surface.Rendering.Api.SurfaceHandoffEndpoints
 Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest
 Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.<Clone>$() -> Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest!
@@ -122,4 +126,6 @@ static Callora.Surface.Rendering.SurfaceCallerViewFactory.Create(Callora.Core.Ap
 static Callora.Surface.Rendering.SurfaceRenderContext.operator !=(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
 static Callora.Surface.Rendering.SurfaceRenderContext.operator ==(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
 static Callora.Surface.Rendering.SurfaceThemeTokens.Compose(string? themePluginId, string? themeVersion, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? effectiveValues) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+static readonly Callora.Surface.Rendering.Api.SurfaceContext.SurfaceContextRevalidator.Interval -> System.TimeSpan
 static readonly Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot -> string!
+virtual Callora.Surface.Rendering.Api.SurfaceContext.SurfaceSessionProbe.Invoke(string! cookieValue, string! audience, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.SurfaceCallerContext?>!
