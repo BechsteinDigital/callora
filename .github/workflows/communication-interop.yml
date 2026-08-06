@@ -51,12 +51,18 @@ jobs:
       # forward — the media (echo) round-trip needs the client and Asterisk on the same network namespace.
       - name: Start Asterisk
         run: |
+          # Pinned by digest: :latest makes this job's result depend on when it ran, and an
+          # interop test that silently changes what it tests against is worse than none.
+          #
+          # The digest lives in a variable rather than inline, because inline it sat behind
+          # a line continuation with a COMMENT between: the comment ends the continuation,
+          # so `docker run` received the two -v options and no image at all. Every run of
+          # this job failed that way from the moment the pin was introduced.
+          ASTERISK_IMAGE=andrius/asterisk@sha256:e1c8eeb4daeaceeca7d8ed6f02c65011002e2d97365ee8a2fa7b0123559754c7
           docker run -d --name callora-asterisk --network host \
             -v "${{ github.workspace }}/ops/spikes/asterisk-b4deep3/pjsip.conf:/etc/asterisk/pjsip.conf" \
             -v "${{ github.workspace }}/ops/spikes/asterisk-b4deep3/extensions.conf:/etc/asterisk/extensions.conf" \
-            # Pinned by digest: :latest makes this job's result depend on when it ran, and an
-            # interop test that silently changes what it tests against is worse than none.
-            andrius/asterisk@sha256:e1c8eeb4daeaceeca7d8ed6f02c65011002e2d97365ee8a2fa7b0123559754c7
+            "$ASTERISK_IMAGE"
           # Wait until the registrar has loaded the AOR before running the tests.
           for i in $(seq 1 30); do
             if docker exec callora-asterisk asterisk -rx "pjsip show aors" 2>/dev/null | grep -q "callora"; then
