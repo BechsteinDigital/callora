@@ -48,6 +48,14 @@
   <link rel="stylesheet" href="/surface-base/base.css" />
   {% endblock %}
 
+  {#
+    Where plugins put what belongs in the head — a font, a meta tag, a preconnect.
+    A SLOT, not just a block: a block is filled by exactly one template, so two
+    plugins wanting something in the head would collide. This is precisely the case
+    Shopware needs sw_extends for; a slot answers it without chain resolution.
+  #}
+  {% block base_head_slot %}{{ callora_slot("surface.head") }}{% endblock %}
+
   {% block base_head_extra %}{% endblock %}
 </head>
 {% endblock %}
@@ -105,7 +113,7 @@
     from script.
   #}
   {% block base_overlay %}
-  <div id="cal-overlay" class="cal-overlay"></div>
+  <div id="cal-overlay" class="cal-overlay">{{ callora_slot("surface.overlay") }}</div>
   {% endblock %}
 
   {% block base_scripts %}
@@ -116,6 +124,8 @@
   #}
   <script src="/surface-app/surface.js" defer></script>
   {% endblock %}
+
+  {% block base_body_slot %}{{ callora_slot("surface.body.end") }}{% endblock %}
 
   {% block base_body_extra %}{% endblock %}
 </body>
