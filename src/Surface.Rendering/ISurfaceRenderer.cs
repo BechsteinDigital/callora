@@ -15,7 +15,8 @@ public interface ISurfaceRenderer
     /// Renders with <c>@bundle/path</c> includes enabled, resolved only against the
     /// bundles in <paramref name="bundleChain"/> (the surface's resolved chain).
     /// Paths outside a bundle root are rejected (ADR-015 §8). Requires a configured
-    /// <see cref="ISurfaceTemplateBundleProvider"/>; without one, includes stay off.
+    /// <see cref="ISurfaceTemplateBundleProvider"/>. Without one, plugin bundles do not
+    /// resolve, but the host's own <c>@callora/…</c> bundle always does.
     /// </summary>
     string Render(string templateText, SurfaceRenderContext context, IReadOnlyList<string> bundleChain);
 }

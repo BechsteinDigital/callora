@@ -1,0 +1,23 @@
+{#
+  Two columns: content and a companion rail.
+
+      {% extends "@callora/layout/sidebar.njk" %}
+      {% set page_title = "Anrufe" %}
+      {% block page_content %}…{% endblock %}
+      {% block sidebar_content %}…{% endblock %}
+
+  The rail comes SECOND in the source — it fills base_aside, which sits after main —
+  and CSS places it beside the content. So a narrow screen and a screen reader both
+  reach the content first, and below the breakpoint the rail stacks under it rather
+  than pushing it down.
+#}
+{% extends "@callora/layout/page.njk" %}
+
+{% block base_body_classes %}{{ super() }} cal-surface--sidebar{% endblock %}
+
+{% block base_aside %}
+<aside class="cal-sidebar" aria-label="{% block sidebar_label %}Nebenbereich{% endblock %}">
+  {% block sidebar_content %}{% endblock %}
+  {% block sidebar_slot %}{{ callora_slot("surface.sidebar") }}{% endblock %}
+</aside>
+{% endblock %}

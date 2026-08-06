@@ -1,0 +1,130 @@
+{#
+  The host base template. Every server-rendered surface starts here, directly or
+  through one of the layouts in layout/.
+
+      {% extends "@callora/layout/page.njk" %}
+      {% block page_content %}…{% endblock %}
+
+  WHAT THE BLOCKS ARE FOR
+  Two levels of change, deliberately separated. The blocks below let a template
+  replace a whole region — swap the header, drop the footer, wrap main in something
+  else. Changing what is INSIDE a region means overriding that region's file in
+  section/, where each has its own finer blocks.
+
+  Every region is an {% include %}, so a template that wants a different header
+  overrides base_header rather than editing markup it does not own. Nunjucks does not
+  let a parent reach into an included template's blocks — that is the boundary, and
+  it is why the regions are small.
+
+  WHAT THIS TEMPLATE DOES NOT DECIDE
+  It does not know what the surface is for. No product grid, no dashboard, no
+  navigation shape — the header renders whatever navigation the plugins contributed,
+  in whatever order the host resolved. A surface is a point of access, not a kind of
+  page, so the base ships structure and leaves meaning to whoever extends it.
+-#}{% block base_doctype %}<!doctype html>{% endblock %}
+{%- block base_html %}
+<html lang="{{ locale }}">
+{% block base_head %}
+<head>
+  {% block base_head_meta %}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  {% endblock %}
+
+  {% block base_head_title %}
+  <title>{% block base_title %}{{ surface.key }}{% endblock %}</title>
+  {% endblock %}
+
+  {#
+    The theme's tokens as custom properties, before the stylesheet that consumes
+    them. Inline because they differ per surface and per request — a cached file
+    could not carry them.
+  #}
+  {% block base_head_tokens %}
+  {% include "@callora/utilities/tokens.njk" %}
+  {% endblock %}
+
+  {% block base_head_stylesheets %}
+  <link rel="stylesheet" href="/surface-base/base.css" />
+  {% endblock %}
+
+  {% block base_head_extra %}{% endblock %}
+</head>
+{% endblock %}
+
+{% block base_body %}
+<body class="{% block base_body_classes %}cal-surface cal-surface--{{ surface.type }}{% endblock %}"
+      {#
+        The surface runtime reads its context from #callora-app or, failing that, from
+        the nearest [data-workspace] ancestor of an island. A server-rendered page has
+        no single app root, so the body carries it — drop these and hydration silently
+        falls back to defaults.
+      #}
+      {% block base_body_context %}data-workspace="{{ workspace.key }}"
+      data-surface="{{ surface.key }}"
+      data-caller-state="{{ caller.state if caller else 'anonymous' }}"
+      data-caller-issuer="{{ caller.issuer if caller else '' }}"
+      data-caller-subject="{{ caller.subjectId if caller else '' }}"
+      data-caller-name="{{ caller.displayName if caller else '' }}"
+      data-caller-claims="{{ caller.claimsJson if caller else '' }}"{% endblock %}>
+  {#
+    First focusable element on the page, visible only once focused. Keyboard and
+    screen-reader users skip the header instead of tabbing through it on every page.
+  #}
+  {% block base_skip_link %}
+  <a class="cal-skip-link" href="#cal-main">{{ "Zum Inhalt springen" }}</a>
+  {% endblock %}
+
+  {% block base_noscript %}
+  <noscript>
+    <p class="cal-noscript">Diese Seite verwendet JavaScript für interaktive Bereiche. Der Inhalt ist auch ohne lesbar.</p>
+  </noscript>
+  {% endblock %}
+
+  {% block base_header %}
+  {% include "@callora/section/header.njk" %}
+  {% endblock %}
+
+  {% block base_navigation %}
+  {% include "@callora/section/navigation.njk" %}
+  {% endblock %}
+
+  {% block base_main %}
+  <main id="cal-main" class="cal-main">
+    {% block base_messages %}
+    {% include "@callora/section/messages.njk" %}
+    {% endblock %}
+
+    {% block base_content %}{% endblock %}
+  </main>
+  {% endblock %}
+
+  {% block base_aside %}{% endblock %}
+
+  {% block base_footer %}
+  {% include "@callora/section/footer.njk" %}
+  {% endblock %}
+
+  {#
+    Anything that must escape the document flow — dialogs, toasts, drawers. Empty
+    here so a theme has a defined place to put them instead of appending to body
+    from script.
+  #}
+  {% block base_overlay %}
+  <div id="cal-overlay" class="cal-overlay"></div>
+  {% endblock %}
+
+  {% block base_scripts %}
+  {#
+    The surface runtime hydrates the islands this page rendered
+    (data-callora-island) and serves late-registering plugins. Deferred: the page
+    is readable before it runs, and it needs the full DOM.
+  #}
+  <script src="/surface-app/surface.js" defer></script>
+  {% endblock %}
+
+  {% block base_body_extra %}{% endblock %}
+</body>
+{% endblock %}
+</html>
+{% endblock %}

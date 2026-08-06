@@ -1,0 +1,19 @@
+{#
+  The surface's theme tokens as CSS custom properties.
+
+  A token key is dotted (color.brand, space.md); the property name replaces dots with
+  hyphens and prefixes cal-, so color.brand becomes --cal-color-brand. That is the name
+  base.css consumes and the name a theme overrides.
+
+  Values arrive already filtered by the host — secrets are stripped before a token
+  reaches a template — and Nunjucks escapes them on output, so a value cannot close the
+  style element. It CAN still be nonsense CSS; a bad value breaks its own rule and no
+  more, which is why declarations are one per line.
+#}
+<style>
+:root {
+{%- for key, value in tokens %}
+  --cal-{{ key | replace(r/[^a-zA-Z0-9]+/g, "-") }}: {{ value }};
+{%- endfor %}
+}
+</style>

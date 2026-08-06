@@ -1,0 +1,22 @@
+{#
+  An empty state: what to say when there is nothing to show.
+
+      {% from "@callora/component/empty-state.njk" import empty_state %}
+      {{ empty_state("Keine Anrufe", "Sobald jemand anruft, erscheint er hier.") }}
+
+  With an action, using call so the markup comes from the template rather than from a
+  string argument — a "| safe" parameter here would be an XSS hole one careless caller
+  wide:
+
+      {% call empty_state("Keine Anrufe") %}<a href="/neu">Anruf starten</a>{% endcall %}
+
+  A macro rather than an include, because it takes arguments — an include would need
+  the caller to set variables, which leak into whatever follows.
+#}
+{% macro empty_state(title, description) %}
+<div class="cal-empty">
+  <p class="cal-empty__title">{{ title }}</p>
+  {% if description %}<p class="cal-empty__description">{{ description }}</p>{% endif %}
+  {% if caller %}<div class="cal-empty__action">{{ caller() }}</div>{% endif %}
+</div>
+{% endmacro %}

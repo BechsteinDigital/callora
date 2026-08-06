@@ -1,0 +1,31 @@
+{#
+  The navigation plugins contributed, already filtered by caller claims and plugin
+  availability and already ordered — this template renders what it is given and
+  decides nothing.
+
+  Whether that becomes a bar, a sidebar or a launcher is a theme's business; the base
+  renders a horizontal bar because it is the shape that works before anyone has
+  decided. A surface with no entries renders no element at all rather than an empty
+  landmark, which a screen reader would otherwise announce.
+#}
+{% set entries = callora_navigation() %}
+{% if entries.length > 0 %}
+<nav class="cal-nav" aria-label="{% block navigation_label %}Hauptnavigation{% endblock %}">
+  {% block navigation_list %}
+  <ul class="cal-nav__list">
+    {% for entry in entries %}
+      {% block navigation_item %}
+      <li class="cal-nav__item">
+        <a class="cal-nav__link" href="{{ entry.to }}" data-nav-id="{{ entry.id }}">
+          {% if entry.icon %}<span class="cal-nav__icon" data-icon="{{ entry.icon }}" aria-hidden="true"></span>{% endif %}
+          <span class="cal-nav__label">{{ entry.label }}</span>
+        </a>
+      </li>
+      {% endblock %}
+    {% endfor %}
+  </ul>
+  {% endblock %}
+
+  {% block navigation_slot %}{{ callora_slot("surface.navigation") }}{% endblock %}
+</nav>
+{% endif %}
