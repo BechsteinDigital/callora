@@ -52,6 +52,10 @@ public sealed class SurfaceContextController : ControllerBase
         // Composed with the surface identity subsystem. Without it a connection is anonymous,
         // which means surface-wide values and no subject-scoped ones — the safe half, not none.
         [FromServices] SurfaceUpgradeCallerResolver? callerResolver,
+        // Composed with the identity subsystem too. Without it a connection is never re-checked,
+        // which is correct: there is no session behind it to lose.
+        [FromServices] SurfaceContextRevalidator revalidator,
+        [FromServices] SurfaceSessionCookieAccessor? cookies,
         [FromQuery] string? path,
         CancellationToken cancellationToken)
     {
@@ -82,7 +86,14 @@ public sealed class SurfaceContextController : ControllerBase
             return Unauthorized();
         }
 
-        await PumpAsync(surface, caller, broadcaster, loggerFactory, cancellationToken)
+        await PumpAsync(
+                surface,
+                caller,
+                broadcaster,
+                loggerFactory,
+                revalidator,
+                cookies?.Read(HttpContext),
+                cancellationToken)
             .ConfigureAwait(false);
 
         // The socket carried the response; anything else here would try to write a body onto it.
@@ -94,6 +105,8 @@ public sealed class SurfaceContextController : ControllerBase
         SurfaceCaller? caller,
         SurfaceContextBroadcaster broadcaster,
         ILoggerFactory loggerFactory,
+        SurfaceContextRevalidator revalidator,
+        string? cookieValue,
         CancellationToken cancellationToken)
     {
         using var socket = await HttpContext.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
@@ -110,6 +123,15 @@ public sealed class SurfaceContextController : ControllerBase
         // in flight, a tab that goes away is only noticed on the next send — which for a quiet
         // surface may be hours later.
         var watchClose = WatchForCloseAsync(socket, closed);
+
+        // A socket outlives the permission behind it. This ends the connection as soon as the
+        // session stops holding — a signed-out visitor keeps receiving context otherwise, for as
+        // long as they leave the tab open.
+        var watchSession = revalidator.WatchAsync(
+                cookieValue,
+                HttpContext.Request.Host.Host,
+                caller?.Subject.SubjectId,
+                closed);
 
         try
         {
@@ -133,6 +155,7 @@ public sealed class SurfaceContextController : ControllerBase
         {
             await closed.CancelAsync().ConfigureAwait(false);
             await watchClose.ConfigureAwait(false);
+            await watchSession.ConfigureAwait(false);
         }
     }
 
