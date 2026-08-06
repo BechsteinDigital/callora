@@ -12,15 +12,15 @@ public static class BackendExtensionPointCatalog
         [
             new ExtensionPointDefinition(
                 ExtensionPointId: CalloraExtensionPoints.WorkspaceNavigationMain,
-                Surface: ExtensionSurface.Workspace,
+                Surface: ExtensionSurface.Surface,
                 RequiredScope: "workspace.navigation"),
             new ExtensionPointDefinition(
                 ExtensionPointId: CalloraExtensionPoints.WorkspaceThemeDefinition,
-                Surface: ExtensionSurface.Workspace,
+                Surface: ExtensionSurface.Surface,
                 RequiredScope: "workspace.theme.read"),
             new ExtensionPointDefinition(
                 ExtensionPointId: CalloraExtensionPoints.WorkspaceThemeSettings,
-                Surface: ExtensionSurface.Workspace,
+                Surface: ExtensionSurface.Surface,
                 RequiredScope: "workspace.theme.write"),
             new ExtensionPointDefinition(
                 ExtensionPointId: CalloraExtensionPoints.AdminNavigationMain,

@@ -27,7 +27,7 @@ public sealed class PluginAssetCachingTests
     [Fact]
     public void Apply_VersionedPluginAsset_SetsImmutable()
     {
-        var ctx = BuildContext("/plugin-assets/voip/app/workspace/main.js", "?v=abc123");
+        var ctx = BuildContext("/plugin-assets/voip/app/surface/main.js", "?v=abc123");
 
         PluginAssetCaching.Apply(ctx);
 
@@ -37,7 +37,7 @@ public sealed class PluginAssetCachingTests
     [Fact]
     public void Apply_UnversionedPluginAsset_SetsNoCache()
     {
-        var ctx = BuildContext("/plugin-assets/voip/app/workspace/main.js", query: null);
+        var ctx = BuildContext("/plugin-assets/voip/app/surface/main.js", query: null);
 
         PluginAssetCaching.Apply(ctx);
 

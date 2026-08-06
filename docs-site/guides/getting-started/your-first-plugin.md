@@ -82,7 +82,7 @@ The scaffolded `registry.json` looks like this — it's the plugin's identity ca
   "entryTypeName": "Callora.Plugins.Hello.Application.HelloPlugin",
   "capabilities": ["workspace.navigation"],
   "extensions": [
-    { "extensionPointId": "workspace.navigation.main", "surface": "workspace" }
+    { "extensionPointId": "workspace.navigation.main", "surface": "surface" }
   ],
   "dependencies": { "Callora.Core": ">=0.1.0" }
 }

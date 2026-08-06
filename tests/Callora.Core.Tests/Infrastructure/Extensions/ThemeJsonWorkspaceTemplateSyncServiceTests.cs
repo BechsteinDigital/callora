@@ -23,7 +23,7 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
 
             await File.WriteAllTextAsync(Path.Combine(tempDir, "theme.json"), """
             {
-              "surface": "workspace",
+              "surface": "surface",
               "definitions": [
                 {
                   "templateKey": "workspace.layout",
@@ -58,7 +58,7 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
 
             await sut.SyncFromAssemblyAsync(pluginId, "1.0.0", assemblyPath);
 
-            var first = await store.ListDefinitionsAsync(surface: "workspace", isActive: null);
+            var first = await store.ListDefinitionsAsync(surface: "surface", isActive: null);
             var firstSettings = await settingsStore.ListDefinitionsAsync(pluginId, "1.0.0");
             Assert.Equal(2, first.Count);
             Assert.Equal(2, firstSettings.Count);
@@ -93,7 +93,7 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
 
             await sut.SyncFromAssemblyAsync(pluginId, "1.1.0", assemblyPath);
 
-            var second = await store.ListDefinitionsAsync(surface: "workspace", isActive: null);
+            var second = await store.ListDefinitionsAsync(surface: "surface", isActive: null);
             var firstVersionSettings = await settingsStore.ListDefinitionsAsync(pluginId, "1.0.0");
             var secondSettings = await settingsStore.ListDefinitionsAsync(pluginId, "1.1.0");
             Assert.Equal(3, second.Count);
@@ -123,7 +123,7 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
 
         await store.UpsertDefinitionAsync(
             templateKey: "workspace.layout",
-            surface: "workspace",
+            surface: "surface",
             pluginId: pluginId,
             version: "1.0.0",
             displayName: "Layout",
@@ -163,7 +163,7 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
 
         await store.UpsertDefinitionAsync(
             templateKey: "workspace.layout",
-            surface: "workspace",
+            surface: "surface",
             pluginId: "theme-a",
             version: "1.0.0",
             displayName: "Layout",
@@ -174,7 +174,7 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
             priority: 100);
         await store.UpsertDefinitionAsync(
             templateKey: "workspace.layout",
-            surface: "workspace",
+            surface: "surface",
             pluginId: "theme-b",
             version: "1.0.0",
             displayName: "Layout",

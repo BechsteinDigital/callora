@@ -44,7 +44,7 @@ and signer use a matching model.
   "tier": "application",
   "capabilities": ["read:workspaces"],
   "extensions": [
-    { "extensionPointId": "callora.item.render", "surface": "workspace" }
+    { "extensionPointId": "callora.item.render", "surface": "surface" }
   ]
 }
 ```
@@ -97,13 +97,13 @@ Each `workspaceTemplates[]` item (`PluginWorkspaceTemplateManifestEntry`):
 {
   "generatedAtUtc": "2026-07-19T12:34:56.1234567+00:00",
   "entries": [
-    { "pluginId": "my.plugin", "surface": "workspace", "entryPath": "my.plugin/app/workspace/main.js" }
+    { "pluginId": "my.plugin", "surface": "surface", "entryPath": "my.plugin/app/surface/main.js" }
   ],
   "styleEntries": [
-    { "pluginId": "my.plugin", "surface": "workspace", "stylePath": "my.plugin/app/workspace/main.css" }
+    { "pluginId": "my.plugin", "surface": "surface", "stylePath": "my.plugin/app/surface/main.css" }
   ],
   "workspaceTemplates": [
-    { "pluginId": "my.plugin", "templatePath": "my.plugin/views/workspace/dashboard.html" }
+    { "pluginId": "my.plugin", "templatePath": "my.plugin/views/surface/dashboard.html" }
   ]
 }
 ```
@@ -203,7 +203,7 @@ The operator theme API then exposes and applies them (see the theme endpoints in
   - `config.fields` — an object of setting definitions keyed by setting key.
 
 - **Template definition** — `templateKey` (aliases `key`/`id`), `displayName`,
-  `templatePath` (default `views/workspace/{templateKey}.html`),
+  `templatePath` (default `views/surface/{templateKey}.html`),
   `parentTemplateKey`/`extends`, `surface`, `scope` (default `workspace`),
   `isActive` (default true), `priority` (default 100).
 
@@ -226,7 +226,7 @@ route `GET /workspace/public/theme` exposes a workspace's resolved
 
 ```json
 {
-  "surface": "workspace",
+  "surface": "surface",
   "definitions": [
     { "templateKey": "custom-dashboard", "displayName": "Custom Dashboard", "priority": 50 }
   ],

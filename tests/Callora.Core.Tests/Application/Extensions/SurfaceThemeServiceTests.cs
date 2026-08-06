@@ -224,7 +224,7 @@ public sealed class SurfaceThemeServiceTests
         {
             _ = await templates.UpsertDefinitionAsync(
                 $"workspace.{pluginId}",
-                "workspace",
+                "surface",
                 pluginId,
                 Version,
                 pluginId,

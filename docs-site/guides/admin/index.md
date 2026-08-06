@@ -112,7 +112,7 @@ the admin shell is decoupled from the surface compiler and evolves independently
 | Shape | One fixed, opinionated Vue 3 SPA | Neutral, per-workspace rendered surfaces |
 | Extend via | `window.CalloraAdmin` (slots / hooks / services) | `@callora/surface-sdk` (`registerSurfaceView`) |
 | Shared Vue | `window.CalloraAdmin.vue` (`h`, `defineComponent`) | `window.CalloraVue` |
-| Published under | `/plugin-assets/<id>/app/admin/` | `/plugin-assets/<id>/app/workspace/` |
+| Published under | `/plugin-assets/<id>/app/admin/` | `/plugin-assets/<id>/app/surface/` |
 | Served at | `/admin` | the workspace's surface route (`/surface/render`) |
 
 Use the **admin shell** to give operators new backoffice capabilities; use a **surface

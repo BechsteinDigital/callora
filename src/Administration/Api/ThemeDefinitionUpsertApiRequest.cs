@@ -7,4 +7,4 @@ public sealed record ThemeDefinitionUpsertApiRequest(
     string Scope,
     bool IsActive,
     int Priority,
-    string Surface = "workspace");
+    string Surface = "surface");

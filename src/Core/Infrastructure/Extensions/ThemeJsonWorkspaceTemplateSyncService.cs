@@ -1,4 +1,5 @@
 using Callora.Core.Application.Extensions;
+using Callora.Core.Domain.Extensions;
 using System.Text.Json;
 
 namespace Callora.Core.Infrastructure.Extensions;
@@ -149,14 +150,14 @@ public sealed class ThemeJsonWorkspaceTemplateSyncService(
                 TryGetString(item, "templatePath"),
                 TryGetString(item, "path"),
                 TryGetString(item, "template"),
-                $"views/workspace/{templateKey}.html");
+                $"views/surface/{templateKey}.html");
             var parentTemplateKey = FirstNonEmptyOrNull(
                 TryGetString(item, "parentTemplateKey"),
                 TryGetString(item, "extends"));
             var surface = FirstNonEmpty(
                 TryGetString(item, "surface"),
                 rootSurface,
-                "workspace");
+                ExtensionSurfaceCodes.Surface);
             var scope = FirstNonEmpty(TryGetString(item, "scope"), "workspace");
             var isActive = TryGetBoolean(item, "isActive") ?? TryGetBoolean(item, "active") ?? true;
             var priority = TryGetInt32(item, "priority") ?? TryGetInt32(item, "order") ?? 100;

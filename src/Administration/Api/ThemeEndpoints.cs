@@ -110,7 +110,7 @@ public static class ThemeEndpoints
                 return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
-            var definitionExists = (await store.ListDefinitionsAsync(surface: "workspace", isActive: true, cancellationToken)
+            var definitionExists = (await store.ListDefinitionsAsync(surface: "surface", isActive: true, cancellationToken)
                     .ConfigureAwait(false))
                 .Any(x =>
                     string.Equals(x.PluginId, request.ThemePluginId, StringComparison.OrdinalIgnoreCase) &&

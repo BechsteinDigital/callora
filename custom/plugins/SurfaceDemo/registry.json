@@ -12,7 +12,7 @@
   "extensions": [
     {
       "extensionPointId": "workspace.navigation.main",
-      "surface": "workspace"
+      "surface": "surface"
     }
   ],
   "dependencies": {

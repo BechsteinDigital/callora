@@ -464,7 +464,7 @@ public sealed class PluginUiAssetPublisherTests
                 createAdmin: false,
                 createWorkspace: true,
                 createWorkspaceTemplate: false);
-            var workspaceEntry = Path.Combine(pluginRoot, "src", "Resources", "app", "workspace", "src", "main.js");
+            var workspaceEntry = Path.Combine(pluginRoot, "src", "Resources", "app", "surface", "src", "main.js");
 
             var environment = new TestWebHostEnvironment { WebRootPath = webRoot, ContentRootPath = tempRoot };
             var hostingOptions = new CalloraHostingOptions { PluginDirectory = pluginDirectory };
@@ -547,7 +547,7 @@ public sealed class PluginUiAssetPublisherTests
     {
         using var document = JsonDocument.Parse(manifestJson);
         var entry = document.RootElement.GetProperty("entries").EnumerateArray()
-            .Single(x => x.GetProperty("surface").GetString() == "workspace");
+            .Single(x => x.GetProperty("surface").GetString() == "surface");
         return entry.TryGetProperty("contentHash", out var hash) ? hash.GetString() : null;
     }
 
@@ -582,14 +582,14 @@ public sealed class PluginUiAssetPublisherTests
 
         if (createWorkspace)
         {
-            var workspaceDirectory = Path.Combine(pluginRoot, "src", "Resources", "app", "workspace", "src");
+            var workspaceDirectory = Path.Combine(pluginRoot, "src", "Resources", "app", "surface", "src");
             Directory.CreateDirectory(workspaceDirectory);
             File.WriteAllText(Path.Combine(workspaceDirectory, "main.js"), "console.log('workspace');");
         }
 
         if (createWorkspaceTemplate)
         {
-            var templateDirectory = Path.Combine(pluginRoot, "src", "Resources", "views", "workspace");
+            var templateDirectory = Path.Combine(pluginRoot, "src", "Resources", "views", "surface");
             Directory.CreateDirectory(templateDirectory);
             File.WriteAllText(Path.Combine(templateDirectory, "base.html"), "<div>workspace template</div>");
         }

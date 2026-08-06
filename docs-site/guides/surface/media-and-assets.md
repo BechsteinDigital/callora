@@ -32,7 +32,7 @@ For each surface (`admin` and `workspace`), the publisher looks for the plugin's
 deliverable and copies it to `plugin-assets/<pluginId>/app/<surface>/`:
 
 ```text
-src/Resources/public/workspace/   ──▶   /plugin-assets/<pluginId>/app/workspace/
+src/Resources/public/surface/   ──▶   /plugin-assets/<pluginId>/app/surface/
 ```
 
 It resolves the source directory in this preference order
@@ -48,13 +48,13 @@ and records no entry, so the UI never loads. Always build the bundle
 (see [Building a surface plugin](./building-a-surface-plugin)) before activating.
 :::
 
-### 2. Workspace SSR templates → `views/workspace`
+### 2. Workspace SSR templates → `views/surface`
 
 The plugin's `.njk` template tree is copied to
-`plugin-assets/<pluginId>/views/workspace/`:
+`plugin-assets/<pluginId>/views/surface/`:
 
 ```text
-src/Resources/views/workspace/   ──▶   /plugin-assets/<pluginId>/views/workspace/
+src/Resources/views/surface/   ──▶   /plugin-assets/<pluginId>/views/surface/
 ```
 
 This is the root `PublishedSurfaceTemplateBundles` maps a plugin id back to when the SSR
@@ -99,13 +99,13 @@ Shape (fields per `plugin-loader.ts`):
 {
   "generatedAtUtc": "2026-07-20T…Z",
   "entries": [
-    { "pluginId": "my-plugin", "surface": "workspace", "entryPath": "my-plugin/app/workspace/main.js" }
+    { "pluginId": "my-plugin", "surface": "surface", "entryPath": "my-plugin/app/surface/main.js" }
   ],
   "styleEntries": [
-    { "pluginId": "my-plugin", "surface": "workspace", "stylePath": "my-plugin/app/workspace/main.css" }
+    { "pluginId": "my-plugin", "surface": "surface", "stylePath": "my-plugin/app/surface/main.css" }
   ],
   "workspaceTemplates": [
-    { "pluginId": "my-plugin", "templatePath": "my-plugin/views/workspace/index.njk" }
+    { "pluginId": "my-plugin", "templatePath": "my-plugin/views/surface/index.njk" }
   ]
 }
 ```
@@ -191,6 +191,6 @@ through the media library.
 ## Next steps
 
 - Build the bundle that gets published: **[Building a surface plugin](./building-a-surface-plugin)**
-- Author the templates that publish to `views/workspace`: **[SSR Templates](./ssr-templates)**
+- Author the templates that publish to `views/surface`: **[SSR Templates](./ssr-templates)**
 - How exports (including UI assets) leave a plugin: **[Exporting extensions](/guides/fundamentals/exporting-extensions)**
 - The media and UI-chain endpoints: **[REST API](/reference/rest-api)**
