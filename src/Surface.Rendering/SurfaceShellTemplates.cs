@@ -26,4 +26,11 @@ public static class SurfaceShellTemplates
     /// </para>
     /// </summary>
     public static readonly string SpaRoot = """{% extends "@callora/page/app.njk" %}""";
+
+    /// <summary>
+    /// The page for a surface whose layout was composed in the editor — see
+    /// <c>Resources/views/surface/page/composed.njk</c>. The sections and blocks are already
+    /// markup by the time it renders; the template only decides where they sit.
+    /// </summary>
+    public static readonly string Composed = """{% extends "@callora/page/composed.njk" %}""";
 }

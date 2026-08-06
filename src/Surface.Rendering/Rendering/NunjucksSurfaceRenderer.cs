@@ -166,6 +166,18 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
             env.addGlobal('callora_navigation', function () {
                 return navigation;
             });
+
+            // The composed layout, already rendered by the composition renderer. Safe because the
+            // renderer encoded every attribute it emitted; interpolating it would escape the
+            // markup it just produced.
+            var composition = (context && context.compositionHtml) || '';
+            env.addGlobal('callora_composition', function () {
+                return safe(composition);
+            });
+
+            env.addGlobal('callora_has_composition', function () {
+                return composition.length > 0;
+            });
         }
         """;
 
@@ -268,6 +280,7 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
             tokens = context.Tokens,
             slots = context.Slots,
             navigation = context.Navigation,
+            compositionHtml = context.CompositionHtml,
             caller = context.Caller is null
                 ? null
                 : new

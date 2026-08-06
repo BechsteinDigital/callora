@@ -2878,6 +2878,61 @@ Callora.Core.Application.Surfaces.ISurfaceSessionStore.PurgeExpiredAsync(System.
 Callora.Core.Application.Surfaces.ISurfaceSessionStore.RevokeAsync(System.Guid sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Surfaces.ISurfaceSessionStore.RevokeForSurfaceAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
 Callora.Core.Application.Surfaces.ISurfaceSessionStore.TouchAsync(System.Guid sessionId, System.DateTimeOffset seenAtUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource
+Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource.GetDraftAsync(string! layoutKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument?>!
+Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource.GetPublishedAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument?>!
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.<Clone>$() -> Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Deconstruct(out string! Source, out object? Value, out string? Key, out string? Path) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Equals(Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding? other) -> bool
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Key.get -> string?
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Key.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Path.get -> string?
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Path.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Source.get -> string!
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Source.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.SurfaceBlockBinding(string! Source, object? Value = null, string? Key = null, string? Path = null) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Value.get -> object?
+Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Value.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.<Clone>$() -> Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.BlockId.get -> string!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.BlockId.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Config.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!>!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Config.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Deconstruct(out string! BlockId, out string! Region, out int Position, out System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!>! Config) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Equals(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock? other) -> bool
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Position.get -> int
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Position.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Region.get -> string!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Region.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.SurfaceLayoutBlock(string! BlockId, string! Region, int Position, System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!>! Config) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.<Clone>$() -> Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.Deconstruct(out string! Key, out int VersionNumber, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection!>! Sections) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.Equals(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument? other) -> bool
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.Key.get -> string!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.Key.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.Sections.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection!>!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.Sections.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.SurfaceLayoutDocument(string! Key, int VersionNumber, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection!>! Sections) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.VersionNumber.get -> int
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.VersionNumber.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.<Clone>$() -> Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Blocks.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock!>!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Blocks.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Deconstruct(out string! Layout, out int Position, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock!>! Blocks, out string? Spacing, out string? SurfaceRole) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Equals(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection? other) -> bool
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Layout.get -> string!
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Layout.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Position.get -> int
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Position.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Spacing.get -> string?
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Spacing.init -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.SurfaceLayoutSection(string! Layout, int Position, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock!>! Blocks, string? Spacing = null, string? SurfaceRole = null) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.SurfaceRole.get -> string?
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.SurfaceRole.init -> void
 Callora.Core.Application.Surfaces.SharedContext.ISharedContextKeyContributor
 Callora.Core.Application.Surfaces.SharedContext.ISharedContextKeyContributor.SharedContextKeys.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration!>!
 Callora.Core.Application.Surfaces.SharedContext.ISharedContextService
@@ -5381,6 +5436,10 @@ const Callora.Core.Application.Security.Events.UserEventTypes.Deleted = "user.de
 const Callora.Core.Application.Security.Events.UserEventTypes.Updated = "user.updated" -> string!
 const Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.JobTypeName = "security.session-revocation-purge" -> string!
 const Callora.Core.Application.Surfaces.Events.SurfaceCallerEventTypes.Promoted = "surface.caller-promoted" -> string!
+const Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.ContextSource = "context" -> string!
+const Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.DefaultSource = "default" -> string!
+const Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.InheritSource = "inherit" -> string!
+const Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.StaticSource = "static" -> string!
 const Callora.Core.Application.Surfaces.SurfaceApiOptions.SectionName = "Callora:SurfaceApi" -> string!
 const Callora.Core.Application.Surfaces.SurfaceApiRouteRules.Prefix = "/surface-api" -> string!
 const Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.ConnectionQueueCapacity = 64 -> int
@@ -5773,6 +5832,18 @@ override Callora.Core.Application.Surfaces.GuestSurfaceCaller.<Clone>$() -> Call
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.ToString() -> string!
+override Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.ToString() -> string!
+override Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.ToString() -> string!
+override Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.ToString() -> string!
+override Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.ToString() -> string!
 override Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.ToString() -> string!
@@ -6288,6 +6359,14 @@ static Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.operator ==(
 static Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent.Promoted(string! workspaceKey, string! surfaceKey, Callora.Core.Application.Surfaces.SurfaceSubject! previous, Callora.Core.Application.Surfaces.SurfaceSubject! current) -> Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent!
 static Callora.Core.Application.Surfaces.GuestSurfaceCaller.operator !=(Callora.Core.Application.Surfaces.GuestSurfaceCaller? left, Callora.Core.Application.Surfaces.GuestSurfaceCaller? right) -> bool
 static Callora.Core.Application.Surfaces.GuestSurfaceCaller.operator ==(Callora.Core.Application.Surfaces.GuestSurfaceCaller? left, Callora.Core.Application.Surfaces.GuestSurfaceCaller? right) -> bool
+static Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.operator !=(Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding? left, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding? right) -> bool
+static Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.operator ==(Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding? left, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding? right) -> bool
+static Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.operator !=(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock? left, Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock? right) -> bool
+static Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.operator ==(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock? left, Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock? right) -> bool
+static Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.operator !=(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument? left, Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument? right) -> bool
+static Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.operator ==(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument? left, Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument? right) -> bool
+static Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.operator !=(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection? left, Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection? right) -> bool
+static Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection.operator ==(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection? left, Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection? right) -> bool
 static Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.ForConversation(string! conversationId) -> Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor!
 static Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.ForSubject(string! issuer, string! subjectId) -> Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor!
 static Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.operator !=(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor? left, Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor? right) -> bool
