@@ -123,7 +123,7 @@ internal sealed class ConferenceParticipant : IConferenceParticipant, IConferenc
 
     /// <summary>
     /// Subscribes to the peer's ICE events and produces the initial offer (under the signalling gate) so
-    /// <see cref="InitialOffer"/> is ready when <see cref="IConferenceService.JoinAsync"/> returns. It does
+    /// <see cref="InitialOffer"/> is ready when <see cref="IConferenceService.JoinAsync(string, string, System.Threading.CancellationToken)"/> returns. It does
     /// NOT flush or gather candidates: the trickle gate stays closed and any candidate surfaced during
     /// CreateOffer is buffered. Gathering is deferred to <see cref="StartSignalingAsync"/> so nothing is
     /// raised before the vertical — which only obtains this session after JoinAsync returns — has subscribed.

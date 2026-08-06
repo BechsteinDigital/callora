@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Callora.Plugin.Communication.Abstractions.Conference;
 using Callora.Plugin.Communication.Application.RealtimeMedia;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -30,6 +31,52 @@ internal sealed class ConferenceMediaRouter
     public ConferenceMediaRouter(ILogger? logger = null)
     {
         _logger = logger ?? NullLogger.Instance;
+    }
+
+    /// <summary>
+    /// Settles the policy for a conference. The first stated policy takes effect and later joins may
+    /// restate it or pass <see langword="null"/>; a contradicting one is refused. Omitting a policy
+    /// must never relax the room, otherwise anyone able to join could strip a restriction by simply
+    /// not restating it.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A different policy is already in force.</exception>
+    public void ApplyPolicy(string conferenceId, ConferencePolicy? policy)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(conferenceId);
+
+        if (policy is null)
+        {
+            return;
+        }
+
+        var conference = _conferences.GetOrAdd(conferenceId, _ => new Conference());
+
+        lock (conference.Gate)
+        {
+            if (conference.Policy is { } inForce && inForce != policy)
+            {
+                throw new InvalidOperationException(
+                    $"Conference '{conferenceId}' is already under a different policy. Keeping the stricter one " +
+                    "would leave this caller believing it opened the room it asked for, and taking the looser one " +
+                    "would break the expectation of whoever opened it.");
+            }
+
+            conference.Policy = policy;
+        }
+    }
+
+    /// <summary>The policy in force, or <see cref="ConferencePolicy.Unrestricted"/> when none was stated.</summary>
+    public ConferencePolicy GetPolicy(string conferenceId)
+    {
+        if (!_conferences.TryGetValue(conferenceId, out var conference))
+        {
+            return ConferencePolicy.Unrestricted;
+        }
+
+        lock (conference.Gate)
+        {
+            return conference.Policy ?? ConferencePolicy.Unrestricted;
+        }
     }
 
     /// <summary>
