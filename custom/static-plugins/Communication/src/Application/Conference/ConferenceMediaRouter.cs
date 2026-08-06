@@ -65,6 +65,28 @@ internal sealed class ConferenceMediaRouter
         }
     }
 
+    /// <summary>
+    /// Whether this process is running the conference — that is, whether it has participants here.
+    /// </summary>
+    /// <remarks>
+    /// A conference is process-bound: its participants' peers live in one process. An empty entry does
+    /// not count as hosted, because <see cref="ParticipantJoined"/> creates entries on demand and leave
+    /// deliberately leaves them behind. Treating an empty one as hosted would let something attach to a
+    /// room that is actually running elsewhere and wait in silence for people who are not there.
+    /// </remarks>
+    public bool IsHosted(string conferenceId)
+    {
+        if (!_conferences.TryGetValue(conferenceId, out var conference))
+        {
+            return false;
+        }
+
+        lock (conference.Gate)
+        {
+            return conference.Participants.Count > 0;
+        }
+    }
+
     /// <summary>The policy in force, or <see cref="ConferencePolicy.Unrestricted"/> when none was stated.</summary>
     public ConferencePolicy GetPolicy(string conferenceId)
     {

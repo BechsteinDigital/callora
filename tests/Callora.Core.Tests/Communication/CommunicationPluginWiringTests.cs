@@ -9,6 +9,7 @@ using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Tests.Communication.Sdk;
 using Callora.Plugin.Communication;
 using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugin.Communication.Abstractions.Conference;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Flows;
 using Callora.Plugin.Communication.Application.Streaming;
@@ -51,6 +52,43 @@ public sealed class CommunicationPluginWiringTests
         Assert.Contains(typeof(ICallControlService), context.Exports.Keys);
         Assert.Contains(typeof(ICallAccess), context.Exports.Keys);
         Assert.Same(context.Exports[typeof(ICallControlService)], context.Exports[typeof(ICallAccess)]);
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenWebRtcEnabled_ExportsConferenceCallAttachment_AlongsideTheConferenceService()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [CommunicationPlugin.WebRtcEnabledConfigKey] = "true",
+            })
+            .Build();
+        var context = new CapturingHostPluginContext(hasDbFactory: true, configuration: config);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // The port a policy plugin like the SIP bridge resolves: without the export it can decide who
+        // may enter a room but cannot get anyone in.
+        Assert.Contains(typeof(IConferenceService), context.Exports.Keys);
+        Assert.Contains(typeof(IConferenceCallAttachment), context.Exports.Keys);
+    }
+
+    [Fact]
+    public async Task StartAsync_WithoutCallControl_ExportsNoConferenceCallAttachment()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [CommunicationPlugin.WebRtcEnabledConfigKey] = "true",
+            })
+            .Build();
+        var context = new CapturingHostPluginContext(hasDbFactory: false, configuration: config);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // Without call control there is no call to resolve, so the port could only ever fail. Offering
+        // it anyway would read as a capability this deployment has.
+        Assert.DoesNotContain(typeof(IConferenceCallAttachment), context.Exports.Keys);
     }
 
     [Fact]
