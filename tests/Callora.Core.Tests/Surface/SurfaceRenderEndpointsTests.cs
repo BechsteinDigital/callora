@@ -16,6 +16,7 @@ using Xunit;
 
 namespace Callora.Core.Tests.Surface;
 
+[Collection(SurfaceRenderingCollection.Name)]
 public sealed class SurfaceRenderEndpointsTests
 {
     [Fact]

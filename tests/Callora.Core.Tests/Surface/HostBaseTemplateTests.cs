@@ -11,6 +11,7 @@ namespace Callora.Core.Tests.Surface;
 /// author takes — extend a layout, fill a block — rather than the loader underneath it
 /// (<see cref="HostBaseBundleTests"/>).
 /// </summary>
+[Collection(SurfaceRenderingCollection.Name)]
 public sealed class HostBaseTemplateTests
 {
     [Fact]

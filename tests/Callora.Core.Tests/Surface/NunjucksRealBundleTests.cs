@@ -9,6 +9,7 @@ namespace Callora.Core.Tests.Surface;
 /// TemplateAlpha layout — relative extends/include, not @bundle namespaces) renders
 /// with native Nunjucks inheritance through the confined loader.
 /// </summary>
+[Collection(SurfaceRenderingCollection.Name)]
 public sealed class NunjucksRealBundleTests : IDisposable
 {
     private readonly DirectoryInfo _temp = Directory.CreateTempSubdirectory("callora-bundle-");

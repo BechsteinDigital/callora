@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Callora.Core.Tests.Surface;
 
+[Collection(SurfaceRenderingCollection.Name)]
 public sealed class NunjucksSurfaceRendererTests
 {
     private static SurfaceRenderContext Context(IReadOnlyDictionary<string, string>? tokens = null) => new(
