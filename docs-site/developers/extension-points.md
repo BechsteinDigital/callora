@@ -119,6 +119,20 @@ rather than leaving a reader to assume the ticket authenticated someone.
 | **IHostSurfaceApiContributor** | Contributable | Contribute HTTP routes a surface's visitors may call, under `/surface-api/{pluginId}/…`. |
 | **IHostSurfaceApiRouteHandler** | Contributable | Handle one surface API route — owns the business authorization for the calling subject. |
 | **IHostSurfaceViewContributor** | Contributable | Contribute composable views to surface slots; the browser bundle registers the component under the same view id. |
+| **ISurfaceContextBroadcaster** | Resolvable | Push a context value to the surfaces a visitor has open, so a server-side event reaches the views that declared they need it. |
+
+::: tip The realtime bridge is one-way
+Resolve `ISurfaceContextBroadcaster` and publish under a namespaced, versioned key
+(`communication.active-call/v1`); every browser the address covers receives it and the
+runtime hands it to the local context channel. A view that declared `RequiresContexts`
+updates — no socket, no reconnect, no message format on the plugin's side.
+
+The address decides delivery **on the server**: name a subject and only that visitor's
+connections receive the value. There is no client-side filtering to add, because there is
+nothing to filter — what a tab does not receive, it cannot read. A browser cannot publish
+here at all: everything in a tab is visible to DevTools and to every script on the page, so
+a value from there would carry no authority.
+:::
 
 ::: tip Surface slots ride on Nunjucks inheritance
 A view declares the semantic role it fills (`workspace.main`, `lead.detail.panel`), not
