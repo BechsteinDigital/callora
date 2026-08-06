@@ -1,4 +1,4 @@
-import { registerSurfaceView } from '@callora/surface-sdk'
+import { registerSurfaceView } from '@callora/surface'
 import GreetingPage from './GreetingPage.vue'
 
 // Register this plugin's view with the surface runtime. The runtime renders it as the

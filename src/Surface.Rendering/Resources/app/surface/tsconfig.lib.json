@@ -1,0 +1,16 @@
+{
+  // Emits the declarations for the published package. The base tsconfig stays noEmit for the
+  // editor and the app build; this one produces dist-lib/**/*.d.ts alongside Vite's JavaScript.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": true,
+    "outDir": "dist-lib",
+    "rootDir": "src",
+    "types": ["node"]
+  },
+  "include": ["src/public/**/*.ts", "src/*.ts", "src/blocks/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
+}
