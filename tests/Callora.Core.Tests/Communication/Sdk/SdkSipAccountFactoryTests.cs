@@ -79,6 +79,21 @@ public sealed class SdkSipAccountFactoryTests
     }
 
     [Fact]
+    public void Create_DigestRegister_DoesNotAcceptCallsAddressedToOtherUsers()
+    {
+        var factory = new SdkSipAccountFactory(new FakePluginDataProtector(("pw-ref", "s3cret")), PluginId);
+
+        var sdk = factory.Create(DigestAccount(mode: SipAccountMode.Register));
+
+        // Trunk inbound broadens matching beyond the account's own user: without a DID whitelist it
+        // accepts anything addressed to the provider's domain. Two workspaces with accounts at the
+        // same provider share that domain, so each would accept the other's calls — the workspace
+        // boundary would depend on who answers first. A register account is 1:1 by definition and has
+        // no reason to be broadened.
+        Assert.False(sdk.AcceptTrunkInbound);
+    }
+
+    [Fact]
     public void Create_NonDigestAuth_Throws()
     {
         var factory = new SdkSipAccountFactory(new FakePluginDataProtector(), PluginId);
