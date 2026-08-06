@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useWorkspaceContext, resetWorkspaceContext } from './workspaceContext'
+import { useWorkspaceContext, resetWorkspaceContext, readStoredWorkspace } from './workspaceContext'
 import type { AdminContext } from '@/core/auth/adminContext'
 
 const { listMock, contextRef } = vi.hoisted(() => ({
@@ -63,6 +63,40 @@ describe('workspaceContext', () => {
 
     expect(activeWorkspace.value).toBe('wsB')
     expect(localStorage.getItem('callora.activeWorkspace')).toBe('wsB')
+  })
+
+  it('setActive reloads the shell, because plugin bundles are chained per workspace', async () => {
+    contextRef.value = ctx(null)
+    const reload = vi.fn()
+    const { ensure, setActive } = useWorkspaceContext()
+    await ensure()
+
+    setActive('wsB', reload)
+
+    // The loaded bundles belong to the previous workspace and a script cannot be unloaded.
+    // Reloading is the only state that is not half-right.
+    expect(reload).toHaveBeenCalledOnce()
+  })
+
+  it('setActive does not reload when the workspace did not actually change', async () => {
+    contextRef.value = ctx(null)
+    const reload = vi.fn()
+    const { ensure, setActive } = useWorkspaceContext()
+    await ensure()
+
+    setActive('wsA', reload)
+
+    expect(reload).not.toHaveBeenCalled()
+  })
+
+  it('readStoredWorkspace exposes the persisted selection for the bootstrap chain request', () => {
+    localStorage.setItem('callora.activeWorkspace', 'wsB')
+
+    expect(readStoredWorkspace()).toBe('wsB')
+  })
+
+  it('readStoredWorkspace returns null when nothing is persisted', () => {
+    expect(readStoredWorkspace()).toBeNull()
   })
 
   it('restores a persisted selection when it still exists', async () => {

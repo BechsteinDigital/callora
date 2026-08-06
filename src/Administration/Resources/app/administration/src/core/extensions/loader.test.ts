@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
-  normalizeEntryPath,
-  selectAdminAssets,
+  isSafeAssetPath,
+  resolveAdminAssets,
   installGlobalApi,
   loadPluginExtensions,
   getPluginUiLoadResults,
   resetPluginUiLoadResults,
   type CalloraAdminGlobal,
+  type PluginUiLoaderDeps,
   type PluginUiManifest,
 } from './loader'
 import { registerService, getServiceConflicts, resetServices } from './services'
@@ -15,6 +16,37 @@ function globalApi(): CalloraAdminGlobal | undefined {
   return (globalThis as unknown as { CalloraAdmin?: CalloraAdminGlobal }).CalloraAdmin
 }
 
+/**
+ * Injectable dependencies for a deterministic load: the chain and manifest come from a map
+ * instead of the network, and scripts "load" without the browser events happy-dom never fires
+ * for an injected <script src>.
+ */
+function deps(
+  responses: Record<string, unknown>,
+  options: { failing?: string[]; onScript?: (url: string) => void } = {},
+): PluginUiLoaderDeps {
+  let clock = 0
+  return {
+    fetchJson: async (url: string) => {
+      const key = Object.keys(responses).find((candidate) => url.startsWith(candidate))
+      if (key === undefined) {
+        throw new Error(`unexpected fetch: ${url}`)
+      }
+      return responses[key]
+    },
+    loadScript: async (_doc: Document, src: string) => {
+      options.onScript?.(src)
+      if (options.failing?.some((fragment) => src.includes(fragment))) {
+        throw new Error(`Failed to load plugin asset '${src}'.`)
+      }
+    },
+    now: () => (clock += 5),
+  }
+}
+
+const CHAIN = '/api/ext/admin/ui-chain'
+const MANIFEST = '/manifests/plugin-ui-assets.manifest.json'
+
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
@@ -22,69 +54,124 @@ afterEach(() => {
   delete (globalThis as unknown as { CalloraAdmin?: CalloraAdminGlobal }).CalloraAdmin
 })
 
-describe('normalizeEntryPath', () => {
-  it('strips the custom/plugins/ marker and keeps the remainder', () => {
-    expect(normalizeEntryPath('custom/plugins/acme/admin.js')).toBe('acme/admin.js')
+describe('isSafeAssetPath', () => {
+  it('accepts a plain relative path under the asset base', () => {
+    expect(isSafeAssetPath('acme/app/admin/main.js')).toBe(true)
   })
 
-  it('is case-insensitive on the marker and normalizes backslashes', () => {
-    expect(normalizeEntryPath('Custom\\Plugins\\acme\\admin.js')).toBe('acme/admin.js')
+  it('rejects a scheme, so a manifest can never point a bundle off-origin', () => {
+    expect(isSafeAssetPath('https://evil.example/x.js')).toBe(false)
+    expect(isSafeAssetPath('javascript:alert(1)')).toBe(false)
   })
 
-  it('strips leading slashes when no marker is present', () => {
-    expect(normalizeEntryPath('/acme/admin.js')).toBe('acme/admin.js')
+  it('rejects absolute and protocol-relative paths', () => {
+    expect(isSafeAssetPath('/etc/passwd')).toBe(false)
+    expect(isSafeAssetPath('//evil.example/x.js')).toBe(false)
+    expect(isSafeAssetPath('\\evil')).toBe(false)
   })
 
-  it('returns empty for empty or whitespace input', () => {
-    expect(normalizeEntryPath('')).toBe('')
-    expect(normalizeEntryPath('   ')).toBe('')
+  it('rejects parent traversal in any segment', () => {
+    expect(isSafeAssetPath('acme/../../secret.js')).toBe(false)
+    expect(isSafeAssetPath('acme\\..\\secret.js')).toBe(false)
+  })
+
+  it('rejects an empty path', () => {
+    expect(isSafeAssetPath('')).toBe(false)
   })
 })
 
-describe('selectAdminAssets', () => {
-  it('selects only admin-surface scripts and styles and resolves them under the asset base', () => {
-    const manifest: PluginUiManifest = {
-      entries: [
-        { pluginId: 'a', surface: 'admin', entryPath: 'custom/plugins/a/admin.js' },
-        { pluginId: 'a', surface: 'workspace', entryPath: 'custom/plugins/a/store.js' },
-      ],
-      styleEntries: [
-        { pluginId: 'a', surface: 'admin', stylePath: 'custom/plugins/a/admin.css' },
-        { pluginId: 'a', surface: 'workspace', stylePath: 'custom/plugins/a/store.css' },
-      ],
+describe('resolveAdminAssets', () => {
+  const manifest: PluginUiManifest = {
+    entries: [
+      { pluginId: 'a', surface: 'admin', entryPath: 'a/app/admin/main.js' },
+      { pluginId: 'a', surface: 'surface', entryPath: 'a/app/surface/main.js' },
+      { pluginId: 'b', surface: 'admin', entryPath: 'b/app/admin/main.js' },
+    ],
+    styleEntries: [
+      { pluginId: 'a', surface: 'admin', stylePath: 'a/app/admin/main.css' },
+      { pluginId: 'a', surface: 'surface', stylePath: 'a/app/surface/main.css' },
+    ],
+  }
+
+  it('selects only admin-surface assets of plugins the chain names', () => {
+    const { scripts, styles } = resolveAdminAssets(manifest, ['a'], '/plugin-assets')
+
+    expect(scripts).toEqual([{ url: '/plugin-assets/a/app/admin/main.js', pluginId: 'a' }])
+    expect(styles).toEqual(['/plugin-assets/a/app/admin/main.css'])
+  })
+
+  it('drops a plugin the chain does not name, which is the whole point of the chain', () => {
+    const { scripts } = resolveAdminAssets(manifest, ['a'], '/plugin-assets')
+
+    expect(scripts.map((s) => s.pluginId)).not.toContain('b')
+  })
+
+  it('orders scripts by the chain, so a bundle extending an earlier one runs after it', () => {
+    const { scripts } = resolveAdminAssets(manifest, ['b', 'a'], '/plugin-assets')
+
+    expect(scripts.map((s) => s.pluginId)).toEqual(['b', 'a'])
+  })
+
+  it('appends the content hash as a cache-busting query', () => {
+    const hashed: PluginUiManifest = {
+      entries: [{ pluginId: 'a', surface: 'admin', entryPath: 'a/app/admin/main.js', contentHash: 'deadbeef' }],
+      styleEntries: [{ pluginId: 'a', surface: 'admin', stylePath: 'a/app/admin/main.css', contentHash: 'cafe' }],
     }
-    const { scripts, styles } = selectAdminAssets(manifest)
-    expect(scripts).toEqual([{ url: '/plugin-assets/a/admin.js', pluginId: 'a' }])
-    expect(styles).toEqual([{ url: '/plugin-assets/a/admin.css', pluginId: 'a' }])
+
+    const { scripts, styles } = resolveAdminAssets(hashed, ['a'], '/plugin-assets')
+
+    expect(scripts[0].url).toBe('/plugin-assets/a/app/admin/main.js?v=deadbeef')
+    expect(styles[0]).toBe('/plugin-assets/a/app/admin/main.css?v=cafe')
+  })
+
+  it('rejects an unsafe asset path even though the manifest is server-published', () => {
+    const hostile: PluginUiManifest = {
+      entries: [{ pluginId: 'a', surface: 'admin', entryPath: 'https://evil.example/x.js' }],
+    }
+
+    expect(resolveAdminAssets(hostile, ['a'], '/plugin-assets').scripts).toEqual([])
   })
 
   it('ignores admin entries that are not JavaScript', () => {
-    const manifest: PluginUiManifest = {
+    const mixed: PluginUiManifest = {
       entries: [
-        { pluginId: 'a', surface: 'admin', entryPath: 'custom/plugins/a/admin.css' },
-        { pluginId: 'a', surface: 'admin', entryPath: 'custom/plugins/a/admin.mjs' },
+        { pluginId: 'a', surface: 'admin', entryPath: 'a/app/admin/main.css' },
+        { pluginId: 'a', surface: 'admin', entryPath: 'a/app/admin/main.mjs' },
       ],
     }
-    expect(selectAdminAssets(manifest).scripts).toEqual([{ url: '/plugin-assets/a/admin.mjs', pluginId: 'a' }])
+
+    expect(resolveAdminAssets(mixed, ['a'], '/plugin-assets').scripts).toEqual([
+      { url: '/plugin-assets/a/app/admin/main.mjs', pluginId: 'a' },
+    ])
   })
 
-  it('tolerates a manifest without entries or styleEntries', () => {
-    expect(selectAdminAssets({})).toEqual({ scripts: [], styles: [] })
+  it('is total: a null or garbage manifest yields empty selections', () => {
+    expect(resolveAdminAssets(null as unknown as PluginUiManifest, ['a'], '/plugin-assets')).toEqual({
+      scripts: [],
+      styles: [],
+    })
+    expect(resolveAdminAssets(42 as unknown as PluginUiManifest, ['a'], '/plugin-assets')).toEqual({
+      scripts: [],
+      styles: [],
+    })
   })
 
-  it('is total: a null/garbage manifest body yields empty selections', () => {
-    expect(selectAdminAssets(null as unknown as PluginUiManifest)).toEqual({ scripts: [], styles: [] })
-    expect(selectAdminAssets(42 as unknown as PluginUiManifest)).toEqual({ scripts: [], styles: [] })
+  it('yields nothing for an empty chain', () => {
+    expect(resolveAdminAssets(manifest, [], '/plugin-assets').scripts).toEqual([])
   })
 })
 
 describe('installGlobalApi', () => {
-  it('exposes the register functions and shared Vue primitives on globalThis', () => {
+  it('exposes the register functions, the slot read side and the shared Vue on globalThis', () => {
     installGlobalApi()
     const api = globalApi()
+
     expect(typeof api?.registerExtension).toBe('function')
     expect(typeof api?.registerHook).toBe('function')
     expect(typeof api?.registerService).toBe('function')
+    expect(typeof api?.getExtensions).toBe('function')
+    // Shipped plugin bundles keep Vue external and resolve it here; removing this before
+    // @callora/ui-core provides the shared global would break them.
     expect(typeof api?.vue.h).toBe('function')
     expect(typeof api?.vue.defineComponent).toBe('function')
   })
@@ -95,140 +182,148 @@ describe('loadPluginExtensions', () => {
     delete (globalThis as unknown as { CalloraAdmin?: CalloraAdminGlobal }).CalloraAdmin
   })
 
-  it('installs the global API even when the manifest is missing (404)', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
-    await loadPluginExtensions()
+  it('installs the global API before loading, so a bundle can register on execution', async () => {
+    await loadPluginExtensions({}, deps({ [CHAIN]: { chain: [] } }))
+
     expect(globalApi()).toBeDefined()
   })
 
-  it('tolerates a failing fetch without throwing', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
-    await expect(loadPluginExtensions()).resolves.toBeUndefined()
-    expect(globalApi()).toBeDefined()
+  it('loads nothing when the chain is empty — an unassigned plugin gets no admin UI', async () => {
+    const loaded: string[] = []
+    await loadPluginExtensions({}, deps({ [CHAIN]: { chain: [] } }, { onScript: (u) => loaded.push(u) }))
+
+    expect(loaded).toEqual([])
   })
 
-  it('passes an abort timeout signal to the manifest fetch and tolerates its rejection', async () => {
-    const fetchMock = vi.fn().mockRejectedValue(new DOMException('timeout', 'TimeoutError'))
-    vi.stubGlobal('fetch', fetchMock)
-    await expect(loadPluginExtensions()).resolves.toBeUndefined()
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+  it('loads only the bundles of plugins in the chain', async () => {
+    const loaded: string[] = []
+    await loadPluginExtensions(
+      {},
+      deps(
+        {
+          [CHAIN]: { chain: ['a'] },
+          [MANIFEST]: {
+            entries: [
+              { pluginId: 'a', surface: 'admin', entryPath: 'a/app/admin/main.js' },
+              { pluginId: 'b', surface: 'admin', entryPath: 'b/app/admin/main.js' },
+            ],
+          },
+        },
+        { onScript: (u) => loaded.push(u) },
+      ),
     )
+
+    expect(loaded).toEqual(['/plugin-assets/a/app/admin/main.js'])
   })
 
-  it('tolerates a malformed (null) manifest body without throwing', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(null) }))
-    await expect(loadPluginExtensions()).resolves.toBeUndefined()
-  })
-
-  it('appends the admin style and script assets from the manifest', async () => {
-    const manifest: PluginUiManifest = {
-      entries: [{ pluginId: 'a', surface: 'admin', entryPath: 'custom/plugins/a/admin.js' }],
-      styleEntries: [{ pluginId: 'a', surface: 'admin', stylePath: 'custom/plugins/a/admin.css' }],
+  it('tolerates a failing chain request and loads nothing rather than everything', async () => {
+    const loaded: string[] = []
+    const failing: PluginUiLoaderDeps = {
+      fetchJson: async () => {
+        throw new Error('network down')
+      },
+      loadScript: async (_doc, src) => {
+        loaded.push(src)
+      },
     }
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(manifest) }))
 
-    // happy-dom never fires onload for a real <script src>, so resolve the load
-    // promise ourselves as soon as the element is appended.
-    const appended: Array<{ tag: string; url: string }> = []
-    vi.spyOn(document.head, 'appendChild').mockImplementation((node: unknown) => {
-      const el = node as HTMLScriptElement & HTMLLinkElement
-      if (el.tagName === 'SCRIPT') {
-        appended.push({ tag: 'SCRIPT', url: el.src })
-        Promise.resolve().then(() => el.onload?.(new Event('load')))
-      } else if (el.tagName === 'LINK') {
-        appended.push({ tag: 'LINK', url: el.href })
-      }
-      return node as Node
-    })
-
-    await loadPluginExtensions()
-
-    expect(appended).toContainEqual({ tag: 'LINK', url: expect.stringContaining('/plugin-assets/a/admin.css') })
-    expect(appended).toContainEqual({ tag: 'SCRIPT', url: expect.stringContaining('/plugin-assets/a/admin.js') })
+    await expect(loadPluginExtensions({}, failing)).resolves.toEqual([])
+    expect(loaded).toEqual([])
+    expect(globalApi()).toBeDefined()
   })
 
-  it('does not let a broken plugin bundle reject the whole load', async () => {
-    const manifest: PluginUiManifest = {
-      entries: [{ pluginId: 'a', surface: 'admin', entryPath: 'custom/plugins/a/broken.js' }],
-    }
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(manifest) }))
-    vi.spyOn(document.head, 'appendChild').mockImplementation((node: unknown) => {
-      const el = node as HTMLScriptElement
-      if (el.tagName === 'SCRIPT') {
-        Promise.resolve().then(() => el.onerror?.(new Event('error')))
-      }
-      return node as Node
-    })
-
-    await expect(loadPluginExtensions()).resolves.toBeUndefined()
+  it('tolerates a malformed chain body', async () => {
+    await expect(loadPluginExtensions({}, deps({ [CHAIN]: null }))).resolves.toEqual([])
   })
 
-  it('records a loaded result per plugin script', async () => {
-    const manifest: PluginUiManifest = {
-      entries: [{ pluginId: 'acme', surface: 'admin', entryPath: 'custom/plugins/acme/admin.js' }],
-    }
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(manifest) }))
-    vi.spyOn(document.head, 'appendChild').mockImplementation((node: unknown) => {
-      const el = node as HTMLScriptElement
-      if (el.tagName === 'SCRIPT') {
-        Promise.resolve().then(() => el.onload?.(new Event('load')))
-      }
-      return node as Node
-    })
+  it('records a loaded result with a duration per bundle', async () => {
+    const results = await loadPluginExtensions(
+      {},
+      deps({
+        [CHAIN]: { chain: ['acme'] },
+        [MANIFEST]: { entries: [{ pluginId: 'acme', surface: 'admin', entryPath: 'acme/app/admin/main.js' }] },
+      }),
+    )
 
-    await loadPluginExtensions()
-
-    const results = getPluginUiLoadResults()
     expect(results).toHaveLength(1)
     expect(results[0]).toMatchObject({ pluginId: 'acme', status: 'loaded' })
-    expect(results[0].url).toContain('/plugin-assets/acme/admin.js')
+    expect(results[0].durationMs).toBeGreaterThan(0)
+    expect(getPluginUiLoadResults()).toEqual(results)
   })
 
-  it('records a failed result for a broken bundle', async () => {
-    const manifest: PluginUiManifest = {
-      entries: [{ pluginId: 'acme', surface: 'admin', entryPath: 'custom/plugins/acme/broken.js' }],
-    }
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(manifest) }))
-    vi.spyOn(document.head, 'appendChild').mockImplementation((node: unknown) => {
-      const el = node as HTMLScriptElement
-      if (el.tagName === 'SCRIPT') {
-        Promise.resolve().then(() => el.onerror?.(new Event('error')))
-      }
-      return node as Node
-    })
+  it('records a failed result for a broken bundle without stopping the others', async () => {
+    const results = await loadPluginExtensions(
+      {},
+      deps(
+        {
+          [CHAIN]: { chain: ['broken', 'good'] },
+          [MANIFEST]: {
+            entries: [
+              { pluginId: 'broken', surface: 'admin', entryPath: 'broken/app/admin/main.js' },
+              { pluginId: 'good', surface: 'admin', entryPath: 'good/app/admin/main.js' },
+            ],
+          },
+        },
+        { failing: ['broken/'] },
+      ),
+    )
 
-    await loadPluginExtensions()
-
-    const results = getPluginUiLoadResults()
-    expect(results).toHaveLength(1)
-    expect(results[0]).toMatchObject({ pluginId: 'acme', status: 'failed' })
+    expect(results.map((r) => [r.pluginId, r.status])).toEqual([
+      ['broken', 'failed'],
+      ['good', 'loaded'],
+    ])
+    expect(results[0].detail).toContain('broken')
   })
 
   it('attributes a plugin service registration to the loading plugin and reports the conflict', async () => {
     resetServices()
-    // A host default is already registered; the plugin overrides it during load.
+    // A host default is already registered; the plugin overrides it during its load window.
     registerService('usersApi', { name: 'host' })
-    const manifest: PluginUiManifest = {
-      entries: [{ pluginId: 'acme', surface: 'admin', entryPath: 'custom/plugins/acme/admin.js' }],
-    }
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(manifest) }))
-    vi.spyOn(document.head, 'appendChild').mockImplementation((node: unknown) => {
-      const el = node as HTMLScriptElement
-      if (el.tagName === 'SCRIPT') {
-        // Simulate the plugin bundle registering during its (attributed) load window.
-        globalApi()?.registerService('usersApi', { name: 'acme' })
-        Promise.resolve().then(() => el.onload?.(new Event('load')))
-      }
-      return node as Node
-    })
 
-    await loadPluginExtensions()
+    await loadPluginExtensions(
+      {},
+      deps(
+        {
+          [CHAIN]: { chain: ['acme'] },
+          [MANIFEST]: { entries: [{ pluginId: 'acme', surface: 'admin', entryPath: 'acme/app/admin/main.js' }] },
+        },
+        { onScript: () => globalApi()?.registerService('usersApi', { name: 'acme' }) },
+      ),
+    )
 
     expect(getServiceConflicts()).toEqual([
       { key: 'usersApi', activePluginId: 'acme', shadowedPluginIds: [null] },
     ])
     resetServices()
+  })
+
+  it('passes the selected workspace to the chain endpoint', async () => {
+    const seen: string[] = []
+    await loadPluginExtensions(
+      { workspaceKey: 'ws-42' },
+      {
+        fetchJson: async (url: string) => {
+          seen.push(url)
+          return { chain: [] }
+        },
+      },
+    )
+
+    expect(seen[0]).toBe('/api/ext/admin/ui-chain?workspaceKey=ws-42')
+  })
+
+  it('omits the workspace query when none is selected, letting the server use the bound one', async () => {
+    const seen: string[] = []
+    await loadPluginExtensions(
+      {},
+      {
+        fetchJson: async (url: string) => {
+          seen.push(url)
+          return { chain: [] }
+        },
+      },
+    )
+
+    expect(seen[0]).toBe('/api/ext/admin/ui-chain')
   })
 })

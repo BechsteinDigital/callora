@@ -15,8 +15,42 @@ updates:
     schedule:
       interval: weekly
 
+  # Jedes aktive npm-Verzeichnis wird abgedeckt (#121). Nicht gelistet: custom/plugins/*
+  # (Beispiel-Plugins, werden entfernt) und custom/static-plugins/_archive/* (archiviert).
   - package-ecosystem: npm
     directory: /src/Administration/Resources/app/administration
+    schedule:
+      interval: weekly
+    groups:
+      npm-all:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /src/Surface.Rendering/Resources/app/surface
+    schedule:
+      interval: weekly
+    groups:
+      npm-all:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /custom/surface-sdk
+    schedule:
+      interval: weekly
+    groups:
+      npm-all:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /custom/static-plugins/Communication/src/Resources/app/admin
+    schedule:
+      interval: weekly
+    groups:
+      npm-all:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /docs-site
     schedule:
       interval: weekly
     groups:
