@@ -1,6 +1,7 @@
 using Callora.Core.Application.Options;
 using Callora.Core.Application.Persistence;
 using Callora.Core.Application.Plugins;
+using Callora.Core.Domain.Extensions;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Startup;
 using Microsoft.AspNetCore.Hosting;
@@ -135,7 +136,7 @@ public sealed class PluginUiAssetPublisher(
             PublishSurface(
                 pluginId,
                 pluginRoot,
-                "admin",
+                ExtensionSurfaceCodes.Admin,
                 stagingRoot,
                 entries,
                 styleEntries);
@@ -143,7 +144,7 @@ public sealed class PluginUiAssetPublisher(
             PublishSurface(
                 pluginId,
                 pluginRoot,
-                "workspace",
+                ExtensionSurfaceCodes.Surface,
                 stagingRoot,
                 entries,
                 styleEntries);
@@ -329,13 +330,13 @@ public sealed class PluginUiAssetPublisher(
         return
             Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "public")) ||
             Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "app")) ||
-            Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "views", "workspace")) ||
+            Directory.Exists(Path.Combine(pluginRoot, "src", "Resources", "views", "surface")) ||
             Directory.Exists(Path.Combine(pluginRoot, "Resources", "public")) ||
             Directory.Exists(Path.Combine(pluginRoot, "Resources", "app")) ||
-            Directory.Exists(Path.Combine(pluginRoot, "Resources", "views", "workspace")) ||
+            Directory.Exists(Path.Combine(pluginRoot, "Resources", "views", "surface")) ||
             Directory.Exists(Path.Combine(pluginRoot, "public")) ||
             Directory.Exists(Path.Combine(pluginRoot, "app")) ||
-            Directory.Exists(Path.Combine(pluginRoot, "views", "workspace"));
+            Directory.Exists(Path.Combine(pluginRoot, "views", "surface"));
     }
 
     private void PublishSurface(
@@ -476,7 +477,7 @@ public sealed class PluginUiAssetPublisher(
             return;
         }
 
-        var targetDirectory = ResolveContainedTargetDirectory(pluginAssetsRoot, pluginId, "views", "workspace");
+        var targetDirectory = ResolveContainedTargetDirectory(pluginAssetsRoot, pluginId, "views", "surface");
         if (targetDirectory is null)
         {
             return;
@@ -490,7 +491,7 @@ public sealed class PluginUiAssetPublisher(
         foreach (var file in files)
         {
             var relative = Path.GetRelativePath(sourceDirectory, file);
-            var templatePath = ToManifestPath(Path.Combine(pluginId, "views", "workspace", relative));
+            var templatePath = ToManifestPath(Path.Combine(pluginId, "views", "surface", relative));
             templates.Add(new PluginWorkspaceTemplateManifestEntry(pluginId, templatePath));
         }
     }
@@ -562,19 +563,19 @@ public sealed class PluginUiAssetPublisher(
 
     private static string ResolveWorkspaceTemplateSourceDirectory(string pluginRoot)
     {
-        var sourcePreferred = Path.Combine(pluginRoot, "src", "Resources", "views", "workspace");
+        var sourcePreferred = Path.Combine(pluginRoot, "src", "Resources", "views", "surface");
         if (Directory.Exists(sourcePreferred))
         {
             return sourcePreferred;
         }
 
-        var packagedResources = Path.Combine(pluginRoot, "Resources", "views", "workspace");
+        var packagedResources = Path.Combine(pluginRoot, "Resources", "views", "surface");
         if (Directory.Exists(packagedResources))
         {
             return packagedResources;
         }
 
-        return Path.Combine(pluginRoot, "views", "workspace");
+        return Path.Combine(pluginRoot, "views", "surface");
     }
 
     private static void RecreateDirectory(string path)

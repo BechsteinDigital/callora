@@ -30,24 +30,24 @@ public sealed class WorkspaceTemplateEndpointsTests
             "/api/themes/definitions/workspace.dashboard/plugins/template-alpha/versions/1.0.0",
             new ThemeDefinitionUpsertApiRequest(
                 DisplayName: "Dashboard Alpha",
-                TemplatePath: "custom/plugins/TemplateAlpha/src/Resources/views/workspace/layouts/dashboard.html",
+                TemplatePath: "custom/plugins/TemplateAlpha/src/Resources/views/surface/layouts/dashboard.html",
                 ParentTemplateKey: null,
                 Scope: "workspace",
                 IsActive: true,
                 Priority: 100,
-                Surface: "workspace"));
+                Surface: "surface"));
         Assert.Equal(HttpStatusCode.OK, upsertAlpha.StatusCode);
 
         var upsertBeta = await adminClient.PutAsJsonAsync(
             "/api/themes/definitions/workspace.dashboard/plugins/template-beta/versions/1.1.0",
             new ThemeDefinitionUpsertApiRequest(
                 DisplayName: "Dashboard Beta",
-                TemplatePath: "custom/plugins/TemplateBeta/src/Resources/views/workspace/layouts/dashboard.html",
+                TemplatePath: "custom/plugins/TemplateBeta/src/Resources/views/surface/layouts/dashboard.html",
                 ParentTemplateKey: null,
                 Scope: "workspace",
                 IsActive: true,
                 Priority: 110,
-                Surface: "workspace"));
+                Surface: "surface"));
         Assert.Equal(HttpStatusCode.OK, upsertBeta.StatusCode);
 
         var assignAlpha = await adminClient.PutAsJsonAsync(
@@ -86,24 +86,24 @@ public sealed class WorkspaceTemplateEndpointsTests
             "/api/themes/definitions/workspace.base/plugins/template-alpha/versions/1.0.0",
             new ThemeDefinitionUpsertApiRequest(
                 DisplayName: "Workspace Base",
-                TemplatePath: "custom/plugins/TemplateAlpha/src/Resources/views/workspace/base.html",
+                TemplatePath: "custom/plugins/TemplateAlpha/src/Resources/views/surface/base.html",
                 ParentTemplateKey: null,
                 Scope: "workspace",
                 IsActive: true,
                 Priority: 80,
-                Surface: "workspace"));
+                Surface: "surface"));
         Assert.Equal(HttpStatusCode.OK, upsertBase.StatusCode);
 
         var upsertChild = await adminClient.PutAsJsonAsync(
             "/api/themes/definitions/workspace.dashboard/plugins/template-beta/versions/1.1.0",
             new ThemeDefinitionUpsertApiRequest(
                 DisplayName: "Workspace Dashboard Beta",
-                TemplatePath: "custom/plugins/TemplateBeta/src/Resources/views/workspace/layouts/dashboard.html",
+                TemplatePath: "custom/plugins/TemplateBeta/src/Resources/views/surface/layouts/dashboard.html",
                 ParentTemplateKey: "workspace.base",
                 Scope: "workspace",
                 IsActive: true,
                 Priority: 110,
-                Surface: "workspace"));
+                Surface: "surface"));
         Assert.Equal(HttpStatusCode.OK, upsertChild.StatusCode);
 
         var assign = await adminClient.PutAsJsonAsync(
@@ -133,12 +133,12 @@ public sealed class WorkspaceTemplateEndpointsTests
             "/api/themes/definitions/workspace.dashboard/plugins/template-alpha/versions/1.0.0",
             new ThemeDefinitionUpsertApiRequest(
                 DisplayName: "Dashboard Alpha",
-                TemplatePath: "custom/plugins/TemplateAlpha/src/Resources/views/workspace/layouts/dashboard.html",
+                TemplatePath: "custom/plugins/TemplateAlpha/src/Resources/views/surface/layouts/dashboard.html",
                 ParentTemplateKey: null,
                 Scope: "workspace",
                 IsActive: true,
                 Priority: 100,
-                Surface: "workspace"));
+                Surface: "surface"));
 
         _ = await adminClient.PutAsJsonAsync(
             "/api/themes/workspaces/workspace-a",
@@ -169,12 +169,12 @@ public sealed class WorkspaceTemplateEndpointsTests
             "/api/themes/definitions/workspace.dashboard/plugins/template-alpha/versions/1.0.0",
             new ThemeDefinitionUpsertApiRequest(
                 DisplayName: "Dashboard Alpha",
-                TemplatePath: "custom/plugins/TemplateAlpha/src/Resources/views/workspace/layouts/dashboard.html",
+                TemplatePath: "custom/plugins/TemplateAlpha/src/Resources/views/surface/layouts/dashboard.html",
                 ParentTemplateKey: null,
                 Scope: "workspace",
                 IsActive: true,
                 Priority: 100,
-                Surface: "workspace"));
+                Surface: "surface"));
         Assert.Equal(HttpStatusCode.OK, upsertTheme.StatusCode);
 
         var assign = await adminClient.PutAsJsonAsync(

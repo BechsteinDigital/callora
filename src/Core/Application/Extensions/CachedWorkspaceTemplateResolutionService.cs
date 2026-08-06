@@ -100,7 +100,7 @@ public sealed class CachedWorkspaceTemplateResolutionService(
         }
 
         var definitions = await templateRegistryStore
-            .ListDefinitionsAsync(surface: "workspace", isActive: true, cancellationToken)
+            .ListDefinitionsAsync(surface: "surface", isActive: true, cancellationToken)
             .ConfigureAwait(false);
 
         if (definitions.Count == 0)

@@ -1,10 +1,9 @@
 <template>
-  <CalPage wide>
-    <CalPageHeader title="Webhooks" description="Ereignisse der Plattform an externe Ziele zustellen.">
-      <template #actions>
-        <ExtensionSlot name="webhooks.list.toolbar" />
-      </template>
-    </CalPageHeader>
+  <CalListPage
+    module="webhooks"
+    title="Webhooks"
+    description="Ereignisse der Plattform an externe Ziele zustellen."
+  >
 
     <CalCard
       v-if="canManage"
@@ -95,7 +94,7 @@
         </CalButton>
       </template>
     </CalCard>
-  </CalPage>
+  </CalListPage>
 </template>
 
 <script setup lang="ts">
@@ -105,6 +104,7 @@ import { webhooksApi, type WebhookSubscription } from './webhooksApi'
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
+import CalListPage from '@/core/patterns/CalListPage.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
 import CalBadge from '@/core/ui/CalBadge.vue'
@@ -114,8 +114,6 @@ import CalCheckbox from '@/core/ui/CalCheckbox.vue'
 import CalDataTable from '@/core/ui/CalDataTable.vue'
 import CalField from '@/core/ui/CalField.vue'
 import CalInput from '@/core/ui/CalInput.vue'
-import CalPage from '@/core/ui/CalPage.vue'
-import CalPageHeader from '@/core/ui/CalPageHeader.vue'
 import type { DataTableColumn } from '@/core/ui/dataTable'
 import { confirm } from '@/core/feedback/confirm'
 import { toast } from '@/core/feedback/toasts'

@@ -16,8 +16,8 @@ public sealed class NunjucksRealBundleTests : IDisposable
 
     public NunjucksRealBundleTests()
     {
-        // <temp>/views/workspace/{base.njk, partials/sidebar.njk, layouts/dashboard.njk}
-        _viewsRoot = Path.Combine(_temp.FullName, "views", "workspace");
+        // <temp>/views/surface/{base.njk, partials/sidebar.njk, layouts/dashboard.njk}
+        _viewsRoot = Path.Combine(_temp.FullName, "views", "surface");
         Directory.CreateDirectory(Path.Combine(_viewsRoot, "partials"));
         Directory.CreateDirectory(Path.Combine(_viewsRoot, "layouts"));
 

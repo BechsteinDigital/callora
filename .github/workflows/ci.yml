@@ -197,6 +197,14 @@ jobs:
       - name: Audit (all dependencies, advisory)
         run: npm audit --audit-level=high || true
 
+      # Der Extension-Point-Katalog wird aus der Shell generiert. Wanderte ein Slot,
+      # ohne dass jemand neu generiert, verspräche @callora/admin einen Punkt, den es
+      # nicht mehr gibt — und der Typfehler träfe den Plugin-Autor statt uns.
+      - name: Katalog aktuell?
+        run: |
+          npm run generate:catalog
+          git diff --exit-code src/core/extensions/catalog.generated.ts src/core/extensions/catalog.json
+
       # Die Vitest-Suite (Slots/Hooks/Services/Loader + alle Admin-Module) läuft
       # als eigener Gate-Schritt, damit UI-Verhaltensregressionen main nicht
       # erreichen; der Build (vue-tsc + vite) folgt als Typ-/Bundle-Check.
@@ -205,3 +213,12 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Build library
+        run: npm run build:lib
+
+      # Nach dem Bibliotheks-Build, weil beide Tests gegen dist-lib prüfen: dass jeder
+      # Export auf eine gebaute Datei zeigt, und dass die Scope-Ids der Bibliothek im
+      # Anwendungs-Build vorkommen. Bräche das, blieben Plugin-Seiten ungestylt.
+      - name: Paketvertrag prüfen
+        run: npx vitest run src/public/exports.test.ts src/public/scoped-styles.test.ts

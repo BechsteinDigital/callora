@@ -9,7 +9,7 @@ namespace Callora.Core.Tests.Surface;
 /// <summary>
 /// End-to-end for the published-bundle wiring (engine baustein E2c): a plugin whose
 /// Nunjucks views were laid down by the UI asset publisher at
-/// <c>&lt;webRoot&gt;/plugin-assets/&lt;id&gt;/views/workspace</c> resolves its surface
+/// <c>&lt;webRoot&gt;/plugin-assets/&lt;id&gt;/views/surface</c> resolves its surface
 /// entry and renders through the confined loader — the same path the /surface/render
 /// endpoint drives.
 /// </summary>
@@ -21,8 +21,8 @@ public sealed class PublishedSurfaceTemplateBundlesTests : IDisposable
 
     public PublishedSurfaceTemplateBundlesTests()
     {
-        // Mirror the publisher's output tree: <webRoot>/plugin-assets/alpha/views/workspace.
-        _viewsRoot = Path.Combine(_temp.FullName, "plugin-assets", "alpha", "views", "workspace");
+        // Mirror the publisher's output tree: <webRoot>/plugin-assets/alpha/views/surface.
+        _viewsRoot = Path.Combine(_temp.FullName, "plugin-assets", "alpha", "views", "surface");
         Directory.CreateDirectory(Path.Combine(_viewsRoot, "partials"));
 
         File.WriteAllText(Path.Combine(_viewsRoot, "base.njk"),
@@ -88,7 +88,7 @@ public sealed class PublishedSurfaceTemplateBundlesTests : IDisposable
     public void PluginWithoutEntry_ReturnsNull_ForSpaFallback()
     {
         // A published views root that has partials but no index/main entry.
-        var noEntry = Path.Combine(_temp.FullName, "plugin-assets", "beta", "views", "workspace");
+        var noEntry = Path.Combine(_temp.FullName, "plugin-assets", "beta", "views", "surface");
         Directory.CreateDirectory(noEntry);
         File.WriteAllText(Path.Combine(noEntry, "base.njk"), "<html></html>");
 

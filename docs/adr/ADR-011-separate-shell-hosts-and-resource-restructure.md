@@ -164,3 +164,17 @@ Tradeoffs:
 4. Backend funktioniert als API-Control-Plane ohne Shell-Copy-Zwang.
 5. Plugin-Admin- und Plugin-Workspace-Erweiterungen laufen ueber Public-Artefakte reproduzierbar.
 6. Workspace-Domain-Routing ist host-basiert und fuer mehrere Workspace-Domains auf einer Plattforminstanz nutzbar.
+
+---
+
+## Nachtrag 2026-08-06 — Flächencode umbenannt
+
+Der tenant-seitige Flächencode heißt seit `ExtensionSurfaceCodes.Surface` **`surface`**, nicht
+mehr `workspace`. Betroffen sind der Code in Manifesten (`"surface": "surface"`), die
+Verzeichnisse `Resources/app/surface`, `Resources/public/surface` und `Resources/views/surface`
+sowie die Spalte `workspace_template_definitions.surface`.
+
+Der alte Name benannte das Falsche: ein Workspace ist der Behälter, eine Surface einer seiner
+Zugänge, und ein Workspace kann mehrere haben (ADR-014 §5). Wo dieses Dokument `workspace` als
+Fläche schreibt, ist `surface` gemeint; `workspace` als Behälter, als Scope und in Routen wie
+`/workspace/public/ui-chain` bleibt unverändert.

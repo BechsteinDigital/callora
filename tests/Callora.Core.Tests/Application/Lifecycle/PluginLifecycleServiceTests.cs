@@ -746,7 +746,7 @@ public sealed class PluginLifecycleServiceTests
                     [
                         new PluginPackageExtensionRegistration(
                             "workspace.unknown.point",
-                            ExtensionSurface.Workspace)
+                            ExtensionSurface.Surface)
                     ]))
         };
         var extensionRegistry = new InMemoryExtensionPointRegistryStore();
@@ -870,7 +870,7 @@ public sealed class PluginLifecycleServiceTests
                 new StaticHostPluginExtensionContributor(
                     "plugin-x",
                     ["workspace.navigation"],
-                    [new HostPluginExtensionRegistration("workspace.navigation.unknown", "workspace")])
+                    [new HostPluginExtensionRegistration("workspace.navigation.unknown", "surface")])
             ]
         });
         var sut = new PluginLifecycleService(
@@ -926,7 +926,7 @@ public sealed class PluginLifecycleServiceTests
                 new StaticHostPluginExtensionContributor(
                     "plugin-x",
                     ["workspace.navigation"],
-                    [new HostPluginExtensionRegistration("workspace.navigation.main", "workspace")])
+                    [new HostPluginExtensionRegistration("workspace.navigation.main", "surface")])
             ]
         });
         var sut = new PluginLifecycleService(
