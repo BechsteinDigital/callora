@@ -88,7 +88,7 @@ workspace data through different channels and access modes at once.
 ## Themes and branding
 
 Branding is a **token axis**: themes are contributed by plugins per *surface*
-(for example a `workspace` surface or the `admin` surface), versioned, and can
+(for example a `surface` surface or the `admin` surface), versioned, and can
 inherit from a parent theme so a child overrides only what it needs. You assign a
 theme to a workspace and then tune its settings.
 

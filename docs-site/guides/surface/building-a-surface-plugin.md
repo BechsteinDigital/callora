@@ -43,8 +43,8 @@ at runtime from the runtime's shared `window.CalloraVue`, so every plugin runs i
 *same* Vue instance instead of shipping its own.
 
 The default `<surface>` segment is `workspace`. The build outputs to
-`src/Resources/public/workspace`; on publish the host copies that to
-`/plugin-assets/<pluginId>/app/workspace/`. The client loader finds it via the manifest
+`src/Resources/public/surface`; on publish the host copies that to
+`/plugin-assets/<pluginId>/app/surface/`. The client loader finds it via the manifest
 and injects it in chain order. (Sources under `app/` stay with the vendor; only the built
 `Resources/public/<surface>` deliverable ships — Shopware-analog.)
 
@@ -61,10 +61,10 @@ my-plugin/                       # plugin root — also holds registry.json / .c
 ├── vite.config.ts
 └── src/
     └── Resources/
-        ├── app/workspace/src/   # source (stays with the vendor)
+        ├── app/surface/src/   # source (stays with the vendor)
         │   ├── main.ts
         │   └── GreetingPage.vue
-        └── public/workspace/    # build output — the only thing that ships
+        └── public/surface/    # build output — the only thing that ships
 ```
 
 `package.json` for the bundle (at the plugin root):
@@ -115,7 +115,7 @@ import { calloraSurfacePlugin } from '@callora/surface-sdk/vite-preset'
 
 export default calloraSurfacePlugin({
   // Paths are relative to the plugin root (where this vite.config.ts lives).
-  entry: 'src/Resources/app/workspace/src/main.ts',
+  entry: 'src/Resources/app/surface/src/main.ts',
   name: 'MyPluginWorkspaceSurface', // must be globally unique per plugin
 })
 ```
@@ -213,7 +213,7 @@ npm install
 npm run build
 ```
 
-**Expected result:** `src/Resources/public/workspace/` now contains `main.js` (and
+**Expected result:** `src/Resources/public/surface/` now contains `main.js` (and
 `main.css` if the component emitted styles). These are the files that ship with the
 plugin.
 
@@ -229,8 +229,8 @@ installing or shipping.
 You don't wire anything up manually — publication and loading are automatic:
 
 1. **Publish.** When the plugin is active, `PluginUiAssetPublisher` copies
-   `src/Resources/public/workspace/` to
-   `<webroot>/plugin-assets/<pluginId>/app/workspace/` and records the entry (and any
+   `src/Resources/public/surface/` to
+   `<webroot>/plugin-assets/<pluginId>/app/surface/` and records the entry (and any
    `main.css`) in the UI-asset manifest, served at
    `/manifests/plugin-ui-assets.manifest.json`.
 2. **Chain.** Add the plugin to the workspace's UI chain (the ordered list of plugin ids
@@ -254,7 +254,7 @@ your greeting, with the workspace and surface keys filled in from the `SurfaceCo
 
 ::: tip Nothing showing?
 Walk the chain outward: is the plugin **active**? Did the build produce `main.js`? Does
-`/manifests/plugin-ui-assets.manifest.json` list your entry for `surface: "workspace"`?
+`/manifests/plugin-ui-assets.manifest.json` list your entry for `surface: "surface"`?
 Is the plugin id present in `/workspace/public/ui-chain`? Each layer is independent, so
 the break is usually in exactly one of them.
 :::
@@ -262,11 +262,11 @@ the break is usually in exactly one of them.
 ## The complete picture
 
 ```text
-src/main.ts  ──build──▶  Resources/public/workspace/main.js
+src/main.ts  ──build──▶  Resources/public/surface/main.js
                                     │
                           PluginUiAssetPublisher (on activate)
                                     ▼
-        /plugin-assets/<id>/app/workspace/main.js  +  manifest entry
+        /plugin-assets/<id>/app/surface/main.js  +  manifest entry
                                     │
               plugin-loader.ts reads chain + manifest, injects <script>
                                     ▼

@@ -1,0 +1,402 @@
+{
+  "slots": [
+    {
+      "kind": "slot",
+      "name": "config.toolbar",
+      "file": "modules/config/SystemConfigView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "config.fields",
+      "file": "modules/config/SystemConfigView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "dashboard.metrics",
+      "file": "modules/dashboard/DashboardView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "entitlements.list.toolbar",
+      "file": "modules/entitlements/EntitlementsListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "entitlements.list.row-actions",
+      "file": "modules/entitlements/EntitlementsListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "flows.list.toolbar",
+      "file": "modules/flows/FlowsListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "flows.list.row-actions",
+      "file": "modules/flows/FlowsListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "jobs.list.toolbar",
+      "file": "modules/jobs/JobsListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "media.toolbar",
+      "file": "modules/media/MediaLibraryView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "media.item-actions",
+      "file": "modules/media/MediaLibraryView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "plugins.list.toolbar",
+      "file": "modules/plugins/PluginsListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "plugins.list.row-actions",
+      "file": "modules/plugins/PluginsListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "roles.detail.fields",
+      "file": "modules/roles/RoleDetailView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "roles.list.toolbar",
+      "file": "modules/roles/RolesListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "tenants.list.toolbar",
+      "file": "modules/tenants/TenantsListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "tenants.list.row-actions",
+      "file": "modules/tenants/TenantsListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "themes.toolbar",
+      "file": "modules/themes/ThemesView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "themes.after-assignment",
+      "file": "modules/themes/ThemesView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "users.detail.fields",
+      "file": "modules/users/UserDetailView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "users.list.toolbar",
+      "file": "modules/users/UsersListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "users.list.row-actions",
+      "file": "modules/users/UsersListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "webhooks.list.toolbar",
+      "file": "modules/webhooks/WebhooksListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "webhooks.list.row-actions",
+      "file": "modules/webhooks/WebhooksListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "workspaces.detail.fields",
+      "file": "modules/workspaces/WorkspaceDetailView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "workspaces.members.row-actions",
+      "file": "modules/workspaces/WorkspaceMembers.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "workspaces.surfaces.row-actions",
+      "file": "modules/workspaces/WorkspaceSurfaces.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "workspaces.list.toolbar",
+      "file": "modules/workspaces/WorkspacesListView.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "workspaces.list.row-actions",
+      "file": "modules/workspaces/WorkspacesListView.vue"
+    }
+  ],
+  "hooks": [
+    {
+      "kind": "hook",
+      "name": "config.before-save",
+      "file": "modules/config/SystemConfigView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "config.after-save",
+      "file": "modules/config/SystemConfigView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "entitlements.before-*",
+      "file": "modules/entitlements/EntitlementsListView.vue",
+      "dynamic": true
+    },
+    {
+      "kind": "hook",
+      "name": "entitlements.after-*",
+      "file": "modules/entitlements/EntitlementsListView.vue",
+      "dynamic": true
+    },
+    {
+      "kind": "hook",
+      "name": "flows.before-save",
+      "file": "modules/flows/FlowsListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "flows.after-save",
+      "file": "modules/flows/FlowsListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "flows.before-delete",
+      "file": "modules/flows/FlowsListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "flows.after-delete",
+      "file": "modules/flows/FlowsListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "media.before-upload",
+      "file": "modules/media/MediaLibraryView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "media.after-upload",
+      "file": "modules/media/MediaLibraryView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "media.before-delete",
+      "file": "modules/media/MediaLibraryView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "media.after-delete",
+      "file": "modules/media/MediaLibraryView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "plugins.before-install",
+      "file": "modules/plugins/PluginsListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "plugins.after-install",
+      "file": "modules/plugins/PluginsListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "plugins.before-*",
+      "file": "modules/plugins/PluginsListView.vue",
+      "dynamic": true
+    },
+    {
+      "kind": "hook",
+      "name": "plugins.after-*",
+      "file": "modules/plugins/PluginsListView.vue",
+      "dynamic": true
+    },
+    {
+      "kind": "hook",
+      "name": "roles.before-save",
+      "file": "modules/roles/RoleDetailView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "roles.after-save",
+      "file": "modules/roles/RoleDetailView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "roles.before-delete",
+      "file": "modules/roles/RolesListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "roles.after-delete",
+      "file": "modules/roles/RolesListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "tenants.before-create",
+      "file": "modules/tenants/TenantsListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "tenants.after-create",
+      "file": "modules/tenants/TenantsListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "tenants.before-*",
+      "file": "modules/tenants/TenantsListView.vue",
+      "dynamic": true
+    },
+    {
+      "kind": "hook",
+      "name": "tenants.after-*",
+      "file": "modules/tenants/TenantsListView.vue",
+      "dynamic": true
+    },
+    {
+      "kind": "hook",
+      "name": "themes.settings.before-save",
+      "file": "modules/themes/ThemeSettings.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "themes.settings.after-save",
+      "file": "modules/themes/ThemeSettings.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "themes.before-assign",
+      "file": "modules/themes/ThemesView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "themes.after-assign",
+      "file": "modules/themes/ThemesView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "themes.before-clear",
+      "file": "modules/themes/ThemesView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "themes.after-clear",
+      "file": "modules/themes/ThemesView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "users.before-save",
+      "file": "modules/users/UserDetailView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "users.after-save",
+      "file": "modules/users/UserDetailView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "users.before-delete",
+      "file": "modules/users/UsersListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "users.after-delete",
+      "file": "modules/users/UsersListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "webhooks.before-create",
+      "file": "modules/webhooks/WebhooksListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "webhooks.after-create",
+      "file": "modules/webhooks/WebhooksListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "webhooks.before-delete",
+      "file": "modules/webhooks/WebhooksListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "webhooks.after-delete",
+      "file": "modules/webhooks/WebhooksListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.before-save",
+      "file": "modules/workspaces/WorkspaceDetailView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.after-save",
+      "file": "modules/workspaces/WorkspaceDetailView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.member.before-save",
+      "file": "modules/workspaces/WorkspaceMembers.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.member.after-save",
+      "file": "modules/workspaces/WorkspaceMembers.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.member.before-remove",
+      "file": "modules/workspaces/WorkspaceMembers.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.member.after-remove",
+      "file": "modules/workspaces/WorkspaceMembers.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.surface.before-save",
+      "file": "modules/workspaces/WorkspaceSurfaces.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.surface.after-save",
+      "file": "modules/workspaces/WorkspaceSurfaces.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.surface.before-remove",
+      "file": "modules/workspaces/WorkspaceSurfaces.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.surface.after-remove",
+      "file": "modules/workspaces/WorkspaceSurfaces.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.before-delete",
+      "file": "modules/workspaces/WorkspacesListView.vue"
+    },
+    {
+      "kind": "hook",
+      "name": "workspaces.after-delete",
+      "file": "modules/workspaces/WorkspacesListView.vue"
+    }
+  ]
+}

@@ -30,7 +30,7 @@ describe('calloraSurfacePlugin', () => {
 
   it('defaults the output dir to Resources/public/<surface> and honours overrides', () => {
     expect(calloraSurfacePlugin({ entry: 'e', name: 'X' }).build?.outDir).toBe(
-      'src/Resources/public/workspace',
+      'src/Resources/public/surface',
     )
     expect(calloraSurfacePlugin({ entry: 'e', name: 'X', surface: 'admin' }).build?.outDir).toBe(
       'src/Resources/public/admin',

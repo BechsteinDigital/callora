@@ -177,7 +177,7 @@ public sealed class {className} : IHostManagedPlugin
                 new
                 {
                     extensionPointId = "workspace.navigation.main",
-                    surface = "workspace"
+                    surface = "surface"
                 }
             },
             dependencies = new Dictionary<string, string>(StringComparer.Ordinal)

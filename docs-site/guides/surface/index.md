@@ -96,7 +96,7 @@ A surface plugin contributes one of three things:
 | Contribution | Layer | You ship | Learn in |
 | --- | --- | --- | --- |
 | A **Vue view** | Client | An IIFE bundle under `Resources/public/<surface>` that calls `registerSurfaceView` | [Building a surface plugin](./building-a-surface-plugin) |
-| A **`.njk` template** | SSR | Nunjucks views under `Resources/views/workspace/` (entry `index.njk`) | [SSR Templates](./ssr-templates) |
+| A **`.njk` template** | SSR | Nunjucks views under `Resources/views/surface/` (entry `index.njk`) | [SSR Templates](./ssr-templates) |
 | A **theme** | Both | A `theme.json` declaring `--cal-*` tokens + settings | [Themes & Tokens](./themes-and-tokens) |
 
 These are not mutually exclusive — a content-surface plugin commonly ships a `.njk`

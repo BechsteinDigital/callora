@@ -17,7 +17,7 @@ public sealed class PublishedSurfaceTemplateBundles : ISurfaceTemplateBundleProv
     // Only the workspace surface publishes SSR templates today: PluginUiAssetPublisher
     // publishes plugin views under views/workspace. Generalise to a surface argument
     // when an admin SSR surface lands.
-    private const string ViewsSurfaceSegment = "workspace";
+    private const string ViewsSurfaceSegment = "surface";
 
     // The SSR entry, mirroring the built-JS entry convention (index.js/main.js): the
     // primary template plugin's root document. .njk is the engine's native extension;

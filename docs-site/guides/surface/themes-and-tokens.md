@@ -91,7 +91,7 @@ can override.
 
 ```json
 {
-  "surface": "workspace",
+  "surface": "surface",
   "definitions": [
     { "templateKey": "custom-dashboard", "displayName": "Custom Dashboard", "priority": 50 }
   ],
