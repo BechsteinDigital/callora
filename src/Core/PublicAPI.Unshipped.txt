@@ -3816,7 +3816,7 @@ Callora.Core.Domain.Extensions.ExtensionPointRegistrySnapshot.RegistryVersion.ge
 Callora.Core.Domain.Extensions.ExtensionPointRegistrySnapshot.RegistryVersion.init -> void
 Callora.Core.Domain.Extensions.ExtensionSurface
 Callora.Core.Domain.Extensions.ExtensionSurface.Admin = 0 -> Callora.Core.Domain.Extensions.ExtensionSurface
-Callora.Core.Domain.Extensions.ExtensionSurface.Workspace = 1 -> Callora.Core.Domain.Extensions.ExtensionSurface
+Callora.Core.Domain.Extensions.ExtensionSurface.Surface = 1 -> Callora.Core.Domain.Extensions.ExtensionSurface
 Callora.Core.Domain.Extensions.ExtensionSurfaceCodes
 Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition
 Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition.CreatedAtUtc.get -> System.DateTimeOffset
@@ -5292,7 +5292,7 @@ const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceNavigationM
 const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceThemeDefinition = "workspace.theme.definition" -> string!
 const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceThemeSettings = "workspace.theme.settings" -> string!
 const Callora.Core.Domain.Extensions.ExtensionSurfaceCodes.Admin = "admin" -> string!
-const Callora.Core.Domain.Extensions.ExtensionSurfaceCodes.Workspace = "workspace" -> string!
+const Callora.Core.Domain.Extensions.ExtensionSurfaceCodes.Surface = "surface" -> string!
 const Callora.Core.Domain.Plugins.PluginInstallationException.AlreadyUninstalledCode = "PLUGIN__ALREADY_UNINSTALLED" -> string!
 const Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions.McpAuthorizationPolicy = "CalloraMcp" -> string!
 const Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions.McpEndpointPattern = "/mcp" -> string!

@@ -666,7 +666,7 @@ Callora.Administration.Api.ThemeDefinitionUpsertApiRequest.Surface.get -> string
 Callora.Administration.Api.ThemeDefinitionUpsertApiRequest.Surface.init -> void
 Callora.Administration.Api.ThemeDefinitionUpsertApiRequest.TemplatePath.get -> string!
 Callora.Administration.Api.ThemeDefinitionUpsertApiRequest.TemplatePath.init -> void
-Callora.Administration.Api.ThemeDefinitionUpsertApiRequest.ThemeDefinitionUpsertApiRequest(string! DisplayName, string! TemplatePath, string? ParentTemplateKey, string! Scope, bool IsActive, int Priority, string! Surface = "workspace") -> void
+Callora.Administration.Api.ThemeDefinitionUpsertApiRequest.ThemeDefinitionUpsertApiRequest(string! DisplayName, string! TemplatePath, string? ParentTemplateKey, string! Scope, bool IsActive, int Priority, string! Surface = "surface") -> void
 Callora.Administration.Api.ThemeEndpoints
 Callora.Administration.Api.TrustedPluginSignerApiResponse
 Callora.Administration.Api.TrustedPluginSignerApiResponse.<Clone>$() -> Callora.Administration.Api.TrustedPluginSignerApiResponse!

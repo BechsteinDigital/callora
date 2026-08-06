@@ -14,7 +14,7 @@ Grounded in `src/Surface.Rendering/` — `NunjucksSurfaceRenderer`,
 
 - The Nunjucks-on-Jint rendering engine and its hardened sandbox
 - Template inheritance: `extends`, `block`, `super()`, and `include`
-- The bundle layout (`Resources/views/workspace/`, entry `index.njk`)
+- The bundle layout (`Resources/views/surface/`, entry `index.njk`)
 - How `GET /surface/render` resolves a workspace's chain and renders its entry
 - The context values a template may read
 - How the SPA shell fits in as a fallback
@@ -55,7 +55,7 @@ templates.
 Because it's real Nunjucks, you get full Twig-style inheritance. A base layout declares
 blocks; child templates extend it and fill or extend those blocks.
 
-`views/workspace/base.njk`:
+`views/surface/base.njk`:
 
 ```html
 <!doctype html>
@@ -71,7 +71,7 @@ blocks; child templates extend it and fill or extend those blocks.
 </html>
 ```
 
-`views/workspace/index.njk` (the entry):
+`views/surface/index.njk` (the entry):
 
 ```html
 {% extends "base.njk" %}
@@ -98,9 +98,9 @@ Template names are resolved through `BundleFileLoader`
 
 - A **plain relative name** (`"base.njk"`, `"partials/footer.njk"`) resolves against the
   **primary bundle** — the first plugin in the surface's chain, i.e. the rendering
-  plugin's own `views/workspace` root.
+  plugin's own `views/surface` root.
 - A **cross-bundle name** `@<pluginId>/path` resolves against another plugin *in the chain*
-  — e.g. `{% extends "@acme.base-theme/views/workspace/base.njk" %}` to inherit from a base
+  — e.g. `{% extends "@acme.base-theme/views/surface/base.njk" %}` to inherit from a base
   theme plugin.
 
 Every resolved path is canonicalised and confined under its bundle root; `../`, absolute
@@ -116,7 +116,7 @@ client runtime mounts the matching registered Vue view into each — see
 
 ## Bundle layout
 
-An SSR template bundle lives under the plugin's `Resources/views/workspace/`:
+An SSR template bundle lives under the plugin's `Resources/views/surface/`:
 
 ```text
 my-plugin/
@@ -131,7 +131,7 @@ my-plugin/
 ```
 
 On activation the publisher copies this tree to
-`<webroot>/plugin-assets/<pluginId>/views/workspace/`
+`<webroot>/plugin-assets/<pluginId>/views/surface/`
 (`PluginUiAssetPublisher`), and `PublishedSurfaceTemplateBundles` maps a plugin id back to
 that published root for the renderer.
 

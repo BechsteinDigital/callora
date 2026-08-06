@@ -45,3 +45,17 @@ Tradeoffs:
 - Template-Auswahl ist pro Workspace auditierbar.
 - Konflikte zwischen Plugin-Templates werden ueber feste Prioritaets- und Fallback-Regeln aufgeloest.
 - `Admin UI` nutzt ausschliesslich `api/*`, `Workspace UI` ausschliesslich `workspace/*`.
+
+---
+
+## Nachtrag 2026-08-06 — Flächencode umbenannt
+
+Der tenant-seitige Flächencode heißt seit `ExtensionSurfaceCodes.Surface` **`surface`**, nicht
+mehr `workspace`. Betroffen sind der Code in Manifesten (`"surface": "surface"`), die
+Verzeichnisse `Resources/app/surface`, `Resources/public/surface` und `Resources/views/surface`
+sowie die Spalte `workspace_template_definitions.surface`.
+
+Der alte Name benannte das Falsche: ein Workspace ist der Behälter, eine Surface einer seiner
+Zugänge, und ein Workspace kann mehrere haben (ADR-014 §5). Wo dieses Dokument `workspace` als
+Fläche schreibt, ist `surface` gemeint; `workspace` als Behälter, als Scope und in Routen wie
+`/workspace/public/ui-chain` bleibt unverändert.

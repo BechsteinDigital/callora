@@ -19,7 +19,7 @@ public sealed class SurfaceThemeService(
     IWorkspaceThemeSettingsStore settingsStore)
 {
     /// <summary>Surface for which a theme definition must be registered.</summary>
-    private const string ThemeSurface = "workspace";
+    private const string ThemeSurface = "surface";
 
     public async Task<SurfaceThemeAssignmentResult> GetAssignmentAsync(
         string workspaceKey,

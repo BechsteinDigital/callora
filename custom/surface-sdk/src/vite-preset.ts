@@ -2,11 +2,11 @@ import type { UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export interface SurfacePluginPresetOptions {
-  /** Entry module of the plugin's surface UI (e.g. 'src/Resources/app/workspace/src/main.ts'). */
+  /** Entry module of the plugin's surface UI (e.g. 'src/Resources/app/surface/src/main.ts'). */
   entry: string
   /** Global name for the IIFE bundle (must be unique per plugin). */
   name: string
-  /** Surface the bundle targets; also the default output-dir segment. Default 'workspace'. */
+  /** Surface the bundle targets; also the default output-dir segment. Default 'surface'. */
   surface?: string
   /** Output directory. Default 'src/Resources/public/<surface>' (only this is published). */
   outDir?: string
@@ -20,7 +20,7 @@ export interface SurfacePluginPresetOptions {
  * runs inside the surface runtime's single Vue instance instead of shipping its own.
  */
 export function calloraSurfacePlugin(options: SurfacePluginPresetOptions): UserConfig {
-  const surface = options.surface ?? 'workspace'
+  const surface = options.surface ?? 'surface'
   const outDir = options.outDir ?? `src/Resources/public/${surface}`
 
   return {

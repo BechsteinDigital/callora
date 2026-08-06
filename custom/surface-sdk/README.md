@@ -53,7 +53,7 @@ The component receives the `SurfaceContext` (`{ workspaceKey, surfaceKey }`) as 
 import { calloraSurfacePlugin } from '@callora/surface-sdk/vite-preset'
 
 export default calloraSurfacePlugin({
-  entry: 'src/Resources/app/workspace/src/main.ts',
+  entry: 'src/Resources/app/surface/src/main.ts',
   name: 'CalloraVoipWorkspace',
 })
 ```

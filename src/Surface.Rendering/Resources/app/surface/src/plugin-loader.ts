@@ -83,7 +83,7 @@ export interface PluginLoaderDeps {
 }
 
 const DEFAULTS = {
-  surface: 'workspace',
+  surface: 'surface',
   assetBase: '/plugin-assets',
   manifestUrl: '/manifests/plugin-ui-assets.manifest.json',
   uiChainUrl: '/workspace/public/ui-chain',

@@ -24,13 +24,13 @@ beforeEach(() => {
 
 const manifest: PluginManifest = {
   entries: [
-    { pluginId: 'voip', surface: 'workspace', entryPath: 'voip/app/workspace/main.js' },
-    { pluginId: 'theme', surface: 'workspace', entryPath: 'theme/app/workspace/main.js' },
+    { pluginId: 'voip', surface: 'surface', entryPath: 'voip/app/workspace/main.js' },
+    { pluginId: 'theme', surface: 'surface', entryPath: 'theme/app/workspace/main.js' },
     { pluginId: 'voip', surface: 'admin', entryPath: 'voip/app/admin/main.js' },
-    { pluginId: 'notInChain', surface: 'workspace', entryPath: 'x/app/workspace/main.js' },
+    { pluginId: 'notInChain', surface: 'surface', entryPath: 'x/app/workspace/main.js' },
   ],
   styleEntries: [
-    { pluginId: 'voip', surface: 'workspace', stylePath: 'voip/app/workspace/main.css' },
+    { pluginId: 'voip', surface: 'surface', stylePath: 'voip/app/workspace/main.css' },
     { pluginId: 'voip', surface: 'admin', stylePath: 'voip/app/admin/main.css' },
   ],
 }
@@ -38,7 +38,7 @@ const manifest: PluginManifest = {
 describe('resolveSurfaceAssets', () => {
   it('keeps only the surface + chain plugins, orders by chain, builds URLs with pluginId', () => {
     // chain order (theme before voip) must win over manifest order (voip before theme).
-    const assets = resolveSurfaceAssets(manifest, ['theme', 'voip'], 'workspace', '/plugin-assets')
+    const assets = resolveSurfaceAssets(manifest, ['theme', 'voip'], 'surface', '/plugin-assets')
 
     expect(assets.scripts).toEqual([
       { pluginId: 'theme', url: '/plugin-assets/theme/app/workspace/main.js' },
@@ -48,7 +48,7 @@ describe('resolveSurfaceAssets', () => {
   })
 
   it('drops entries of other surfaces and plugins not in the chain', () => {
-    const assets = resolveSurfaceAssets(manifest, ['voip'], 'workspace', '/plugin-assets')
+    const assets = resolveSurfaceAssets(manifest, ['voip'], 'surface', '/plugin-assets')
 
     expect(assets.scripts.map((s) => s.url)).toEqual(['/plugin-assets/voip/app/workspace/main.js'])
     expect(assets.scripts.some((s) => s.url.includes('/admin/'))).toBe(false)
@@ -56,7 +56,7 @@ describe('resolveSurfaceAssets', () => {
   })
 
   it('trims a trailing slash off the asset base and tolerates a missing manifest section', () => {
-    const assets = resolveSurfaceAssets({ entries: undefined }, ['voip'], 'workspace', '/plugin-assets/')
+    const assets = resolveSurfaceAssets({ entries: undefined }, ['voip'], 'surface', '/plugin-assets/')
 
     expect(assets).toEqual({ scripts: [], styles: [] })
   })
@@ -64,16 +64,16 @@ describe('resolveSurfaceAssets', () => {
   it('appends the content hash as a ?v= cache-busting query when present', () => {
     const withHash: PluginManifest = {
       entries: [
-        { pluginId: 'voip', surface: 'workspace', entryPath: 'voip/app/workspace/main.js', contentHash: 'abc123' },
+        { pluginId: 'voip', surface: 'surface', entryPath: 'voip/app/workspace/main.js', contentHash: 'abc123' },
         // No contentHash → bare URL (legacy manifest / unhashable file).
-        { pluginId: 'theme', surface: 'workspace', entryPath: 'theme/app/workspace/main.js' },
+        { pluginId: 'theme', surface: 'surface', entryPath: 'theme/app/workspace/main.js' },
       ],
       styleEntries: [
-        { pluginId: 'voip', surface: 'workspace', stylePath: 'voip/app/workspace/main.css', contentHash: 'def456' },
+        { pluginId: 'voip', surface: 'surface', stylePath: 'voip/app/workspace/main.css', contentHash: 'def456' },
       ],
     }
 
-    const assets = resolveSurfaceAssets(withHash, ['voip', 'theme'], 'workspace', '/plugin-assets')
+    const assets = resolveSurfaceAssets(withHash, ['voip', 'theme'], 'surface', '/plugin-assets')
 
     expect(assets.scripts).toEqual([
       { pluginId: 'voip', url: '/plugin-assets/voip/app/workspace/main.js?v=abc123' },
@@ -85,18 +85,18 @@ describe('resolveSurfaceAssets', () => {
   it('drops entries whose path escapes the base (scheme, absolute, protocol-relative, traversal)', () => {
     const evil: PluginManifest = {
       entries: [
-        { pluginId: 'ok', surface: 'workspace', entryPath: 'ok/app/workspace/main.js' },
-        { pluginId: 'scheme', surface: 'workspace', entryPath: 'https://evil.example/x.js' },
-        { pluginId: 'protoRel', surface: 'workspace', entryPath: '//evil.example/x.js' },
-        { pluginId: 'absolute', surface: 'workspace', entryPath: '/etc/passwd.js' },
-        { pluginId: 'traversal', surface: 'workspace', entryPath: '../../secret.js' },
+        { pluginId: 'ok', surface: 'surface', entryPath: 'ok/app/workspace/main.js' },
+        { pluginId: 'scheme', surface: 'surface', entryPath: 'https://evil.example/x.js' },
+        { pluginId: 'protoRel', surface: 'surface', entryPath: '//evil.example/x.js' },
+        { pluginId: 'absolute', surface: 'surface', entryPath: '/etc/passwd.js' },
+        { pluginId: 'traversal', surface: 'surface', entryPath: '../../secret.js' },
       ],
     }
 
     const assets = resolveSurfaceAssets(
       evil,
       ['ok', 'scheme', 'protoRel', 'absolute', 'traversal'],
-      'workspace',
+      'surface',
       '/plugin-assets',
     )
 
