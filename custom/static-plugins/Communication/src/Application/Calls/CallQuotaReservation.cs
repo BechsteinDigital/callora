@@ -4,7 +4,7 @@ namespace Callora.Plugin.Communication.Application.Calls;
 /// One claimed line, given back on dispose. Idempotent: a double release would hand the same line out
 /// twice, and the second holder would be over the quota without anyone having asked for it.
 /// </summary>
-internal sealed class CallQuotaReservation : IDisposable
+public sealed class CallQuotaReservation : IDisposable
 {
     private readonly CallQuotaLedger _ledger;
     private readonly CallQuotaKey _key;
