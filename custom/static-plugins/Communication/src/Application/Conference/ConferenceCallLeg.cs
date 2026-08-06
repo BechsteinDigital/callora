@@ -32,7 +32,8 @@ internal sealed class ConferenceCallLeg : IConferenceCallLeg
         ConferenceDownlinkMixer mixer,
         ICallAudioStream audio,
         PeriodicPacingClock clock,
-        ILogger logger)
+        ILogger logger,
+        Func<bool>? isAnnouncing = null)
     {
         _router = router;
         _conferenceId = conferenceId;
@@ -45,7 +46,7 @@ internal sealed class ConferenceCallLeg : IConferenceCallLeg
         _onInboundFrame = (_, e) => _endpoint.PushFromCall(e.Frame.Span);
         _audio.FrameReceived += _onInboundFrame;
 
-        var pump = new ConferenceDownlinkPump(mixer, _audio.SendAsync, clock, logger);
+        var pump = new ConferenceDownlinkPump(mixer, _audio.SendAsync, clock, logger, isAnnouncing);
         _pumping = pump.RunAsync(_stopping.Token);
     }
 
