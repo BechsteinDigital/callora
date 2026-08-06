@@ -108,15 +108,6 @@ export interface CalloraAdminGlobal {
   registerService<T>(key: string, implementation: T, meta?: { priority?: number }): void
   /** Read side of the slot registry, so a plugin can render into a slot it does not own. */
   getExtensions(slot: string): Component[]
-  /**
-   * The host's Vue runtime, shared so a plugin bundle builds real .vue SFCs against the SAME
-   * Vue instance (Vue marked external, mapped to CalloraAdmin.vue). A plugin must never bundle
-   * its own Vue — two runtimes break reactivity and component instancing across the boundary.
-   *
-   * This moves to the shared `Callora.vue` global once @callora/ui-core exists; until then the
-   * shipped bundles resolve through here.
-   */
-  vue: typeof Vue
 }
 
 // The plugin whose bundle is currently executing; register* calls made during that window are
@@ -199,9 +190,17 @@ export function installGlobalApi(): void {
     registerService: (key, implementation, meta) =>
       registerService(key, implementation, { pluginId: currentPluginId, priority: meta?.priority }),
     getExtensions,
-    vue: Vue,
   }
   ;(globalThis as unknown as { CalloraAdmin?: CalloraAdminGlobal }).CalloraAdmin = api
+
+  // The shared Vue instance, under the name BOTH runtimes use. It used to live inside
+  // CalloraAdmin, which meant a bundle was built for exactly one of the two shells: the
+  // composer's canvas runs surface blocks inside the admin, and a block built against
+  // CalloraAdmin.vue could never run on a surface, nor the other way round.
+  //
+  // A plugin must never bundle its own Vue. Two runtimes do not fail loudly — they fail by
+  // reactivity quietly not crossing the boundary.
+  ;(globalThis as unknown as { CalloraVue?: typeof Vue }).CalloraVue = Vue
 }
 
 function injectStylesheet(doc: Document, url: string): void {
