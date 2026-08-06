@@ -32,6 +32,13 @@ internal sealed class ConferenceService : IConferenceService
         _router = new ConferenceMediaRouter(_logger);
     }
 
+    /// <summary>
+    /// The SFU topology behind this service. Exposed inside the plugin so an attachment can put a
+    /// non-browser participant into the same topology the browsers are in — a second router would be a
+    /// second conference wearing the same id.
+    /// </summary>
+    internal ConferenceMediaRouter Router => _router;
+
     /// <inheritdoc />
     public Task<IConferenceParticipant> JoinAsync(string conferenceId, string participantId, CancellationToken ct = default) =>
         JoinCoreAsync(conferenceId, participantId, policy: null, ct);
