@@ -4,7 +4,7 @@ namespace Callora.Plugin.Communication.Abstractions.Conference;
 
 /// <summary>
 /// One participant's server-side conference session — a transport-neutral handle a vertical (a video
-/// conference, a call centre) obtains from <see cref="IConferenceService.JoinAsync"/> and relays over its
+/// conference, a call centre) obtains from <see cref="IConferenceService.JoinAsync(string, string, System.Threading.CancellationToken)"/> and relays over its
 /// own authenticated transport. The server is always the offerer: the session carries the initial
 /// <see cref="InitialOffer"/> and re-offers via <see cref="OfferProduced"/> when the conference topology
 /// changes (another participant joining or leaving). The vertical relays SDP/candidates in both directions
@@ -32,7 +32,7 @@ public interface IConferenceParticipant : IAsyncDisposable
     /// <see cref="InitialOffer"/>. It opens the trickle gate, flushes the candidates buffered while the offer
     /// was produced, then gathers server-reflexive (STUN) candidates — all surfaced through
     /// <see cref="LocalIceCandidateProduced"/>. Gathering is deferred out of
-    /// <see cref="IConferenceService.JoinAsync"/> precisely so no candidate is raised before the vertical has
+    /// <see cref="IConferenceService.JoinAsync(string, string, System.Threading.CancellationToken)"/> precisely so no candidate is raised before the vertical has
     /// subscribed (which would lose it); a browser only ever applies candidates for an offer it has seen.
     /// </summary>
     Task StartSignalingAsync(CancellationToken ct = default);
