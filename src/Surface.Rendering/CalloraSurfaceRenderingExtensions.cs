@@ -35,6 +35,16 @@ public static class CalloraSurfaceRenderingExtensions
         // One broadcaster per process: a subscription belongs to the process that accepted
         // its socket, and a value is published to the connections that process holds.
         services.AddSingleton<SurfaceContextBroadcaster>();
+        // GetService, not GetRequiredService: a host without the identity subsystem composes
+        // fine, and the revalidator then has nothing to watch rather than being absent.
+        services.AddSingleton(sp =>
+        {
+            var authenticator = sp.GetService<SurfaceSessionAuthenticator>();
+            SurfaceSessionProbe? probe = authenticator is null
+                ? null
+                : (cookie, audience, ct) => authenticator.AuthenticateAsync(cookie, audience, ct);
+            return new SurfaceContextRevalidator(probe);
+        });
         services.AddSingleton<ISurfaceContextBroadcaster>(
             sp => sp.GetRequiredService<SurfaceContextBroadcaster>());
         return services;
