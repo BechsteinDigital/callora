@@ -168,6 +168,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                 _callEventBroadcaster);
             context.Export<ICallControlService>(_callControlService);
 
+            // The same instance under its observation face: one tracked-call state, so a consumer
+            // that resolves a call sees exactly the calls control commands act on. Exporting a second
+            // implementation here would be two views of the truth that can disagree.
+            context.Export<ICallAccess>(_callControlService);
+
             // Flow actions over the same primitive the REST and MCP faces use, so a rule that answers
             // a call is subject to the same ownership check and state machine as an operator's click
             // (#116).
