@@ -86,6 +86,18 @@ public sealed class CommunicationPluginWiringTests
     }
 
     [Fact]
+    public async Task StartAsync_ExportsDtmfCollector()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // The receive half of the announcement mechanics: without it a dial-in can speak but not
+        // listen.
+        Assert.Contains(typeof(ICallDtmfCollector), context.Exports.Keys);
+    }
+
+    [Fact]
     public async Task StartAsync_WithoutCallControl_ExportsNoConferenceCallAttachment()
     {
         var config = new ConfigurationBuilder()
