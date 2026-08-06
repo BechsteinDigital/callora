@@ -16,10 +16,11 @@ namespace Callora.Surface.Rendering.Rendering;
 public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
 {
     // Wall-clock, so it measures elapsed time rather than work done: a render competing
-    // for CPU with fifteen others takes longer without doing more. The base template
-    // chain renders in ~110 ms, so five seconds is ample headroom while still cutting an
-    // endless loop short — which is what this bounds. It is a DoS limit, not a
-    // performance budget.
+    // for CPU with fifteen others takes longer without doing more. The base chain renders
+    // in ~110 ms alone; sixteen of those serialised onto one core is already 1.8 s, which
+    // is why the old two-second limit no longer holds. Measured, not guessed: at two
+    // seconds the suite loses 11 to 19 tests per run, at five none across seven runs.
+    // It bounds an endless loop; it is not a performance budget.
     private const int TimeoutSeconds = 5;
     private const long MemoryLimitBytes = 32L * 1024 * 1024;
     private const int RecursionLimit = 64;
@@ -195,6 +196,12 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
         ArgumentNullException.ThrowIfNull(templateText);
         ArgumentNullException.ThrowIfNull(context);
 
+        // Touch the prepared scripts BEFORE the engine exists. They are static, so the
+        // first render triggers the type initialiser — parsing the whole Nunjucks bundle
+        // — and every other thread blocks on it. Inside the engine that happens with the
+        // timeout clock already running, which turned a cold start into seven timeouts.
+        var prepared = (PreparedHarness, PreparedNunjucks, PreparedComposition, PreparedRender);
+
         // A fresh, CLR-denied engine per render — no AllowClr(), so JS cannot reach
         // any .NET type; only the two values we set below are visible.
         var engine = new Engine(options => options
@@ -205,15 +212,15 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
 
         try
         {
-            engine.Execute(PreparedHarness);
-            engine.Execute(PreparedNunjucks);
-            engine.Execute(PreparedComposition);
+            engine.Execute(prepared.Item1);
+            engine.Execute(prepared.Item2);
+            engine.Execute(prepared.Item3);
 
             engine.SetValue("__loadTemplate", new Func<string, string?>(loader.TryLoad));
             engine.SetValue("__templateText", templateText);
             engine.SetValue("__contextJson", SerializeContext(context));
 
-            var result = engine.Evaluate(PreparedRender);
+            var result = engine.Evaluate(prepared.Item4);
             var html = result.IsNull() || result.IsUndefined() ? string.Empty : result.AsString();
 
             if (html.Length > MaxOutputChars)
