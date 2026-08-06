@@ -2878,6 +2878,82 @@ Callora.Core.Application.Surfaces.ISurfaceSessionStore.PurgeExpiredAsync(System.
 Callora.Core.Application.Surfaces.ISurfaceSessionStore.RevokeAsync(System.Guid sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Surfaces.ISurfaceSessionStore.RevokeForSurfaceAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
 Callora.Core.Application.Surfaces.ISurfaceSessionStore.TouchAsync(System.Guid sessionId, System.DateTimeOffset seenAtUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Surfaces.SharedContext.ISharedContextKeyContributor
+Callora.Core.Application.Surfaces.SharedContext.ISharedContextKeyContributor.SharedContextKeys.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration!>!
+Callora.Core.Application.Surfaces.SharedContext.ISharedContextService
+Callora.Core.Application.Surfaces.SharedContext.ISharedContextService.Publish(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor! anchor, string! key, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? value) -> bool
+Callora.Core.Application.Surfaces.SharedContext.ISharedContextService.ReleaseConversation(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor! anchor) -> void
+Callora.Core.Application.Surfaces.SharedContext.ISharedContextService.SetParticipants(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor! anchor, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation!>! participants) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.<Clone>$() -> Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.Deconstruct(out Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType Type, out string! Value) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.Equals(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor? other) -> bool
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.SharedContextAnchor(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType Type, string! Value) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.Type.get -> Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.Type.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.Value.get -> string!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.Value.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType.Conversation = 1 -> Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType
+Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType.Subject = 0 -> Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType
+Callora.Core.Application.Surfaces.SharedContext.SharedContextBroadcastService
+Callora.Core.Application.Surfaces.SharedContext.SharedContextBroadcastService.MessageFor(Callora.Core.Application.Surfaces.SurfaceContextSubscription! connection, string! key) -> Callora.Core.Application.Surfaces.SurfaceContextMessage?
+Callora.Core.Application.Surfaces.SharedContext.SharedContextBroadcastService.Publish(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor! anchor, string! key, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? value) -> bool
+Callora.Core.Application.Surfaces.SharedContext.SharedContextBroadcastService.ReleaseConversation(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor! anchor) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextBroadcastService.SetParticipants(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor! anchor, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation!>! participants) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextBroadcastService.SharedContextBroadcastService(Callora.Core.Application.Surfaces.SharedContext.SharedContextStore! store, Callora.Core.Application.Surfaces.SurfaceContextBroadcaster! broadcaster) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.<Clone>$() -> Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.Deconstruct(out string! Name, out Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility Visibility, out string? Description) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.Description.get -> string?
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.Description.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.Equals(Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration? other) -> bool
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.Name.get -> string!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.Name.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.SharedContextFieldDeclaration(string! Name, Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility Visibility = Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility.Owner, string? Description = null) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.Visibility.get -> Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility
+Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.Visibility.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.<Clone>$() -> Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.AnchorType.get -> Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.AnchorType.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.Deconstruct(out string! Key, out Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType AnchorType, out string! Purpose, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration!>! Fields, out System.TimeSpan TimeToLive, out string! PublisherPluginId) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.Equals(Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration? other) -> bool
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.Fields.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration!>!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.Fields.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.FieldsFor(Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility visibility) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration!>!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.Key.get -> string!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.Key.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.PublisherPluginId.get -> string!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.PublisherPluginId.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.Purpose.get -> string!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.Purpose.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.SharedContextKeyDeclaration(string! Key, Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchorType AnchorType, string! Purpose, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration!>! Fields, System.TimeSpan TimeToLive, string! PublisherPluginId) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.TimeToLive.get -> System.TimeSpan
+Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.TimeToLive.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.<Clone>$() -> Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.Deconstruct(out string! Issuer, out string! SubjectId, out Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility Visibility) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.Equals(Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation? other) -> bool
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.Issuer.get -> string!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.Issuer.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.SharedContextParticipation(string! Issuer, string! SubjectId, Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility Visibility) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.SubjectId.get -> string!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.SubjectId.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.Visibility.get -> Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility
+Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.Visibility.init -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextProjection
+Callora.Core.Application.Surfaces.SharedContext.SharedContextStore
+Callora.Core.Application.Surfaces.SharedContext.SharedContextStore.Declaration(string! key) -> Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration?
+Callora.Core.Application.Surfaces.SharedContext.SharedContextStore.DeclaredKeys.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
+Callora.Core.Application.Surfaces.SharedContext.SharedContextStore.Publish(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor! anchor, string! key, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? value) -> bool
+Callora.Core.Application.Surfaces.SharedContext.SharedContextStore.Read(System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor!>! anchors, string! key, string? issuer, string? subjectId) -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>?
+Callora.Core.Application.Surfaces.SharedContext.SharedContextStore.ReleaseConversation(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor! anchor) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextStore.SetParticipants(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor! anchor, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation!>! participants) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextStore.SharedContextStore(System.Collections.Generic.IEnumerable<Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration!>! declarations, System.TimeProvider? timeProvider = null) -> void
+Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility
+Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility.Owner = 0 -> Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility
+Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility.Participant = 1 -> Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility
 Callora.Core.Application.Surfaces.SurfaceApiMountedRoute
 Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceApiMountedRoute!
 Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.Deconstruct(out string! PluginId, out Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration! Route) -> void
@@ -2955,7 +3031,8 @@ Callora.Core.Application.Surfaces.SurfaceContextAddress.WorkspaceKey.get -> stri
 Callora.Core.Application.Surfaces.SurfaceContextAddress.WorkspaceKey.init -> void
 Callora.Core.Application.Surfaces.SurfaceContextBroadcaster
 Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.Publish(Callora.Core.Application.Surfaces.SurfaceContextAddress! address, string! key, object? value) -> void
-Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.Subscribe(string! workspaceKey, string! surfaceKey, string? issuer, string? subjectId) -> Callora.Core.Application.Surfaces.SurfaceContextSubscription!
+Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.PublishPerConnection(System.Func<Callora.Core.Application.Surfaces.SurfaceContextSubscription!, Callora.Core.Application.Surfaces.SurfaceContextMessage?>! project) -> void
+Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.Subscribe(string! workspaceKey, string! surfaceKey, string? issuer, string? subjectId, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor!>? anchors = null, System.Collections.Generic.IReadOnlySet<string!>? requiredKeys = null) -> Callora.Core.Application.Surfaces.SurfaceContextSubscription!
 Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.SubscriptionCount.get -> int
 Callora.Core.Application.Surfaces.SurfaceContextBroadcaster.SurfaceContextBroadcaster() -> void
 Callora.Core.Application.Surfaces.SurfaceContextMessage
@@ -2968,9 +3045,11 @@ Callora.Core.Application.Surfaces.SurfaceContextMessage.SurfaceContextMessage(st
 Callora.Core.Application.Surfaces.SurfaceContextMessage.Value.get -> object?
 Callora.Core.Application.Surfaces.SurfaceContextMessage.Value.init -> void
 Callora.Core.Application.Surfaces.SurfaceContextSubscription
+Callora.Core.Application.Surfaces.SurfaceContextSubscription.Anchors.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor!>!
 Callora.Core.Application.Surfaces.SurfaceContextSubscription.Dispose() -> void
 Callora.Core.Application.Surfaces.SurfaceContextSubscription.Issuer.get -> string?
 Callora.Core.Application.Surfaces.SurfaceContextSubscription.Messages.get -> System.Threading.Channels.ChannelReader<Callora.Core.Application.Surfaces.SurfaceContextMessage!>!
+Callora.Core.Application.Surfaces.SurfaceContextSubscription.RequiredKeys.get -> System.Collections.Generic.IReadOnlySet<string!>!
 Callora.Core.Application.Surfaces.SurfaceContextSubscription.SubjectId.get -> string?
 Callora.Core.Application.Surfaces.SurfaceContextSubscription.SurfaceKey.get -> string!
 Callora.Core.Application.Surfaces.SurfaceContextSubscription.WorkspaceKey.get -> string!
@@ -5694,6 +5773,18 @@ override Callora.Core.Application.Surfaces.GuestSurfaceCaller.<Clone>$() -> Call
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.ToString() -> string!
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.ToString() -> string!
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.ToString() -> string!
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.ToString() -> string!
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.ToString() -> string!
 override Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.ToString() -> string!
@@ -6197,6 +6288,17 @@ static Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.operator ==(
 static Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent.Promoted(string! workspaceKey, string! surfaceKey, Callora.Core.Application.Surfaces.SurfaceSubject! previous, Callora.Core.Application.Surfaces.SurfaceSubject! current) -> Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent!
 static Callora.Core.Application.Surfaces.GuestSurfaceCaller.operator !=(Callora.Core.Application.Surfaces.GuestSurfaceCaller? left, Callora.Core.Application.Surfaces.GuestSurfaceCaller? right) -> bool
 static Callora.Core.Application.Surfaces.GuestSurfaceCaller.operator ==(Callora.Core.Application.Surfaces.GuestSurfaceCaller? left, Callora.Core.Application.Surfaces.GuestSurfaceCaller? right) -> bool
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.ForConversation(string! conversationId) -> Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor!
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.ForSubject(string! issuer, string! subjectId) -> Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor!
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.operator !=(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor? left, Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor? right) -> bool
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor.operator ==(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor? left, Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor? right) -> bool
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.operator !=(Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration? left, Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration? right) -> bool
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration.operator ==(Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration? left, Callora.Core.Application.Surfaces.SharedContext.SharedContextFieldDeclaration? right) -> bool
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.operator !=(Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration? left, Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration? right) -> bool
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration.operator ==(Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration? left, Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration? right) -> bool
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.operator !=(Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation? left, Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation? right) -> bool
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation.operator ==(Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation? left, Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation? right) -> bool
+static Callora.Core.Application.Surfaces.SharedContext.SharedContextProjection.Project(Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration! declaration, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! value, Callora.Core.Application.Surfaces.SharedContext.SharedContextVisibility visibility) -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
 static Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.operator !=(Callora.Core.Application.Surfaces.SurfaceApiMountedRoute? left, Callora.Core.Application.Surfaces.SurfaceApiMountedRoute? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceApiMountedRoute.operator ==(Callora.Core.Application.Surfaces.SurfaceApiMountedRoute? left, Callora.Core.Application.Surfaces.SurfaceApiMountedRoute? right) -> bool
 static Callora.Core.Application.Surfaces.SurfaceApiRouteInventory.Build(System.Collections.Generic.IEnumerable<Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor!>! contributors) -> Callora.Core.Application.Surfaces.SurfaceApiRouteInventory!

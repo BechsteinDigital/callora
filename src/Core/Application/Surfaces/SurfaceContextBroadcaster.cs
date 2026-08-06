@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
+using Callora.Core.Application.Surfaces.SharedContext;
 
 namespace Callora.Core.Application.Surfaces;
 
@@ -37,7 +38,9 @@ public sealed class SurfaceContextBroadcaster : ISurfaceContextBroadcaster
         string workspaceKey,
         string surfaceKey,
         string? issuer,
-        string? subjectId)
+        string? subjectId,
+        IReadOnlyList<SharedContextAnchor>? anchors = null,
+        IReadOnlySet<string>? requiredKeys = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(surfaceKey);
@@ -51,7 +54,14 @@ public sealed class SurfaceContextBroadcaster : ISurfaceContextBroadcaster
             });
 
         var subscription = new SurfaceContextSubscription(
-            this, workspaceKey, surfaceKey, issuer, subjectId, channel);
+            this,
+            workspaceKey,
+            surfaceKey,
+            issuer,
+            subjectId,
+            anchors ?? [],
+            requiredKeys ?? new HashSet<string>(StringComparer.Ordinal),
+            channel);
         _subscriptions[subscription] = 0;
         return subscription;
     }
@@ -70,6 +80,28 @@ public sealed class SurfaceContextBroadcaster : ISurfaceContextBroadcaster
                     subscription.SurfaceKey,
                     subscription.Issuer,
                     subscription.SubjectId))
+            {
+                subscription.TryEnqueue(message);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Publishes a value that differs per recipient. <paramref name="project"/> is asked once per
+    /// connection and returns what THAT connection receives, or null for nothing.
+    /// <para>
+    /// Shared context needs this: two people on the same call hold the same anchor and see
+    /// different fields of the same value. Sending one message to all of them and letting the
+    /// browser sort it out is exactly the mistake §5.5 P1 forbids.
+    /// </para>
+    /// </summary>
+    public void PublishPerConnection(Func<SurfaceContextSubscription, SurfaceContextMessage?> project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        foreach (var subscription in _subscriptions.Keys)
+        {
+            if (project(subscription) is { } message)
             {
                 subscription.TryEnqueue(message);
             }

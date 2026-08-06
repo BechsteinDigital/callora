@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Callora.Core.Application.Surfaces.SharedContext;
 
 namespace Callora.Core.Application.Surfaces;
 
@@ -18,6 +19,8 @@ public sealed class SurfaceContextSubscription : IDisposable
         string surfaceKey,
         string? issuer,
         string? subjectId,
+        IReadOnlyList<SharedContextAnchor> anchors,
+        IReadOnlySet<string> requiredKeys,
         Channel<SurfaceContextMessage> channel)
     {
         _owner = owner;
@@ -26,6 +29,8 @@ public sealed class SurfaceContextSubscription : IDisposable
         SurfaceKey = surfaceKey;
         Issuer = issuer;
         SubjectId = subjectId;
+        Anchors = anchors;
+        RequiredKeys = requiredKeys;
     }
 
     public string WorkspaceKey { get; }
@@ -37,6 +42,19 @@ public sealed class SurfaceContextSubscription : IDisposable
 
     /// <summary>Who is on this connection, or null when nobody was established.</summary>
     public string? SubjectId { get; }
+
+    /// <summary>
+    /// The anchors this connection holds, derived from its session at accept time (§5.5 P2).
+    /// Never re-read per message and never taken from a request: a client cannot claim an anchor,
+    /// because there is no syntax in which to claim one.
+    /// </summary>
+    public IReadOnlyList<SharedContextAnchor> Anchors { get; } = [];
+
+    /// <summary>
+    /// The context keys a visible block on this surface declared it needs (§5.5 P3). A key nobody
+    /// here needs does not leave the server, whatever an anchor would theoretically permit.
+    /// </summary>
+    public IReadOnlySet<string> RequiredKeys { get; } = new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>Values for this connection, in order. Completes when the subscription is disposed.</summary>
     public ChannelReader<SurfaceContextMessage> Messages => _channel.Reader;
