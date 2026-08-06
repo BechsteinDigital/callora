@@ -20,11 +20,33 @@ public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySou
 
     private bool _disposed;
 
-    /// <summary>Wires the source to the channel registry and seeds from its current registrations.</summary>
-    public CommunicationRuntimeCapabilitySource(ICommunicationChannelRegistry registry)
+    private readonly bool _conferenceBridgingAvailable;
+
+    /// <summary>
+    /// Capabilities this source derives instead of taking them from a channel — named here so that a
+    /// declared capability is provably reachable either way, and a derivation cannot be added without
+    /// being visible where declarations are checked.
+    /// </summary>
+    public static IReadOnlyCollection<string> DerivedCapabilities { get; } =
+        [CommunicationCapabilities.ConferenceTelephony];
+
+    /// <summary>
+    /// Wires the source to the channel registry and seeds from its current registrations.
+    /// </summary>
+    /// <param name="registry">The channel registry whose health the grants are derived from.</param>
+    /// <param name="conferenceBridgingAvailable">
+    /// Whether this composition offers the attachment that puts a call into a conference. It is a
+    /// property of the deployment, not of a workspace, so it gates
+    /// <see cref="CommunicationCapabilities.ConferenceTelephony"/> rather than being derived per
+    /// workspace: without the attachment that capability would be a promise nothing can keep.
+    /// </param>
+    public CommunicationRuntimeCapabilitySource(
+        ICommunicationChannelRegistry registry,
+        bool conferenceBridgingAvailable = false)
     {
         ArgumentNullException.ThrowIfNull(registry);
         _registry = registry;
+        _conferenceBridgingAvailable = conferenceBridgingAvailable;
 
         _registry.ChannelRegistered += OnChannelRegistered;
         _registry.ChannelUnregistered += OnChannelUnregistered;
@@ -148,13 +170,32 @@ public sealed class CommunicationRuntimeCapabilitySource : IRuntimeCapabilitySou
         }
     }
 
-    private HashSet<RuntimeCapabilityGrant> GetAvailableGrants(string workspaceKey) =>
-        _registry.GetChannels(workspaceKey)
+    private HashSet<RuntimeCapabilityGrant> GetAvailableGrants(string workspaceKey)
+    {
+        var declared = _registry.GetChannels(workspaceKey)
             .Where(channel => channel.Health == ChannelHealth.Up)
             .SelectMany(channel => channel.Capabilities)
             .Where(capability => !string.IsNullOrWhiteSpace(capability))
-            .Select(capability => new RuntimeCapabilityGrant(capability.Trim(), workspaceKey))
+            .Select(capability => capability.Trim())
+            .ToHashSet(StringComparer.Ordinal);
+
+        var grants = declared
+            .Select(capability => new RuntimeCapabilityGrant(capability, workspaceKey))
             .ToHashSet(RuntimeCapabilityGrantComparer.Instance);
+
+        // Telephony into a conference is the one capability no channel can declare on its own: it holds
+        // only where a call can be made and a room exists to put it into, and where this composition
+        // has the attachment that joins the two. Deriving it here keeps that conjunction in one place
+        // instead of asking a channel to know about the others.
+        if (_conferenceBridgingAvailable &&
+            declared.Contains(CommunicationCapabilities.Voice) &&
+            declared.Contains(CommunicationCapabilities.Video))
+        {
+            grants.Add(new RuntimeCapabilityGrant(CommunicationCapabilities.ConferenceTelephony, workspaceKey));
+        }
+
+        return grants;
+    }
 
     /// <inheritdoc />
     public void Dispose()

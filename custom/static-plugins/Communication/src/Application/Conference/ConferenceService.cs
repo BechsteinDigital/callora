@@ -32,11 +32,47 @@ internal sealed class ConferenceService : IConferenceService
         _router = new ConferenceMediaRouter(_logger);
     }
 
+    /// <summary>
+    /// The SFU topology behind this service. Exposed inside the plugin so an attachment can put a
+    /// non-browser participant into the same topology the browsers are in — a second router would be a
+    /// second conference wearing the same id.
+    /// </summary>
+    internal ConferenceMediaRouter Router => _router;
+
     /// <inheritdoc />
-    public async Task<IConferenceParticipant> JoinAsync(string conferenceId, string participantId, CancellationToken ct = default)
+    public Task<IConferenceParticipant> JoinAsync(string conferenceId, string participantId, CancellationToken ct = default) =>
+        JoinCoreAsync(conferenceId, participantId, policy: null, ct);
+
+    /// <inheritdoc />
+    public Task<IConferenceParticipant> JoinAsync(
+        string conferenceId,
+        string participantId,
+        ConferencePolicy policy,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(policy);
+        return JoinCoreAsync(conferenceId, participantId, policy, ct);
+    }
+
+    /// <inheritdoc />
+    public ConferencePolicy GetPolicy(string conferenceId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(conferenceId);
+        return _router.GetPolicy(conferenceId);
+    }
+
+    private async Task<IConferenceParticipant> JoinCoreAsync(
+        string conferenceId,
+        string participantId,
+        ConferencePolicy? policy,
+        CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(conferenceId);
         ArgumentException.ThrowIfNullOrWhiteSpace(participantId);
+
+        // Settle the policy before any media is set up: a room that turns out to be under a different
+        // obligation than the caller assumed must fail before it has a peer and tracks to unwind.
+        _router.ApplyPolicy(conferenceId, policy);
 
         var peer = _provider.CreatePeer(_peerOptions);
 

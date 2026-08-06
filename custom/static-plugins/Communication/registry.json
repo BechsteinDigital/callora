@@ -12,7 +12,8 @@
   "conditionalCapabilities": [
     "communication.voice",
     "communication.video",
-    "communication.webrtc"
+    "communication.webrtc",
+    "communication.conference.telephony"
   ],
   "sensitiveFields": [
     "remoteParty"

@@ -33,4 +33,16 @@ public static class CommunicationCapabilities
     /// nothing about the concrete WebRTC SDK used by that provider.
     /// </summary>
     public const string WebRtc = "communication.webrtc";
+
+    /// <summary>
+    /// A call can be put into a conference, so that somebody on a telephone takes part in a room of
+    /// browsers.
+    /// </summary>
+    /// <remarks>
+    /// Unlike the others this one is derived rather than declared, because no single channel can claim
+    /// it: bridging needs telephony and a conference to be available at the same time, plus the
+    /// attachment that joins them. A consumer requiring this one is saying it needs all three — which
+    /// is exactly what <see cref="Foundation"/> does not tell it.
+    /// </remarks>
+    public const string ConferenceTelephony = "communication.conference.telephony";
 }

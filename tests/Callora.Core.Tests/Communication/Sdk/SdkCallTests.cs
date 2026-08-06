@@ -17,6 +17,7 @@ using SdkCallStateChangedEventArgs = CalloraVoipSdk.Core.Domain.Events.CallState
 using SdkCallTerminatedBy = CalloraVoipSdk.Core.Domain.Calls.CallTerminatedBy;
 using SdkCallTerminationCategory = CalloraVoipSdk.Core.Domain.Calls.CallTerminationCategory;
 using SdkCallTerminationReason = CalloraVoipSdk.Core.Domain.Calls.CallTerminationReason;
+using SdkDtmfReceivedEventArgs = CalloraVoipSdk.Core.Domain.Events.DtmfReceivedEventArgs;
 using SdkDtmfTone = CalloraVoipSdk.Core.Domain.Calls.DtmfTone;
 
 namespace Callora.Core.Tests.Communication.Sdk;
@@ -208,6 +209,35 @@ public sealed class SdkCallTests
     }
 
     [Fact]
+    public void DtmfReceived_ReRaisesToneAndDurationFromSdk()
+    {
+        var sdk = new FakeSdkCall();
+        var call = NewCall(sdk);
+        DtmfReceivedEventArgs? raised = null;
+        call.DtmfReceived += (_, e) => raised = e;
+
+        sdk.RaiseDtmfReceived('7', durationMs: 120);
+
+        Assert.NotNull(raised);
+        Assert.Equal('7', raised!.Tone);
+        Assert.Equal(120, raised.DurationMs);
+    }
+
+    [Fact]
+    public void DtmfReceived_DetachesFromSdkAfterTerminated()
+    {
+        var sdk = new FakeSdkCall { State = SdkCallState.Connected };
+        var call = NewCall(sdk);
+        var count = 0;
+        call.DtmfReceived += (_, _) => count++;
+
+        sdk.RaiseStateChanged(SdkCallState.Connected, SdkCallState.Terminated);
+
+        Assert.False(sdk.HasDtmfReceivedSubscribers); // adapter unsubscribed — will not outlive the call
+        Assert.Equal(0, count);
+    }
+
+    [Fact]
     public async Task RejectAsync_Success_CompletesWithoutThrowing()
     {
         var sdk = new FakeSdkCall { RejectResult = CallActionResult.Success() };
@@ -302,6 +332,16 @@ internal sealed class FakeSdkCall : NativeCall
             modifiers: null)
         ?? throw new InvalidOperationException("SDK CallStateChangedEventArgs ctor signature changed.");
 
+    // Same story for the DTMF payload: the SDK keeps its ctor internal, so the test builds it
+    // reflectively to drive the adapter through the SDK's real event contract.
+    private static readonly ConstructorInfo DtmfArgsCtor =
+        typeof(SdkDtmfReceivedEventArgs).GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null,
+            types: [typeof(SdkDtmfTone), typeof(int), typeof(NativeCall)],
+            modifiers: null)
+        ?? throw new InvalidOperationException("SDK DtmfReceivedEventArgs ctor signature changed.");
+
     public SdkCallId CallId { get; init; } = SdkCallId.New();
 
     public SdkCallState State { get; set; } = SdkCallState.Idle;
@@ -327,11 +367,14 @@ internal sealed class FakeSdkCall : NativeCall
 
     public bool HasStateChangedSubscribers => StateChanged is not null;
 
+    public bool HasDtmfReceivedSubscribers => DtmfReceived is not null;
+
     public event EventHandler<SdkCallStateChangedEventArgs>? StateChanged;
+
+    public event EventHandler<SdkDtmfReceivedEventArgs>? DtmfReceived;
 
 #pragma warning disable CS0067 // Interface members the adapter never observes.
     public event EventHandler<CalloraVoipSdk.Core.Domain.Events.HoldStateChangedEventArgs>? HoldStateChanged;
-    public event EventHandler<CalloraVoipSdk.Core.Domain.Events.DtmfReceivedEventArgs>? DtmfReceived;
     public event EventHandler<CalloraVoipSdk.Core.Domain.Events.TransferRequestedEventArgs>? TransferRequested;
     public event EventHandler<CalloraVoipSdk.Core.Domain.Events.CallQualitySnapshotChangedEventArgs>? QualitySnapshotChanged;
     public event EventHandler<CalloraVoipSdk.Core.Domain.Events.CallIceConnectionStateChangedEventArgs>? IceConnectionStateChanged;
@@ -342,6 +385,12 @@ internal sealed class FakeSdkCall : NativeCall
         State = newState;
         var args = (SdkCallStateChangedEventArgs)StateArgsCtor.Invoke([oldState, newState, this, TerminationReason]);
         StateChanged?.Invoke(this, args);
+    }
+
+    public void RaiseDtmfReceived(char symbol, int durationMs)
+    {
+        var args = (SdkDtmfReceivedEventArgs)DtmfArgsCtor.Invoke([new SdkDtmfTone(symbol), durationMs, this]);
+        DtmfReceived?.Invoke(this, args);
     }
 
     public Task AcceptAsync(CancellationToken ct = default)

@@ -60,10 +60,10 @@ internal sealed class FakePeerConnection : IPeerConnection
 
     public event EventHandler<PeerConnectionState>? ConnectionStateChanged;
     public event EventHandler<string>? LocalIceCandidateDiscovered;
+    public event EventHandler<DtmfTone>? DtmfReceived;
 
 #pragma warning disable CS0067 // Events the adapters never observe.
     public event EventHandler<RemoteTrack>? TrackReceived;
-    public event EventHandler<DtmfTone>? DtmfReceived;
     public event EventHandler? VideoKeyFrameRequested;
     public event EventHandler<SignalingState>? SignalingStateChanged;
     public event EventHandler<BitrateRecommendation>? RecommendedBitrateChanged;
@@ -79,6 +79,15 @@ internal sealed class FakePeerConnection : IPeerConnection
     /// <summary>Raises a locally discovered ICE candidate (RFC 8838 trickle) for the signalling tests.</summary>
     public void RaiseLocalIceCandidate(string candidate) =>
         LocalIceCandidateDiscovered?.Invoke(this, candidate);
+
+    /// <summary>
+    /// Raises one inbound DTMF tone. The peer reports the RFC 4733 event code rather than the
+    /// character, so the test states the symbol and encodes it the way the wire would.
+    /// </summary>
+    public void RaiseDtmfReceived(char symbol, int durationMs) =>
+        DtmfReceived?.Invoke(
+            this,
+            new DtmfTone(new CalloraVoipSdk.Core.Domain.Calls.DtmfTone(symbol).Code, durationMs));
 
     public Task SendDtmfAsync(byte toneCode, int durationMs = 160, CancellationToken cancellationToken = default)
     {
