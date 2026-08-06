@@ -88,6 +88,40 @@ public sealed class WebRtcCallTests
         Assert.False(peer.HasStateChangedSubscribers); // adapter unsubscribed — will not outlive the call
     }
 
+    [Theory]
+    [InlineData('5')]
+    [InlineData('*')]
+    [InlineData('#')]
+    [InlineData('D')]
+    public void DtmfReceived_DecodesEventCodeBackToItsSymbol(char symbol)
+    {
+        var peer = new FakePeerConnection { State = PeerConnectionState.Connected };
+        var call = NewCall(peer);
+        DtmfReceivedEventArgs? raised = null;
+        call.DtmfReceived += (_, e) => raised = e;
+
+        // The peer reports the RFC 4733 event code, not the character — the adapter has to decode it.
+        peer.RaiseDtmfReceived(symbol, durationMs: 200);
+
+        Assert.NotNull(raised);
+        Assert.Equal(symbol, raised!.Tone);
+        Assert.Equal(200, raised.DurationMs);
+    }
+
+    [Fact]
+    public void DtmfReceived_DetachesFromPeerAfterTerminated()
+    {
+        var peer = new FakePeerConnection { State = PeerConnectionState.Connected };
+        var call = NewCall(peer);
+        var count = 0;
+        call.DtmfReceived += (_, _) => count++;
+
+        peer.RaiseStateChanged(PeerConnectionState.Closed);
+        peer.RaiseDtmfReceived('1', durationMs: 100);
+
+        Assert.Equal(0, count);
+    }
+
     [Fact]
     public void TerminationReason_NullBeforeTerminated()
     {

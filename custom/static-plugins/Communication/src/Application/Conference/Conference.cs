@@ -1,3 +1,5 @@
+using Callora.Plugin.Communication.Abstractions.Conference;
+
 namespace Callora.Plugin.Communication.Application.Conference;
 
 /// <summary>
@@ -12,6 +14,12 @@ internal sealed class Conference
 
     /// <summary>Serializes topology mutations for this conference; never held across an <c>await</c> of a network send.</summary>
     public object Gate { get; } = new();
+
+    /// <summary>
+    /// What this conference requires of its participants, or <see langword="null"/> while nothing has
+    /// been stated. Read and written only under <see cref="Gate"/>.
+    /// </summary>
+    public ConferencePolicy? Policy { get; set; }
 
     /// <summary>The live participant map. Only mutate under <see cref="Gate"/>.</summary>
     public Dictionary<string, ConferenceParticipantEntry> Participants => _participants;

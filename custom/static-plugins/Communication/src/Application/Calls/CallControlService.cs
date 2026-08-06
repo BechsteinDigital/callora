@@ -22,7 +22,7 @@ namespace Callora.Plugin.Communication.Application.Calls;
 /// outage delays delivery instead of losing it.
 /// </para>
 /// </summary>
-public sealed class CallControlService : ICallControlService, IAsyncDisposable
+public sealed class CallControlService : ICallControlService, ICallAccess, IAsyncDisposable
 {
     private readonly ICommunicationChannelRegistry _channels;
     private readonly ICallLogStore _callLogStore;
@@ -193,6 +193,21 @@ public sealed class CallControlService : ICallControlService, IAsyncDisposable
     /// <inheritdoc />
     public CallSnapshot? Get(string workspaceKey, string callId) =>
         TryGetOwned(workspaceKey, callId, out var tracked) ? Snapshot(tracked.Call) : null;
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The same ownership check <see cref="Get"/> performs, but handing out the tracked call itself
+    /// instead of a snapshot of it. This service is the only place that holds both the workspace
+    /// boundary and the live calls, so resolving one anywhere else would mean duplicating the
+    /// boundary — and a duplicated boundary is one that can drift out of agreement with this one.
+    /// </remarks>
+    public ICall? Find(string workspaceKey, string callId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(callId);
+
+        return TryGetOwned(workspaceKey, callId, out var tracked) ? tracked.Call : null;
+    }
 
     /// <inheritdoc />
     public IReadOnlyList<CallSnapshot> ListActive(string workspaceKey)

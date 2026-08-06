@@ -23,16 +23,24 @@ public sealed class ConditionalCapabilityContractTests
     private const string Workspace = "ws-a";
 
     [Fact]
-    public void EveryDeclaredConditionalCapability_HasAPublishingChannel()
+    public void EveryDeclaredConditionalCapability_IsReachable()
     {
         var declared = ReadConditionalCapabilities();
-        var published = new HashSet<string>(
-            [.. WebRtcVoiceChannel.PublishedCapabilities, .. ConferenceChannel.PublishedCapabilities],
+        var reachable = new HashSet<string>(
+            [
+                .. WebRtcVoiceChannel.PublishedCapabilities,
+                .. ConferenceChannel.PublishedCapabilities,
+                // Not every capability can come from a channel: conference telephony holds only where
+                // telephony and a conference are available together, which no single channel knows.
+                // The source names what it derives, so a derivation is as visible here as a
+                // declaration and cannot be slipped in unnoticed.
+                .. CommunicationRuntimeCapabilitySource.DerivedCapabilities,
+            ],
             StringComparer.Ordinal);
 
-        // A declared capability without a publisher can never be satisfied, which is worse than
-        // not declaring it: a consumer waits for something that will never arrive.
-        Assert.All(declared, capability => Assert.Contains(capability, published));
+        // A declared capability nothing can satisfy is worse than not declaring it: a consumer waits
+        // for something that will never arrive.
+        Assert.All(declared, capability => Assert.Contains(capability, reachable));
     }
 
     [Theory]
