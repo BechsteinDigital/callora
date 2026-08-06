@@ -89,7 +89,6 @@ Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(stri
 Callora.Surface.Rendering.SurfaceThemeTokens
 const Callora.Surface.Rendering.SurfaceCallerView.AuthenticatedState = "authenticated" -> string!
 const Callora.Surface.Rendering.SurfaceCallerView.GuestState = "guest" -> string!
-const Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot = "<!doctype html>\n<html lang=\"{{ locale }}\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <title>{{ surface.key }}</title>\n  <link rel=\"stylesheet\" href=\"/surface-app/surface.css\" />\n</head>\n<body>\n  <div id=\"callora-app\"\n       data-workspace=\"{{ workspace.key }}\"\n       data-surface=\"{{ surface.key }}\"\n       data-caller-state=\"{{ caller.state }}\"\n       data-caller-issuer=\"{{ caller.issuer }}\"\n       data-caller-subject=\"{{ caller.subjectId }}\"\n       data-caller-name=\"{{ caller.displayName }}\"\n       data-caller-claims=\"{{ caller.claimsJson }}\"></div>\n  <script src=\"/surface-app/surface.js\" defer></script>\n</body>\n</html>" -> string!
 const Callora.Surface.Rendering.SurfaceThemeTokens.ThemePluginIdKey = "themePluginId" -> string!
 const Callora.Surface.Rendering.SurfaceThemeTokens.ThemeVersionKey = "themeVersion" -> string!
 override Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.Equals(object? obj) -> bool
@@ -120,3 +119,4 @@ static Callora.Surface.Rendering.SurfaceCallerViewFactory.Create(Callora.Core.Ap
 static Callora.Surface.Rendering.SurfaceRenderContext.operator !=(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
 static Callora.Surface.Rendering.SurfaceRenderContext.operator ==(Callora.Surface.Rendering.SurfaceRenderContext? left, Callora.Surface.Rendering.SurfaceRenderContext? right) -> bool
 static Callora.Surface.Rendering.SurfaceThemeTokens.Compose(string? themePluginId, string? themeVersion, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? effectiveValues) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+static readonly Callora.Surface.Rendering.SurfaceShellTemplates.SpaRoot -> string!
