@@ -1,4 +1,5 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Security;
@@ -40,8 +41,43 @@ public static class PluginAdminExtensionEndpoints
             return Results.Ok(items);
         }).WithName("PluginExtensions_AdminNavigation");
 
+        group.MapGet("/ui-chain", HandleUiChainAsync)
+            .WithName("PluginExtensions_AdminUiChain");
+
         group.MapMethods("/plugins/{pluginId}/{**routePath}", ["GET", "POST", "PUT", "DELETE"], HandlePluginAdminRouteAsync)
             .WithName("PluginExtensions_AdminApiProxy");
+    }
+
+    /// <summary>
+    /// The ordered plugin ids whose admin UI bundles the shell may load for the caller's
+    /// effective workspace.
+    /// <para>
+    /// The shell previously loaded every admin bundle the manifest carried, which made the
+    /// workspace plugin assignment ineffective on the UI layer: an unassigned plugin's
+    /// interface still appeared. The chain folds assignment, entitlement, capability and
+    /// runtime health together, so the decision stays on the server.
+    /// </para>
+    /// </summary>
+    private static async Task<IResult> HandleUiChainAsync(
+        HttpContext httpContext,
+        IWorkspaceScopeContext workspaceScope,
+        WorkspaceUiChainResolver chainResolver,
+        CancellationToken cancellationToken)
+    {
+        // Same resolution as the proxy route (#109): a bound session keeps its own workspace,
+        // and only a platform operator may name one through ?workspaceKey=.
+        var workspaceKey = PluginAdminWorkspaceResolver.Resolve(httpContext, workspaceScope.WorkspaceKey);
+        if (string.IsNullOrWhiteSpace(workspaceKey))
+        {
+            return ApiProblems.BadRequest(
+                "A workspace is required. Platform operators select one with ?workspaceKey=.");
+        }
+
+        var chain = await chainResolver
+            .ResolveAsync(workspaceKey, cancellationToken)
+            .ConfigureAwait(false);
+
+        return Results.Ok(new UiChainApiResponse(workspaceKey, chain));
     }
 
     private static async Task<IResult> HandlePluginAdminRouteAsync(
