@@ -129,6 +129,8 @@ jobs:
             path: custom/plugins/SurfaceDemo
             gates: build
             test: false
+            # Consumes @callora/surface-sdk as a file: dependency — see the build step.
+            buildsSdkFirst: true
           - name: Docs Site
             path: docs-site
             gates: lint + build
@@ -146,6 +148,17 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: ${{ matrix.path }}/package-lock.json
+
+      # A file: dependency links the source directory, not a published tarball, and the
+      # SDK's dist/ is gitignored. So the dependency resolves, npm ci succeeds, and the
+      # build then fails on ERR_MODULE_NOT_FOUND for dist/vite-preset.js — which is how
+      # this job failed on every run since it was added.
+      - name: Build local SDK dependency
+        if: matrix.buildsSdkFirst
+        working-directory: custom/surface-sdk
+        run: |
+          npm ci
+          npm run build
 
       - name: Install
         run: npm ci
