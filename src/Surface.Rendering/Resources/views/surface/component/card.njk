@@ -1,0 +1,22 @@
+{#
+  A card: a bounded region with an optional heading.
+
+      {% from "@callora/component/card.njk" import card %}
+      {% call card("Letzte Anrufe") %}
+        <ul>…</ul>
+      {% endcall %}
+
+  The heading level is a parameter because a card's heading has to fit the page's
+  outline — a card under an h1 needs an h2, one inside a section needs an h3. Getting
+  that wrong is invisible on screen and disorienting in a screen reader.
+#}
+{% macro card(title, level=2) %}
+<section class="cal-card">
+  {% if title %}
+  <div class="cal-card__header">
+    <h{{ level }} class="cal-card__title">{{ title }}</h{{ level }}>
+  </div>
+  {% endif %}
+  <div class="cal-card__body">{{ caller() if caller }}</div>
+</section>
+{% endmacro %}

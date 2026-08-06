@@ -1,0 +1,26 @@
+{#
+  What a surface renders before anyone has designed it: whatever the installed plugins
+  contributed into surface.main, and an honest empty state when that is nothing.
+
+  This is the host's fallback entry — the page a freshly created surface serves. A
+  plugin that publishes its own index.njk replaces it entirely; a plugin that only
+  wants to add to it extends this file and fills main_before or main_after.
+#}
+{% extends "@callora/layout/page.njk" %}
+
+{% block page_content %}
+{% block main_before %}{% endblock %}
+
+{% if callora_has_slot("surface.main") %}
+  {% block main_slot %}{{ callora_slot("surface.main") }}{% endblock %}
+{% else %}
+  {% block main_empty %}
+  {% from "@callora/component/empty-state.njk" import empty_state %}
+  {{ empty_state(
+      "Diese Fläche ist noch leer",
+      "Sobald ein Plugin einen Bereich für " + surface.key + " beisteuert, erscheint er hier.") }}
+  {% endblock %}
+{% endif %}
+
+{% block main_after %}{% endblock %}
+{% endblock %}

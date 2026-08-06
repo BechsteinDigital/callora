@@ -1,0 +1,29 @@
+{#
+  What the host renders for a surface whose plugins publish no SSR entry — the default
+  a fresh surface serves.
+
+  It carries BOTH ways a plugin can contribute, because both exist and neither is
+  wrong:
+
+    - Server-resolved views become islands, filtered by claims and availability before
+      any markup exists. They are in the HTML, so they survive without JavaScript.
+    - Client-registered views mount into #callora-app. A plugin that only ships a
+      bundle needs no server-side contribution at all.
+
+  mountSurface does both in one pass, so a surface can use either or both. App.vue
+  carries its own empty state, which is why this page has none: two empty states on
+  one screen say less than one.
+#}
+{% extends "@callora/layout/page.njk" %}
+
+{% block page_content %}
+{% block app_islands %}{{ callora_slot("surface.main") }}{% endblock %}
+
+{#
+  readSurfaceContext reads the app root's OWN dataset, not an ancestor's, so the
+  attributes are repeated here rather than inherited from the body.
+#}
+{% block app_root %}
+<div id="callora-app" {% include "@callora/utilities/context-attributes.njk" %}></div>
+{% endblock %}
+{% endblock %}

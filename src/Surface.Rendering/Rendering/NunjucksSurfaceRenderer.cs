@@ -1,3 +1,4 @@
+using Acornima.Ast;
 using Jint;
 using Jint.Runtime;
 using System.Text.Json;
@@ -14,14 +15,32 @@ namespace Callora.Surface.Rendering.Rendering;
 /// </summary>
 public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
 {
-    private const int TimeoutSeconds = 2;
+    // Wall-clock, so it measures elapsed time rather than work done: a render competing
+    // for CPU with fifteen others takes longer without doing more. The base chain renders
+    // in ~110 ms alone; sixteen of those serialised onto one core is already 1.8 s, which
+    // is why the old two-second limit no longer holds. Measured, not guessed: at two
+    // seconds the suite loses 11 to 19 tests per run, at five none across seven runs.
+    // It bounds an endless loop; it is not a performance budget.
+    private const int TimeoutSeconds = 5;
     private const long MemoryLimitBytes = 32L * 1024 * 1024;
     private const int RecursionLimit = 64;
     private const int MaxStatements = 2_000_000;
     private const int MaxOutputChars = 512 * 1024;
 
-    // The Nunjucks bundle source, loaded once and executed on each fresh engine.
-    private static readonly string NunjucksSource = LoadNunjucksSource();
+    // Every render gets a fresh engine, so each one used to re-PARSE the whole Nunjucks
+    // bundle — the dominant cost of a render, paid again for every request. Jint can
+    // parse once into a Prepared<Script> that any engine executes, which leaves only the
+    // execution per render. The isolation is untouched: parsing produces an AST, not
+    // state, and each engine still starts empty.
+    private static readonly Prepared<Script> PreparedNunjucks =
+        Engine.PrepareScript(LoadNunjucksSource());
+
+    private static readonly Prepared<Script> PreparedHarness = Engine.PrepareScript(RenderHarness);
+
+    private static readonly Prepared<Script> PreparedComposition =
+        Engine.PrepareScript(CompositionScript);
+
+    private static readonly Prepared<Script> PreparedRender = Engine.PrepareScript(RenderScript);
 
     // Templates address the context in JavaScript spelling ({{ view.displayName }}),
     // so records serialize camelCase and enums as their names rather than ordinals.
@@ -161,21 +180,27 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
     }
 
     public string Render(string templateText, SurfaceRenderContext context) =>
-        RenderCore(templateText, context, loader: null);
+        RenderCore(templateText, context, new BundleFileLoader(_bundleProvider, []));
 
     public string Render(string templateText, SurfaceRenderContext context, IReadOnlyList<string> bundleChain)
     {
         ArgumentNullException.ThrowIfNull(bundleChain);
-        var loader = _bundleProvider is not null && bundleChain.Count > 0
-            ? new BundleFileLoader(_bundleProvider, bundleChain)
-            : null;
-        return RenderCore(templateText, context, loader);
+        // A loader always exists now, even with no provider and an empty chain: the host
+        // bundle (@callora/…) resolves from this assembly and must be reachable from the
+        // very first render, before any plugin is installed.
+        return RenderCore(templateText, context, new BundleFileLoader(_bundleProvider, bundleChain));
     }
 
-    private static string RenderCore(string templateText, SurfaceRenderContext context, BundleFileLoader? loader)
+    private static string RenderCore(string templateText, SurfaceRenderContext context, BundleFileLoader loader)
     {
         ArgumentNullException.ThrowIfNull(templateText);
         ArgumentNullException.ThrowIfNull(context);
+
+        // Touch the prepared scripts BEFORE the engine exists. They are static, so the
+        // first render triggers the type initialiser — parsing the whole Nunjucks bundle
+        // — and every other thread blocks on it. Inside the engine that happens with the
+        // timeout clock already running, which turned a cold start into seven timeouts.
+        var prepared = (PreparedHarness, PreparedNunjucks, PreparedComposition, PreparedRender);
 
         // A fresh, CLR-denied engine per render — no AllowClr(), so JS cannot reach
         // any .NET type; only the two values we set below are visible.
@@ -187,18 +212,15 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
 
         try
         {
-            engine.Execute(RenderHarness);
-            engine.Execute(NunjucksSource);
-            engine.Execute(CompositionScript);
+            engine.Execute(prepared.Item1);
+            engine.Execute(prepared.Item2);
+            engine.Execute(prepared.Item3);
 
-            if (loader is not null)
-            {
-                engine.SetValue("__loadTemplate", new Func<string, string?>(loader.TryLoad));
-            }
+            engine.SetValue("__loadTemplate", new Func<string, string?>(loader.TryLoad));
             engine.SetValue("__templateText", templateText);
             engine.SetValue("__contextJson", SerializeContext(context));
 
-            var result = engine.Evaluate(RenderScript);
+            var result = engine.Evaluate(prepared.Item4);
             var html = result.IsNull() || result.IsUndefined() ? string.Empty : result.AsString();
 
             if (html.Length > MaxOutputChars)

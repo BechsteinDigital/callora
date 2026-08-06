@@ -1,0 +1,18 @@
+{#
+  What a surface shows when a request could not be served. Blank layout: a page that
+  failed should not offer navigation that may fail the same way.
+
+  It says what happened and nothing about why — no stack, no path, no plugin id. A
+  visitor cannot act on those and an attacker can.
+
+      {% set error_title = "Nicht gefunden" %}
+      {% set error_description = "Diese Seite gibt es nicht." %}
+#}
+{% extends "@callora/layout/blank.njk" %}
+
+{% block page_content %}
+{% from "@callora/component/empty-state.njk" import empty_state %}
+{{ empty_state(
+    error_title if error_title else "Die Seite konnte nicht geladen werden",
+    error_description if error_description else "Bitte versuchen Sie es später noch einmal.") }}
+{% endblock %}

@@ -1,0 +1,27 @@
+{#
+  A page with nothing around it: no header, no navigation, no footer.
+
+      {% extends "@callora/layout/blank.njk" %}
+      {% block page_content %}…{% endblock %}
+
+  For anything that must not offer a way out before it is finished — sign-in, a
+  consent step, a fatal error. Navigation is removed rather than hidden, so it is
+  also gone for keyboard and screen-reader users.
+
+  The header and footer SLOTS go with it. A plugin that must appear here uses
+  surface.blank, which only this layout renders.
+#}
+{% extends "@callora/base.njk" %}
+
+{% block base_body_classes %}{{ super() }} cal-surface--blank{% endblock %}
+
+{% block base_header %}{% endblock %}
+{% block base_navigation %}{% endblock %}
+{% block base_footer %}{% endblock %}
+
+{% block base_content %}
+<div class="cal-blank">
+  {% block page_content %}{% endblock %}
+  {% block blank_slot %}{{ callora_slot("surface.blank") }}{% endblock %}
+</div>
+{% endblock %}

@@ -1,37 +1,29 @@
 namespace Callora.Surface.Rendering;
 
 /// <summary>
-/// The built-in minimal SurfaceShell (ADR-014 §8.1/§11.2): a single app root that
-/// carries the workspace/surface context and loads the colocated surface runtime
-/// (Resources/app/surface → wwwroot/surface-app). The runtime is the neutral
-/// grundgerüst — it ships no UI of its own; every concrete surface comes from a
-/// plugin registering against it. A template plugin that renders full SSR HTML
-/// replaces this shell entirely via its own entry template (see PublishedSurfaceTemplateBundles).
+/// The built-in SurfaceShell (ADR-014 §8.1/§11.2): what the host renders for a surface
+/// whose plugins publish no SSR entry of their own.
+/// <para>
+/// It is a one-line template that extends the host bundle, so a surface with no plugins
+/// gets the same header, navigation, footer and theme tokens as one that was designed —
+/// rather than the bare app root this used to be. Both contribution paths stay open:
+/// server-resolved views render as islands, client-registered ones mount into
+/// <c>#callora-app</c>.
+/// </para>
+/// <para>
+/// A template plugin that renders full SSR HTML replaces this entirely via its own entry
+/// template (see PublishedSurfaceTemplateBundles), and can itself extend the same bundle.
+/// </para>
 /// </summary>
 public static class SurfaceShellTemplates
 {
-    /// <summary>SPA-root document — one mount point, no fixed navigation/CMS; boots the surface runtime.</summary>
-    public const string SpaRoot =
-        """
-        <!doctype html>
-        <html lang="{{ locale }}">
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>{{ surface.key }}</title>
-          <link rel="stylesheet" href="/surface-app/surface.css" />
-        </head>
-        <body>
-          <div id="callora-app"
-               data-workspace="{{ workspace.key }}"
-               data-surface="{{ surface.key }}"
-               data-caller-state="{{ caller.state }}"
-               data-caller-issuer="{{ caller.issuer }}"
-               data-caller-subject="{{ caller.subjectId }}"
-               data-caller-name="{{ caller.displayName }}"
-               data-caller-claims="{{ caller.claimsJson }}"></div>
-          <script src="/surface-app/surface.js" defer></script>
-        </body>
-        </html>
-        """;
+    /// <summary>
+    /// The host's default surface page — see <c>Resources/views/surface/page/app.njk</c>.
+    /// <para>
+    /// Deliberately not a <c>const</c>: a const's VALUE is part of the public API and gets
+    /// compiled into every consumer, which would make each edit to the shell a breaking
+    /// change. What the host renders by default is implementation.
+    /// </para>
+    /// </summary>
+    public static readonly string SpaRoot = """{% extends "@callora/page/app.njk" %}""";
 }
