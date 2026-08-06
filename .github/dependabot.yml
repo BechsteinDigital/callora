@@ -34,15 +34,6 @@ updates:
 
   # Surface-SDK (an Plugin-Autoren ausgeliefert)
   - package-ecosystem: npm
-    directory: /custom/surface-sdk
-    schedule:
-      interval: weekly
-    groups:
-      npm-all:
-        patterns: ["*"]
-
-  # Communication-Admin-UI
-  - package-ecosystem: npm
     directory: /custom/static-plugins/Communication/src/Resources/app/admin
     schedule:
       interval: weekly

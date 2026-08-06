@@ -1,18 +1,55 @@
 {
-  "name": "@callora/surface-shell",
-  "private": true,
+  "name": "@callora/surface",
+  "version": "0.1.0",
+  "description": "The Callora surface runtime and the contract surface plugins compile against — views, blocks, the context channel, and the blessed Vite preset.",
+  "license": "Apache-2.0",
   "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist-lib",
+    "src/styles/tokens.scss",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist-lib/public/index.d.ts",
+      "import": "./dist-lib/public/index.js"
+    },
+    "./context": {
+      "types": "./dist-lib/public/context.d.ts",
+      "import": "./dist-lib/public/context.js"
+    },
+    "./vite-preset": {
+      "types": "./dist-lib/public/vite-preset.d.ts",
+      "import": "./dist-lib/vite-preset.js"
+    },
+    "./tokens.scss": "./src/styles/tokens.scss"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "build:lib": "vite build --config vite.lib.config.ts && vue-tsc -p tsconfig.lib.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "peerDependencies": {
+    "vite": "^6.0.0",
+    "vue": "^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
   "dependencies": {
+    "@vitejs/plugin-vue": "^5.1.0",
     "vue": "^3.5.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.1.0",
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^20.11.1",
     "sass": "^1.80.0",
