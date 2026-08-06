@@ -277,6 +277,8 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
             surface = new { key = context.SurfaceKey, type = context.SurfaceType },
             tenant = new { key = context.TenantKey },
             locale = context.Locale,
+            path = context.Path,
+            data = context.Data,
             tokens = context.Tokens,
             slots = context.Slots,
             navigation = context.Navigation,

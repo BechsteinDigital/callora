@@ -75,12 +75,16 @@ Callora.Surface.Rendering.SurfaceRenderContext.Caller.get -> Callora.Surface.Ren
 Callora.Surface.Rendering.SurfaceRenderContext.Caller.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.CompositionHtml.get -> string?
 Callora.Surface.Rendering.SurfaceRenderContext.CompositionHtml.init -> void
+Callora.Surface.Rendering.SurfaceRenderContext.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>!
+Callora.Surface.Rendering.SurfaceRenderContext.Data.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.Deconstruct(out string! TenantKey, out string! WorkspaceKey, out string! SurfaceKey, out string! SurfaceType, out string! Locale, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Tokens) -> void
 Callora.Surface.Rendering.SurfaceRenderContext.Equals(Callora.Surface.Rendering.SurfaceRenderContext? other) -> bool
 Callora.Surface.Rendering.SurfaceRenderContext.Locale.get -> string!
 Callora.Surface.Rendering.SurfaceRenderContext.Locale.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.Navigation.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SurfaceNavigationEntry!>!
 Callora.Surface.Rendering.SurfaceRenderContext.Navigation.init -> void
+Callora.Surface.Rendering.SurfaceRenderContext.Path.get -> string!
+Callora.Surface.Rendering.SurfaceRenderContext.Path.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.Slots.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SurfaceSlotView!>!>!
 Callora.Surface.Rendering.SurfaceRenderContext.Slots.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.SurfaceKey.get -> string!

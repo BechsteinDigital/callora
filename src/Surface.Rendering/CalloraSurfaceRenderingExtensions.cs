@@ -1,4 +1,5 @@
 using Callora.Core.Application.Surfaces;
+using Callora.Core.Application.Surfaces.Data;
 using Callora.Surface.Rendering.Api;
 using Callora.Surface.Rendering.Api.SurfaceContext;
 using Callora.Surface.Rendering.Rendering;
@@ -34,6 +35,10 @@ public static class CalloraSurfaceRenderingExtensions
 
         // One broadcaster per process: a subscription belongs to the process that accepted
         // its socket, and a value is published to the connections that process holds.
+        // Immer registriert; ohne Contributoren liefert er eine leere Komposition. Das kostet
+        // einen Dienst und erspart jedem Aufrufer eine Fallunterscheidung.
+        services.AddSingleton<SurfaceDataResolver>();
+
         services.AddSingleton<SurfaceContextBroadcaster>();
         // GetService, not GetRequiredService: a host without the identity subsystem composes
         // fine, and the revalidator then has nothing to watch rather than being absent.
