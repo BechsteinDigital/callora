@@ -74,6 +74,18 @@ public sealed class CommunicationPluginWiringTests
     }
 
     [Fact]
+    public async Task StartAsync_ExportsCallAudioPlayback()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // Without this a dial-in can answer, collect a PIN and bridge the caller — but never tell them
+        // any of it is happening.
+        Assert.Contains(typeof(ICallAudioPlayback), context.Exports.Keys);
+    }
+
+    [Fact]
     public async Task StartAsync_WithoutCallControl_ExportsNoConferenceCallAttachment()
     {
         var config = new ConfigurationBuilder()
