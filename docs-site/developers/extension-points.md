@@ -122,7 +122,27 @@ rather than leaving a reader to assume the ticket authenticated someone.
 | **ISurfaceContextBroadcaster** | Resolvable | Push a context value to the surfaces a visitor has open, so a server-side event reaches the views that declared they need it. |
 | **ISharedContextKeyContributor** | Contributable | Declare shared context keys — anchor, purpose, field visibility, time to live. Declaration is a precondition for publishing. |
 | **ISharedContextService** | Resolvable | Publish context that crosses surface boundaries, anchored to a subject or a conversation. |
+| **IHostSurfaceDataContributor** | Contributable | Contribute data a server-rendered surface template reads — a product for `/produkt/schuhe`, opening hours for `/kontakt`. |
 | **ISurfaceLayoutSource** | Contributable | Supply composed surface layouts. Implemented by the composer plugin; no composer installed means no layout, and a surface renders from `.njk` as before. |
+
+::: warning Everything a data contributor returns reaches the delivered HTML
+Whoever fetches the page reads it — on a `Public` surface without signing in. So the
+contributor declares whether its data depends on the caller, and the HOST acts on it: a
+caller-specific contribution is not invoked on a Public surface at all, and it makes the
+response `no-store`, because a proxy in front would otherwise serve the first visitor's data
+to everyone after them.
+
+Three outcomes, not two. „Dieses Produkt gibt es nicht" (`SurfaceDataResult.Missing` → 404)
+and „ich konnte den Katalog nicht erreichen" (an exception or an overrun budget → 503) are
+different answers, and only the contributor can tell them apart. A required contributor that
+could only report "did not work" would force the host into a choice where both options are
+wrong.
+
+Contributors run at once, each with its own budget, and **must not read each other's data**.
+The moment one waits for another, the budget stops being parallel and the failure rules turn
+transitive: if A drops out, B goes quietly wrong instead of empty. A contributor that needs
+another plugin's data takes that plugin's contract, not its render contribution.
+:::
 
 ::: tip Two methods, not one with a flag
 `GetPublishedAsync` is the only method the public render path calls. `GetDraftAsync` exists

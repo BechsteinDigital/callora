@@ -2847,6 +2847,52 @@ Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller
 Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.AuthenticatedSurfaceCaller(Callora.Core.Application.Surfaces.SurfaceSubject! subject, Callora.Core.Application.Surfaces.SurfaceIdentity! identity) -> void
 Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.Equals(Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? other) -> bool
 Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.Identity.get -> Callora.Core.Application.Surfaces.SurfaceIdentity!
+Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor
+Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor.ContributeAsync(Callora.Core.Application.Surfaces.Data.SurfaceDataRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Data.SurfaceDataResult!>!
+Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor.Namespace.get -> string!
+Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor.Required.get -> bool
+Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor.Visibility.get -> Callora.Core.Application.Surfaces.Data.SurfaceDataVisibility
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.<Clone>$() -> Callora.Core.Application.Surfaces.Data.SurfaceDataComposition!
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Cacheable.get -> bool
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Cacheable.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Deconstruct(out System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>! Values, out bool Cacheable, out string? FailedRequiredNamespace, out string? MissingRequiredNamespace, out System.Collections.Generic.IReadOnlyList<string!>! Skipped) -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Equals(Callora.Core.Application.Surfaces.Data.SurfaceDataComposition? other) -> bool
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.FailedRequiredNamespace.get -> string?
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.FailedRequiredNamespace.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.MissingRequiredNamespace.get -> string?
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.MissingRequiredNamespace.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Skipped.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Skipped.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.SurfaceDataComposition(System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>! Values, bool Cacheable, string? FailedRequiredNamespace, string? MissingRequiredNamespace, System.Collections.Generic.IReadOnlyList<string!>! Skipped) -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Values.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>!
+Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Values.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.<Clone>$() -> Callora.Core.Application.Surfaces.Data.SurfaceDataRequest!
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.Caller.get -> Callora.Core.Application.Surfaces.SurfaceCaller?
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.Caller.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.Deconstruct(out string! WorkspaceKey, out string! SurfaceKey, out string! Path, out string! Locale, out Callora.Core.Application.Surfaces.SurfaceCaller? Caller) -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.Equals(Callora.Core.Application.Surfaces.Data.SurfaceDataRequest? other) -> bool
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.Locale.get -> string!
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.Locale.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.Path.get -> string!
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.Path.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.SurfaceDataRequest(string! WorkspaceKey, string! SurfaceKey, string! Path, string! Locale, Callora.Core.Application.Surfaces.SurfaceCaller? Caller) -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.SurfaceKey.get -> string!
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.SurfaceKey.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.WorkspaceKey.get -> string!
+Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.WorkspaceKey.init -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataResolver
+Callora.Core.Application.Surfaces.Data.SurfaceDataResolver.ResolveAsync(Callora.Core.Application.Surfaces.Data.SurfaceDataRequest! request, Callora.Core.Domain.Workspaces.SurfaceAccessMode accessMode, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Data.SurfaceDataComposition!>!
+Callora.Core.Application.Surfaces.Data.SurfaceDataResolver.SurfaceDataResolver(System.Collections.Generic.IEnumerable<Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor!>! contributors, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Surfaces.Data.SurfaceDataResolver!>! logger) -> void
+Callora.Core.Application.Surfaces.Data.SurfaceDataResult
+Callora.Core.Application.Surfaces.Data.SurfaceDataResult.<Clone>$() -> Callora.Core.Application.Surfaces.Data.SurfaceDataResult!
+Callora.Core.Application.Surfaces.Data.SurfaceDataResult.Equals(Callora.Core.Application.Surfaces.Data.SurfaceDataResult? other) -> bool
+Callora.Core.Application.Surfaces.Data.SurfaceDataResult.NotFound.get -> bool
+Callora.Core.Application.Surfaces.Data.SurfaceDataResult.Values.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>?
+Callora.Core.Application.Surfaces.Data.SurfaceDataVisibility
+Callora.Core.Application.Surfaces.Data.SurfaceDataVisibility.CallerIndependent = 0 -> Callora.Core.Application.Surfaces.Data.SurfaceDataVisibility
+Callora.Core.Application.Surfaces.Data.SurfaceDataVisibility.CallerSpecific = 1 -> Callora.Core.Application.Surfaces.Data.SurfaceDataVisibility
 Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent
 Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent.EventName.get -> string!
 Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent.ToEventData() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
@@ -5828,6 +5874,15 @@ override Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.<Clone>$()
 override Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.GetHashCode() -> int
 override Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.ToString() -> string!
+override Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.ToString() -> string!
+override Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.ToString() -> string!
+override Callora.Core.Application.Surfaces.Data.SurfaceDataResult.Equals(object? obj) -> bool
+override Callora.Core.Application.Surfaces.Data.SurfaceDataResult.GetHashCode() -> int
+override Callora.Core.Application.Surfaces.Data.SurfaceDataResult.ToString() -> string!
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.<Clone>$() -> Callora.Core.Application.Surfaces.GuestSurfaceCaller!
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.GuestSurfaceCaller.GetHashCode() -> int
@@ -6356,6 +6411,13 @@ static Callora.Core.Application.Security.WorkspaceScopeEvaluator.HasWorkspaceAcc
 static Callora.Core.Application.Security.WorkspaceScopeEvaluator.IsOperator(System.Security.Claims.ClaimsPrincipal! user) -> bool
 static Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.operator !=(Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? left, Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? right) -> bool
 static Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.operator ==(Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? left, Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? right) -> bool
+static Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.operator !=(Callora.Core.Application.Surfaces.Data.SurfaceDataComposition? left, Callora.Core.Application.Surfaces.Data.SurfaceDataComposition? right) -> bool
+static Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.operator ==(Callora.Core.Application.Surfaces.Data.SurfaceDataComposition? left, Callora.Core.Application.Surfaces.Data.SurfaceDataComposition? right) -> bool
+static Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.operator !=(Callora.Core.Application.Surfaces.Data.SurfaceDataRequest? left, Callora.Core.Application.Surfaces.Data.SurfaceDataRequest? right) -> bool
+static Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.operator ==(Callora.Core.Application.Surfaces.Data.SurfaceDataRequest? left, Callora.Core.Application.Surfaces.Data.SurfaceDataRequest? right) -> bool
+static Callora.Core.Application.Surfaces.Data.SurfaceDataResult.Contributed(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! values) -> Callora.Core.Application.Surfaces.Data.SurfaceDataResult!
+static Callora.Core.Application.Surfaces.Data.SurfaceDataResult.operator !=(Callora.Core.Application.Surfaces.Data.SurfaceDataResult? left, Callora.Core.Application.Surfaces.Data.SurfaceDataResult? right) -> bool
+static Callora.Core.Application.Surfaces.Data.SurfaceDataResult.operator ==(Callora.Core.Application.Surfaces.Data.SurfaceDataResult? left, Callora.Core.Application.Surfaces.Data.SurfaceDataResult? right) -> bool
 static Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent.Promoted(string! workspaceKey, string! surfaceKey, Callora.Core.Application.Surfaces.SurfaceSubject! previous, Callora.Core.Application.Surfaces.SurfaceSubject! current) -> Callora.Core.Application.Surfaces.Events.SurfaceCallerBusinessEvent!
 static Callora.Core.Application.Surfaces.GuestSurfaceCaller.operator !=(Callora.Core.Application.Surfaces.GuestSurfaceCaller? left, Callora.Core.Application.Surfaces.GuestSurfaceCaller? right) -> bool
 static Callora.Core.Application.Surfaces.GuestSurfaceCaller.operator ==(Callora.Core.Application.Surfaces.GuestSurfaceCaller? left, Callora.Core.Application.Surfaces.GuestSurfaceCaller? right) -> bool
@@ -6546,6 +6608,10 @@ static Callora.Core.Infrastructure.Surfaces.SurfaceRequestOrigin.IsSameOrigin(Mi
 static Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ParseSensitiveFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<string!>!
 static readonly Callora.Core.Application.Security.BackendLockoutPolicy.LockoutDuration -> System.TimeSpan
 static readonly Callora.Core.Application.Security.BackendPermissionActions.All -> string![]!
+static readonly Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Empty -> Callora.Core.Application.Surfaces.Data.SurfaceDataComposition!
+static readonly Callora.Core.Application.Surfaces.Data.SurfaceDataResolver.ContributorBudget -> System.TimeSpan
+static readonly Callora.Core.Application.Surfaces.Data.SurfaceDataResult.Missing -> Callora.Core.Application.Surfaces.Data.SurfaceDataResult!
+static readonly Callora.Core.Application.Surfaces.Data.SurfaceDataResult.Nothing -> Callora.Core.Application.Surfaces.Data.SurfaceDataResult!
 static readonly Callora.Core.Infrastructure.Security.BackendSessionStateCache.Lifetime -> System.TimeSpan
 virtual Callora.Core.Application.Events.HostApplicationEventPublishNext<TEvent>.Invoke(TEvent appEvent, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 virtual Callora.Core.Application.Surfaces.SurfaceCaller.EqualityContract.get -> System.Type!

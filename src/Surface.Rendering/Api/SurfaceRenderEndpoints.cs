@@ -1,5 +1,6 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Surfaces;
+using Callora.Core.Application.Surfaces.Data;
 using Callora.Core.Application.Surfaces.Layout;
 using Callora.Surface.Rendering.Rendering.Composition;
 using Callora.Core.Application.Workspaces;
@@ -94,6 +95,9 @@ public static class SurfaceRenderEndpoints
         var locale = string.IsNullOrWhiteSpace(surface.Locale) ? "de" : surface.Locale;
 
         SurfaceCallerView? caller = null;
+        // Die Template-Sicht oben lässt die Identität bewusst weg; ein Contributor braucht sie,
+        // um seine Antwort zu formen — nicht, um über Zugriff zu entscheiden.
+        SurfaceCaller? establishedCaller = null;
         var compositionSlots = SurfaceComposition.Empty;
         if (callerResolver is not null)
         {
@@ -107,6 +111,7 @@ public static class SurfaceRenderEndpoints
             }
 
             caller = SurfaceCallerViewFactory.Create(establishment.Caller);
+            establishedCaller = establishment.Caller;
 
             // Resolved per request because it depends on the caller: claim-gated views
             // are filtered here, not hidden in the browser.
@@ -142,6 +147,50 @@ public static class SurfaceRenderEndpoints
             effectiveTheme = theme?.ValuesByKey;
         }
 
+        // Everything a contributor needs to tell one page from another. The prefix comes off
+        // here rather than in every contributor: the first one to get it wrong on a surface
+        // mounted at "/" would never find out.
+        var surfacePath = StripPrefix(path, surface.PublicPathPrefix);
+
+        var data = SurfaceDataComposition.Empty;
+        if (httpContext.RequestServices.GetService<SurfaceDataResolver>() is { } dataResolver)
+        {
+            data = await dataResolver
+                .ResolveAsync(
+                    new SurfaceDataRequest(
+                        surface.WorkspaceKey, surface.SurfaceKey, surfacePath, locale, establishedCaller),
+                    surface.AccessMode,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            // Zwei verschiedene Antworten, und nur der Contributor konnte sie unterscheiden:
+            // "das gibt es nicht" ist eine 404, "ich kam nicht heran" eine 503. Eine halbe
+            // Seite auszuliefern wäre schlimmer als beide — sie sähe vollständig aus.
+            if (data.MissingRequiredNamespace is not null)
+            {
+                return Results.NotFound();
+            }
+
+            if (data.FailedRequiredNamespace is not null)
+            {
+                loggerFactory
+                    .CreateLogger("Callora.Surface.Rendering.SurfaceRender")
+                    .LogError(
+                        "Required surface data contributor {Namespace} could not answer for {Surface}{Path}.",
+                        data.FailedRequiredNamespace,
+                        surface.SurfaceKey,
+                        surfacePath);
+                return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+            }
+
+            // Caller-abhängige Daten stehen im HTML. Ein Proxy davor lieferte sonst die Daten
+            // des ersten Besuchers an alle danach — der leise Fehler dieses Musters.
+            if (!data.Cacheable)
+            {
+                httpContext.Response.Headers.CacheControl = "no-store";
+            }
+        }
+
         // Resolved from the container rather than bound as a parameter: [FromServices] on an
         // unregistered INTERFACE fails the binding and answers 400, where the intent is "no
         // composer installed, carry on".
@@ -164,6 +213,8 @@ public static class SurfaceRenderEndpoints
                 surface.ThemePluginId, surface.ThemeVersion, effectiveTheme))
         {
             Caller = caller,
+            Path = surfacePath,
+            Data = data.Values,
             Slots = compositionSlots.Slots,
             Navigation = compositionSlots.Navigation,
             CompositionHtml = composition,
@@ -179,6 +230,28 @@ public static class SurfaceRenderEndpoints
                 cancellationToken)
             .ConfigureAwait(false);
         return Results.Content(html, "text/html; charset=utf-8");
+    }
+
+    /// <summary>
+    /// The path within the surface. A surface mounted at <c>/shop</c> turns
+    /// <c>/shop/produkt/schuhe</c> into <c>/produkt/schuhe</c>; one mounted at <c>/</c> changes
+    /// nothing.
+    /// </summary>
+    private static string StripPrefix(string path, string? prefix)
+    {
+        if (string.IsNullOrWhiteSpace(prefix) || prefix == "/")
+        {
+            return path;
+        }
+
+        var trimmed = prefix.TrimEnd('/');
+        if (!path.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase))
+        {
+            return path;
+        }
+
+        var rest = path[trimmed.Length..];
+        return string.IsNullOrEmpty(rest) ? "/" : rest.StartsWith('/') ? rest : "/" + rest;
     }
 
     private static async Task<string?> RenderCompositionAsync(
