@@ -120,6 +120,8 @@ rather than leaving a reader to assume the ticket authenticated someone.
 | **IHostSurfaceApiRouteHandler** | Contributable | Handle one surface API route — owns the business authorization for the calling subject. |
 | **IHostSurfaceViewContributor** | Contributable | Contribute composable views to surface slots; the browser bundle registers the component under the same view id. |
 | **ISurfaceContextBroadcaster** | Resolvable | Push a context value to the surfaces a visitor has open, so a server-side event reaches the views that declared they need it. |
+| **ISharedContextKeyContributor** | Contributable | Declare shared context keys — anchor, purpose, field visibility, time to live. Declaration is a precondition for publishing. |
+| **ISharedContextService** | Resolvable | Publish context that crosses surface boundaries, anchored to a subject or a conversation. |
 
 ::: tip The realtime bridge is one-way
 Resolve `ISurfaceContextBroadcaster` and publish under a namespaced, versioned key
@@ -132,6 +134,36 @@ connections receive the value. There is no client-side filtering to add, because
 nothing to filter — what a tab does not receive, it cannot read. A browser cannot publish
 here at all: everything in a tab is visible to DevTools and to every script on the page, so
 a value from there would carry no authority.
+:::
+
+::: warning Shared context is personal data, and its contract says so
+`ISurfaceContextBroadcaster` reaches the surfaces of one workspace. Crossing a surface
+BOUNDARY — an agent desk and the customer's portal on the same call — goes through
+`ISharedContextService` and needs a declaration first:
+
+```csharp
+new SharedContextKeyDeclaration(
+    "communication.active-call/v1",
+    SharedContextAnchorType.Conversation,
+    Purpose: "Beide Seiten eines laufenden Gesprächs zeigen dessen Zustand an.",
+    Fields:
+    [
+        new("state", SharedContextVisibility.Participant),
+        new("customerRecord", SharedContextVisibility.Owner),
+    ],
+    TimeToLive: TimeSpan.FromMinutes(30),
+    PublisherPluginId: "communication")
+```
+
+The declaration is what the projection reads: the customer receives `state`, the agent
+receives both, and a field nobody declared is not delivered even if the publisher sets it.
+Three gates stand between a published value and a browser — the connection holds a matching
+anchor, a visible block on that surface declared it needs the key, and the projection leaves
+something after cutting what the holder may not see.
+
+Anchors come from the session, never from a request: there is no parameter in which to claim
+one. And a key you may not see answers exactly like a key that does not exist — nothing,
+never "forbidden", so the set of contexts cannot be enumerated.
 :::
 
 ::: tip Surface slots ride on Nunjucks inheritance
