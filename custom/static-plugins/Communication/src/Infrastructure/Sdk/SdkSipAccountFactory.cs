@@ -59,9 +59,15 @@ public sealed class SdkSipAccountFactory
         }
 
         // A credentialed trunk registers but accepts trunk inbound: an optional outbound proxy and a
-        // DID whitelist. For a plain register account these stay at the SDK defaults (AcceptTrunkInbound
-        // already true, no proxy, no whitelist), so nothing is forced onto it. The SDK properties are
-        // init-only, so the trunk fields are set here in the initializer rather than after the fact.
+        // DID whitelist. The SDK properties are init-only, so the trunk fields are set here in the
+        // initializer rather than after the fact.
+        //
+        // Trunk inbound is tied to the mode rather than always on. It broadens inbound matching past
+        // the account's own user: without a DID whitelist the line accepts anything addressed to the
+        // provider's domain. Two workspaces with accounts at the same provider share that domain, so
+        // each line would accept the other's calls and the workspace boundary would come down to who
+        // answers first. A register account is 1:1 by definition and gains nothing from the broadening;
+        // a trunk needs it, which is what the whitelist is then for.
         var isTrunk = connection.Mode == SipAccountMode.Trunk;
 
         return new SdkSipAccount
@@ -73,7 +79,7 @@ public sealed class SdkSipAccountFactory
             Port = connection.Port,
             Transport = MapTransport(connection.Transport),
             RegistrationExpiry = connection.RegistrationExpirySeconds ?? DefaultRegistrationExpirySeconds,
-            AcceptTrunkInbound = true,
+            AcceptTrunkInbound = isTrunk,
             OutboundProxy = isTrunk ? connection.OutboundProxy : null,
             InboundNumbers = isTrunk ? connection.InboundNumbers : null,
         };
