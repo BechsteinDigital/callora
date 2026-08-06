@@ -44,7 +44,7 @@ export function calloraAdminPlugin(options: AdminPluginPresetOptions): UserConfi
       rollupOptions: {
         external: ['vue'],
         output: {
-          globals: { vue: 'CalloraAdmin.vue' },
+          globals: { vue: 'CalloraVue' },
           assetFileNames: (asset) =>
             asset.names.some((name) => name.endsWith('.css'))
               ? 'main.css'

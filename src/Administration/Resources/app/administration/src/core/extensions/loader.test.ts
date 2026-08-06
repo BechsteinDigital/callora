@@ -162,7 +162,7 @@ describe('resolveAdminAssets', () => {
 })
 
 describe('installGlobalApi', () => {
-  it('exposes the register functions, the slot read side and the shared Vue on globalThis', () => {
+  it('exposes the register functions and the slot read side on globalThis', () => {
     installGlobalApi()
     const api = globalApi()
 
@@ -170,10 +170,19 @@ describe('installGlobalApi', () => {
     expect(typeof api?.registerHook).toBe('function')
     expect(typeof api?.registerService).toBe('function')
     expect(typeof api?.getExtensions).toBe('function')
-    // Shipped plugin bundles keep Vue external and resolve it here; removing this before
-    // @callora/ui-core provides the shared global would break them.
-    expect(typeof api?.vue.h).toBe('function')
-    expect(typeof api?.vue.defineComponent).toBe('function')
+  })
+
+  it('exposes Vue under the name BOTH runtimes use, not inside the admin API', () => {
+    // Ein Block-Bundle ist gegen genau einen Namen gebaut. Läge Vue weiterhin in
+    // CalloraAdmin, könnte ein im Editor platzierter Surface-Block dort nicht laufen —
+    // und der Canvas ist genau das: Surface-Blöcke innerhalb der Admin-Shell.
+    installGlobalApi()
+
+    const shared = (globalThis as unknown as { CalloraVue?: typeof import('vue') }).CalloraVue
+
+    expect(typeof shared?.h).toBe('function')
+    expect(typeof shared?.defineComponent).toBe('function')
+    expect((globalApi() as unknown as { vue?: unknown }).vue).toBeUndefined()
   })
 })
 
