@@ -8,6 +8,7 @@ using SdkCallStateChangedEventArgs = CalloraVoipSdk.Core.Domain.Events.CallState
 using SdkCallTerminatedBy = CalloraVoipSdk.Core.Domain.Calls.CallTerminatedBy;
 using SdkCallTerminationCategory = CalloraVoipSdk.Core.Domain.Calls.CallTerminationCategory;
 using SdkCallTerminationReason = CalloraVoipSdk.Core.Domain.Calls.CallTerminationReason;
+using SdkDtmfReceivedEventArgs = CalloraVoipSdk.Core.Domain.Events.DtmfReceivedEventArgs;
 using SdkDtmfTone = CalloraVoipSdk.Core.Domain.Calls.DtmfTone;
 
 namespace Callora.Plugin.Communication.Infrastructure.Sdk;
@@ -37,6 +38,7 @@ public sealed class SdkCall : IVoipCall
         _sdkCall = sdkCall;
         _mediaTapFactory = mediaTapFactory;
         _sdkCall.StateChanged += OnSdkStateChanged;
+        _sdkCall.DtmfReceived += OnSdkDtmfReceived;
     }
 
     /// <inheritdoc />
@@ -56,6 +58,9 @@ public sealed class SdkCall : IVoipCall
 
     /// <inheritdoc />
     public event EventHandler<CallStateChangedEventArgs>? StateChanged;
+
+    /// <inheritdoc />
+    public event EventHandler<DtmfReceivedEventArgs>? DtmfReceived;
 
     /// <inheritdoc />
     public Task AcceptAsync(CancellationToken cancellationToken = default) =>
@@ -125,8 +130,15 @@ public sealed class SdkCall : IVoipCall
         if (current == CallState.Terminated)
         {
             _sdkCall.StateChanged -= OnSdkStateChanged;
+            _sdkCall.DtmfReceived -= OnSdkDtmfReceived;
         }
     }
+
+    // Raised from two SDK threads (signalling for out-of-band tones, media receive for in-band
+    // ones), so this must stay allocation-light and non-blocking; the neutral contract passes the
+    // same non-serialized, non-de-duplicated guarantee on to consumers verbatim.
+    private void OnSdkDtmfReceived(object? sender, SdkDtmfReceivedEventArgs e) =>
+        DtmfReceived?.Invoke(this, new DtmfReceivedEventArgs(e.Tone.Symbol, e.DurationMs));
 
     private static CallState MapState(SdkCallState state) => state switch
     {

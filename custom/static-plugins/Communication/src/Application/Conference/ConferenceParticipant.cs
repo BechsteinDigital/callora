@@ -23,7 +23,7 @@ namespace Callora.Plugin.Communication.Application.Conference;
 /// them, so the browser never applies a candidate for an offer it has not seen.
 /// </para>
 /// </summary>
-internal sealed class ConferenceParticipant : IConferenceParticipant
+internal sealed class ConferenceParticipant : IConferenceParticipant, IConferenceEndpoint
 {
     private readonly IMediaPeer _peer;
     private readonly Func<ValueTask> _onLeave;
@@ -85,12 +85,45 @@ internal sealed class ConferenceParticipant : IConferenceParticipant
     public SessionDescription InitialOffer =>
         _initialOffer ?? throw new InvalidOperationException("The conference session has not been initialised.");
 
-    /// <summary>The owned server peer — the router forwards frames through it and requests key frames on it.</summary>
+    /// <summary>
+    /// The owned server peer, disposed on leave. The router no longer reaches for it: it goes through
+    /// the <see cref="IConferenceEndpoint"/> members below, so that a participant backed by something
+    /// other than a peer fits the same topology.
+    /// </summary>
     public IMediaPeer Peer => _peer;
+
+    /// <inheritdoc />
+    public MediaConnectionState ConnectionState => _peer.ConnectionState;
+
+    // The endpoint members below hand the router straight through to the peer. Forwarding the events by
+    // accessor rather than re-raising them keeps the router attached to the peer's own event, so the
+    // detach it performs on leave still reaches the source of the frames.
+
+    /// <inheritdoc />
+    public event EventHandler<IRemoteMediaTrack>? RemoteTrackReceived
+    {
+        add => _peer.RemoteTrackReceived += value;
+        remove => _peer.RemoteTrackReceived -= value;
+    }
+
+    /// <inheritdoc />
+    public event EventHandler? KeyFrameRequested
+    {
+        add => _peer.KeyFrameRequested += value;
+        remove => _peer.KeyFrameRequested -= value;
+    }
+
+    /// <inheritdoc />
+    public IMediaOutboundTrack AddOutboundTrack(MediaTrackKind kind, string streamId) =>
+        _peer.AddOutboundTrack(kind, streamId);
+
+    /// <inheritdoc />
+    public ValueTask<bool> RequestKeyFrameAsync(CancellationToken ct = default) =>
+        _peer.RequestKeyFrameAsync(ct);
 
     /// <summary>
     /// Subscribes to the peer's ICE events and produces the initial offer (under the signalling gate) so
-    /// <see cref="InitialOffer"/> is ready when <see cref="IConferenceService.JoinAsync"/> returns. It does
+    /// <see cref="InitialOffer"/> is ready when <see cref="IConferenceService.JoinAsync(string, string, System.Threading.CancellationToken)"/> returns. It does
     /// NOT flush or gather candidates: the trickle gate stays closed and any candidate surfaced during
     /// CreateOffer is buffered. Gathering is deferred to <see cref="StartSignalingAsync"/> so nothing is
     /// raised before the vertical — which only obtains this session after JoinAsync returns — has subscribed.

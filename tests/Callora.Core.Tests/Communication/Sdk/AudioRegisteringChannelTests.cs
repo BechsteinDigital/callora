@@ -197,6 +197,12 @@ internal sealed class FakePlainCall : ICall
         remove { }
     }
 
+    public event EventHandler<DtmfReceivedEventArgs>? DtmfReceived
+    {
+        add { }
+        remove { }
+    }
+
     public Task AcceptAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     public Task RejectAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;

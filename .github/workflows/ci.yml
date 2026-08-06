@@ -103,6 +103,73 @@ jobs:
           path: ./test-results/**/coverage.cobertura.xml
           if-no-files-found: warn
 
+  frontends:
+    name: ${{ matrix.name }} (${{ matrix.gates }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      # No fail-fast: one workspace breaking should not hide the state of the others,
+      # which is the whole point of gating them separately.
+      fail-fast: false
+      matrix:
+        include:
+          - name: Surface Runtime
+            path: src/Surface.Rendering/Resources/app/surface
+            gates: test + build
+            test: true
+          - name: Surface SDK
+            path: custom/surface-sdk
+            gates: test + build
+            test: true
+          - name: Communication Admin
+            path: custom/static-plugins/Communication/src/Resources/app/admin
+            gates: build
+            test: false
+          - name: SurfaceDemo
+            path: custom/plugins/SurfaceDemo
+            gates: build
+            test: false
+          - name: Docs Site
+            path: docs-site
+            gates: lint + build
+            test: false
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Shipped dependencies are the gate. A vulnerable test runner is worth knowing about and
+      # worth fixing, but it never reaches a customer — blocking on it would train everyone to
+      # ignore the signal that does.
+      - name: Audit (shipped dependencies)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit (all dependencies, advisory)
+        run: npm audit --audit-level=high || true
+
+      - name: Test
+        if: matrix.test
+        run: npm run test
+
+      - name: Lint
+        if: matrix.name == 'Docs Site'
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
   admin-frontend:
     name: Admin Shell (Vitest + Build)
     runs-on: ubuntu-latest
@@ -124,9 +191,15 @@ jobs:
       - name: Install
         run: npm ci
 
-      # Der Extension-Point-Katalog ist generiert und eingecheckt. Neu erzeugen und
-      # auf Diff prüfen: so kann ein neuer Slot oder Hook in der Shell nicht landen,
-      # ohne dass der Vertrag, gegen den Plugins kompilieren, ihn kennt.
+      - name: Audit (shipped dependencies)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit (all dependencies, advisory)
+        run: npm audit --audit-level=high || true
+
+      # Der Extension-Point-Katalog wird aus der Shell generiert. Wanderte ein Slot,
+      # ohne dass jemand neu generiert, verspräche @callora/admin einen Punkt, den es
+      # nicht mehr gibt — und der Typfehler träfe den Plugin-Autor statt uns.
       - name: Katalog aktuell?
         run: |
           npm run generate:catalog
@@ -141,83 +214,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Der Bibliotheks-Build erzeugt, was Plugin-Autoren konsumieren. Er läuft VOR den
-      # Tests nicht, sondern hier: der Export-Test prüft dist-lib nur, wenn es existiert,
-      # und soll in CI beißen.
       - name: Build library
         run: npm run build:lib
 
-      # Beide Builds liegen jetzt vor: Export-Pfade und die Scope-Id-Annahme prüfen,
-      # von der abhängt, ob eine Plugin-Seite ohne eigenes Stylesheet gestylt ist.
+      # Nach dem Bibliotheks-Build, weil beide Tests gegen dist-lib prüfen: dass jeder
+      # Export auf eine gebaute Datei zeigt, und dass die Scope-Ids der Bibliothek im
+      # Anwendungs-Build vorkommen. Bräche das, blieben Plugin-Seiten ungestylt.
       - name: Paketvertrag prüfen
         run: npx vitest run src/public/exports.test.ts src/public/scoped-styles.test.ts
-
-      # Jedes aktive Lockfile bekommt ein Audit-Gate (#121). Schwelle "high": moderate
-      # Befunde blockieren main nicht, kritische und hohe schon. Ausnahmen ohne Fix
-      # stehen in ops/compliance/npm-risk-acceptance.md.
-      - name: Audit
-        run: npm audit --audit-level=high
-
-  surface-sdk:
-    name: Surface SDK (Vitest + Build + Audit)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        package: [surface-sdk]
-    defaults:
-      run:
-        working-directory: custom/${{ matrix.package }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: custom/${{ matrix.package }}/package-lock.json
-
-      - name: Install
-        run: npm ci
-
-      - name: Test
-        run: npm run test
-
-      - name: Build
-        run: npm run build
-
-      - name: Audit
-        run: npm audit --audit-level=high
-
-  surface-runtime:
-    name: Surface Runtime (Vitest + Build + Audit)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: src/Surface.Rendering/Resources/app/surface
-    steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: src/Surface.Rendering/Resources/app/surface/package-lock.json
-
-      - name: Install
-        run: npm ci
-
-      - name: Test
-        run: npm run test
-
-      - name: Build
-        run: npm run build
-
-      - name: Audit
-        run: npm audit --audit-level=high
