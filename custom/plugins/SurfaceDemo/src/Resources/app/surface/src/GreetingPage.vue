@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { SurfaceContext } from '@callora/surface-sdk'
+import type { SurfaceContext } from '@callora/surface'
 
 // The runtime passes the resolved SurfaceContext as a `context` prop.
 defineProps<{ context: SurfaceContext }>()

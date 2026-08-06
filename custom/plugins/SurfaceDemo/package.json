@@ -3,12 +3,12 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "Reference surface plugin — the front-end bundle built against @callora/surface-sdk.",
+  "description": "Reference surface plugin — the front-end bundle built against @callora/surface.",
   "scripts": {
     "build": "vite build"
   },
   "dependencies": {
-    "@callora/surface-sdk": "file:../../surface-sdk"
+    "@callora/surface": "file:../../../src/Surface.Rendering/Resources/app/surface"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.0",

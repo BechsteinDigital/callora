@@ -4,6 +4,7 @@ import {
   type SurfaceContextChannel,
 } from './surface-context-channel'
 import { createBlockRegistry, type BlockRegistry } from './blocks/block-registry'
+import type { SurfaceContext } from './surface-context'
 import type { BlockDefinition } from './blocks/block-contract'
 
 /**
@@ -12,6 +13,17 @@ import type { BlockDefinition } from './blocks/block-contract'
  * instead of deriving everything from the URL.
  */
 export type SurfaceViewParams = Readonly<Record<string, unknown>>
+
+/**
+ * What the runtime hands a view. Both props were always passed — mount.ts renders
+ * `h(view.component, { context, params })` — but the contract typed the component only
+ * as a bare `Component`, so a view author had no shape to annotate against and `params`
+ * was effectively undocumented.
+ */
+export interface SurfaceViewProps {
+  readonly context: SurfaceContext
+  readonly params: SurfaceViewParams
+}
 
 /**
  * A view a plugin contributes to the surface. The runtime ships NO views of its own

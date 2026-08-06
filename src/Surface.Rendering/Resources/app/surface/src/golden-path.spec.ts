@@ -5,7 +5,7 @@ import { createSurfaceRegistry } from './surface-registry'
 import { mountSurface } from './mount'
 import { injectPluginScript, loadSurfacePlugins } from './plugin-loader'
 // The real, committed bundle of the SurfaceDemo reference plugin, imported as raw text
-// (built by the @callora/surface-sdk preset: Vue external → CalloraVue, registerSurfaceView).
+// (built by the @callora/surface preset: Vue external → CalloraVue, registerSurfaceView).
 // The path sits outside this project's root, so vite.config.ts allowlists it explicitly —
 // Vite's filesystem guard denies such ids by default since the path-traversal hardening.
 import surfaceDemoBundle from '../../../../../../custom/plugins/SurfaceDemo/src/Resources/public/surface/main.js?raw'
