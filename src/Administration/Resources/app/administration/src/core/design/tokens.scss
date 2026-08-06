@@ -82,9 +82,10 @@
   --cal-z-toast: 600;
 
   /* --------------------------------------------------------------- Maße */
-  --cal-sidebar-width: 236px;
-  --cal-sidebar-width-collapsed: 60px;
-  --cal-topbar-height: 52px;
+  /* Nur flächenübergreifende Maße. Chrome-Maße einer einzelnen Oberfläche —
+     Sidebar-Breite, Topbar-Höhe — gehören zu ihr, nicht hierher: eine Surface
+     hat keine Sidebar, und ein Token, das dort nie greift, ist kein Vertrag,
+     sondern Rauschen. Siehe Administration: core/design/layout.scss. */
   --cal-content-max: 1360px;
 
   /* ------------------------------------------------- Farbe (Dark, Basis) */

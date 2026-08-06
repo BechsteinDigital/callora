@@ -1,0 +1,18 @@
+/**
+ * Maße des Admin-Chrome.
+ *
+ * Diese Tokens beschreiben die Rahmenkonstruktion DIESER Oberfläche — Sidebar, Topbar — und
+ * gehören deshalb nicht in @callora/ui-core. Der Kern trägt, was beide Flächen teilen: Farbe,
+ * Raum, Typografie, Form, Tiefe, Bewegung, Ebene. Eine Surface hat keine Sidebar, und ein
+ * Token, das dort nie greift, wäre kein Vertrag, sondern Rauschen.
+ *
+ * Umgekehrt darf eine Surface eigene Layout-Tokens führen (Sektionsbreiten, Rasterspalten) —
+ * verschiedene Layouts brauchen verschiedene Maße. Was NICHT auseinanderlaufen darf, sind zwei
+ * Namen für dieselbe semantische Rolle; die stehen im Kern.
+ */
+
+:root {
+  --cal-sidebar-width: 236px;
+  --cal-sidebar-width-collapsed: 60px;
+  --cal-topbar-height: 52px;
+}

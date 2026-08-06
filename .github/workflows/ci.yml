@@ -124,6 +124,14 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Der Extension-Point-Katalog ist generiert und eingecheckt. Neu erzeugen und
+      # auf Diff prüfen: so kann ein neuer Slot oder Hook in der Shell nicht landen,
+      # ohne dass der Vertrag, gegen den Plugins kompilieren, ihn kennt.
+      - name: Katalog aktuell?
+        run: |
+          npm run generate:catalog
+          git diff --exit-code src/core/extensions/catalog.generated.ts src/core/extensions/catalog.json
+
       # Die Vitest-Suite (Slots/Hooks/Services/Loader + alle Admin-Module) läuft
       # als eigener Gate-Schritt, damit UI-Verhaltensregressionen main nicht
       # erreichen; der Build (vue-tsc + vite) folgt als Typ-/Bundle-Check.
@@ -132,3 +140,84 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Der Bibliotheks-Build erzeugt, was Plugin-Autoren konsumieren. Er läuft VOR den
+      # Tests nicht, sondern hier: der Export-Test prüft dist-lib nur, wenn es existiert,
+      # und soll in CI beißen.
+      - name: Build library
+        run: npm run build:lib
+
+      # Beide Builds liegen jetzt vor: Export-Pfade und die Scope-Id-Annahme prüfen,
+      # von der abhängt, ob eine Plugin-Seite ohne eigenes Stylesheet gestylt ist.
+      - name: Paketvertrag prüfen
+        run: npx vitest run src/public/exports.test.ts src/public/scoped-styles.test.ts
+
+      # Jedes aktive Lockfile bekommt ein Audit-Gate (#121). Schwelle "high": moderate
+      # Befunde blockieren main nicht, kritische und hohe schon. Ausnahmen ohne Fix
+      # stehen in ops/compliance/npm-risk-acceptance.md.
+      - name: Audit
+        run: npm audit --audit-level=high
+
+  surface-sdk:
+    name: Surface SDK (Vitest + Build + Audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [surface-sdk]
+    defaults:
+      run:
+        working-directory: custom/${{ matrix.package }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: custom/${{ matrix.package }}/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Audit
+        run: npm audit --audit-level=high
+
+  surface-runtime:
+    name: Surface Runtime (Vitest + Build + Audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src/Surface.Rendering/Resources/app/surface
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/Surface.Rendering/Resources/app/surface/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Audit
+        run: npm audit --audit-level=high
