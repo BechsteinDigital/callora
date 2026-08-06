@@ -34,6 +34,15 @@
     <EmbeddedResource Include="Resources\nunjucks.js" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The host's own template bundle, addressed as @callora/… from any surface
+         template. Embedded rather than published as content so it travels with the
+         assembly: available before any plugin is installed, and impossible for a
+         deployment to half-ship. HostSurfaceTemplates maps a path onto the resource
+         name, which is why no directory here may contain a dot. -->
+    <EmbeddedResource Include="Resources\views\surface\**\*.njk" />
+  </ItemGroup>
+
   <!-- The colocated surface runtime (Resources/app/surface) is the neutral client
        grundgerüst (ADR-014 §8/§11). It builds into wwwroot/surface-app and rides
        along as a Static Web Asset, served at /surface-app; the SSR SurfaceShell

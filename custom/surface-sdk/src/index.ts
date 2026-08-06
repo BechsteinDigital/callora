@@ -111,11 +111,134 @@ export interface SurfaceContextChannel {
   diagnostics(): readonly SurfaceContextKeyDiagnostics[]
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Blocks
+//
+// A block is a view with editor metadata — the same component, one identity. Its id
+// IS the view id IS the island attribute, so a block placed in the editor and a view
+// rendered server-side are the same thing rather than two registries to keep in step.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * What a control is bound to. `source: 'context'` is the one the comparable tools do
+ * not have: the value comes from a versioned context key and updates when that context
+ * changes — an incoming call, a selected lead — with no realtime code. Framer, Webflow
+ * and Shopware resolve their bindings once and freeze the result.
+ *
+ * `scope` is normally omitted; the resolver decides whether a key comes from this
+ * surface or another one the visitor has open.
+ */
+export type Binding<T> =
+  | { source: 'static'; value: T }
+  | { source: 'context'; key: string; scope?: 'local' | 'shared'; path?: string }
+  | { source: 'inherit' }
+  | { source: 'default' }
+
+/**
+ * Control types that shape APPEARANCE. Closed: each picks a --cal-* role or step, never
+ * a free value. Contributing one is refused — a free colour picker would undo the
+ * guardrail that lets the editor promise a composed page still looks like the product.
+ */
+export type AppearanceControlType = 'colorToken' | 'spacingToken' | 'typeToken' | 'variant'
+
+export type KnownControlType =
+  | 'text'
+  | 'richText'
+  | 'number'
+  | 'toggle'
+  | 'select'
+  | 'list'
+  | 'group'
+  | 'media'
+  | 'link'
+  | 'date'
+  | 'context'
+  | 'query'
+  | AppearanceControlType
+  /** Takes other blocks — nesting without a separate slots field. */
+  | 'slot'
+
+/**
+ * Open on purpose: a plugin can contribute a phone-number picker or an agent selector.
+ * The `string & {}` keeps autocompletion for the known types, which a plain `string`
+ * would collapse.
+ */
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type ControlType = KnownControlType | (string & {})
+
+export interface ControlOption {
+  value: string
+  label: string
+}
+
+/** A control as the editor renders it. The settings panel is generated from this. */
+export interface BlockControl<T = unknown> {
+  type: ControlType
+  label: string
+  description?: string
+  default?: T
+  required?: boolean
+  /** Panel grouping — controls sharing a group render together. */
+  group?: string
+  min?: number
+  max?: number
+  options?: readonly ControlOption[]
+  /**
+   * When this control is shown. Stated positively, unlike Framer's `hidden`: a missing
+   * predicate then means "always", which is the safer default to forget.
+   */
+  visibleWhen?: (values: Readonly<Record<string, unknown>>) => boolean
+  /** Keeps the value out of the delivered markup — an api key, an internal id. */
+  confidential?: boolean
+}
+
+export type BlockSurface = 'surface' | 'admin'
+
+/** A block: what the editor offers and what the runtime renders. */
+export interface BlockDefinition {
+  /** Stable id — also the view id and the island attribute. */
+  id: string
+  label: string
+  description?: string
+  /** A free string. Register it with registerBlockCategory to give it a name and icon. */
+  category: string
+  /** Absent means every surface. */
+  surfaces?: readonly BlockSurface[]
+  /** Versioned context keys this block reads. */
+  requires?: readonly string[]
+  /** Versioned context keys this block publishes. */
+  provides?: readonly string[]
+  controls?: Readonly<Record<string, BlockControl>>
+  component: Component
+  /** What the picker shows before placement; without it the real component renders. */
+  preview?: Component
+  order?: number
+  icon?: string
+}
+
+export interface BlockCategory {
+  id: string
+  label: string
+  icon?: string
+  order?: number
+}
+
+/** Blocks and their categories, on the runtime registry. */
+export interface BlockRegistry {
+  readonly blocks: BlockDefinition[]
+  readonly categories: BlockCategory[]
+  readonly controlTypes: string[]
+  registerBlock(block: BlockDefinition): void
+  registerBlockCategory(category: BlockCategory): void
+  registerControlType(type: string): void
+}
+
 /** The runtime registry plugins dock into (window.calloraSurface). */
 export interface SurfaceRegistry {
   readonly views: SurfaceView[]
   registerView(view: SurfaceView): void
   readonly contextChannel: SurfaceContextChannel
+  readonly blocks: BlockRegistry
 }
 
 declare global {
@@ -143,6 +266,55 @@ export function registerSurfaceView(view: SurfaceView): void {
   }
 
   registry.registerView(view)
+}
+
+/**
+ * Registers a block. It becomes renderable immediately — the registry registers the
+ * view alongside it — and appears in the editor's picker once that exists.
+ *
+ * Register the category too, unless it is one the host already defines: a block whose
+ * category nobody registered still works, but shows up unnamed.
+ */
+export function registerBlock(block: BlockDefinition): void {
+  const registry = window.calloraSurface
+  if (!registry) {
+    console.warn(
+      `[callora-surface-sdk] surface runtime not initialised; block "${block.id}" was not registered.`,
+    )
+    return
+  }
+
+  registry.blocks.registerBlock(block)
+}
+
+/** Registers a category for the editor's block picker. Any id is allowed. */
+export function registerBlockCategory(category: BlockCategory): void {
+  const registry = window.calloraSurface
+  if (!registry) {
+    console.warn(
+      `[callora-surface-sdk] surface runtime not initialised; category "${category.id}" was not registered.`,
+    )
+    return
+  }
+
+  registry.blocks.registerBlockCategory(category)
+}
+
+/**
+ * Registers a control type this plugin implements — a phone-number picker, an agent
+ * selector. Appearance types (colorToken, spacingToken, typeToken, variant) are
+ * reserved and refused: they pick from --cal-* and nothing else.
+ */
+export function registerControlType(type: string): void {
+  const registry = window.calloraSurface
+  if (!registry) {
+    console.warn(
+      `[callora-surface-sdk] surface runtime not initialised; control type "${type}" was not registered.`,
+    )
+    return
+  }
+
+  registry.blocks.registerControlType(type)
 }
 
 /**

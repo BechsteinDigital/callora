@@ -1,0 +1,11 @@
+{#
+  The page footer. Carries no claim of its own — no copyright line, no product name.
+  A surface belongs to whoever runs it, and the base guessing otherwise would put text
+  on their page that they never wrote.
+#}
+<footer class="cal-footer">
+  <div class="cal-footer__inner">
+    {% block footer_slot %}{{ callora_slot("surface.footer") }}{% endblock %}
+    {% block footer_extra %}{% endblock %}
+  </div>
+</footer>

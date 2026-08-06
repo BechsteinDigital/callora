@@ -3,6 +3,8 @@ import {
   createSurfaceContextChannel,
   type SurfaceContextChannel,
 } from './surface-context-channel'
+import { createBlockRegistry, type BlockRegistry } from './blocks/block-registry'
+import type { BlockDefinition } from './blocks/block-contract'
 
 /**
  * Instance parameters an island carries: what the SSR template passed at the slot's
@@ -43,6 +45,12 @@ export interface SurfaceRegistry {
    * the page and never shared across surfaces or workspaces.
    */
   readonly contextChannel: SurfaceContextChannel
+  /**
+   * Blocks and their categories — what the editor offers, and the same components the
+   * runtime renders. Registering a block also registers its view, so a block is never
+   * a second thing to keep in step with a view.
+   */
+  readonly blocks: BlockRegistry
 }
 
 export function createSurfaceRegistry(
@@ -50,19 +58,32 @@ export function createSurfaceRegistry(
   surfaceKey = 'default',
 ): SurfaceRegistry {
   const views = reactive<SurfaceView[]>([])
+  const registerView = (view: SurfaceView): void => {
+    if (views.some((existing) => existing.id === view.id)) {
+      return
+    }
+
+    // markRaw: a Vue component definition must not be turned into a reactive proxy.
+    views.push({ ...view, component: markRaw(view.component) })
+    views.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  }
+
+  // A registered block becomes a renderable view under the same id — that id is also
+  // the island attribute, so server-rendered placement and editor placement meet.
+  const blocks = createBlockRegistry((block: BlockDefinition) =>
+    registerView({
+      id: block.id,
+      component: block.component,
+      order: block.order,
+      surfaceKeys: undefined,
+    }),
+  )
 
   return {
     views,
+    blocks,
     contextChannel: createSurfaceContextChannel(workspaceKey, surfaceKey),
-    registerView(view: SurfaceView): void {
-      if (views.some((existing) => existing.id === view.id)) {
-        return
-      }
-
-      // markRaw: a Vue component definition must not be turned into a reactive proxy.
-      views.push({ ...view, component: markRaw(view.component) })
-      views.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    },
+    registerView,
   }
 }
 

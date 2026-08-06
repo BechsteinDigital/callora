@@ -1,0 +1,311 @@
+/*
+ * The base stylesheet for server-rendered surfaces.
+ *
+ * Every value it uses is a --cal-* custom property with a fallback, so a surface that
+ * defines no theme tokens still renders legibly and one that defines some overrides
+ * exactly those. The fallbacks are the defaults; there is no second place to change
+ * them.
+ *
+ * It styles the structure base.njk emits and nothing else. No utility classes, no
+ * component library — those belong to whoever builds the surface. What is here is the
+ * part that would otherwise be rewritten identically by everyone: readable text, a
+ * content measure, focus that is visible, and a layout that survives a narrow screen.
+ */
+
+:root {
+  color-scheme: light dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--cal-font-body, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  font-size: var(--cal-font-size-base, 1rem);
+  line-height: var(--cal-line-height, 1.6);
+  color: var(--cal-color-text, #1d2837);
+  background: var(--cal-color-bg, #f5f7fb);
+}
+
+/* Anything the surface itself did not size stays inside the readable measure. */
+.cal-header__inner,
+.cal-page,
+.cal-footer__inner,
+.cal-blank {
+  width: min(100% - 2 * var(--cal-space-page, 1.25rem), var(--cal-measure, 72rem));
+  margin-inline: auto;
+}
+
+/* ── Skip link ─────────────────────────────────────────────────────────────
+   Present in the tab order from the start, off-screen until focused. Not
+   display:none — that would remove it from the tab order, which is the one
+   thing it exists for. */
+.cal-skip-link {
+  position: absolute;
+  inset-inline-start: -100vw;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  background: var(--cal-color-surface, #ffffff);
+  color: var(--cal-color-text, #1d2837);
+  border-radius: 0 0 var(--cal-radius, 0.75rem) 0;
+}
+
+.cal-skip-link:focus {
+  inset-inline-start: 0;
+}
+
+/* ── Focus ────────────────────────────────────────────────────────────────
+   Never removed, only replaced. :focus-visible so a mouse click does not
+   leave a ring behind, while keyboard focus always shows one. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--cal-color-focus, var(--cal-color-brand, #1f6fe5));
+  outline-offset: 2px;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+.cal-header {
+  background: var(--cal-color-surface, #ffffff);
+  border-bottom: 1px solid var(--cal-color-line, #d8e0ec);
+}
+
+.cal-header__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space-md, 1rem);
+  min-height: var(--cal-header-height, 3.5rem);
+}
+
+.cal-header__brand {
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Pushes the caller to the far end without needing a spacer element. */
+.cal-header__slot {
+  flex: 1;
+}
+
+.cal-header__caller {
+  color: var(--cal-color-muted, #627089);
+  font-size: 0.9375rem;
+}
+
+/* ── Navigation ───────────────────────────────────────────────────────── */
+.cal-nav {
+  background: var(--cal-color-surface, #ffffff);
+  border-bottom: 1px solid var(--cal-color-line, #d8e0ec);
+}
+
+.cal-nav__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cal-space-xs, 0.25rem);
+  width: min(100% - 2 * var(--cal-space-page, 1.25rem), var(--cal-measure, 72rem));
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.cal-nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem var(--cal-space-sm, 0.75rem);
+  color: var(--cal-color-muted, #627089);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.cal-nav__link:hover {
+  color: var(--cal-color-text, #1d2837);
+}
+
+.cal-nav__link[aria-current] {
+  color: var(--cal-color-brand, #1f6fe5);
+  border-bottom-color: currentColor;
+}
+
+/* ── Main ─────────────────────────────────────────────────────────────── */
+.cal-main {
+  display: block;
+  padding-block: var(--cal-space-lg, 1.5rem);
+}
+
+.cal-page__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cal-space-md, 1rem);
+  margin-bottom: var(--cal-space-lg, 1.5rem);
+}
+
+.cal-page__title {
+  margin: 0;
+  font-size: var(--cal-font-size-title, 1.5rem);
+  line-height: 1.25;
+}
+
+/* ── Sidebar layout ────────────────────────────────────────────────────
+   Main and aside are siblings, main first in the source. Grid places the rail
+   beside it above the breakpoint and below it under — the reading order never
+   changes, only the placement. */
+.cal-surface--sidebar .cal-main,
+.cal-surface--sidebar .cal-sidebar {
+  width: min(100% - 2 * var(--cal-space-page, 1.25rem), var(--cal-measure, 72rem));
+  margin-inline: auto;
+}
+
+@media (min-width: 60rem) {
+  .cal-surface--sidebar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--cal-sidebar-width, 20rem);
+    grid-template-areas:
+      "header  header"
+      "nav     nav"
+      "main    aside"
+      "footer  footer";
+    align-items: start;
+    min-height: 100vh;
+  }
+
+  .cal-surface--sidebar .cal-header { grid-area: header; }
+  .cal-surface--sidebar .cal-nav { grid-area: nav; }
+  .cal-surface--sidebar .cal-main { grid-area: main; }
+  .cal-surface--sidebar .cal-sidebar { grid-area: aside; }
+  .cal-surface--sidebar .cal-footer { grid-area: footer; }
+
+  .cal-surface--sidebar .cal-main,
+  .cal-surface--sidebar .cal-sidebar {
+    width: auto;
+    margin-inline: 0;
+  }
+
+  .cal-surface--sidebar .cal-main {
+    padding-inline-start: var(--cal-space-page, 1.25rem);
+  }
+
+  .cal-surface--sidebar .cal-sidebar {
+    padding-inline-end: var(--cal-space-page, 1.25rem);
+  }
+}
+
+.cal-sidebar {
+  padding-block: var(--cal-space-lg, 1.5rem);
+}
+
+/* ── Blank layout ─────────────────────────────────────────────────────── */
+.cal-surface--blank .cal-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.cal-blank {
+  width: min(100% - 2 * var(--cal-space-page, 1.25rem), var(--cal-blank-measure, 26rem));
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────── */
+.cal-card {
+  background: var(--cal-color-surface, #ffffff);
+  border: 1px solid var(--cal-color-line, #d8e0ec);
+  border-radius: var(--cal-radius, 0.75rem);
+  box-shadow: var(--cal-shadow, 0 1px 2px rgba(16, 30, 54, 0.06));
+}
+
+.cal-card__header {
+  padding: var(--cal-space-md, 1rem) var(--cal-space-md, 1rem) 0;
+}
+
+.cal-card__title {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.cal-card__body {
+  padding: var(--cal-space-md, 1rem);
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────── */
+.cal-empty {
+  padding: var(--cal-space-xl, 2.5rem) var(--cal-space-md, 1rem);
+  text-align: center;
+  color: var(--cal-color-muted, #627089);
+}
+
+.cal-empty__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.0625rem;
+  color: var(--cal-color-text, #1d2837);
+}
+
+.cal-empty__description {
+  margin: 0;
+}
+
+.cal-empty__action {
+  margin-top: var(--cal-space-md, 1rem);
+}
+
+/* ── Messages ─────────────────────────────────────────────────────────── */
+.cal-messages:empty {
+  display: none;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.cal-footer {
+  margin-top: auto;
+  padding-block: var(--cal-space-lg, 1.5rem);
+  border-top: 1px solid var(--cal-color-line, #d8e0ec);
+  color: var(--cal-color-muted, #627089);
+  font-size: 0.9375rem;
+}
+
+.cal-footer__inner:empty {
+  display: none;
+}
+
+.cal-noscript {
+  margin: 0;
+  padding: var(--cal-space-sm, 0.75rem) var(--cal-space-page, 1.25rem);
+  background: var(--cal-color-notice, #fff6e0);
+  color: var(--cal-color-text, #1d2837);
+}
+
+/* An island before hydration occupies no space and shows nothing — better than a
+   flash of empty boxes that then rearrange. */
+.callora-island:empty {
+  display: contents;
+}
+
+/* ── Dark scheme ──────────────────────────────────────────────────────────
+   Only applies where the surface set no colour tokens of its own: a theme that
+   defines --cal-color-bg means it, in both schemes, and overriding it here would
+   silently undo that. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-cal-theme]) {
+    --cal-color-bg: #10151d;
+    --cal-color-surface: #171d27;
+    --cal-color-line: #2a3342;
+    --cal-color-text: #e6ebf3;
+    --cal-color-muted: #97a3b6;
+    --cal-color-notice: #2e2413;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
