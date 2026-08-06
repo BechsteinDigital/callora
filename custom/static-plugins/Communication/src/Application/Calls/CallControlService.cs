@@ -30,6 +30,7 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
     private readonly TimeProvider _timeProvider;
     private readonly ICallMediaStreamTerminator? _mediaStreams;
     private readonly ICallEventPublisher? _liveEvents;
+    private readonly CallQuotaLedger? _quotas;
 
     private static readonly JsonSerializerOptions PayloadOptions = new(JsonSerializerDefaults.Web);
 
@@ -59,7 +60,8 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
         ILogger<CallControlService> logger,
         TimeProvider timeProvider,
         ICallMediaStreamTerminator? mediaStreams = null,
-        ICallEventPublisher? liveEvents = null)
+        ICallEventPublisher? liveEvents = null,
+        CallQuotaLedger? quotas = null)
     {
         _channels = channels ?? throw new ArgumentNullException(nameof(channels));
         _callLogStore = callLogStore ?? throw new ArgumentNullException(nameof(callLogStore));
@@ -67,6 +69,7 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _mediaStreams = mediaStreams;
         _liveEvents = liveEvents;
+        _quotas = quotas;
     }
 
     /// <inheritdoc />
@@ -75,16 +78,30 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
         ArgumentNullException.ThrowIfNull(command);
 
         var channel = ResolveChannel(command);
-        var call = await channel
-            .PlaceCallAsync(new CallTarget(command.To, command.DisplayName), cancellationToken)
-            .ConfigureAwait(false);
+
+        // Claimed before dialing, not after: a call placed and then torn down has already rung at the
+        // other end and already appears on the bill.
+        var reservation = ReserveLine(command, channel);
+
+        ICall call;
+        try
+        {
+            call = await channel
+                .PlaceCallAsync(new CallTarget(command.To, command.DisplayName), cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch
+        {
+            reservation?.Dispose();
+            throw;
+        }
 
         try
         {
             // Log the operator's verbatim target for an outbound call, not the provider's
             // normalized remote party.
             await StartTrackingAsync(
-                    command.WorkspaceKey, channel, call, CallDirection.Outbound, command.To, cancellationToken)
+                    command.WorkspaceKey, channel, call, CallDirection.Outbound, command.To, cancellationToken, reservation)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -92,6 +109,7 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
             // The call is already live at the carrier. Leaving it up while the API reports a
             // failure would bill the customer for a call nobody can see or hang up, so it is
             // compensated and the attempt is recorded (#113).
+            reservation?.Dispose();
             await CompensateUntrackedCallAsync(command, channel, call, ex).ConfigureAwait(false);
             throw;
         }
@@ -288,7 +306,8 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
         ICall call,
         CallDirection direction,
         string remoteParty,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IDisposable? quotaReservation = null)
     {
         var startedAt = _timeProvider.GetUtcNow();
         var key = new ActiveCallKey(workspaceKey, channel.ChannelId, call.CallId);
@@ -317,7 +336,7 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
 
         void Handler(object? sender, CallStateChangedEventArgs e) => _ = HandleStateChangeAsync(key, e.CurrentState);
 
-        var tracked = new TrackedCall(key, call, log, Handler);
+        var tracked = new TrackedCall(key, call, log, Handler) { QuotaReservation = quotaReservation };
         if (!_active.TryAdd(key, tracked))
         {
             // The same call is already tracked (a duplicated inbound notification); keep the
@@ -518,6 +537,25 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
         }
 
         await signal.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Claims a line from the quota configured for this call's origin, or returns <see langword="null"/>
+    /// when no ledger is wired or the command names no origin — an unnamed origin is unlimited, the
+    /// same reading the ledger applies to an origin nobody configured.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The origin's quota is exhausted.</exception>
+    private IDisposable? ReserveLine(PlaceCallCommand command, ICommunicationChannel channel)
+    {
+        if (_quotas is null || string.IsNullOrWhiteSpace(command.Origin))
+        {
+            return null;
+        }
+
+        return _quotas.TryReserve(command.WorkspaceKey, channel.ChannelId, command.Origin)
+            ?? throw new InvalidOperationException(
+                $"Origin '{command.Origin}' has no lines left on channel '{channel.ChannelId}'. " +
+                "Its share of this trunk is in use; the call was not placed.");
     }
 
     /// <summary>Removes the call from tracking and unhooks its handler. Safe to call twice.</summary>
