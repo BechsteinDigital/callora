@@ -1,0 +1,19 @@
+{#
+  What a surface renders when a layout was composed in the editor.
+
+  The sections and blocks are already markup by the time this template runs — the composition
+  renderer produced them, with every attribute encoded and every confidential control left out.
+  This template only decides where they sit, which is why it is this short.
+
+  A plugin that wants its own frame around a composed page extends this file and fills
+  composed_before or composed_after; overriding composed_body would drop the composition.
+#}
+{% extends "@callora/layout/page.njk" %}
+
+{% block page_content %}
+{% block composed_before %}{% endblock %}
+
+{% block composed_body %}{{ callora_composition() }}{% endblock %}
+
+{% block composed_after %}{% endblock %}
+{% endblock %}
