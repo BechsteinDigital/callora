@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Callora.Plugin.Communication.Abstractions.Conference;
 using Callora.Plugin.Communication.Application.RealtimeMedia;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -33,6 +34,74 @@ internal sealed class ConferenceMediaRouter
     }
 
     /// <summary>
+    /// Settles the policy for a conference. The first stated policy takes effect and later joins may
+    /// restate it or pass <see langword="null"/>; a contradicting one is refused. Omitting a policy
+    /// must never relax the room, otherwise anyone able to join could strip a restriction by simply
+    /// not restating it.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A different policy is already in force.</exception>
+    public void ApplyPolicy(string conferenceId, ConferencePolicy? policy)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(conferenceId);
+
+        if (policy is null)
+        {
+            return;
+        }
+
+        var conference = _conferences.GetOrAdd(conferenceId, _ => new Conference());
+
+        lock (conference.Gate)
+        {
+            if (conference.Policy is { } inForce && inForce != policy)
+            {
+                throw new InvalidOperationException(
+                    $"Conference '{conferenceId}' is already under a different policy. Keeping the stricter one " +
+                    "would leave this caller believing it opened the room it asked for, and taking the looser one " +
+                    "would break the expectation of whoever opened it.");
+            }
+
+            conference.Policy = policy;
+        }
+    }
+
+    /// <summary>
+    /// Whether this process is running the conference — that is, whether it has participants here.
+    /// </summary>
+    /// <remarks>
+    /// A conference is process-bound: its participants' peers live in one process. An empty entry does
+    /// not count as hosted, because <see cref="ParticipantJoined"/> creates entries on demand and leave
+    /// deliberately leaves them behind. Treating an empty one as hosted would let something attach to a
+    /// room that is actually running elsewhere and wait in silence for people who are not there.
+    /// </remarks>
+    public bool IsHosted(string conferenceId)
+    {
+        if (!_conferences.TryGetValue(conferenceId, out var conference))
+        {
+            return false;
+        }
+
+        lock (conference.Gate)
+        {
+            return conference.Participants.Count > 0;
+        }
+    }
+
+    /// <summary>The policy in force, or <see cref="ConferencePolicy.Unrestricted"/> when none was stated.</summary>
+    public ConferencePolicy GetPolicy(string conferenceId)
+    {
+        if (!_conferences.TryGetValue(conferenceId, out var conference))
+        {
+            return ConferencePolicy.Unrestricted;
+        }
+
+        lock (conference.Gate)
+        {
+            return conference.Policy ?? ConferencePolicy.Unrestricted;
+        }
+    }
+
+    /// <summary>
     /// Wires a joined participant into the conference SFU topology: adds the reciprocal send-only track
     /// pairs between the joiner and every existing participant, subscribes the joiner's inbound tracks for
     /// fan-out and its downstream PLI for upstream key-frame requests, then registers it. Runs the topology
@@ -42,19 +111,18 @@ internal sealed class ConferenceMediaRouter
     /// gather is deferred to <see cref="ConferenceParticipant.StartSignalingAsync"/> the vertical calls) is
     /// driven by the service <em>after</em> this returns, so the offer reflects the wired topology.
     /// </summary>
-    public void ParticipantJoined(string conferenceId, string participantId, ConferenceParticipant session, CancellationToken ct = default)
+    public void ParticipantJoined(string conferenceId, string participantId, IConferenceEndpoint endpoint, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(conferenceId);
         ArgumentException.ThrowIfNullOrWhiteSpace(participantId);
-        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(endpoint);
 
-        var peer = session.Peer;
         var conference = _conferences.GetOrAdd(conferenceId, _ => new Conference());
 
         // Participants that gained a new outbound track for the joiner and therefore need a re-offer.
         // Collected under the lock, renegotiated/key-framed afterwards (network sends, no lock held).
         List<ConferenceParticipantEntry> affectedExisting;
-        var joiner = new ConferenceParticipantEntry(participantId, peer, session);
+        var joiner = new ConferenceParticipantEntry(participantId, endpoint);
 
         lock (conference.Gate)
         {
@@ -63,15 +131,15 @@ internal sealed class ConferenceMediaRouter
             foreach (var existing in affectedExisting)
             {
                 // Existing peer renders the joiner's media…
-                existing.Outbound[participantId] = AddOutboundTracks(existing.Peer, participantId);
+                existing.Outbound[participantId] = AddOutboundTracks(existing.Endpoint, participantId);
                 // …and the joiner's peer renders the existing participant's media.
-                joiner.Outbound[existing.ParticipantId] = AddOutboundTracks(peer, existing.ParticipantId);
+                joiner.Outbound[existing.ParticipantId] = AddOutboundTracks(endpoint, existing.ParticipantId);
             }
 
             joiner.TrackReceivedHandler = (_, remoteTrack) =>
                 remoteTrack.FrameReceived += (_, frame) =>
                     ForwardFrame(conferenceId, participantId, remoteTrack.Kind, frame);
-            peer.RemoteTrackReceived += joiner.TrackReceivedHandler;
+            endpoint.RemoteTrackReceived += joiner.TrackReceivedHandler;
 
             // On each remote track, forward its frames. The inner FrameReceived handlers are not detached
             // individually on leave: the peer owns its remote tracks and is disposed on leave, and
@@ -83,7 +151,7 @@ internal sealed class ConferenceMediaRouter
             // upstream of the joiner (coarse but correct — the SDK does not attribute the PLI to a track).
             joiner.KeyFrameRequestedHandler = (_, _) =>
                 RequestKeyFramesFromUpstreams(conferenceId, participantId);
-            peer.KeyFrameRequested += joiner.KeyFrameRequestedHandler;
+            endpoint.KeyFrameRequested += joiner.KeyFrameRequestedHandler;
 
             conference.Participants[participantId] = joiner;
         }
@@ -133,12 +201,12 @@ internal sealed class ConferenceMediaRouter
             // tracks other peers hold for the leaver go inert (tile removed via the vertical's roster).
             if (leaver.TrackReceivedHandler is not null)
             {
-                leaver.Peer.RemoteTrackReceived -= leaver.TrackReceivedHandler;
+                leaver.Endpoint.RemoteTrackReceived -= leaver.TrackReceivedHandler;
             }
 
             if (leaver.KeyFrameRequestedHandler is not null)
             {
-                leaver.Peer.KeyFrameRequested -= leaver.KeyFrameRequestedHandler;
+                leaver.Endpoint.KeyFrameRequested -= leaver.KeyFrameRequestedHandler;
             }
 
             remaining = [.. conference.Participants.Values];
@@ -203,7 +271,7 @@ internal sealed class ConferenceMediaRouter
             // been applied has no BUNDLE media session, so every send onto it faults ("apply a BUNDLE remote
             // description before exchanging media") — skip it until it reaches Connected rather than spooling a
             // per-frame exception storm at a consumer that cannot yet receive.
-            if (consumer.Peer.ConnectionState != MediaConnectionState.Connected)
+            if (consumer.Endpoint.ConnectionState != MediaConnectionState.Connected)
             {
                 continue;
             }
@@ -277,10 +345,10 @@ internal sealed class ConferenceMediaRouter
         }
     }
 
-    private static ConferenceOutboundTracks AddOutboundTracks(IMediaPeer peer, string sourceParticipantId)
+    private static ConferenceOutboundTracks AddOutboundTracks(IConferenceEndpoint endpoint, string sourceParticipantId)
     {
-        var video = peer.AddOutboundTrack(MediaTrackKind.Video, sourceParticipantId);
-        var audio = peer.AddOutboundTrack(MediaTrackKind.Audio, sourceParticipantId);
+        var video = endpoint.AddOutboundTrack(MediaTrackKind.Video, sourceParticipantId);
+        var audio = endpoint.AddOutboundTrack(MediaTrackKind.Audio, sourceParticipantId);
         return new ConferenceOutboundTracks(video, audio);
     }
 
@@ -293,7 +361,7 @@ internal sealed class ConferenceMediaRouter
     {
         try
         {
-            await participant.Session.RenegotiateAsync(ct).ConfigureAwait(false);
+            await participant.Endpoint.RenegotiateAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -312,7 +380,7 @@ internal sealed class ConferenceMediaRouter
     {
         try
         {
-            await upstream.Peer.RequestKeyFrameAsync(ct).ConfigureAwait(false);
+            await upstream.Endpoint.RequestKeyFrameAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

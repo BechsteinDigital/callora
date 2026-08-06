@@ -21,4 +21,26 @@ public interface IConferenceService
     /// <param name="participantId">A stable identifier for the participant within this conference session.</param>
     /// <param name="ct">Cancellation for the join operation.</param>
     Task<IConferenceParticipant> JoinAsync(string conferenceId, string participantId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Joins a participant and states what the conference requires of its members. The first stated
+    /// policy takes effect for the room; a later join may restate the same policy or omit it, but
+    /// stating a different one fails rather than silently picking a winner.
+    /// </summary>
+    /// <param name="conferenceId">The conference the participant joins.</param>
+    /// <param name="participantId">A stable identifier for the participant within this conference session.</param>
+    /// <param name="policy">What the conference requires of anything taking part in it.</param>
+    /// <param name="ct">Cancellation for the join operation.</param>
+    /// <exception cref="InvalidOperationException">A different policy is already in force for this conference.</exception>
+    Task<IConferenceParticipant> JoinAsync(
+        string conferenceId,
+        string participantId,
+        ConferencePolicy policy,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// The policy in force for <paramref name="conferenceId"/>, or
+    /// <see cref="ConferencePolicy.Unrestricted"/> when none was stated or the conference is unknown.
+    /// </summary>
+    ConferencePolicy GetPolicy(string conferenceId);
 }

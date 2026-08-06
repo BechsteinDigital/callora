@@ -168,6 +168,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                 _callEventBroadcaster);
             context.Export<ICallControlService>(_callControlService);
 
+            // The same instance under its observation face: one tracked-call state, so a consumer
+            // that resolves a call sees exactly the calls control commands act on. Exporting a second
+            // implementation here would be two views of the truth that can disagree.
+            context.Export<ICallAccess>(_callControlService);
+
             // Flow actions over the same primitive the REST and MCP faces use, so a rule that answers
             // a call is subject to the same ownership check and state machine as an operator's click
             // (#116).
@@ -260,7 +265,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
         // Runtime-capability source: derives communication.voice honestly from live channel health.
         // Exported unconditionally (it just observes the registry — empty until channels register); the
         // host registers it into its runtime-capability registry via the plugin's IRuntimeCapabilitySource export.
-        _capabilitySource = new CommunicationRuntimeCapabilitySource(_channelRegistry);
+        // Conference telephony additionally depends on this composition actually offering the
+        // attachment (below), which needs both call control and WebRTC — the same two conditions, kept
+        // here so the capability cannot outlive the port that has to serve it.
+        var conferenceBridgingAvailable = dbContextFactory is not null && IsWebRtcEnabled(context.PluginConfiguration);
+        _capabilitySource = new CommunicationRuntimeCapabilitySource(_channelRegistry, conferenceBridgingAvailable);
         context.Export<IRuntimeCapabilitySource>(_capabilitySource);
 
         // Persistenz: eigenes Schema migrieren + GDPR-Purge-Contributor exportieren — nur wenn der
@@ -342,6 +351,20 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                 conferencePeerOptions,
                 ResolveLogger<ConferenceService>(context.Services));
             context.Export<IConferenceService>(conferenceService);
+
+            // Attaching a call to a conference needs both halves at once — the SIP side to reach the
+            // call's audio, the WebRTC side to mix and transcode for it — which is why this port lives
+            // here and not in the policy plugin that consumes it (#149). Only offered when call
+            // control exists: without it there is no call to resolve, and a port that always fails
+            // reads as a capability this deployment has.
+            if (_callControlService is not null)
+            {
+                context.Export<IConferenceCallAttachment>(new ConferenceCallAttachment(
+                    conferenceService,
+                    _callControlService,
+                    new SdkAudioTranscoderFactory(),
+                    ResolveLogger<ConferenceCallAttachment>(context.Services)));
+            }
         }
 
         // The full admin surface, now that the WebRTC routes are known.
