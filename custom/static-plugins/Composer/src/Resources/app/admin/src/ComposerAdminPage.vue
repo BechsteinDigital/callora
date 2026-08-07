@@ -73,6 +73,11 @@ const layouts = ref<LayoutSummary[]>([])
  */
 const pages = ref<PageNode[]>([])
 const pageRows = computed(() => flattenPages(pages.value))
+
+/** Unter welcher Seite die neue entsteht — Pflicht, siehe `createPage`. */
+const newPageParent = ref('')
+const newPageLabel = ref('')
+const creatingPage = ref(false)
 const layout = ref<LoadedLayout | null>(null)
 const document = ref<LayoutDocument>(emptyDocument())
 /** Der Stand, der auf dem Server liegt — der Vergleich, der das Laden vom Ändern trennt. */
@@ -154,6 +159,59 @@ async function loadPages(): Promise<void> {
 }
 
 void loadPages()
+
+/**
+ * Legt eine Seite an — Knoten und Erlebniswelt in einem.
+ *
+ * Immer unter einer bestehenden Seite: Eine Anwendungswurzel trägt Host, Zugangsmodus und
+ * Identitätsanbieter, und die anzulegen ist Zugangsverwaltung, nicht Gestaltung. Deshalb steht
+ * hier eine Auswahl und kein „ohne Übergeordnetes".
+ */
+async function createPage(): Promise<void> {
+  const label = newPageLabel.value.trim()
+  if (!label || !newPageParent.value || creatingPage.value) {
+    return
+  }
+
+  creatingPage.value = true
+  error.value = null
+  try {
+    // Der Schlüssel entsteht aus dem Namen. Ihn tippen zu lassen wäre ein zweites Feld für
+    // etwas, das niemand sieht — und der häufigste Grund, aus dem ein Anlegen scheitert.
+    const surfaceKey = label
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
+    const response = await fetch('/api/ext/admin/composer/pages', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ parentSurfaceKey: newPageParent.value, surfaceKey, label }),
+    })
+
+    if (!response.ok) {
+      error.value = response.status === 409
+        ? `Eine Seite mit dem Schlüssel „${surfaceKey}" gibt es schon.`
+        : 'Die Seite konnte nicht angelegt werden.'
+      return
+    }
+
+    newPageLabel.value = ''
+    await loadPages()
+    void loadLayouts()
+
+    // Direkt öffnen: Wer eine Seite anlegt, will sie gestalten.
+    const created = await response.json()
+    await openPage(created)
+  } catch {
+    error.value = 'Die Seite konnte nicht angelegt werden.'
+  } finally {
+    creatingPage.value = false
+  }
+}
 
 /** Öffnet die Seite eines Baumknotens. Ohne Layout gibt es nichts zu öffnen. */
 async function openPage(page: PageNode): Promise<void> {
@@ -500,6 +558,23 @@ function draftUrl(key: string): string {
           <span v-else-if="!row.page.hasPublishedVersion" class="composer__status">Entwurf</span>
         </li>
       </ul>
+
+      <!--
+        „+ Seite" braucht ein Übergeordnetes. Eine Anwendungswurzel trägt Host, Zugangsmodus
+        und Identitätsanbieter — die legt die Workspace-Verwaltung an, nicht der Editor.
+      -->
+      <form class="composer-pages__add" @submit.prevent="createPage">
+        <input v-model="newPageLabel" type="text" placeholder="Neue Seite" aria-label="Name der neuen Seite" />
+        <select v-model="newPageParent" aria-label="Unter welcher Seite">
+          <option value="">unter …</option>
+          <option v-for="row in pageRows" :key="row.page.surfaceKey" :value="row.page.surfaceKey">
+            {{ row.page.label }}
+          </option>
+        </select>
+        <button type="submit" :disabled="creatingPage || !newPageLabel.trim() || !newPageParent">
+          + Seite
+        </button>
+      </form>
     </nav>
 
     <template v-if="layout">

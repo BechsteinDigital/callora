@@ -41,7 +41,12 @@ public sealed class ComposerAdminApiExtensionContributor : IHostAdminApiExtensio
                     "GET",
                     "pages",
                     ComposerPermissionKeys.LayoutRead,
-                    new PageTreeRouteHandler(store, surfaces))],
+                    new PageTreeRouteHandler(store, surfaces)),
+                   new HostAdminApiRouteRegistration(
+                    "POST",
+                    "pages",
+                    ComposerPermissionKeys.LayoutWrite,
+                    new CreatePageRouteHandler(store, surfaces))],
 
             new HostAdminApiRouteRegistration(
                 "GET",

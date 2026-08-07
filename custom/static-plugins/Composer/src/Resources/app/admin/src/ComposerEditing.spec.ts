@@ -214,6 +214,55 @@ describe('Der Seitenbaum', () => {
   })
 })
 
+describe('Eine Seite anlegen', () => {
+  it('legt Knoten und Erlebniswelt in einem an und öffnet sie', async () => {
+    // Bisher zwei Schritte in zwei Oberflächen — und wer den zweiten vergaß, hatte einen
+    // Knoten, der auf nichts zeigt.
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    await wrapper.find('.composer-pages__add input').setValue('Arbeitsplatz')
+    await wrapper.find('.composer-pages__add select').setValue('portal')
+    await wrapper.find('.composer-pages__add').trigger('submit')
+    await flushPromises()
+
+    const created = requests.find((request) => request.init?.method === 'POST')
+    expect(created).toBeDefined()
+    const body = JSON.parse(String(created!.init?.body))
+    expect(body.parentSurfaceKey).toBe('portal')
+    expect(body.label).toBe('Arbeitsplatz')
+    // Der Schlüssel entsteht aus dem Namen — ein zweites Feld dafür wäre der häufigste Grund,
+    // aus dem ein Anlegen scheitert.
+    expect(body.surfaceKey).toBe('arbeitsplatz')
+  })
+
+  it('macht aus Umlauten und Leerzeichen einen brauchbaren Schlüssel', async () => {
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    await wrapper.find('.composer-pages__add input').setValue('Über uns & Kontakt')
+    await wrapper.find('.composer-pages__add select').setValue('portal')
+    await wrapper.find('.composer-pages__add').trigger('submit')
+    await flushPromises()
+
+    const body = JSON.parse(String(requests.find((r) => r.init?.method === 'POST')!.init?.body))
+    expect(body.surfaceKey).toBe('uber-uns-kontakt')
+  })
+
+  it('legt nichts an, solange kein Übergeordnetes gewählt ist', async () => {
+    // Eine Anwendungswurzel trägt Host, Zugangsmodus und Identitätsanbieter — die legt die
+    // Workspace-Verwaltung an, nicht der Editor.
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    await wrapper.find('.composer-pages__add input').setValue('Arbeitsplatz')
+    await wrapper.find('.composer-pages__add').trigger('submit')
+    await flushPromises()
+
+    expect(requests.some((request) => request.init?.method === 'POST')).toBe(false)
+  })
+})
+
 describe('Veröffentlichen und Verwerfen', () => {
   it('speichert erst, dann veröffentlicht es', async () => {
     // Sonst ginge ein Stand live, der die letzte Änderung nicht enthält — und niemand sähe,
