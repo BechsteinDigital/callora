@@ -2,16 +2,15 @@
 
 A Callora plugin is a normal .NET class-library project plus a `registry.json` manifest.
 This guide describes the recommended structure — how to organize code by DDD layers, where
-each artifact belongs, and the contract rules your `.csproj` must follow. The layout here is
-the one the shipped `Dialer` and `Communication` plugins use.
+each artifact belongs, and the contract rules your `.csproj` must follow. It is the layout
+`callora plugin new` scaffolds, and the one the first-party plugins use.
 
 ## What you'll learn
 
 - The recommended folder structure and what each folder holds
 - Where `registry.json`, the `.csproj`, and UI resources live
 - How source UI (`Resources/app`) differs from the built bundle (`Resources/public`)
-- The contract rules: reference `Callora.Core` at compile time only, and do **not** set
-  `CalloraFrameworkAssembly`
+- The one reference that binds you to the platform, and why you should not hand-roll it
 
 ::: tip Prerequisites
 
@@ -26,8 +25,8 @@ Callora's engineering rules favour small, single-responsibility classes — **on
 per file** — organized by DDD layer. A fuller plugin looks like this:
 
 ```text
-custom/plugins/MyPlugin/
-├─ Callora.Plugins.MyPlugin.csproj   # project file
+my-plugin/
+├─ Acme.MyPlugin.csproj               # project file
 ├─ registry.json                     # manifest (required)
 └─ src/
    ├─ MyPluginPlugin.cs              # IHostManagedPlugin entry type
@@ -61,22 +60,22 @@ strictly (each store, handler, and event type is its own file).
 ## `registry.json`
 
 Every plugin ships a `registry.json` next to its assembly. It declares the contract version,
-the entry type, and the plugin's capabilities. The `Dialer` plugin's manifest:
+the entry type, and the plugin's capabilities:
 
 ```json
 {
   "contractVersion": "v1",
   "schemaVersion": "1.0",
-  "name": "Callora Dialer Plugin",
-  "pluginId": "dialer",
+  "name": "Acme Dialer",
+  "pluginId": "acme-dialer",
   "version": "0.1.0",
-  "assemblyFileName": "Callora.Plugins.Dialer.dll",
-  "entryTypeName": "Callora.Plugins.Dialer.DialerPlugin",
+  "assemblyFileName": "Acme.Dialer.dll",
+  "entryTypeName": "Acme.Dialer.DialerPlugin",
   "capabilities": [],
   "requiresCapabilities": ["communication.voice"],
   "dependencies": {
-    "Callora.Host.PluginContracts": ">=0.1.0",
-    "Callora.Plugin.Communication.Abstractions": ">=0.1.0"
+    "Callora.Core": ">=0.9.0",
+    "Callora.Plugin.Communication.Abstractions": ">=0.9.0"
   }
 }
 ```
@@ -119,43 +118,45 @@ Only the built bundle is packaged. The `Communication` plugin does exactly this 
 </ItemGroup>
 ```
 
-## The `.csproj` and the contract rules
+## The `.csproj`
 
-Two rules keep a plugin correctly bound to the host contract.
-
-**1. Reference `Callora.Core` at compile time only.** The host provides `Callora.Core` at
-runtime and the plugin's load context shares its type identity — so the plugin must compile
-against it but must not ship it. Use `ExcludeAssets="runtime"` (and `Private="false"` for a
-`ProjectReference`):
+One reference binds a plugin to the platform:
 
 ```xml
 <ItemGroup>
-  <ProjectReference Include="..\..\..\src\Core\Callora.Core.csproj"
-                    Private="false" ExcludeAssets="runtime" />
+  <PackageReference Include="Callora.Plugin.Sdk" Version="0.9.0" />
 </ItemGroup>
 ```
 
-**2. Do NOT set `CalloraFrameworkAssembly`.** This MSBuild property marks an assembly as
-*part of the framework*, which relaxes the governance analyzers. Plugins must leave it at
-its default (`false`) so the **CAL0001–CAL0004** analyzers enforce the contract: a plugin
-that consumes a `[CalloraInternal]` host API, or otherwise breaks the contract, fails the
-build. The shipped plugins reference the analyzer package explicitly to get this checking:
+That brings three things: the contract surface you compile against (`Callora.Core`), the
+governance analyzers (**CAL0001–CAL0003**), and the build rules that keep platform
+assemblies out of your output.
+
+### Why the third one matters
+
+At runtime the plugin load context routes every assembly named `Callora` or `Callora.*`
+to the host's default context, so host and plugin share one identity for the contract
+types. If a copy of `Callora.Core.dll` sits next to your plugin, the same type can end up
+loaded twice — and that fails **when the plugin loads**, not when it builds, with an error
+that reads like the host is at fault.
+
+Before the SDK existed, every plugin guarded against this by hand:
 
 ```xml
-<ProjectReference Include="..\..\..\src\Analyzers\Callora.Analyzers.csproj"
-                  OutputItemType="Analyzer"
-                  ReferenceOutputAssembly="false" />
+<!-- Don't do this any more -->
+<ProjectReference Include="..\..\..\src\Core\Callora.Core.csproj"
+                  Private="false" ExcludeAssets="runtime" />
 ```
 
-::: warning `CalloraFrameworkAssembly` is for the host, not for plugins
-Only the platform's own assemblies (Core, Administration, Workspace, Analyzers, …) set
-`CalloraFrameworkAssembly=true`. Setting it in a plugin silently disables the contract
-guard — leave it unset.
-:::
+One line, easy to drop while restructuring, and nothing goes red when you do. The SDK
+carries it on the package edge instead, and adds two MSBuild targets as a net for the case
+where you also reference `Callora.Core` directly.
 
-> **Status:** In-repo plugins reference `Callora.Core` and `Callora.Analyzers` via
-> `ProjectReference`. For external plugins these are intended to arrive via NuGet
-> (`Callora.Core` carries the analyzer), but that packaging path is being finalized.
+::: warning `CalloraFrameworkAssembly` is for the host, not for plugins
+This MSBuild property marks an assembly as *part of the framework*, which relaxes the
+governance analyzers. Only the platform's own assemblies set it. The SDK defaults it to
+`false` for you — setting it to `true` in a plugin silently disables the contract guard.
+:::
 
 ## Next steps
 
@@ -165,4 +166,6 @@ guard — leave it unset.
   `IHostManagedPlugin` and register your exports.
 - [Backend extensions](/guides/backend-extensions) — expose HTTP APIs and services from a
   plugin.
+- [Testing & publishing](/guides/testing-and-publishing) — validate against the contract
+  and sign for distribution.
 - [.NET API reference](/api/) — the contract types you compile against.

@@ -137,17 +137,16 @@ if (mediaLibrary is not null)
 
 ## Worked example: exporting several contracts
 
-Here is the shape of a real `StartAsync` (adapted from
-`custom/plugins/Dialer/src/DialerPlugin.cs` and
-`custom/static-plugins/Communication/src/CommunicationPlugin.cs`). It **resolves** host
-services, then **exports** its own implementations:
+Here is the shape of a `StartAsync` that **resolves** host services, then **exports** its
+own implementations. The plugin is a dialer: it places calls through Communication's
+channel registry and runs each dial run as a durable background job.
 
 ```csharp
 public sealed class DialerPlugin : IHostManagedPlugin
 {
-    public const string Id = "dialer";
+    public const string Id = "acme-dialer";
     public string PluginId => Id;
-    public string DisplayName => "Callora Dialer";
+    public string DisplayName => "Acme Dialer";
 
     public ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
     {
@@ -181,7 +180,7 @@ public sealed class DialerPlugin : IHostManagedPlugin
 ```
 
 A plugin that publishes many kinds at once — controllers, flow actions, an event provider,
-and a purge contributor — reads the same way (from `CommunicationPlugin.StartAsync`):
+and a purge contributor — reads the same way:
 
 ```csharp
 context.Export<IApiController>(new CallsController(_callHub, channelRegistry));

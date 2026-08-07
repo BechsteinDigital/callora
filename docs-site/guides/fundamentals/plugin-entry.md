@@ -160,7 +160,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin
         var dataProtector = ResolveRequired<IPluginDataProtector>(context.Services);
 
         // 2. This plugin OWNS a shared contract and exports it so other plugins
-        //    (e.g. Dialer) can resolve it cross-plugin — the host stays unaware.
+        //    (a dialer, say) can resolve it cross-plugin — the host stays unaware.
         var channelRegistry = new CommunicationChannelRegistry();
         context.Export<ICommunicationChannelRegistry>(channelRegistry);
 
@@ -227,8 +227,8 @@ its business-event provider is live. On deactivation `StopAsync` detaches the ev
 shuts down the hub, and disposes the channel manager and engine, letting the load context
 unload cleanly.
 
-A minimal plugin can be far smaller. The Dialer reference plugin's entire `StartAsync` is
-synchronous and just resolves three services and exports two:
+A minimal plugin can be far smaller. A dialer's entire `StartAsync` is synchronous and just
+resolves three services and exports two:
 
 ```csharp
 public ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
@@ -253,7 +253,7 @@ public ValueTask StopAsync(CancellationToken cancellationToken = default) =>
     ValueTask.CompletedTask;
 ```
 
-Dialer holds no long-lived resources of its own — its dial runs execute as durable host
+It holds no long-lived resources of its own — the dial runs execute as durable host
 background jobs — so its `StopAsync` is a no-op. That's the right choice *only* because it
 leaks nothing.
 

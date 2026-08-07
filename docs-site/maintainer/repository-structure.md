@@ -30,8 +30,8 @@ global.json          pinned .NET 10 SDK
 
 | Project | Package / purpose |
 |---|---|
-| `src/Core` | `Callora.Core` — domain-neutral platform core: Identity/RBAC, tenancy, plugin lifecycle, the event bus, persistence, the operator API host surface. This is the library the distribution publishes as the host backend. AGPL-3.0. |
-| `src/Administration` | `Callora.Administration` — operator API plus the colocated Vue 3 admin shell (`Resources/app/administration`). Ships its built SPA as a static web asset served at `/admin`. AGPL-3.0. |
+| `src/Core` | `Callora.Core` — domain-neutral platform core: Identity/RBAC, tenancy, plugin lifecycle, the event bus, persistence, the operator API host surface. This is the library the distribution publishes as the host backend. |
+| `src/Administration` | `Callora.Administration` — operator API plus the colocated Vue 3 admin shell (`Resources/app/administration`). Ships its built SPA as a static web asset served at `/admin`. |
 | `src/Workspace` | `Callora.Workspace` — the workspace (surface) API. To be renamed `Callora.Surface`. |
 | `src/Surface.Rendering` | `Callora.Surface.Rendering` — server-side surface template rendering (Nunjucks on a hardened Jint sandbox, ADR-015) plus the colocated Vue surface runtime (`Resources/app/surface`) served at `/surface-app`. |
 | `src/Host/Cli` | `Callora.Host.Cli` — the `callora` CLI (plugin contract-test kit, `plugin sign`). |

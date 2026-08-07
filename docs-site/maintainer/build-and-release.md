@@ -104,21 +104,46 @@ Runs on push to `main` and on every pull request. Three jobs:
 
 1. **Build & Test** — restore, `dotnet build ... --configuration Release`, then
    `dotnet test ... --collect:"XPlat Code Coverage"`. A **coverage ratchet gate**
-   fails the build if line coverage drops below **25%** (baseline was 28.3% on
-   2026-07-13; the gate is raised as coverage grows). Coverage is uploaded as an
-   artifact.
-2. **Admin Shell (Vitest + Build)** — `npm ci`, `npm run test`, `npm run build`
+   fails the build if line coverage drops below **25%**, computed over *all*
+   coverage reports weighted by line count. (It used to read whichever report the
+   filesystem returned first, which for a while meant the 282-line analyzer report
+   instead of the 84,000-line core one — 93.6% announced, 33.6% actual.)
+2. **Frontends** — a matrix over the surface runtime, the plugin frontends and the
+   docs site: `npm ci`, audit of shipped dependencies, test where applicable, build.
+3. **Admin Shell (Vitest + Build)** — `npm ci`, `npm run test`, `npm run build`
    in `src/Administration/Resources/app/administration` (Node 22). The Vitest gate
-   keeps UI regressions off `main`; the build is the type/bundle check.
+   keeps UI regressions off `main`; the build is the type/bundle check. It also
+   regenerates the extension-point catalog and fails on a diff — a moved slot would
+   otherwise leave `@callora/admin` promising a point that no longer exists.
 
 Additional repo-wide quality automation (per `docs/QUALITY_STANDARDS.md`): CodeQL
 (C# + JS/TS), Dependabot (nuget, npm, github-actions, weekly), and CycloneDX SBOMs.
 
+### `.github/workflows/golden-path.yml`
+
+Runs the chain a third-party plugin author walks, from outside: pack → `dotnet tool
+install` → `plugin new` → `publish` → `test-contract` → `sign`, plus a counter-proof that
+CAL0001 breaks the build of a plugin that only references the SDK package.
+
+It exists because no test *inside* this repository crosses the package boundary. The first
+run found four problems that the suite could never have caught — a security pin that never
+reached the `nuspec`, an SDK that silently withheld its analyzers, a publish filter that
+only worked at build time, and one that deleted the plugin's own assembly.
+
+```bash
+./scripts/golden-path.sh          # same run, locally
+```
+
 ### `.github/workflows/docs.yml`
 
-Builds the DocFX site on changes to `docfx/**`, `src/**`, or the workflow itself.
-The .NET API reference covers the platform packages only — plugins document their
-own surface in their own repositories.
+Builds the DocFX site on changes to `docfx/**`, `src/**`, `README.md`, or the
+workflow itself. The .NET API reference covers the platform packages only — plugins
+document their own surface in their own repositories.
+
+It also runs the **documentation assertions** — xUnit tests that read the docs, such as
+"an entry type quoted for a shipped plugin matches its manifest". Those used to live only
+in `ci.yml`, which ignores markdown; a docs-only change could break them with no job
+running to notice.
 
 ```bash
 dotnet tool restore
@@ -158,8 +183,10 @@ and could not start. The runnable composition belongs to a distribution
   triggers `release.yml`.
 - **Packaging.** Only projects that opt in with `<IsPackable>true</IsPackable>`
   produce a NuGet package (e.g. `Callora.Administration`,
-  `Callora.Surface.Rendering`). Licensing is per-module: the AGPL core modules
-  and the Apache SDK contract carry different `PackageLicenseExpression` values.
+  `Callora.Surface.Rendering`). The license is declared once, in
+  `Directory.Build.props`: everything in this repository is Apache-2.0. It used to sit
+  per-module, which is how four packages kept shipping `AGPL-3.0-or-later` for months
+  after the switch.
   The colocated SPAs ship inside their packages as static web assets — a
   consuming host gets `/admin` and `/surface-app` automatically via the package
   reference.
