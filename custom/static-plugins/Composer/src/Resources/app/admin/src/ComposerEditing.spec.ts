@@ -85,8 +85,14 @@ function stubFetch(): void {
           json: async () => [
             { surfaceKey: 'portal', label: 'Portal', parentSurfaceKey: null, position: 0,
               layoutKey: 'portal', hasPublishedVersion: true },
+            { surfaceKey: 'kunden', label: 'Kunden', parentSurfaceKey: 'portal', position: 0,
+              layoutKey: 'kunden', hasPublishedVersion: false },
           ],
         }
+      }
+
+      if (url.includes('/composer/pages/')) {
+        return { ok: true, status: init?.method === 'DELETE' ? 204 : 200, json: async () => ({}) }
       }
 
       if (url.endsWith('/composer/layouts')) {
@@ -211,6 +217,62 @@ describe('Der Seitenbaum', () => {
     const entry = wrapper.findAll('.composer-pages button').find((b) => b.text() === 'Bereich')
     expect(entry!.attributes('disabled')).toBeDefined()
     expect(wrapper.find('.composer-pages').text()).toContain('ohne Erlebniswelt')
+  })
+})
+
+describe('Seiten verwalten', () => {
+  it('bietet Verschieben und Löschen nur für Seiten an, nicht für Anwendungswurzeln', async () => {
+    // Eine Wurzel trägt Host, Zugangsmodus und Identitätsanbieter — die verwaltet der
+    // Workspace, nicht der Editor.
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    const rows = wrapper.findAll('.composer-pages li')
+    expect(rows[0].text()).toContain('Portal')
+    expect(rows[0].find('.composer-pages__delete').exists()).toBe(false)
+    expect(rows[1].find('.composer-pages__delete').exists()).toBe(true)
+  })
+
+  it('fragt vor dem Löschen und lädt danach neu', async () => {
+    // Die einzige Aktion hier, die sich nicht zurücknehmen lässt.
+    vi.stubGlobal('confirm', vi.fn(() => true))
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+    const before = requests.filter((r) => r.url.endsWith('/composer/pages')).length
+
+    await wrapper.findAll('.composer-pages__delete')[0].trigger('click')
+    await flushPromises()
+
+    expect(requests.some((r) => r.init?.method === 'DELETE')).toBe(true)
+    expect(requests.filter((r) => r.url.endsWith('/composer/pages')).length).toBeGreaterThan(before)
+  })
+
+  it('löscht nichts, wenn die Rückfrage verneint wird', async () => {
+    vi.stubGlobal('confirm', vi.fn(() => false))
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    await wrapper.findAll('.composer-pages__delete')[0].trigger('click')
+    await flushPromises()
+
+    expect(requests.some((r) => r.init?.method === 'DELETE')).toBe(false)
+  })
+
+  it('verschiebt eine Seite unter ein anderes Übergeordnetes', async () => {
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    // Die Auswahl bietet sich selbst nicht an — ein Knoten kann nicht sein eigener Elternteil
+    // sein.
+    const select = wrapper.findAll('.composer-pages__move')[0]
+    const offered = select.findAll('option').map((o) => o.attributes('value'))
+    expect(offered).not.toContain('kunden')
+
+    await select.setValue('portal')
+    await flushPromises()
+
+    // Unverändert heißt: nichts tun. `kunden` hängt schon unter `portal`.
+    expect(requests.some((r) => r.url.includes('/parent'))).toBe(false)
   })
 })
 
