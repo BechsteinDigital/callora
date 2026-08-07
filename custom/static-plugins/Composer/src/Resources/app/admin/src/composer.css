@@ -291,3 +291,11 @@
   font-weight: 600;
   text-decoration: underline;
 }
+
+.composer-pages__add {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-block: 0.5rem 1rem;
+}
