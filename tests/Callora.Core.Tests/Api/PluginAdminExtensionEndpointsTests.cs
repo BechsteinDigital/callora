@@ -317,15 +317,27 @@ public sealed class PluginAdminExtensionEndpointsTests
         Assert.Contains("ws-7", queried);
     }
 
+    /// <summary>
+    /// Ohne auflösbaren Workspace ist die leere Kette die Antwort — kein Fehler.
+    /// </summary>
+    /// <remarks>
+    /// Vorher stand hier 400. Auf einer frischen Installation gibt es noch keinen
+    /// Workspace, die Admin-Shell fragt beim ersten Laden also zwangsläufig ohne, und der
+    /// Betreiber sah einen roten Konsolenfehler, bevor er etwas anlegen konnte. Ein Fehler
+    /// im Normalfall erzieht dazu, Fehler zu übersehen.
+    /// </remarks>
     [Fact]
-    public async Task UiChain_WithoutResolvableWorkspace_ReturnsBadRequest()
+    public async Task UiChain_WithoutResolvableWorkspace_ReturnsAnEmptyChain()
     {
         await using var app = await CreateAppAsync(activePluginIds: ["voip"]);
         var client = app.GetTestClient();
 
         var response = await client.GetAsync("/api/ext/admin/ui-chain");
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<UiChainApiResponse>();
+        Assert.NotNull(payload);
+        Assert.Empty(payload!.Chain);
     }
 
     private static async Task<WebApplication> CreateAppAsync(

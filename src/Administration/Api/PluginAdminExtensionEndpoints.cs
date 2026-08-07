@@ -69,8 +69,17 @@ public static class PluginAdminExtensionEndpoints
         var workspaceKey = PluginAdminWorkspaceResolver.Resolve(httpContext, workspaceScope.WorkspaceKey);
         if (string.IsNullOrWhiteSpace(workspaceKey))
         {
-            return ApiProblems.BadRequest(
-                "A workspace is required. Platform operators select one with ?workspaceKey=.");
+            // Kein Workspace ausgewählt heißt: keine Plugin-Oberfläche gilt. Das ist eine
+            // Antwort, keine fehlerhafte Anfrage.
+            //
+            // Vorher stand hier 400. Auf einer FRISCHEN Installation gibt es noch gar keinen
+            // Workspace, die Shell fragt beim ersten Laden also zwangsläufig ohne — und der
+            // Betreiber sah einen roten Konsolenfehler, bevor er überhaupt etwas anlegen
+            // konnte. Ein Fehler im Normalfall erzieht dazu, Fehler zu übersehen.
+            //
+            // Die Shell verhält sich in beiden Fällen gleich (sie rendert ohne Plugin-UI);
+            // was sich ändert, ist die Aussage: leere Kette statt "deine Anfrage war falsch".
+            return Results.Ok(new UiChainApiResponse(string.Empty, []));
         }
 
         var chain = await chainResolver

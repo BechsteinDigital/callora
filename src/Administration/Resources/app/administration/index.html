@@ -5,21 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark light" />
     <title>Callora Administration</title>
-    <script>
-      // Applies the stored colour-scheme choice before the first paint. Without
-      // it the page renders in the system scheme and visibly snaps over once the
-      // SPA boots. Deliberately inline, tiny and failure-tolerant.
-      ;(function () {
-        try {
-          var pref = localStorage.getItem('callora.admin.theme')
-          if (pref === 'light' || pref === 'dark') {
-            document.documentElement.setAttribute('data-theme', pref)
-          }
-        } catch (e) {
-          /* storage unavailable — the media query decides */
-        }
-      })()
-    </script>
+    <!-- Setzt das gespeicherte Farbschema vor dem ersten Paint. Eigene Datei statt inline,
+         weil die CSP des Hosts `script-src 'self'` ohne 'unsafe-inline' sendet — inline
+         wurde es blockiert, und die Seite sprang um. Kein defer/async: Es muss vor dem
+         ersten Paint laufen. -->
+    <script src="./theme-preference.js"></script>
   </head>
   <body>
     <div id="app"></div>
