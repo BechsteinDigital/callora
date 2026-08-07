@@ -33,6 +33,8 @@ interface CallHistoryEntry {
   callId: string
   direction: string
   remoteParty: string
+  /** Unsere Seite: eingehend die erreichte Nummer, ausgehend die Leitung. */
+  localIdentity: string
   startedAt: string
   answeredAt: string | null
   endedAt: string | null
@@ -337,7 +339,7 @@ onMounted(() => {
       <table v-else style="width: 100%; border-collapse: collapse">
         <thead>
           <tr>
-            <th v-for="c in ['Zeit', 'Richtung', 'Gegenstelle', 'Ergebnis', 'Dauer', '']" :key="c" style="text-align: left; padding: 0.4rem; border-bottom: 1px solid var(--cal-color-surface, #ddd)">
+            <th v-for="c in ['Zeit', 'Richtung', 'Gegenstelle', 'Erreicht', 'Ergebnis', 'Dauer', '']" :key="c" style="text-align: left; padding: 0.4rem; border-bottom: 1px solid var(--cal-color-surface, #ddd)">
               {{ c }}
             </th>
           </tr>
@@ -348,6 +350,7 @@ onMounted(() => {
               <td style="padding: 0.4rem">{{ formatMoment(call.startedAt) }}</td>
               <td style="padding: 0.4rem">{{ call.direction === 'Inbound' ? 'eingehend' : 'ausgehend' }}</td>
               <td style="padding: 0.4rem">{{ call.remoteParty }}</td>
+              <td style="padding: 0.4rem">{{ call.localIdentity }}</td>
               <td style="padding: 0.4rem">
                 {{ outcomeOf(call) }}
                 <span v-if="call.disconnectCause" style="display: block; font-size: 0.75rem; color: var(--cal-color-text-muted, #777)">
@@ -365,7 +368,7 @@ onMounted(() => {
               </td>
             </tr>
             <tr v-if="openCall === call.callId">
-              <td colspan="6" style="padding: 0 0.4rem 0.8rem">
+              <td colspan="7" style="padding: 0 0.4rem 0.8rem">
                 <ol style="margin: 0; padding-left: 1.2rem">
                   <li v-for="(step, index) in call.journey" :key="index" style="font-size: 0.85rem; line-height: 1.6">
                     <span style="font-variant-numeric: tabular-nums; color: var(--cal-color-text-muted, #777)">

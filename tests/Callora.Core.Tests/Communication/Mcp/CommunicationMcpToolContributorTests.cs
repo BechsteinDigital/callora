@@ -202,7 +202,7 @@ public sealed class CommunicationMcpToolContributorTests
         {
             NextHistory =
             [
-                new CallHistoryEntry("h-1", "Outbound", "+49301", DateTimeOffset.UnixEpoch, null, null, 0, "InProgress", null, []),
+                new CallHistoryEntry("h-1", "Outbound", "+49301", "Berlin Trunk", DateTimeOffset.UnixEpoch, null, null, 0, "InProgress", null, []),
             ],
         };
         var handler = HandlerFor(fake, "list_recent_calls");
