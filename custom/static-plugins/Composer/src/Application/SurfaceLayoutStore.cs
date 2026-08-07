@@ -38,6 +38,32 @@ public sealed class SurfaceLayoutStore(
     }
 
     /// <summary>
+    /// Die Surface-Schlüssel dieses Workspaces, für die eine Version veröffentlicht ist.
+    /// <para>
+    /// Eine Abfrage für alle: Die Navigation zeigt bei jedem Aufruf den ganzen Baum, und
+    /// einzeln gefragt wären das so viele Datenbankrunden wie Knoten — auf dem öffentlichen
+    /// Renderpfad, bei jedem Besucher.
+    /// </para>
+    /// </summary>
+    public async Task<IReadOnlySet<string>> ListPublishedSurfaceKeysAsync(
+        string workspaceKey,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = factory.CreateDbContext();
+
+        var keys = await db.Layouts
+            .AsNoTracking()
+            .Where(layout => layout.WorkspaceKey == workspaceKey && layout.SurfaceKey != null)
+            .Where(layout => db.Versions.Any(version =>
+                version.LayoutKey == layout.Key && version.State == SurfaceLayoutState.Published))
+            .Select(layout => layout.SurfaceKey!)
+            .ToArrayAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return keys.ToHashSet(StringComparer.Ordinal);
+    }
+
+    /// <summary>
     /// A layout's identity — which workspace and which surface it renders. The editor needs it to
     /// load the right surface's block bundles; the versions alone do not carry it.
     /// </summary>

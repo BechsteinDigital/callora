@@ -1,5 +1,6 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Policies;
+using Callora.Core.Application.Surfaces.Layout;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Workspaces;
 using System.Text.Json;
@@ -210,6 +211,61 @@ public static class WorkspacePublicEndpoints
                     {
                         workspaceKey = normalizedKey,
                         chain
+                    });
+                })
+            .AllowAnonymous()
+            .ExcludeFromDescription();
+
+        endpoints.MapGet(
+                "/workspace/public/navigation",
+                async (
+                    string? workspaceKey,
+                    string? surfaceKey,
+                    HttpContext httpContext,
+                    BackendHostOptions hostOptions,
+                    IWorkspaceManagementStore workspaceStore,
+                    IWorkspaceSurfaceStore surfaceStore,
+                    CancellationToken cancellationToken) =>
+                {
+                    var normalizedKey = string.IsNullOrWhiteSpace(workspaceKey)
+                        ? "default"
+                        : workspaceKey.Trim();
+
+                    // Anonymer Endpunkt — nur sichtbare Workspaces geben ihre Gliederung preis.
+                    var workspace = await workspaceStore
+                        .GetAsync(normalizedKey, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (!IsWorkspaceVisibleInTenant(workspace, hostOptions.DefaultTenantKey))
+                    {
+                        return Results.NotFound();
+                    }
+
+                    var current = await surfaceStore
+                        .GetAsync(
+                            normalizedKey,
+                            string.IsNullOrWhiteSpace(surfaceKey) ? DefaultSurfaceKey : surfaceKey.Trim(),
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                    if (current is null)
+                    {
+                        return Results.NotFound();
+                    }
+
+                    var all = await surfaceStore.ListAsync(normalizedKey, cancellationToken).ConfigureAwait(false);
+
+                    // Welche Knoten eine Erlebniswelt tragen — eine Abfrage für alle. Ohne
+                    // Composer gibt es keine; die Navigation bleibt dann eine reine Gliederung.
+                    var withLayout = httpContext.RequestServices.GetService<ISurfaceLayoutSource>() is { } layouts
+                        ? await layouts.ListPublishedSurfaceKeysAsync(normalizedKey, cancellationToken)
+                            .ConfigureAwait(false)
+                        : new HashSet<string>(StringComparer.Ordinal);
+
+                    return Results.Ok(new
+                    {
+                        workspaceKey = normalizedKey,
+                        surfaceKey = current.SurfaceKey,
+                        items = SurfaceNavigationBuilder.Build(
+                            current, all, node => withLayout.Contains(node.SurfaceKey))
                     });
                 })
             .AllowAnonymous()
