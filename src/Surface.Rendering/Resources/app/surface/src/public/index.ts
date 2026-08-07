@@ -75,3 +75,5 @@ export {
 } from './bundles'
 
 export type { PluginLoadResult } from '../plugin-loader'
+
+export { surfaceBaseTokens } from './tokens'

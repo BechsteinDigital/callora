@@ -13,6 +13,7 @@ import ComposerAdminPage from './ComposerAdminPage.vue'
 const loadSurfaceBundles = vi.fn()
 vi.mock('@callora/surface', () => ({
   loadSurfaceBundles: (...args: unknown[]) => loadSurfaceBundles(...args),
+  surfaceBaseTokens: ':root { --cal-color-fg: #111; --cal-space-4: 1rem }',
 }))
 
 const fetchSurfaceStyles = vi.fn(async () => '.cal-header { color: red }')
@@ -105,7 +106,10 @@ describe('ComposerAdminPage', () => {
     expect(wrapper.text()).not.toContain('Noch keine Sektion')
   })
 
-  it('reicht Stylesheet-Text und Theme-Werte an den Canvas durch', async () => {
+  it('reicht Stylesheet-Text und Theme-Werte an den Canvas durch — samt Basis-Token', async () => {
+    // Die Basis-Token lädt auf einer Fläche die Runtime selbst; im Canvas tut das niemand.
+    // Ohne sie fiele ein Block, der `var(--cal-color-fg)` liest, auf nichts zurück — die
+    // Vorschau sähe anders aus als das Ergebnis, ohne dass etwas kaputt wirkt.
     vi.stubGlobal('fetch', vi.fn(async () => draftResponse('kiosk')))
 
     const wrapper = await loadLayout('kiosk')
@@ -113,7 +117,8 @@ describe('ComposerAdminPage', () => {
     expect(fetchSurfaceStyles).toHaveBeenCalledWith(['/plugin-assets/voip/app/workspace/main.css'])
     expect(fetchThemeTokens).toHaveBeenCalledWith('acme')
     const canvas = wrapper.findComponent({ name: 'ComposerCanvas' })
-    expect(canvas.props('surfaceCss')).toBe('.cal-header { color: red }')
+    expect(canvas.props('surfaceCss')).toContain('--cal-color-fg')
+    expect(canvas.props('surfaceCss')).toContain('.cal-header { color: red }')
     expect(canvas.props('tokens')).toEqual({ 'color-primary': '#123456' })
   })
 })
