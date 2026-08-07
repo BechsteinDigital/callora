@@ -164,6 +164,38 @@ public sealed class IncomingCallObserverTests
         Assert.Empty(journey.Read(Workspace, "in-1"));
     }
 
+    [Fact]
+    public async Task TheNumberTheCallerReached_IsKeptWithTheCall()
+    {
+        // Bisher stand sie nur als Prosa im Verlauf. Damit ließ sich keine Anrufliste nach Nummer
+        // auswerten — und „wie viele Anrufe kamen auf der Support-Linie an" ist die erste Frage, die
+        // ein Betreiber an eine geteilte Leitung hat.
+        var (observer, registry, store) = Create();
+        observer.Start();
+        var channel = new FakeCommunicationChannel();
+        registry.Register(Workspace, channel);
+
+        channel.RaiseIncoming(InboundTo("in-1", "+493012345678"));
+        await Task.Delay(50);
+
+        Assert.Equal("+493012345678", store.Added[0].LocalIdentity);
+    }
+
+    [Fact]
+    public async Task ACallOnATransportThatReportsNoNumber_KeepsTheChannelsName()
+    {
+        // Etwas muss dastehen, und der Name der Leitung ist die einzige wahre Auskunft, die es gibt.
+        var (observer, registry, store) = Create();
+        observer.Start();
+        var channel = new FakeCommunicationChannel { DisplayName = "Berlin Trunk" };
+        registry.Register(Workspace, channel);
+
+        channel.RaiseIncoming(Inbound());
+        await Task.Delay(50);
+
+        Assert.Equal("Berlin Trunk", store.Added[0].LocalIdentity);
+    }
+
     // ── Kontingente auf der eingehenden Seite ───────────────────────────────
 
     [Fact]

@@ -152,7 +152,13 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
             // For an inbound call the remote party is only known from the call itself.
             await StartTrackingAsync(
                     workspaceKey, channel, call, CallDirection.Inbound, call.Target.Value, cancellationToken,
-                    reservation)
+                    reservation,
+                    // Our side of an inbound call is the number the caller reached, which is what
+                    // LocalIdentity has always meant — it was filled with the channel's name because
+                    // nothing reported the number yet. Without it a history cannot be read by number,
+                    // and "how many calls came in on the support line" is the first question anybody
+                    // asks about a shared trunk.
+                    localIdentity: calledNumber)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -326,7 +332,8 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
         CallDirection direction,
         string remoteParty,
         CancellationToken cancellationToken,
-        IDisposable? quotaReservation = null)
+        IDisposable? quotaReservation = null,
+        string? localIdentity = null)
     {
         var startedAt = _timeProvider.GetUtcNow();
         var key = new ActiveCallKey(workspaceKey, channel.ChannelId, call.CallId);
@@ -337,7 +344,9 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
             accountId: channel.ChannelId,
             direction: direction,
             remoteParty: remoteParty,
-            localIdentity: channel.DisplayName,
+            // The channel's name is the fallback, not the meaning: on a transport that reports no
+            // called number it is the only true thing there is to say about our side.
+            localIdentity: string.IsNullOrWhiteSpace(localIdentity) ? channel.DisplayName : localIdentity,
             handledBy: null,
             correlationId: null,
             startedAt: startedAt);

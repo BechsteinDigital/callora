@@ -203,7 +203,7 @@ public sealed class CallAdminRoutesTests
         {
             HistoryResult =
             [
-                new CallHistoryEntry("call-1", "Outbound", "+49301234567", DateTimeOffset.UnixEpoch, null, null, 0, "InProgress", null, []),
+                new CallHistoryEntry("call-1", "Outbound", "+49301234567", "Berlin Trunk", DateTimeOffset.UnixEpoch, null, null, 0, "InProgress", null, []),
             ],
         };
         var handler = new ListCallsRouteHandler(service);
