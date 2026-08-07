@@ -4,6 +4,7 @@ using Callora.Surface.Rendering.Api;
 using Callora.Surface.Rendering.Api.SurfaceContext;
 using Callora.Surface.Rendering.Rendering;
 using Microsoft.Extensions.DependencyInjection;
+using Callora.Core.Application.Surfaces.Contracts;
 
 namespace Callora.Surface.Rendering;
 

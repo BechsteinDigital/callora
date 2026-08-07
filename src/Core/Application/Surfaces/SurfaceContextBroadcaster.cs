@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Callora.Core.Application.Surfaces.SharedContext;
+using Callora.Core.Application.Surfaces.Contracts;
 
 namespace Callora.Core.Application.Surfaces;
 

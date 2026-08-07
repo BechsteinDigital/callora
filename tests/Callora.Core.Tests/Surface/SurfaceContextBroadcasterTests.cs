@@ -1,5 +1,6 @@
 using Callora.Core.Application.Surfaces;
 using Xunit;
+using Callora.Core.Application.Surfaces.Contracts;
 
 namespace Callora.Core.Tests.Surface;
 

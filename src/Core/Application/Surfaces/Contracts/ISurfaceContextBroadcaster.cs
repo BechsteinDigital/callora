@@ -1,6 +1,6 @@
 using Callora.Core.Extensibility;
 
-namespace Callora.Core.Application.Surfaces;
+namespace Callora.Core.Application.Surfaces.Contracts;
 
 /// <summary>
 /// Publishes a context value to the surfaces a visitor has open, so a server-side event reaches
