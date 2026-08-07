@@ -46,7 +46,19 @@ public sealed class ComposerAdminApiExtensionContributor : IHostAdminApiExtensio
                     "POST",
                     "pages",
                     ComposerPermissionKeys.LayoutWrite,
-                    new CreatePageRouteHandler(store, surfaces))],
+                    new CreatePageRouteHandler(store, surfaces)),
+                   new HostAdminApiRouteRegistration(
+                    "PUT",
+                    "pages/{surfaceKey}/parent",
+                    ComposerPermissionKeys.LayoutWrite,
+                    new MovePageRouteHandler(surfaces)),
+                   // Löschen zählt wie Veröffentlichen: Beides entscheidet darüber, was
+                   // Besucher noch vorfinden.
+                   new HostAdminApiRouteRegistration(
+                    "DELETE",
+                    "pages/{surfaceKey}",
+                    ComposerPermissionKeys.LayoutPublish,
+                    new DeletePageRouteHandler(store, surfaces))],
 
             new HostAdminApiRouteRegistration(
                 "GET",
