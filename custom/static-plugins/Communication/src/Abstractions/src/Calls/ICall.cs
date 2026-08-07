@@ -52,6 +52,18 @@ public interface ICall
     Task HangupAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Who called and which of our numbers they reached, or <see langword="null"/> for an outbound
+    /// call and for a channel that does not report it.
+    /// </summary>
+    /// <remarks>
+    /// The dialed number is what decides whose call this is: on a trunk one registration receives every
+    /// number in the block, so the called number is the only thing distinguishing the support line from
+    /// the conference dial-in. A default of <see langword="null"/> keeps this additive for
+    /// implementations that have nothing to report.
+    /// </remarks>
+    InboundCallIdentity? InboundIdentity => null;
+
+    /// <summary>
     /// Sends one DTMF tone (0-9, *, #, A-D) to the remote party.
     /// </summary>
     Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default);
