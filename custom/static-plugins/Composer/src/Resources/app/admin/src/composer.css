@@ -242,3 +242,17 @@
 .composer__conflict {
   color: color-mix(in srgb, currentColor 60%, red);
 }
+
+.composer__transitions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+/*
+ * „Verwerfen" bleibt schlicht — es wirft Arbeit weg und soll nicht der bequemste Knopf sein.
+ */
+.composer__publish {
+  font-weight: 600;
+}

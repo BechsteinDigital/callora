@@ -29,6 +29,12 @@ public sealed class ComposerAdminApiExtensionContributor : IHostAdminApiExtensio
         [
             new HostAdminApiRouteRegistration(
                 "GET",
+                "layouts",
+                ComposerPermissionKeys.LayoutRead,
+                new LayoutListRouteHandler(store)),
+
+            new HostAdminApiRouteRegistration(
+                "GET",
                 "layouts/{layoutKey}/draft",
                 ComposerPermissionKeys.LayoutRead,
                 new LayoutDraftRouteHandler(store)),
