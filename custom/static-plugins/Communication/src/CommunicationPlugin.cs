@@ -207,6 +207,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
             context.Export<IHostSurfaceApiContributor>(
                 new CommunicationSurfaceApiContributor(Id, _callControlService, _callControlService));
 
+            // Die Serverhälfte der Blöcke: Sie entscheidet Sichtbarkeit, bevor Markup entsteht, und
+            // meldet den Kontextbedarf an — ein Schlüssel, den auf dieser Fläche niemand deklariert
+            // hat, verlässt den Host nicht.
+            context.Export<IHostSurfaceViewContributor>(new CommunicationSurfaceViewContributor(Id));
+
             // Flow actions over the same primitive the REST and MCP faces use, so a rule that answers
             // a call is subject to the same ownership check and state machine as an operator's click
             // (#116).
