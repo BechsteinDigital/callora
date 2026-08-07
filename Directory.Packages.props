@@ -27,6 +27,9 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" />
+    <!-- Nur für Tests: eine Verdrahtungsprüfung, die eine echte Schreiboperation braucht,
+         soll dafür weder Docker noch Postgres verlangen. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.9" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />

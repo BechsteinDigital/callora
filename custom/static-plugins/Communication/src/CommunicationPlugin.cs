@@ -4,10 +4,12 @@ using Callora.Core.Application.Jobs.Contracts;
 using Callora.Core.Application.Mcp.Contracts;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Application.Surfaces.Contracts;
 using Callora.Core.Application.Secrets.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Abstractions.Conference;
+using Callora.Plugin.Communication.Api.Surface;
 using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Accounts;
 using Callora.Plugin.Communication.Application.Admin;
@@ -183,7 +185,13 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                     mediaConnections,
                     TimeProvider.System,
                     ResolveLogger<CallMediaStreamTerminator>(context.Services)),
-                _callEventBroadcaster,
+                // The surface context sits in front of the live stream, not beside it: a block on a
+                // workplace learns about a call from the same transition an event subscriber does,
+                // and neither has to know the other exists. Without a surface runtime the decorator
+                // is not built at all — a host that renders no surfaces publishes to nobody.
+                context.Services.GetService(typeof(ISurfaceContextBroadcaster)) is ISurfaceContextBroadcaster surfaceContext
+                    ? new SurfaceCallContextPublisher(surfaceContext, _callEventBroadcaster)
+                    : _callEventBroadcaster,
                 _callQuotas,
                 _callJourney);
             context.Export<ICallControlService>(_callControlService);
