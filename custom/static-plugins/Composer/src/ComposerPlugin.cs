@@ -3,6 +3,7 @@ using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Surfaces.Layout;
 using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Composer.Application;
+using Callora.Plugin.Composer.Application.Admin;
 using Callora.Plugin.Composer.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;
 
@@ -57,6 +58,10 @@ public sealed class ComposerPlugin : IHostManagedPlugin
             ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ComposerLayoutSource>.Instance;
 
         context.Export<ISurfaceLayoutSource>(new ComposerLayoutSource(store, sourceLogger));
+
+        // Die Admin-Fläche, mit der der Editor spricht. Nach dem Layout-Source exportiert, damit
+        // ein Host, dessen Migration scheitert, nicht mit halber Fläche dasteht.
+        context.Export<IHostAdminApiExtensionContributor>(new ComposerAdminApiExtensionContributor(store));
     }
 
     /// <inheritdoc />
