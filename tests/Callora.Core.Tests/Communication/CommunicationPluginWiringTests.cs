@@ -16,6 +16,9 @@ using Callora.Plugin.Communication.Application.Streaming;
 using Callora.Plugin.Communication.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Xunit;
+using Callora.Core.Application.Surfaces.Contracts;
+using Callora.Plugin.Communication.Api.Surface;
+using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Core.Tests.Communication;
 
@@ -95,6 +98,33 @@ public sealed class CommunicationPluginWiringTests
         // The ledger is wired into the dial path, but a ledger nobody can configure limits nothing:
         // every origin stays unlimited and the whole thing is dead weight.
         Assert.Contains(typeof(ICallQuotaRegistry), context.Exports.Keys);
+    }
+
+    [Fact]
+    public async Task StartAsync_WithASurfaceRuntime_PublishesCallsAsSurfaceContext()
+    {
+        // Ohne diese Verdrahtung existiert der Publisher und wird nie erzeugt: Der Block abonniert
+        // seinen Schlüssel, es kommt nie ein Wert, und nichts meldet einen Fehler.
+        var surface = new CollectingSurfaceContextBroadcaster();
+        // Echte (In-Memory-)Datenbank statt der werfenden Attrappe: Der Test prüft die ganze Kette
+        // vom Wählen bis zum veröffentlichten Kontext, und die führt durch die Historie.
+        var context = new CapturingHostPluginContext(hasDbFactory: false, extraServices:
+            new Dictionary<Type, object>
+            {
+                [typeof(ISurfaceContextBroadcaster)] = surface,
+                [typeof(IPluginDbContextFactory<CommunicationDbContext>)] = new InMemoryCommunicationDbContextFactory(),
+            });
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        var control = (ICallControlService)context.Exports[typeof(ICallControlService)];
+        var channel = new WiringTestVoiceChannel();
+        ((ICommunicationChannelRegistry)context.Exports[typeof(ICommunicationChannelRegistry)])
+            .Register("ws-a", channel);
+        await control.PlaceCallAsync(new PlaceCallCommand("ws-a", "+4930123"));
+
+        Assert.Contains(surface.Keys, key => key == SurfaceCallContextKeys.ActiveCall
+            || key == SurfaceCallContextKeys.IncomingCall);
     }
 
     [Fact]
@@ -363,7 +393,8 @@ public sealed class CommunicationPluginWiringTests
 
 internal sealed class CapturingHostPluginContext(
     bool hasDbFactory,
-    IConfiguration? configuration = null) : IHostPluginContext, IServiceProvider
+    IConfiguration? configuration = null,
+    IReadOnlyDictionary<Type, object>? extraServices = null) : IHostPluginContext, IServiceProvider
 {
     /// <summary>Last export per contract type (existing tests rely on this).</summary>
     public Dictionary<Type, object> Exports { get; } = [];
@@ -393,8 +424,78 @@ internal sealed class CapturingHostPluginContext(
             return configuration;
         }
 
-        return null;
+        return extraServices is not null && extraServices.TryGetValue(serviceType, out var service)
+            ? service
+            : null;
     }
+}
+
+/// <summary>Records which context keys were published, never the values (P6).</summary>
+internal sealed class CollectingSurfaceContextBroadcaster : ISurfaceContextBroadcaster
+{
+    public List<string> Keys { get; } = [];
+
+    public void Publish(SurfaceContextAddress address, string key, object? value) => Keys.Add(key);
+}
+
+/// <summary>A channel whose outbound call is immediately connected, so the wiring produces a transition.</summary>
+internal sealed class WiringTestVoiceChannel : ICommunicationChannel
+{
+    public string ChannelId => "wiring-ch";
+
+    public string DisplayName => "Wiring Channel";
+
+    public string PluginId => "communication";
+
+    public IReadOnlyCollection<string> Capabilities => [CommunicationCapabilities.Voice];
+
+    public ChannelHealth Health => ChannelHealth.Up;
+
+    public event EventHandler<ChannelHealthChangedEventArgs>? HealthChanged { add { } remove { } }
+
+    public event EventHandler<IncomingCallEventArgs>? IncomingCall { add { } remove { } }
+
+    public Task<ICall> PlaceCallAsync(CallTarget target, CancellationToken cancellationToken = default) =>
+        Task.FromResult<ICall>(new WiringTestCall(target));
+}
+
+/// <summary>The minimum a placed call needs to be tracked and to reach Connected.</summary>
+internal sealed class WiringTestCall(CallTarget target) : ICall
+{
+    public string CallId => "wiring-call";
+
+    public CallState State => CallState.Connected;
+
+    public CallDirection Direction => CallDirection.Outbound;
+
+    public CallTarget Target => target;
+
+    public CallTerminationReason? TerminationReason => null;
+
+    public event EventHandler<CallStateChangedEventArgs>? StateChanged { add { } remove { } }
+
+    public event EventHandler<DtmfReceivedEventArgs>? DtmfReceived { add { } remove { } }
+
+    public Task AcceptAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task RejectAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task HangupAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task SendDtmfAsync(char tone, CancellationToken cancellationToken = default) => Task.CompletedTask;
+}
+
+/// <summary>An in-memory context for the one wiring test that has to write a call before it can observe one.</summary>
+internal sealed class InMemoryCommunicationDbContextFactory : IPluginDbContextFactory<CommunicationDbContext>
+{
+    private readonly DbContextOptions<CommunicationDbContext> _options =
+        new DbContextOptionsBuilder<CommunicationDbContext>()
+            .UseInMemoryDatabase($"communication-wiring-{Guid.NewGuid()}")
+            .Options;
+
+    public CommunicationDbContext CreateDbContext() => new(_options);
+
+    public Task MigrateAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
 internal sealed class NoopMigrateDbContextFactory : IPluginDbContextFactory<CommunicationDbContext>
