@@ -19,6 +19,10 @@ set -uo pipefail
 #   ./scripts/ci-local.sh --no-audit         # ohne npm audit (offline)
 #   ./scripts/ci-local.sh --list
 #
+# Nicht parallel zu anderer schwerer Arbeit laufen lassen: Der Surface-Renderer hat ein
+# Wanduhr-Limit, und unter CPU-Konkurrenz kippen einzelne Render-Tests, ohne dass am Code
+# etwas falsch ist. Die CI hat den Rechner für sich; hier muss man daran denken.
+#
 # Was hier NICHT läuft und nur auf GitHub existiert:
 #   - CodeQL (C#/JS) — braucht die GitHub-Analyse-Infrastruktur
 #   - communication-interop.yml — braucht einen echten Asterisk in Docker;
@@ -28,7 +32,7 @@ set -uo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-ALL_GATES=(dotnet admin frontends docs)
+ALL_GATES=(dotnet golden admin frontends docs)
 RUN_AUDIT="true"
 SELECTED=""
 SKIPPED=""
@@ -130,6 +134,13 @@ sys.exit(0 if rate >= threshold else 1)
 PY
   )
   record dotnet $?
+fi
+
+# ── golden ────────────────────────────────────────────────────────────────────
+if wanted golden; then
+  step "golden — ein Plugin von außen bauen, prüfen und signieren (golden-path.yml)"
+  ./scripts/golden-path.sh
+  record golden $?
 fi
 
 # ── admin ─────────────────────────────────────────────────────────────────────

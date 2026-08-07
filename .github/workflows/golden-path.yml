@@ -1,0 +1,59 @@
+name: Golden Path
+
+# Die Kette, die ein fremder Plugin-Autor durchläuft — von außen, gegen die gebauten
+# Pakete: packen → dotnet tool install → plugin new → publish → test-contract → sign,
+# plus die Gegenprobe, dass CAL0001 im fremden Projekt zubeißt.
+#
+# Warum das ein eigener Lauf ist, obwohl die Suite grün ist: Zwischen "im Repository
+# baut es" und "gegen die veröffentlichten Pakete baut es" liegt eine Grenze, die kein
+# Test in diesem Repository überquert. Beim ersten Durchlauf lagen dahinter vier Fehler,
+# die im Repository sämtlich unsichtbar waren — eine Sicherheitsabsicherung, die nicht
+# in die nuspec kam; ein SDK, das seine Analyzer nicht weitergab; ein Publish-Filter,
+# der nur beim Build griff; und einer, der das Plugin selbst löschte. Keiner davon hätte
+# je eine Suite rot gemacht.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "scripts/golden-path.sh"
+      - ".github/workflows/golden-path.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "scripts/golden-path.sh"
+      - ".github/workflows/golden-path.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: golden-path-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  golden-path:
+    name: Ein Plugin von außen bauen, prüfen und signieren
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup .NET (global.json)
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          global-json-file: global.json
+
+      # Kein NuGet-Cache-Restore für diesen Job: Der Lauf setzt NUGET_PACKAGES selbst auf
+      # ein leeres Arbeitsverzeichnis, weil der globale Cache bei gleicher Versionsnummer
+      # die ALTEN Paketinhalte zurückgibt. Ein Golden Path, der eine vorige Version prüft,
+      # prüft nichts.
+      - name: Golden Path
+        run: ./scripts/golden-path.sh
