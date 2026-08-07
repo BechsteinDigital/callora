@@ -117,8 +117,15 @@ public static class SurfaceEndpoints
                 return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
-            var removed = await surfaceStore.DeleteAsync(workspaceKey, surfaceKey, cancellationToken).ConfigureAwait(false);
-            return removed ? Results.NoContent() : Results.NotFound();
+            var result = await surfaceStore.DeleteAsync(workspaceKey, surfaceKey, cancellationToken).ConfigureAwait(false);
+            return result switch
+            {
+                SurfaceDeleteResult.Deleted => Results.NoContent(),
+                // 409 und nicht 404: Der Knoten ist da, er lässt sich nur nicht so löschen.
+                SurfaceDeleteResult.HasChildren => ApiProblems.Conflict(
+                    $"Surface '{surfaceKey}' has child surfaces. Move or delete them first."),
+                _ => Results.NotFound(),
+            };
         }).WithName("Workspaces_Surfaces_Delete")
             .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
 

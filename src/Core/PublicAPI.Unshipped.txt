@@ -2965,6 +2965,7 @@ Callora.Core.Application.Surfaces.ISurfaceSessionStore.TouchAsync(System.Guid se
 Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource
 Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource.GetDraftAsync(string! layoutKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument?>!
 Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource.GetPublishedAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument?>!
+Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource.ListPublishedSurfaceKeysAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlySet<string!>!>!
 Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding
 Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.<Clone>$() -> Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!
 Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding.Deconstruct(out string! Source, out object? Value, out string? Key, out string? Path) -> void
@@ -3738,13 +3739,33 @@ Callora.Core.Application.Workspaces.IWorkspaceManagementStore.UpsertMemberAsync(
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore.UpsertThemeAssignmentAsync(string! workspaceKey, string! themePluginId, string! themeVersion, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot?>!
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.AssignIdentityProviderAsync(string! workspaceKey, string! surfaceKey, string? pluginId, string? version, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
-Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.SurfaceDeleteResult>!
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.GetAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.ListAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot!>!>!
 Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.UpsertAsync(string! workspaceKey, Callora.Core.Application.Workspaces.WorkspaceSurfaceInput! input, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger
 Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger.PluginWorkspaceDataPurger(Callora.Core.Application.Plugins.ICalloraPluginCatalog! catalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger!>! logger) -> void
 Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger.PurgeAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Callora.Core.Application.Workspaces.SurfaceDeleteResult
+Callora.Core.Application.Workspaces.SurfaceDeleteResult.Deleted = 0 -> Callora.Core.Application.Workspaces.SurfaceDeleteResult
+Callora.Core.Application.Workspaces.SurfaceDeleteResult.HasChildren = 2 -> Callora.Core.Application.Workspaces.SurfaceDeleteResult
+Callora.Core.Application.Workspaces.SurfaceDeleteResult.NotFound = 1 -> Callora.Core.Application.Workspaces.SurfaceDeleteResult
+Callora.Core.Application.Workspaces.SurfaceNavigationBuilder
+Callora.Core.Application.Workspaces.SurfaceNavigationNode
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.<Clone>$() -> Callora.Core.Application.Workspaces.SurfaceNavigationNode!
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.Children.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.SurfaceNavigationNode!>!
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.Children.init -> void
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.Deconstruct(out string! SurfaceKey, out string! Label, out string! Path, out bool HasLayout, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.SurfaceNavigationNode!>! Children) -> void
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.Equals(Callora.Core.Application.Workspaces.SurfaceNavigationNode? other) -> bool
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.HasLayout.get -> bool
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.HasLayout.init -> void
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.Label.get -> string!
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.Label.init -> void
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.Path.get -> string!
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.Path.init -> void
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.SurfaceKey.get -> string!
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.SurfaceKey.init -> void
+Callora.Core.Application.Workspaces.SurfaceNavigationNode.SurfaceNavigationNode(string! SurfaceKey, string! Label, string! Path, bool HasLayout, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.SurfaceNavigationNode!>! Children) -> void
 Callora.Core.Application.Workspaces.SurfaceTree
 Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult
 Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.<Clone>$() -> Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult!
@@ -5117,7 +5138,7 @@ Callora.Core.Infrastructure.Persistence.EfWorkspaceSectionLayoutStore.ListAsync(
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSectionLayoutStore.ReplaceForPluginAsync(string! pluginId, string! version, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>! layouts, bool inheritsBase, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.AssignIdentityProviderAsync(string! workspaceKey, string! surfaceKey, string? pluginId, string? version, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
-Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.SurfaceDeleteResult>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.EfWorkspaceSurfaceStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.GetAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.ListAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot!>!>!
@@ -6130,6 +6151,9 @@ override Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.ToString(
 override Callora.Core.Application.Workspaces.EffectiveSurface.Equals(object? obj) -> bool
 override Callora.Core.Application.Workspaces.EffectiveSurface.GetHashCode() -> int
 override Callora.Core.Application.Workspaces.EffectiveSurface.ToString() -> string!
+override Callora.Core.Application.Workspaces.SurfaceNavigationNode.Equals(object? obj) -> bool
+override Callora.Core.Application.Workspaces.SurfaceNavigationNode.GetHashCode() -> int
+override Callora.Core.Application.Workspaces.SurfaceNavigationNode.ToString() -> string!
 override Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.Equals(object? obj) -> bool
 override Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.GetHashCode() -> int
 override Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.ToString() -> string!
@@ -6666,6 +6690,9 @@ static Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ForDele
 static Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ForUpsert(Callora.Core.Application.Workspaces.WorkspaceSnapshot! workspace) -> Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent!
 static Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.Assigned(Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot! member) -> Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent!
 static Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.Removed(string! workspaceKey, string! userId) -> Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent!
+static Callora.Core.Application.Workspaces.SurfaceNavigationBuilder.Build(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot! current, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot!>! all, System.Func<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot!, bool>? hasLayout = null) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.SurfaceNavigationNode!>!
+static Callora.Core.Application.Workspaces.SurfaceNavigationNode.operator !=(Callora.Core.Application.Workspaces.SurfaceNavigationNode? left, Callora.Core.Application.Workspaces.SurfaceNavigationNode? right) -> bool
+static Callora.Core.Application.Workspaces.SurfaceNavigationNode.operator ==(Callora.Core.Application.Workspaces.SurfaceNavigationNode? left, Callora.Core.Application.Workspaces.SurfaceNavigationNode? right) -> bool
 static Callora.Core.Application.Workspaces.SurfaceTree.AncestryOf<T>(T! node, System.Func<T!, System.Guid>! idOf, System.Func<T!, System.Guid?>! parentIdOf, System.Collections.Generic.IReadOnlyDictionary<System.Guid, T!>! byId) -> System.Collections.Generic.IReadOnlyList<T!>!
 static Callora.Core.Application.Workspaces.SurfaceTree.ComposePath(System.Collections.Generic.IReadOnlyList<string?>! segmentsFromNodeToRoot) -> string!
 static Callora.Core.Application.Workspaces.SurfaceTree.Inherited<T, TValue>(System.Collections.Generic.IReadOnlyList<T!>! ancestry, System.Func<T!, TValue?>! select) -> TValue?

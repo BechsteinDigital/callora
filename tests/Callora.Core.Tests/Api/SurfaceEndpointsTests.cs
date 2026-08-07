@@ -28,6 +28,73 @@ public sealed class SurfaceEndpointsTests
         IsActive: true);
 
     [Fact]
+    public async Task DeletingANodeWithChildrenIsRefusedWithAConflict()
+    {
+        // Ohne diese Prüfung liefe der Versuch in den Restrict-Fremdschlüssel und käme als
+        // Serverfehler beim Operator an — und ein 500 sagt nicht, dass da eine Unterseite hängt.
+        // 409 und nicht 404: Der Knoten ist da, er lässt sich nur nicht so löschen.
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        await client.PutAsJsonAsync("/api/workspaces/workspace-a/surfaces/portal", Surface());
+        await client.PutAsJsonAsync(
+            "/api/workspaces/workspace-a/surfaces/partner",
+            Surface() with { ParentSurfaceKey = "portal", PublicPathPrefix = "partner" });
+
+        var refused = await client.DeleteAsync("/api/workspaces/workspace-a/surfaces/portal");
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+
+        // Erst das Kind, dann der Elternteil — und dann geht es.
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await client.DeleteAsync("/api/workspaces/workspace-a/surfaces/partner")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await client.DeleteAsync("/api/workspaces/workspace-a/surfaces/portal")).StatusCode);
+    }
+
+    [Fact]
+    public async Task AChildIsCreatedUnderItsParentAndCarriesItBack()
+    {
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        await client.PutAsJsonAsync("/api/workspaces/workspace-a/surfaces/portal", Surface());
+
+        var created = await client.PutAsJsonAsync(
+            "/api/workspaces/workspace-a/surfaces/partner",
+            Surface() with { ParentSurfaceKey = "portal", PublicPathPrefix = "partner", Position = 2 });
+
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var body = await created.Content.ReadFromJsonAsync<SurfaceApiResponse>();
+        Assert.Equal("portal", body!.ParentSurfaceKey);
+        Assert.Equal(2, body.Position);
+    }
+
+    [Fact]
+    public async Task AParentThatWouldCreateACycleIsRefused()
+    {
+        // Der Zyklus wird beim Schreiben abgelehnt, nicht beim Auflösen: Ein Zyklus, der erst
+        // beim Rendern aufliefe, wäre eine Endlosschleife für jeden Besucher.
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        await client.PutAsJsonAsync("/api/workspaces/workspace-a/surfaces/portal", Surface());
+        await client.PutAsJsonAsync(
+            "/api/workspaces/workspace-a/surfaces/partner",
+            Surface() with { ParentSurfaceKey = "portal", PublicPathPrefix = "partner" });
+
+        var cycle = await client.PutAsJsonAsync(
+            "/api/workspaces/workspace-a/surfaces/portal",
+            Surface() with { ParentSurfaceKey = "partner" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, cycle.StatusCode);
+    }
+
+    [Fact]
     public async Task SurfaceCrud_WithPermissions_Works()
     {
         await using var app = await CreateAppAsync();
