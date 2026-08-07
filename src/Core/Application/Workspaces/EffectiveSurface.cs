@@ -39,6 +39,16 @@ public sealed record EffectiveSurface(
     public required Guid RootId { get; init; }
 
     /// <summary>
+    /// Die Claims, die dieser Knoten verlangt — die der ganzen Kette zusammen (§4).
+    /// <para>
+    /// Zusammengeführt und nicht geerbt: Was ein Elternteil fordert, gilt zusätzlich. Nur den
+    /// nächsten gesetzten Wert zu nehmen hieße, dass ein Kind ohne eigene Anforderung den
+    /// Schutz seines Elternteils aufhebt — und es hat eine eigene URL.
+    /// </para>
+    /// </summary>
+    public required string? RequiredClaims { get; init; }
+
+    /// <summary>
     /// Baut die effektive Sicht aus der Kette (Knoten zuerst, Wurzel zuletzt).
     /// <para>
     /// Der Access Mode ist die eine Ausnahme von „erster gesetzter Wert gewinnt": Er ist nicht
@@ -86,6 +96,11 @@ public sealed record EffectiveSurface(
             root.IdentityAssignedAtUtc)
         {
             RootId = root.Id,
+            RequiredClaims = string.Join(
+                ',',
+                ancestry
+                    .SelectMany(node => SurfaceVisibility.Parse(node.RequiredClaims))
+                    .Distinct(StringComparer.Ordinal)),
         };
     }
 }

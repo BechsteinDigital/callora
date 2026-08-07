@@ -31,10 +31,17 @@ public static class SurfaceNavigationBuilder
     /// <param name="current">Der Knoten, für den gerendert wird.</param>
     /// <param name="all">Alle Surfaces des Workspaces.</param>
     /// <param name="hasLayout">Ob ein Knoten eine eigene Erlebniswelt trägt.</param>
+    /// <param name="callerClaims">
+    /// Die Claims des Besuchers. Ein Knoten, dessen Anforderung sie nicht erfüllen, erscheint
+    /// nicht — und mit ihm kein Nachfahre: Die Anforderung ist kumulativ (§4), und ein Kind
+    /// unter einem verborgenen Elternteil sichtbar zu lassen hieße, den Schutz durch
+    /// Tieferklicken zu umgehen.
+    /// </param>
     public static IReadOnlyList<SurfaceNavigationNode> Build(
         WorkspaceSurfaceSnapshot current,
         IReadOnlyList<WorkspaceSurfaceSnapshot> all,
-        Func<WorkspaceSurfaceSnapshot, bool>? hasLayout = null)
+        Func<WorkspaceSurfaceSnapshot, bool>? hasLayout = null,
+        IReadOnlySet<string>? callerClaims = null)
     {
         ArgumentNullException.ThrowIfNull(current);
         ArgumentNullException.ThrowIfNull(all);
@@ -52,6 +59,7 @@ public static class SurfaceNavigationBuilder
             [root.PublicPathPrefix],
             childrenOf,
             hasLayout ?? (_ => false),
+            callerClaims ?? new HashSet<string>(StringComparer.Ordinal),
             new HashSet<string>(StringComparer.Ordinal));
     }
 
@@ -83,6 +91,7 @@ public static class SurfaceNavigationBuilder
         IReadOnlyList<string?> pathFromNodeToRoot,
         IReadOnlyDictionary<string, WorkspaceSurfaceSnapshot[]> childrenOf,
         Func<WorkspaceSurfaceSnapshot, bool> hasLayout,
+        IReadOnlySet<string> callerClaims,
         HashSet<string> visited)
     {
         // Ein Knoten, der schon in dieser Kette lag, wird nicht noch einmal betreten. Ein Zyklus
@@ -94,6 +103,9 @@ public static class SurfaceNavigationBuilder
         }
 
         return children
+            // Ein Knoten ohne die geforderten Claims verschwindet samt seinem Zweig: Er wird
+            // gar nicht erst betreten, also kann auch kein Nachfahre durchrutschen.
+            .Where(child => SurfaceVisibility.Satisfies(child.RequiredClaims, callerClaims))
             .OrderBy(child => child.Position)
             .ThenBy(child => child.SurfaceKey, StringComparer.Ordinal)
             .Select(child =>
@@ -106,7 +118,7 @@ public static class SurfaceNavigationBuilder
                     string.IsNullOrWhiteSpace(child.DisplayName) ? child.SurfaceKey : child.DisplayName,
                     SurfaceTree.ComposePath(path),
                     hasLayout(child),
-                    ChildrenOf(child, path, childrenOf, hasLayout, visited));
+                    ChildrenOf(child, path, childrenOf, hasLayout, callerClaims, visited));
             })
             .ToArray();
     }
