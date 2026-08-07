@@ -17,7 +17,7 @@ Therefore (ADR-013, Accepted 2026-07-14):
   (marketplace) vetting + **explicit operator consent at install**. This is the
   Shopware model.
 - **Trust tiers**, all in-process/trusted: *System/Foundation* (bundled, e.g.
-  Communication), *Verified/Commercial* (signed by Bechstein Digital),
+  Communication), *Verified/Commercial* (signed by Bechstein.Digital Ecommerce UG (haftungsbeschränkt)),
   *Community-signed* (later; install demands explicit "full access" consent).
 - `internal`/`[CalloraInternal]` + curated DI are the **defined, safe extension
   surface** (a footgun guard and the contract) — **not** a security boundary

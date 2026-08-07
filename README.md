@@ -148,17 +148,14 @@ Architektur-Tests), und es hilft zu wissen, welche.
 
 ## Lizenz
 
-> **In Klärung.** `LICENSE` steht aktuell auf „All rights reserved", während die
-> Vertragspakete `@callora/surface` und `@callora/admin` Apache-2.0 deklarieren — ein
-> Widerspruch, der aufzulösen ist, bevor jemand darauf baut.
->
-> Empfohlen wird **Apache-2.0** für alles, was hier liegt: Callora selbst ist Infrastruktur, und
-> Infrastruktur lebt von Verbreitung. Die kommerziellen Plugins verlassen dieses Repository
-> ohnehin und bleiben proprietär — eine Copyleft-Lizenz am Kern schützte also nichts, was Wert
-> hat. Apache statt MIT wegen der Patentklausel: Bei Codecs, SIP und Echo Cancellation ist
-> Patentrecht real.
->
-> Die vollständige Analyse steht in
-> [`ops/research/2026-08-07-lizenzmodell.md`](ops/research/2026-08-07-lizenzmodell.md).
+Callora steht unter der **[Apache-Lizenz 2.0](LICENSE)**.
 
-© 2026 Bechstein Digital
+Das gilt für alles in diesem Repository, einschließlich der Pakete `@callora/surface` und
+`@callora/admin`, gegen die ein Plugin kompiliert. **Ein Plugin darf beliebig lizenziert sein,
+auch proprietär** — Apache-2.0 verlangt davon nichts.
+
+Apache und nicht MIT wegen der ausdrücklichen **Patentklausel**: Bei Codecs, SIP und Echo
+Cancellation ist Patentrecht real, und MIT adressiert es nicht. Die Überlegungen dahinter stehen
+in [`ops/research/2026-08-07-lizenzmodell.md`](ops/research/2026-08-07-lizenzmodell.md).
+
+© 2026 Bechstein.Digital Ecommerce UG (haftungsbeschränkt)
