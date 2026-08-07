@@ -60,12 +60,7 @@ public static class CalloraAdministrationExtensions
         app.MapWebhookEndpoints();
         app.MapJobEndpoints();
         app.MapSystemConfigEndpoints();
-
-        // Tenant management is feature-gated, mirroring the host composition.
-        if (options.EnableTenantManagementApi)
-        {
-            app.MapTenantEndpoints();
-        }
+        app.MapTenantEndpoints();
 
         // Lowest priority: the admin SPA fallback for client-side routing.
         app.MapAdminSpaFallback();
