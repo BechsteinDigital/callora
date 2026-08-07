@@ -27,6 +27,7 @@ function surface(
     updatedAtUtc: '2026-08-07T00:00:00Z',
     parentSurfaceKey,
     position,
+    requiredClaims: null,
   }
 }
 
