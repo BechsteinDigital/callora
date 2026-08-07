@@ -484,6 +484,10 @@ Callora.Core.Application.Extensions.IPluginExtensionRegistrationStore.UpsertAsyn
 Callora.Core.Application.Extensions.IThemeJsonWorkspaceTemplateSyncService
 Callora.Core.Application.Extensions.IThemeJsonWorkspaceTemplateSyncService.ClearPluginDefinitionsAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Extensions.IThemeJsonWorkspaceTemplateSyncService.SyncFromAssemblyAsync(string! pluginId, string! version, string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Extensions.IWorkspaceSectionLayoutStore
+Callora.Core.Application.Extensions.IWorkspaceSectionLayoutStore.ClearForPluginAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Extensions.IWorkspaceSectionLayoutStore.ListAsync(string! pluginId, string! version, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Extensions.ThemeSectionLayouts!>!
+Callora.Core.Application.Extensions.IWorkspaceSectionLayoutStore.ReplaceForPluginAsync(string! pluginId, string! version, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>! layouts, bool inheritsBase, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Extensions.IWorkspaceTemplateRegistryStore
 Callora.Core.Application.Extensions.IWorkspaceTemplateRegistryStore.ListDefinitionsAsync(string? surface = null, bool? isActive = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionSnapshot!>!>!
 Callora.Core.Application.Extensions.IWorkspaceTemplateRegistryStore.ReplaceDefinitionsForPluginAsync(string! pluginId, string! version, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput!>! definitions, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionSnapshot!>!>!
@@ -512,6 +516,29 @@ Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot.Extensio
 Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot.PluginExtensionRegistrationSnapshot(string! PluginId, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>! ExtensionRegistrations, System.Collections.Generic.IReadOnlyList<string!>! Capabilities) -> void
 Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot.PluginId.get -> string!
 Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot.PluginId.init -> void
+Callora.Core.Application.Extensions.SectionLayoutDefinition
+Callora.Core.Application.Extensions.SectionLayoutDefinition.<Clone>$() -> Callora.Core.Application.Extensions.SectionLayoutDefinition!
+Callora.Core.Application.Extensions.SectionLayoutDefinition.Deconstruct(out string! LayoutKey, out string! Label, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutRegion!>! Regions, out int SortOrder) -> void
+Callora.Core.Application.Extensions.SectionLayoutDefinition.Equals(Callora.Core.Application.Extensions.SectionLayoutDefinition? other) -> bool
+Callora.Core.Application.Extensions.SectionLayoutDefinition.Label.get -> string!
+Callora.Core.Application.Extensions.SectionLayoutDefinition.Label.init -> void
+Callora.Core.Application.Extensions.SectionLayoutDefinition.LayoutKey.get -> string!
+Callora.Core.Application.Extensions.SectionLayoutDefinition.LayoutKey.init -> void
+Callora.Core.Application.Extensions.SectionLayoutDefinition.Regions.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutRegion!>!
+Callora.Core.Application.Extensions.SectionLayoutDefinition.Regions.init -> void
+Callora.Core.Application.Extensions.SectionLayoutDefinition.SectionLayoutDefinition(string! LayoutKey, string! Label, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutRegion!>! Regions, int SortOrder = 100) -> void
+Callora.Core.Application.Extensions.SectionLayoutDefinition.SortOrder.get -> int
+Callora.Core.Application.Extensions.SectionLayoutDefinition.SortOrder.init -> void
+Callora.Core.Application.Extensions.SectionLayoutRegion
+Callora.Core.Application.Extensions.SectionLayoutRegion.<Clone>$() -> Callora.Core.Application.Extensions.SectionLayoutRegion!
+Callora.Core.Application.Extensions.SectionLayoutRegion.Deconstruct(out string! RegionKey, out string! Label) -> void
+Callora.Core.Application.Extensions.SectionLayoutRegion.Equals(Callora.Core.Application.Extensions.SectionLayoutRegion? other) -> bool
+Callora.Core.Application.Extensions.SectionLayoutRegion.Label.get -> string!
+Callora.Core.Application.Extensions.SectionLayoutRegion.Label.init -> void
+Callora.Core.Application.Extensions.SectionLayoutRegion.RegionKey.get -> string!
+Callora.Core.Application.Extensions.SectionLayoutRegion.RegionKey.init -> void
+Callora.Core.Application.Extensions.SectionLayoutRegion.SectionLayoutRegion(string! RegionKey, string! Label) -> void
+Callora.Core.Application.Extensions.SurfaceBaseSectionLayouts
 Callora.Core.Application.Extensions.SurfaceThemeAssignment
 Callora.Core.Application.Extensions.SurfaceThemeAssignment.<Clone>$() -> Callora.Core.Application.Extensions.SurfaceThemeAssignment!
 Callora.Core.Application.Extensions.SurfaceThemeAssignment.Deconstruct(out string! WorkspaceKey, out string! SurfaceKey, out string? ThemePluginId, out string? ThemeVersion, out bool InheritedFromWorkspace) -> void
@@ -587,21 +614,32 @@ Callora.Core.Application.Extensions.SurfaceThemeStatus.Ok = 0 -> Callora.Core.Ap
 Callora.Core.Application.Extensions.SurfaceThemeStatus.SurfaceNotFound = 2 -> Callora.Core.Application.Extensions.SurfaceThemeStatus
 Callora.Core.Application.Extensions.SurfaceThemeStatus.ThemeNotFound = 3 -> Callora.Core.Application.Extensions.SurfaceThemeStatus
 Callora.Core.Application.Extensions.SurfaceThemeStatus.WorkspaceNotFound = 1 -> Callora.Core.Application.Extensions.SurfaceThemeStatus
+Callora.Core.Application.Extensions.ThemeSectionLayouts
+Callora.Core.Application.Extensions.ThemeSectionLayouts.<Clone>$() -> Callora.Core.Application.Extensions.ThemeSectionLayouts!
+Callora.Core.Application.Extensions.ThemeSectionLayouts.Deconstruct(out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>! Layouts, out bool InheritsBase) -> void
+Callora.Core.Application.Extensions.ThemeSectionLayouts.Equals(Callora.Core.Application.Extensions.ThemeSectionLayouts? other) -> bool
+Callora.Core.Application.Extensions.ThemeSectionLayouts.InheritsBase.get -> bool
+Callora.Core.Application.Extensions.ThemeSectionLayouts.InheritsBase.init -> void
+Callora.Core.Application.Extensions.ThemeSectionLayouts.Layouts.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>!
+Callora.Core.Application.Extensions.ThemeSectionLayouts.Layouts.init -> void
+Callora.Core.Application.Extensions.ThemeSectionLayouts.ThemeSectionLayouts(System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>! Layouts, bool InheritsBase) -> void
 Callora.Core.Application.Extensions.WorkspacePublicTheme
 Callora.Core.Application.Extensions.WorkspacePublicTheme.<Clone>$() -> Callora.Core.Application.Extensions.WorkspacePublicTheme!
-Callora.Core.Application.Extensions.WorkspacePublicTheme.Deconstruct(out string! ThemePluginId, out string! ThemeVersion, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! ValuesByKey) -> void
+Callora.Core.Application.Extensions.WorkspacePublicTheme.Deconstruct(out string! ThemePluginId, out string! ThemeVersion, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! ValuesByKey, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>! SectionLayouts) -> void
 Callora.Core.Application.Extensions.WorkspacePublicTheme.Equals(Callora.Core.Application.Extensions.WorkspacePublicTheme? other) -> bool
+Callora.Core.Application.Extensions.WorkspacePublicTheme.SectionLayouts.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>!
+Callora.Core.Application.Extensions.WorkspacePublicTheme.SectionLayouts.init -> void
 Callora.Core.Application.Extensions.WorkspacePublicTheme.ThemePluginId.get -> string!
 Callora.Core.Application.Extensions.WorkspacePublicTheme.ThemePluginId.init -> void
 Callora.Core.Application.Extensions.WorkspacePublicTheme.ThemeVersion.get -> string!
 Callora.Core.Application.Extensions.WorkspacePublicTheme.ThemeVersion.init -> void
 Callora.Core.Application.Extensions.WorkspacePublicTheme.ValuesByKey.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 Callora.Core.Application.Extensions.WorkspacePublicTheme.ValuesByKey.init -> void
-Callora.Core.Application.Extensions.WorkspacePublicTheme.WorkspacePublicTheme(string! ThemePluginId, string! ThemeVersion, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! ValuesByKey) -> void
+Callora.Core.Application.Extensions.WorkspacePublicTheme.WorkspacePublicTheme(string! ThemePluginId, string! ThemeVersion, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! ValuesByKey, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>! SectionLayouts) -> void
 Callora.Core.Application.Extensions.WorkspacePublicThemeResolver
 Callora.Core.Application.Extensions.WorkspacePublicThemeResolver.ResolveAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Extensions.WorkspacePublicTheme?>!
 Callora.Core.Application.Extensions.WorkspacePublicThemeResolver.ResolveForSurfaceAsync(string! workspaceKey, string? surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Extensions.WorkspacePublicTheme?>!
-Callora.Core.Application.Extensions.WorkspacePublicThemeResolver.WorkspacePublicThemeResolver(Callora.Core.Application.Workspaces.IWorkspaceManagementStore! workspaceStore, Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore! surfaceStore, Callora.Core.Application.Extensions.IWorkspaceThemeSettingsStore! settingsStore) -> void
+Callora.Core.Application.Extensions.WorkspacePublicThemeResolver.WorkspacePublicThemeResolver(Callora.Core.Application.Workspaces.IWorkspaceManagementStore! workspaceStore, Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore! surfaceStore, Callora.Core.Application.Extensions.IWorkspaceThemeSettingsStore! settingsStore, Callora.Core.Application.Extensions.IWorkspaceSectionLayoutStore! sectionLayoutStore) -> void
 Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput
 Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput.<Clone>$() -> Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput!
 Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput.Deconstruct(out string! TemplateKey, out string! Surface, out string! DisplayName, out string! TemplatePath, out string? ParentTemplateKey, out string! Scope, out bool IsActive, out int Priority) -> void
@@ -4035,6 +4073,30 @@ Callora.Core.Domain.Extensions.ExtensionSurface
 Callora.Core.Domain.Extensions.ExtensionSurface.Admin = 0 -> Callora.Core.Domain.Extensions.ExtensionSurface
 Callora.Core.Domain.Extensions.ExtensionSurface.Surface = 1 -> Callora.Core.Domain.Extensions.ExtensionSurface
 Callora.Core.Domain.Extensions.ExtensionSurfaceCodes
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.CreatedAtUtc.get -> System.DateTimeOffset
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.CreatedAtUtc.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.Id.get -> System.Guid
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.Id.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.InheritsBase.get -> bool
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.InheritsBase.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.IsActive.get -> bool
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.IsActive.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.Label.get -> string!
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.Label.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.LayoutKey.get -> string!
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.LayoutKey.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.PluginId.get -> string!
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.PluginId.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.RegionsJson.get -> string!
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.RegionsJson.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.SortOrder.get -> int
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.SortOrder.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.UpdatedAtUtc.get -> System.DateTimeOffset
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.UpdatedAtUtc.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.Version.get -> string!
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.Version.set -> void
+Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition.WorkspaceSectionLayoutDefinition() -> void
 Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition
 Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition.CreatedAtUtc.set -> void
@@ -4667,6 +4729,7 @@ Callora.Core.Infrastructure.Extensions.InMemoryWorkspaceTemplateRegistryStore.Li
 Callora.Core.Infrastructure.Extensions.InMemoryWorkspaceTemplateRegistryStore.ReplaceDefinitionsForPluginAsync(string! pluginId, string! version, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput!>! definitions, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionSnapshot!>!>!
 Callora.Core.Infrastructure.Extensions.InMemoryWorkspaceTemplateRegistryStore.SetDefinitionActivationAsync(string! templateKey, string! pluginId, string! version, bool isActive, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Extensions.InMemoryWorkspaceTemplateRegistryStore.UpsertDefinitionAsync(string! templateKey, string! surface, string! pluginId, string! version, string! displayName, string! templatePath, string? parentTemplateKey, string! scope, bool isActive, int priority, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionSnapshot!>!
+Callora.Core.Infrastructure.Extensions.SectionLayoutManifestReader
 Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult
 Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.<Clone>$() -> Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult!
 Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.Deconstruct(out bool ShouldReplaceDefinitions, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput!>! Definitions) -> void
@@ -4688,7 +4751,7 @@ Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult.ThemeJsonSett
 Callora.Core.Infrastructure.Extensions.ThemeJsonWorkspaceTemplateSyncService
 Callora.Core.Infrastructure.Extensions.ThemeJsonWorkspaceTemplateSyncService.ClearPluginDefinitionsAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Extensions.ThemeJsonWorkspaceTemplateSyncService.SyncFromAssemblyAsync(string! pluginId, string! version, string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-Callora.Core.Infrastructure.Extensions.ThemeJsonWorkspaceTemplateSyncService.ThemeJsonWorkspaceTemplateSyncService(Callora.Core.Application.Extensions.IWorkspaceTemplateRegistryStore! store, Callora.Core.Application.Extensions.IWorkspaceThemeSettingsStore! settingsStore, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Extensions.ThemeJsonWorkspaceTemplateSyncService!>! logger) -> void
+Callora.Core.Infrastructure.Extensions.ThemeJsonWorkspaceTemplateSyncService.ThemeJsonWorkspaceTemplateSyncService(Callora.Core.Application.Extensions.IWorkspaceTemplateRegistryStore! store, Callora.Core.Application.Extensions.IWorkspaceThemeSettingsStore! settingsStore, Callora.Core.Application.Extensions.IWorkspaceSectionLayoutStore! sectionLayoutStore, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Extensions.ThemeJsonWorkspaceTemplateSyncService!>! logger) -> void
 Callora.Core.Infrastructure.Features.ConfiguredFeatureFlagService
 Callora.Core.Infrastructure.Features.ConfiguredFeatureFlagService.ConfiguredFeatureFlagService(Callora.Core.Application.Policies.BackendHostOptions! options) -> void
 Callora.Core.Infrastructure.Features.ConfiguredFeatureFlagService.GetAll() -> System.Collections.Generic.IReadOnlyDictionary<string!, bool>!
@@ -4807,6 +4870,9 @@ Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceMembershipEntity
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspacePluginActivationEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspacePluginActivationEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Plugins.WorkspacePluginActivation!>! builder) -> void
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspacePluginActivationEntityTypeConfiguration.WorkspacePluginActivationEntityTypeConfiguration() -> void
+Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceSectionLayoutDefinitionEntityTypeConfiguration
+Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceSectionLayoutDefinitionEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition!>! builder) -> void
+Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceSectionLayoutDefinitionEntityTypeConfiguration.WorkspaceSectionLayoutDefinitionEntityTypeConfiguration() -> void
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceSurfaceEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceSurfaceEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Workspaces.WorkspaceSurface!>! builder) -> void
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceSurfaceEntityTypeConfiguration.WorkspaceSurfaceEntityTypeConfiguration() -> void
@@ -4994,6 +5060,11 @@ Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationReader.ListAc
 Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationStore
 Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationStore.EfWorkspacePluginActivationStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationStore.SetActiveAsync(string! pluginId, string! workspaceKey, string! tenantKey, bool isActive, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Persistence.EfWorkspaceSectionLayoutStore
+Callora.Core.Infrastructure.Persistence.EfWorkspaceSectionLayoutStore.ClearForPluginAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Persistence.EfWorkspaceSectionLayoutStore.EfWorkspaceSectionLayoutStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
+Callora.Core.Infrastructure.Persistence.EfWorkspaceSectionLayoutStore.ListAsync(string! pluginId, string! version, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Extensions.ThemeSectionLayouts!>!
+Callora.Core.Infrastructure.Persistence.EfWorkspaceSectionLayoutStore.ReplaceForPluginAsync(string! pluginId, string! version, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>! layouts, bool inheritsBase, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.AssignIdentityProviderAsync(string! workspaceKey, string! surfaceKey, string? pluginId, string? version, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
@@ -5048,6 +5119,7 @@ Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.Tenants.get -> 
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WebhookSubscriptions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Webhooks.WebhookSubscription!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspaceMemberships.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Workspaces.WorkspaceMembership!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspacePluginActivations.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Plugins.WorkspacePluginActivation!>!
+Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspaceSectionLayoutDefinitions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspaceSurfaces.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Workspaces.WorkspaceSurface!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspaceTemplateDefinitions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspaceThemeSettingDefinitions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Extensions.WorkspaceThemeSettingDefinition!>!
@@ -5583,6 +5655,12 @@ override Callora.Core.Application.Events.PluginLifecycleChangedEvent.ToString() 
 override Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot.Equals(object? obj) -> bool
 override Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot.GetHashCode() -> int
 override Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot.ToString() -> string!
+override Callora.Core.Application.Extensions.SectionLayoutDefinition.Equals(object? obj) -> bool
+override Callora.Core.Application.Extensions.SectionLayoutDefinition.GetHashCode() -> int
+override Callora.Core.Application.Extensions.SectionLayoutDefinition.ToString() -> string!
+override Callora.Core.Application.Extensions.SectionLayoutRegion.Equals(object? obj) -> bool
+override Callora.Core.Application.Extensions.SectionLayoutRegion.GetHashCode() -> int
+override Callora.Core.Application.Extensions.SectionLayoutRegion.ToString() -> string!
 override Callora.Core.Application.Extensions.SurfaceThemeAssignment.Equals(object? obj) -> bool
 override Callora.Core.Application.Extensions.SurfaceThemeAssignment.GetHashCode() -> int
 override Callora.Core.Application.Extensions.SurfaceThemeAssignment.ToString() -> string!
@@ -5595,6 +5673,9 @@ override Callora.Core.Application.Extensions.SurfaceThemeSettings.ToString() -> 
 override Callora.Core.Application.Extensions.SurfaceThemeSettingsResult.Equals(object? obj) -> bool
 override Callora.Core.Application.Extensions.SurfaceThemeSettingsResult.GetHashCode() -> int
 override Callora.Core.Application.Extensions.SurfaceThemeSettingsResult.ToString() -> string!
+override Callora.Core.Application.Extensions.ThemeSectionLayouts.Equals(object? obj) -> bool
+override Callora.Core.Application.Extensions.ThemeSectionLayouts.GetHashCode() -> int
+override Callora.Core.Application.Extensions.ThemeSectionLayouts.ToString() -> string!
 override Callora.Core.Application.Extensions.WorkspacePublicTheme.Equals(object? obj) -> bool
 override Callora.Core.Application.Extensions.WorkspacePublicTheme.GetHashCode() -> int
 override Callora.Core.Application.Extensions.WorkspacePublicTheme.ToString() -> string!
@@ -6122,6 +6203,12 @@ static Callora.Core.Application.Events.PluginLifecycleChangedEvent.operator !=(C
 static Callora.Core.Application.Events.PluginLifecycleChangedEvent.operator ==(Callora.Core.Application.Events.PluginLifecycleChangedEvent? left, Callora.Core.Application.Events.PluginLifecycleChangedEvent? right) -> bool
 static Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot.operator !=(Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot? left, Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot? right) -> bool
 static Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot.operator ==(Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot? left, Callora.Core.Application.Extensions.PluginExtensionRegistrationSnapshot? right) -> bool
+static Callora.Core.Application.Extensions.SectionLayoutDefinition.operator !=(Callora.Core.Application.Extensions.SectionLayoutDefinition? left, Callora.Core.Application.Extensions.SectionLayoutDefinition? right) -> bool
+static Callora.Core.Application.Extensions.SectionLayoutDefinition.operator ==(Callora.Core.Application.Extensions.SectionLayoutDefinition? left, Callora.Core.Application.Extensions.SectionLayoutDefinition? right) -> bool
+static Callora.Core.Application.Extensions.SectionLayoutRegion.operator !=(Callora.Core.Application.Extensions.SectionLayoutRegion? left, Callora.Core.Application.Extensions.SectionLayoutRegion? right) -> bool
+static Callora.Core.Application.Extensions.SectionLayoutRegion.operator ==(Callora.Core.Application.Extensions.SectionLayoutRegion? left, Callora.Core.Application.Extensions.SectionLayoutRegion? right) -> bool
+static Callora.Core.Application.Extensions.SurfaceBaseSectionLayouts.All.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>!
+static Callora.Core.Application.Extensions.SurfaceBaseSectionLayouts.Compose(System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>! themeLayouts, bool inherit) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>!
 static Callora.Core.Application.Extensions.SurfaceThemeAssignment.operator !=(Callora.Core.Application.Extensions.SurfaceThemeAssignment? left, Callora.Core.Application.Extensions.SurfaceThemeAssignment? right) -> bool
 static Callora.Core.Application.Extensions.SurfaceThemeAssignment.operator ==(Callora.Core.Application.Extensions.SurfaceThemeAssignment? left, Callora.Core.Application.Extensions.SurfaceThemeAssignment? right) -> bool
 static Callora.Core.Application.Extensions.SurfaceThemeAssignmentResult.operator !=(Callora.Core.Application.Extensions.SurfaceThemeAssignmentResult? left, Callora.Core.Application.Extensions.SurfaceThemeAssignmentResult? right) -> bool
@@ -6130,6 +6217,8 @@ static Callora.Core.Application.Extensions.SurfaceThemeSettings.operator !=(Call
 static Callora.Core.Application.Extensions.SurfaceThemeSettings.operator ==(Callora.Core.Application.Extensions.SurfaceThemeSettings? left, Callora.Core.Application.Extensions.SurfaceThemeSettings? right) -> bool
 static Callora.Core.Application.Extensions.SurfaceThemeSettingsResult.operator !=(Callora.Core.Application.Extensions.SurfaceThemeSettingsResult? left, Callora.Core.Application.Extensions.SurfaceThemeSettingsResult? right) -> bool
 static Callora.Core.Application.Extensions.SurfaceThemeSettingsResult.operator ==(Callora.Core.Application.Extensions.SurfaceThemeSettingsResult? left, Callora.Core.Application.Extensions.SurfaceThemeSettingsResult? right) -> bool
+static Callora.Core.Application.Extensions.ThemeSectionLayouts.operator !=(Callora.Core.Application.Extensions.ThemeSectionLayouts? left, Callora.Core.Application.Extensions.ThemeSectionLayouts? right) -> bool
+static Callora.Core.Application.Extensions.ThemeSectionLayouts.operator ==(Callora.Core.Application.Extensions.ThemeSectionLayouts? left, Callora.Core.Application.Extensions.ThemeSectionLayouts? right) -> bool
 static Callora.Core.Application.Extensions.WorkspacePublicTheme.operator !=(Callora.Core.Application.Extensions.WorkspacePublicTheme? left, Callora.Core.Application.Extensions.WorkspacePublicTheme? right) -> bool
 static Callora.Core.Application.Extensions.WorkspacePublicTheme.operator ==(Callora.Core.Application.Extensions.WorkspacePublicTheme? left, Callora.Core.Application.Extensions.WorkspacePublicTheme? right) -> bool
 static Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput.operator !=(Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput? left, Callora.Core.Application.Extensions.WorkspaceTemplateDefinitionInput? right) -> bool
@@ -6564,6 +6653,8 @@ static Callora.Core.Infrastructure.DependencyInjection.DecoratableServiceCollect
 static Callora.Core.Infrastructure.DependencyInjection.ServiceCollectionExtensions.AddCalloraHosting(Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry! services, System.Action<Callora.Core.Application.Options.CalloraHostingOptions!>? configure = null) -> void
 static Callora.Core.Infrastructure.Extensions.BackendExtensionPointCatalog.Build() -> System.Collections.Generic.IReadOnlyCollection<Callora.Core.Domain.Extensions.ExtensionPointDefinition!>!
 static Callora.Core.Infrastructure.Extensions.BackendExtensionPointCatalog.Version.get -> string!
+static Callora.Core.Infrastructure.Extensions.SectionLayoutManifestReader.Parse(System.Text.Json.JsonElement root) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>!
+static Callora.Core.Infrastructure.Extensions.SectionLayoutManifestReader.ParseInheritsBase(System.Text.Json.JsonElement root) -> bool
 static Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.operator !=(Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult? left, Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult? right) -> bool
 static Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.operator ==(Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult? left, Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult? right) -> bool
 static Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult.operator !=(Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? left, Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? right) -> bool

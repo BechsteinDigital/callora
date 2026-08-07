@@ -22,7 +22,8 @@ namespace Callora.Core.Application.Extensions;
 public sealed class WorkspacePublicThemeResolver(
     IWorkspaceManagementStore workspaceStore,
     IWorkspaceSurfaceStore surfaceStore,
-    IWorkspaceThemeSettingsStore settingsStore)
+    IWorkspaceThemeSettingsStore settingsStore,
+    IWorkspaceSectionLayoutStore sectionLayoutStore)
 {
     /// <summary>
     /// The workspace-level theme, without any surface override. Used where no
@@ -112,7 +113,15 @@ public sealed class WorkspacePublicThemeResolver(
             }
         }
 
-        return new WorkspacePublicTheme(themePluginId, themeVersion, valuesByKey);
+        // Die Basis plus das, was dieses Theme beisteuert. Ein Theme, das nur
+        // `sidebar-right` ergänzen will, muss die ganze Palette nicht wiederholen; eines, das
+        // ein eigenes Rastersystem durchsetzt, setzt `inheritSectionLayouts` auf false.
+        var declared = await sectionLayoutStore
+            .ListAsync(themePluginId, themeVersion, cancellationToken)
+            .ConfigureAwait(false);
+        var sectionLayouts = SurfaceBaseSectionLayouts.Compose(declared.Layouts, declared.InheritsBase);
+
+        return new WorkspacePublicTheme(themePluginId, themeVersion, valuesByKey, sectionLayouts);
     }
 
     private static string? FirstSet(string? preferred, string? fallback)

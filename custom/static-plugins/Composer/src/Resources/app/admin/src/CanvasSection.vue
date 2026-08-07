@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { LayoutBlock, LayoutSection } from './layout-document'
+import type { SectionLayout } from './preview-assets'
+import { regionsOf } from './section-layouts'
 
 /**
  * Eine Sektion des Canvas mit ihren Blöcken.
@@ -25,6 +27,8 @@ const props = defineProps<{
   sectionIndex: number
   /** Registrierte Blöcke nach id. Ein Block, dessen Plugin nicht geladen ist, fehlt hier. */
   components: Record<string, unknown>
+  /** Die Sektionslayouts des Themes — sie sagen, welche Regionen es gibt. */
+  layouts: readonly SectionLayout[]
   /** Der ausgewählte Block, sofern er in dieser Sektion liegt. */
   selectedBlockIndex: number | null
 }>()
@@ -37,20 +41,26 @@ interface PlacedBlock {
   index: number
 }
 
+/**
+ * Alle Regionen des Layouts, auch die leeren.
+ *
+ * Eine leere Region muss sichtbar sein, sonst gibt es keinen Ort, an den man etwas ziehen
+ * könnte — und eine zweispaltige Sektion mit einer leeren Spalte sähe aus wie eine einspaltige.
+ */
 const regions = computed(() => {
-  const grouped = new Map<string, PlacedBlock[]>()
+  const placed = new Map<string, PlacedBlock[]>()
   props.section.blocks.forEach((block, index) => {
-    const list = grouped.get(block.region) ?? []
+    const list = placed.get(block.region) ?? []
     list.push({ block, index })
-    grouped.set(block.region, list)
+    placed.set(block.region, list)
   })
 
-  return [...grouped.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([region, placed]) => ({
-      region,
-      blocks: [...placed].sort((a, b) => a.block.position - b.block.position),
-    }))
+  return regionsOf(props.section, props.layouts).map((region) => ({
+    ...region,
+    blocks: [...(placed.get(region.regionKey) ?? [])].sort(
+      (a, b) => a.block.position - b.block.position,
+    ),
+  }))
 })
 
 /**
@@ -77,8 +87,14 @@ function propsFor(block: LayoutBlock): Record<string, unknown> {
     :data-cal-spacing="section.spacing"
     :data-cal-surface="section.surfaceRole"
   >
-    <div v-for="group in regions" :key="group.region" class="cal-region" :data-cal-region="group.region">
-      <template v-for="placed in group.blocks" :key="placed.index">
+    <div
+      v-for="region in regions"
+      :key="region.regionKey"
+      class="cal-region"
+      :data-cal-region="region.regionKey"
+      :data-cal-editor-undeclared="region.declared ? undefined : 'true'"
+    >
+      <template v-for="placed in region.blocks" :key="placed.index">
         <component
           :is="components[placed.block.blockId]"
           v-if="components[placed.block.blockId]"
@@ -104,6 +120,16 @@ function propsFor(block: LayoutBlock): Record<string, unknown> {
           {{ placed.block.blockId }}
         </div>
       </template>
+
+      <p v-if="region.blocks.length === 0" class="cal-canvas__region-empty">{{ region.label }}</p>
+      <!--
+        Eine Region, die das Layout nicht (mehr) deklariert. Ihre Blöcke stehen weiter im
+        Dokument und kommen zurück, sobald das Theme die Region wieder mitbringt — sie zu
+        verstecken hieße, Inhalt zu verstecken.
+      -->
+      <p v-else-if="!region.declared" class="cal-canvas__region-orphan">
+        Region „{{ region.regionKey }}" gibt es in diesem Layout nicht.
+      </p>
     </div>
   </div>
 </template>

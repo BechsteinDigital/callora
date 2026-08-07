@@ -7,6 +7,7 @@ namespace Callora.Core.Infrastructure.Extensions;
 public sealed class ThemeJsonWorkspaceTemplateSyncService(
     IWorkspaceTemplateRegistryStore store,
     IWorkspaceThemeSettingsStore settingsStore,
+    IWorkspaceSectionLayoutStore sectionLayoutStore,
     ILogger<ThemeJsonWorkspaceTemplateSyncService> logger) : IThemeJsonWorkspaceTemplateSyncService
 {
     public async Task SyncFromAssemblyAsync(
@@ -23,11 +24,13 @@ public sealed class ThemeJsonWorkspaceTemplateSyncService(
         if (!readResult.ShouldReplaceDefinitions)
         {
             await SyncThemeSettingsFromThemeJsonAsync(pluginId, version, assemblyPath, cancellationToken).ConfigureAwait(false);
+            await SyncSectionLayoutsFromThemeJsonAsync(pluginId, version, assemblyPath, cancellationToken).ConfigureAwait(false);
             return;
         }
 
         await store.ReplaceDefinitionsForPluginAsync(pluginId, version, readResult.Definitions, cancellationToken).ConfigureAwait(false);
         await SyncThemeSettingsFromThemeJsonAsync(pluginId, version, assemblyPath, cancellationToken).ConfigureAwait(false);
+        await SyncSectionLayoutsFromThemeJsonAsync(pluginId, version, assemblyPath, cancellationToken).ConfigureAwait(false);
     }
 
     public Task ClearPluginDefinitionsAsync(
@@ -60,6 +63,56 @@ public sealed class ThemeJsonWorkspaceTemplateSyncService(
         }
 
         await settingsStore.ClearPluginDefinitionsAsync(pluginId, cancellationToken).ConfigureAwait(false);
+        await sectionLayoutStore.ClearForPluginAsync(pluginId, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Takes over the section layouts this theme version declares.
+    /// <para>
+    /// Always replaces, including with an empty list. A theme that dropped its layouts must stop
+    /// offering them — leaving the old ones in place would let the editor compose a grid nothing
+    /// can style, and the mistake would only surface on the published page.
+    /// </para>
+    /// </summary>
+    private async Task SyncSectionLayoutsFromThemeJsonAsync(
+        string pluginId,
+        string version,
+        string assemblyPath,
+        CancellationToken cancellationToken)
+    {
+        var themeJsonPath = ResolveThemeJsonPath(assemblyPath);
+        if (themeJsonPath is null || !File.Exists(themeJsonPath))
+        {
+            return;
+        }
+
+        IReadOnlyList<SectionLayoutDefinition> layouts;
+        bool inheritsBase;
+        try
+        {
+            var json = await File.ReadAllTextAsync(themeJsonPath, cancellationToken).ConfigureAwait(false);
+            using var document = JsonDocument.Parse(json);
+            layouts = SectionLayoutManifestReader.Parse(document.RootElement);
+            inheritsBase = SectionLayoutManifestReader.ParseInheritsBase(document.RootElement);
+        }
+        catch (JsonException ex)
+        {
+            // Die anderen Zweige haben dieselbe Datei schon gelesen und dasselbe gemeldet; hier
+            // nichts zu tun ist richtiger, als die vorhandenen Layouts wegen eines Tippfehlers
+            // in einem ganz anderen Abschnitt zu löschen.
+            logger.LogWarning(ex, "Invalid theme.json found at {ThemeJsonPath}.", themeJsonPath);
+            return;
+        }
+
+        await sectionLayoutStore
+            .ReplaceForPluginAsync(pluginId, version, layouts, inheritsBase, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private static string? ResolveThemeJsonPath(string assemblyPath)
+    {
+        var directory = Path.GetDirectoryName(Path.GetFullPath(assemblyPath));
+        return string.IsNullOrWhiteSpace(directory) ? null : Path.Combine(directory, "theme.json");
     }
 
     private async Task SyncThemeSettingsFromThemeJsonAsync(

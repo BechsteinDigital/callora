@@ -21,3 +21,84 @@
   padding: var(--cal-space-4);
   color: var(--cal-color-muted);
 }
+
+// ── Sektionen und Regionen ───────────────────────────────────────────────────
+//
+// Der Kompositions-Renderer gibt `data-cal-layout` und `data-cal-region` aus. Ohne diese
+// Regeln wären das Attribute, auf die nichts hört: Eine zweispaltige Sektion stünde
+// einspaltig, und niemand könnte sagen, ob der Editor, der Renderer oder das Theme schuld
+// ist.
+//
+// Das ist dieselbe Rolle, die die Token darüber spielen — eine neutrale Basis, kein Design.
+// Ein Theme, das eigene Layouts mitbringt, überschreibt sie; ein Theme, das keine mitbringt,
+// bekommt trotzdem eine Fläche, die funktioniert. Die Namen hier sind DIESE Basis, nicht der
+// Kanon: Der Editor bietet an, was das Theme deklariert, und nur mangels Theme die hier.
+//
+// Alle Maße kommen aus `--cal-*`. Ein fester Pixelwert wäre genau die Freiheit, die die
+// Token-Achse dem Editor verweigert — mit dem Unterschied, dass sie niemand zurücknehmen kann.
+
+.cal-section {
+  display: grid;
+  gap: var(--cal-space-4);
+  padding-block: var(--cal-space-4);
+}
+
+.cal-region {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cal-space-4);
+  // Ohne dies sprengt ein breiter Block (eine Tabelle, ein <pre>) seine Rasterspalte, statt
+  // in ihr zu scrollen — die berüchtigte Grid-Mindestbreite von `auto`.
+  min-width: 0;
+}
+
+.cal-section[data-cal-layout='single'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cal-section[data-cal-layout='two-1-1'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cal-section[data-cal-layout='two-2-1'] {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.cal-section[data-cal-layout='sidebar-left'] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+}
+
+.cal-section[data-cal-layout='three-1-1-1'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+// Unter der Umbruchbreite steht jedes Layout einspaltig. Die Breite ist in `em` und damit an
+// die Schriftgröße gebunden, nicht an das Gerät: Wer größer stellt, bekommt den Umbruch
+// früher — was der Grund ist, aus dem er ihn braucht.
+@media (max-width: 48em) {
+  .cal-section[data-cal-layout] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// `spacing` und `surfaceRole` sind Stufen, keine Werte (§7.1). Der Editor wählt eine Stufe,
+// die Basis entscheidet, was sie bedeutet — deshalb steht hier ein Vielfaches des
+// Grundabstands und keine Zahl, die jemand im Editor eingegeben hat.
+.cal-section[data-cal-spacing='none'] {
+  padding-block: 0;
+  gap: 0;
+}
+
+.cal-section[data-cal-spacing='tight'] {
+  padding-block: calc(var(--cal-space-4) / 2);
+  gap: calc(var(--cal-space-4) / 2);
+}
+
+.cal-section[data-cal-spacing='loose'] {
+  padding-block: calc(var(--cal-space-4) * 3);
+  gap: calc(var(--cal-space-4) * 2);
+}
+
+.cal-section[data-cal-surface='muted'] {
+  background: color-mix(in srgb, var(--cal-color-fg) 4%, var(--cal-color-bg));
+}
