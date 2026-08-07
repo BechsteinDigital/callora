@@ -90,6 +90,38 @@ Absichtserklärung, sondern eine, die der Compiler prüft.
 Der Ist-Stand. Schließt ein Dritt-Ökosystem aus und macht die Apache-Angaben in den npm-Paketen
 zu einem Fehler.
 
+## 4.5 Was das künftige Repository-Modell ändert
+
+**Nachtrag 2026-08-07, nach Klärung des Zielmodells.** Communication und Composer werden eigene
+Repositories und **private** NuGet-Pakete; ein Installationsskript zieht sie in eine
+Distribution. `@callora/surface` und `@callora/admin` werden eigene Repositories und **öffentlich**
+auf npm. Was in diesem Repository bleibt, ist Callora selbst.
+
+Damit liegt der gesamte kommerzielle Wert **außerhalb** des offenen Repositories. Eine
+Copyleft-Lizenz am Kern schützte dann nichts, was Wert hat — sie kostete nur Verbreitung.
+
+Das entwertet das Argument aus §4.3: AGPL schützt vor SaaS-Wiederverkauf des KERNS. Wenn der
+Kern die Einstiegsdroge ist und nicht das Produkt, ist dieser Schutz kein Gewinn, sondern eine
+Hürde vor der Verbreitung, von der das Modell lebt.
+
+## 4.6 Warum Shopware MIT wählt
+
+Vier Gründe, von denen drei hier genauso gelten:
+
+1. **Der Umsatz liegt nicht im Core.** Cloud, Enterprise-Erweiterungen, Store-Provision,
+   Partnerprogramm. Der Core ist Kundengewinnung.
+2. **Das Ökosystem ist der Wert.** Agenturen bauen Kundenprojekte mit proprietärem Code; jede
+   Copyleft-Klausel wäre Reibung, die MIT gar nicht erst entstehen lässt.
+3. **SaaS-Wiederverkauf ist im E-Commerce kein reales Risiko.** Ein Shop ist Integration,
+   Zahlungsanbindung, Betrieb, Support — wer Shopware als SaaS anbietet, ist Partner. Genau
+   deshalb greifen Grafana und MongoDB zu AGPL und Shopware nicht: Dort IST der Kern das Produkt.
+4. **MIT geht durch jede Rechtsabteilung.** AGPL löst bei vielen Konzernen ein pauschales Verbot
+   aus — und ein Verbot ist teurer als jede entgangene Copyleft-Wirkung.
+
+Punkt 3 ist der, an dem sich alles entscheidet, und er trifft auf ein Contact Center genauso zu
+wie auf einen Shop: Telefonie-Anbindung, Betrieb, Compliance und Support sind das Geschäft, nicht
+der Quelltext.
+
 ## 5. Empfehlung
 
 **Dreistufig, entlang der Grenzen, die im Code ohnehin schon gezogen sind:**
@@ -97,23 +129,25 @@ zu einem Fehler.
 | Schicht | Lizenz | Begründung |
 |---|---|---|
 | **Vertragspakete** (`@callora/surface`, `@callora/admin`, künftige `*.Abstractions`) | **Apache-2.0** | Wogegen kompiliert wird, muss reibungsfrei nutzbar sein — auch von proprietären Plugins. Bleibt wie heute deklariert. |
-| **Core** (`Callora.Core`, Host, Module) | **LGPLv3** *oder* **AGPLv3 + Plugin-Ausnahme** | Siehe unten |
+| **Core** (`Callora.Core`, Host, Module) | **Apache-2.0** | Siehe unten |
 | **Eigene kommerzielle Plugins** | proprietär | Der Umsatzträger. Unberührt von beidem. |
 
-**Die eine Frage, die die Wahl zwischen LGPL und AGPL entscheidet, ist keine technische:**
+**Apache-2.0 statt Copyleft**, weil die Wertträger das Repository ohnehin verlassen (§4.5). Was
+bleibt, ist Infrastruktur, und Infrastruktur lebt von Verbreitung.
 
-> Wovor soll die Lizenz schützen — davor, dass jemand den **Core forkt** und nichts zurückgibt
-> (dann reicht LGPL), oder davor, dass jemand **Callora als SaaS anbietet** und nichts zurückgibt
-> (dann braucht es AGPL)?
+**Apache-2.0 statt MIT** aus einem Grund: der ausdrücklichen **Patentklausel**. Bei einer
+Voice-Plattform — Codecs, SIP, Echo Cancellation, Sprachmodelle — ist Patentrecht ein reales
+Thema, und MIT adressiert es schlicht nicht. Apache-2.0 gewährt Nutzern die Patentlizenz
+ausdrücklich und entzieht sie dem, der wegen Patentverletzung klagt. Für einen Shop ist das
+Beiwerk; für Telefonie ist es keins.
 
-Für eine Plattform, die auf Voice-AI und Arbeitsplätze zielt, halte ich das zweite für die
-realere Bedrohung — und damit **AGPLv3 + Plugin-Ausnahme** für den passenderen Weg, mit der
-klaren Einschränkung aus §4.3: Die Ausnahme muss von einem Anwalt formuliert werden und sollte
-sich auf die **compiler-geprüfte** öffentliche API beziehen, nicht auf eine Beschreibung in Prosa.
+Es ist außerdem das, was `@callora/surface`, `@callora/admin` und die VoIP-SDK bereits
+deklarieren — die Entscheidung räumt damit denselben Widerspruch aus, den §1 benennt, statt einen
+neuen zu schaffen.
 
-Wenn diese Präzision nicht rechtzeitig zu haben ist, ist **LGPLv3** die sichere Wahl: erprobt,
-verständlich, und sie erlaubt genau das Geschäftsmodell. Der SaaS-Schutz ließe sich später über
-einen Lizenzwechsel nachziehen — Grafana hat genau das getan.
+**Ein Copyleft-Wechsel bliebe später möglich**, solange die Rechte gebündelt sind (§6.4). Grafana
+hat genau das getan, in dieser Richtung. Umgekehrt — von AGPL zu Apache — ginge es nicht, sobald
+Dritte beigetragen haben.
 
 ## 6. Was unabhängig davon zu tun ist
 
