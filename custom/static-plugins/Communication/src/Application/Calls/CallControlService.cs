@@ -22,7 +22,7 @@ namespace Callora.Plugin.Communication.Application.Calls;
 /// outage delays delivery instead of losing it.
 /// </para>
 /// </summary>
-public sealed class CallControlService : ICallControlService, ICallAccess, IAsyncDisposable
+public sealed class CallControlService : ICallControlService, ICallAccess, ICallHistory, IAsyncDisposable
 {
     private readonly ICommunicationChannelRegistry _channels;
     private readonly ICallLogStore _callLogStore;

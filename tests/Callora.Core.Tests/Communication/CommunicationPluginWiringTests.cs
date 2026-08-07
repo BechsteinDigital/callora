@@ -98,6 +98,20 @@ public sealed class CommunicationPluginWiringTests
     }
 
     [Fact]
+    public async Task StartAsync_ContributesTheNumberPlanRoutes()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // Ohne diese Routen bleibt der Plan ein Handler, den niemand erreicht — und das Kontingent
+        // einer Nummer wäre weiterhin nur über die Konto-API und ohne Oberfläche zu setzen.
+        var contributor = (IHostAdminApiExtensionContributor)context.Exports[typeof(IHostAdminApiExtensionContributor)];
+        Assert.Contains(contributor.Routes, r => r is { HttpMethod: "GET", RouteTemplate: "numbers" });
+        Assert.Contains(contributor.Routes, r => r is { HttpMethod: "POST", RouteTemplate: "numbers/quota" });
+    }
+
+    [Fact]
     public async Task StartAsync_ExportsTheCallJourney()
     {
         var context = new CapturingHostPluginContext(hasDbFactory: true);
