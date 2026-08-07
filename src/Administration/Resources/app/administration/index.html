@@ -8,8 +8,11 @@
     <!-- Setzt das gespeicherte Farbschema vor dem ersten Paint. Eigene Datei statt inline,
          weil die CSP des Hosts `script-src 'self'` ohne 'unsafe-inline' sendet — inline
          wurde es blockiert, und die Seite sprang um. Kein defer/async: Es muss vor dem
-         ersten Paint laufen. -->
-    <script src="./theme-preference.js"></script>
+         ersten Paint laufen.
+         %BASE_URL% und nicht ./ — die SPA liefert diese Datei unter JEDEM Pfad unterhalb
+         von /admin/ aus, ein relativer Verweis zeigte auf /admin/extensions/… und lief in
+         einen 404. -->
+    <script src="%BASE_URL%theme-preference.js"></script>
   </head>
   <body>
     <div id="app"></div>
