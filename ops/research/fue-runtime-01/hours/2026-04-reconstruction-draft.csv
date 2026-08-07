@@ -1,5 +1,0 @@
-Datum;Vorhaben;BSFZ_Aktenzeichen;Arbeitspaket;FuE_Taetigkeit;Persoenliche_Stunden;Ergebnis_oder_Erkenntnis;Nachweisreferenz;Erfassungsart;Status;Bestaetigt_am
-2026-04-16;FUE-RUNTIME-01;;AP 0;Installierbares Plugin-Scaffold als technische Grenzprobe zwischen Host Contract und Plugin-Paket untersucht;2,0;Fruehe Runtime- und Paketgrenze prototypisch sichtbar;f9f34d4;REKONSTRUIERT;ENTWURF;
-2026-04-26;FUE-RUNTIME-01;;AP 3;Install Update Rollback und Vertragspruefpfade der workspace-faehigen Plugin-Control-Plane prototypisch umgesetzt und Lifecycle-Tests ausgewertet;3,5;Lifecycle- und Rollbackpfade im Mischprototyp vorhanden;a01c850;REKONSTRUIERT;ENTWURF;
-2026-04-26;FUE-RUNTIME-01;;AP 4;Workspace-Aktivierung Entitlement Capability-Abhaengigkeiten und Zustandsuebergaenge im Prototyp untersucht;2,5;Workspace-spezifische Aktivierungslogik und Tests vorhanden;a01c850;REKONSTRUIERT;ENTWURF;
-

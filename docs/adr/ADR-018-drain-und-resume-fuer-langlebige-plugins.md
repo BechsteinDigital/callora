@@ -5,7 +5,7 @@
 **Entscheidungsträger:** Bechstein.Digital / Callora
 **Bezug:**
 
-* ops/research/2026-08-06-plugin-neustart-vermeiden.md — die Recherche, aus der diese Entscheidung folgt
+* Recherche `2026-08-06-plugin-neustart-vermeiden`, aus der diese Entscheidung folgt — intern, `callora-ops`
 * ADR-012 — Ein-Core-Extensibility (domänen-neutrale Plattform)
 * ADR-016 — Neutrale Realtime-Media-Abstraktion (Communication als einziger SDK-Binder)
 * ADR-017 — Surface-Identität und Session-Transport (Session-Mechanik im Host)
