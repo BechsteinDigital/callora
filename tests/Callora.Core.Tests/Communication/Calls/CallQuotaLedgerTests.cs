@@ -129,4 +129,51 @@ public sealed class CallQuotaLedgerTests
         ledger.Configure(Workspace, Account, quotas.ToDictionary(q => q.Origin, q => q.Limit));
         return ledger;
     }
+
+    // ── Nummern als Herkunft ────────────────────────────────────────────────
+
+    [Fact]
+    public void ANumberQuota_AppliesHoweverTheTrunkWritesTheNumber()
+    {
+        // Der Betreiber trägt die Nummer ein, wie sein Anbieter sie druckt; das Netz liefert sie, wie
+        // es gerade mag. Ohne gemeinsame Regel gilt das Kontingent für eine Nummer, die nie ankommt.
+        var ledger = new CallQuotaLedger();
+        ledger.Configure("ws-a", "ch-1", new Dictionary<string, int> { ["+49 30 1234-5678"] = 1 });
+
+        Assert.NotNull(ledger.TryReserve("ws-a", "ch-1", "004930 12345678"));
+        Assert.Null(ledger.TryReserve("ws-a", "ch-1", "+493012345678"));
+    }
+
+    [Fact]
+    public void ANamedOrigin_IsMatchedAsWritten()
+    {
+        // "crm" und "dialer:campaign-x" sind Namen, keine Nummern — auf Ziffern reduziert bliebe
+        // nichts übrig, und jedes Kontingent träfe jedes andere.
+        var ledger = new CallQuotaLedger();
+        ledger.Configure("ws-a", "ch-1", new Dictionary<string, int>
+        {
+            ["dialer:campaign-x"] = 1,
+            ["crm"] = 1,
+        });
+
+        Assert.NotNull(ledger.TryReserve("ws-a", "ch-1", "dialer:campaign-x"));
+        Assert.Null(ledger.TryReserve("ws-a", "ch-1", "dialer:campaign-x"));
+
+        // Das andere Kontingent ist davon unberührt.
+        Assert.NotNull(ledger.TryReserve("ws-a", "ch-1", "crm"));
+    }
+
+    [Fact]
+    public void TwoDifferentNumbers_DoNotShareAQuota()
+    {
+        var ledger = new CallQuotaLedger();
+        ledger.Configure("ws-a", "ch-1", new Dictionary<string, int>
+        {
+            ["+493012345678"] = 1,
+            ["+493087654321"] = 1,
+        });
+
+        Assert.NotNull(ledger.TryReserve("ws-a", "ch-1", "+49 30 1234 5678"));
+        Assert.NotNull(ledger.TryReserve("ws-a", "ch-1", "+49 30 8765 4321"));
+    }
 }
