@@ -18,6 +18,7 @@ public sealed class WorkspaceSurfaceEntityTypeConfiguration : IEntityTypeConfigu
         builder.Property(x => x.WorkspaceId).HasColumnName("workspace_id").IsRequired();
         builder.Property(x => x.ParentSurfaceId).HasColumnName("parent_surface_id");
         builder.Property(x => x.Position).HasColumnName("position").IsRequired();
+        builder.Property(x => x.RequiredClaims).HasColumnName("required_claims").HasMaxLength(1000);
         builder.Property(x => x.SurfaceKey).HasColumnName("surface_key").HasMaxLength(120).IsRequired();
         builder.Property(x => x.DisplayName).HasColumnName("display_name").HasMaxLength(300).IsRequired();
         builder.Property(x => x.SurfaceType).HasColumnName("surface_type").HasMaxLength(100).IsRequired();

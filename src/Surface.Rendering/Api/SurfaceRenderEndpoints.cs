@@ -113,6 +113,20 @@ public static class SurfaceRenderEndpoints
             caller = SurfaceCallerViewFactory.Create(establishment.Caller);
             establishedCaller = establishment.Caller;
 
+            // Sichtbarkeit je Knoten (ADR-019 §4). `RequiredClaims` trägt hier die Anforderung
+            // der GANZEN Kette — was ein Elternteil verlangt, gilt auch für die Unterseite, die
+            // eine eigene URL hat.
+            //
+            // 404 und nicht 403: Ein Knoten, den dieser Besucher nicht sehen darf, verhält sich
+            // wie einer, den es nicht gibt. Ein 403 verriete seine Existenz, und genau das ist
+            // bei einer Gliederung oft die Information, die niemanden angeht.
+            if (!SurfaceVisibility.Satisfies(
+                    surface.RequiredClaims,
+                    SurfaceVisibility.ClaimsOf(establishment.Caller)))
+            {
+                return Results.NotFound();
+            }
+
             // Resolved per request because it depends on the caller: claim-gated views
             // are filtered here, not hidden in the browser.
             if (slotResolver is not null)
@@ -123,12 +137,23 @@ public static class SurfaceRenderEndpoints
                     .ConfigureAwait(false);
             }
         }
-        else if (surface.AccessMode == SurfaceAccessMode.Authenticated &&
-                 httpContext.User.Identity?.IsAuthenticated != true)
+        else
         {
-            // Composition without the identity subsystem: the pre-ADR-017 behaviour
-            // stays exactly as it was, so an existing host is unaffected.
-            return SurfaceAccessGate.LoginRedirect(surface, httpContext);
+            // Zusammenstellung ohne Identitäts-Subsystem: Es gibt keine Claims, also ist ein
+            // Knoten, der welche verlangt, hier nicht erreichbar. Ihn durchzulassen wäre die
+            // gefährlichste Variante — die Anforderung stünde in der Verwaltung und wirkte nicht.
+            if (SurfaceVisibility.Parse(surface.RequiredClaims).Count > 0)
+            {
+                return Results.NotFound();
+            }
+
+            if (surface.AccessMode == SurfaceAccessMode.Authenticated &&
+                httpContext.User.Identity?.IsAuthenticated != true)
+            {
+                // Ansonsten bleibt das Verhalten vor ADR-017 exakt wie es war, damit ein
+                // bestehender Host unberührt bleibt.
+                return SurfaceAccessGate.LoginRedirect(surface, httpContext);
+            }
         }
 
         // The effective, secret-filtered theme values (defaults + workspace

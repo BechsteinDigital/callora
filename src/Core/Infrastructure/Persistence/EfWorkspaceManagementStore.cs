@@ -593,6 +593,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             // Der Identity-Provider kommt von der WURZEL (ADR-019 §4). `IdentityAssignedBy`
             // bleibt beim Knoten leer: Wer eine Zuweisung verantwortet, steht an der Wurzel und
             // wäre hier eine Behauptung über diesen Knoten, die niemand gemacht hat.
+            RequiredClaims = effective.RequiredClaims,
             IdentityPluginId = effective.IdentityPluginId,
             IdentityVersion = effective.IdentityVersion,
             IdentityAssignedAtUtc = effective.IdentityAssignedAtUtc,

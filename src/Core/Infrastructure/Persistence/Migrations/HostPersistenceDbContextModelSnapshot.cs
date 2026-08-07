@@ -1699,6 +1699,11 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("public_path_prefix");
 
+                    b.Property<string>("RequiredClaims")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("required_claims");
+
                     b.Property<string>("SurfaceKey")
                         .IsRequired()
                         .HasMaxLength(120)

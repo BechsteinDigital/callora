@@ -33,6 +33,21 @@ public sealed class WorkspaceSurface
     /// <summary>Ascending order among siblings — the order the navigation shows.</summary>
     public int Position { get; set; }
 
+    /// <summary>
+    /// Claims, die ein Besucher mitbringen muss, damit dieser Knoten für ihn existiert
+    /// (ADR-019 §4) — kommagetrennt, leer heißt: keine Anforderung.
+    /// <para>
+    /// Kumulativ entlang der Kette und nicht überschreibbar: Was ein Elternteil verlangt, gilt
+    /// auch für seine Nachfahren. Anders wäre der Schutz durch Tieferklicken zu umgehen, denn
+    /// eine Unterseite hat eine eigene URL.
+    /// </para>
+    /// <para>
+    /// <b>Nicht das Operator-RBAC.</b> Ein Portal-Besucher ist kein Operator; geprüft werden
+    /// die Claims seiner Surface-Identität (ADR-017).
+    /// </para>
+    /// </summary>
+    public string? RequiredClaims { get; set; }
+
     /// <summary>Technical key, unique per workspace.</summary>
     public string SurfaceKey { get; set; } = string.Empty;
 

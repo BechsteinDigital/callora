@@ -32,6 +32,12 @@ public sealed record WorkspaceSurfaceSnapshot(
     public int Position { get; init; }
 
     /// <summary>
+    /// Claims, die ein Besucher mitbringen muss (ADR-019 §4) — kommagetrennt, leer heißt keine
+    /// Anforderung. Kumulativ entlang der Kette.
+    /// </summary>
+    public string? RequiredClaims { get; init; }
+
+    /// <summary>
     /// Tenant that owns the surface's workspace. Additive to the read model so the
     /// public render path can build a per-surface context; defaults to empty for
     /// callers that do not project it.
