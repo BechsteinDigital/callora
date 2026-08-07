@@ -1,5 +1,7 @@
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Application.Surfaces;
+using Callora.Core.Application.Surfaces.Contracts;
 using Callora.Core.Tests.Support;
 using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.DataProtection;
@@ -33,6 +35,51 @@ public sealed class PluginContextTests
         Assert.NotNull(context.PluginConfiguration);
         Assert.Equal("true", context.PluginConfiguration!["WebRtc:Enabled"]);
         Assert.Null(context.PluginConfiguration["BackendHost:JwtSigningKey"]);
+    }
+
+    [Fact]
+    public void SurfaceContextBroadcaster_IsReachableFromAPlugin()
+    {
+        // Es ist als Extension-Point markiert („resolve to publish surface context from server-side
+        // events") — und genau das konnte niemand: Der kuratierte Provider gibt nur Contracts-
+        // Namespaces heraus, und der Broadcaster lag daneben. Ein Plugin, das einen Kontextwert
+        // veröffentlichen will, bekam null und hätte es nur an einem leeren Panel gemerkt.
+        var broadcaster = new SurfaceContextBroadcaster();
+        var services = new ServiceCollection()
+            .AddSingleton<ISurfaceContextBroadcaster>(broadcaster)
+            .AddSingleton<ISurfaceSessionStore>(new NeverAskedSessionStore())
+            .BuildServiceProvider();
+        var context = new PluginContext(services, "communication", (_, _, _) => { }, _ => null);
+
+        Assert.NotNull(context.Services.GetService(typeof(ISurfaceContextBroadcaster)));
+
+        // Und die Grenze hält in die andere Richtung: Der Sitzungsspeicher liegt weiter im
+        // Host-Namespace und bleibt unerreichbar. Ohne diese Hälfte prüft der Test nur, dass
+        // irgendetwas herauskommt — nicht, dass die Regel noch eine Regel ist.
+        Assert.Null(context.Services.GetService(typeof(ISurfaceSessionStore)));
+    }
+
+    /// <summary>Nur da, damit der Container den Vertrag kennt; aufgerufen wird nichts davon.</summary>
+    private sealed class NeverAskedSessionStore : ISurfaceSessionStore
+    {
+        public Task<SurfaceSession?> GetAsync(Guid sessionId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task CreateAsync(SurfaceSession session, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task TouchAsync(Guid sessionId, DateTimeOffset seenAtUtc, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task RevokeAsync(Guid sessionId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<int> RevokeForSurfaceAsync(
+            string workspaceKey, string surfaceKey, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<int> PurgeExpiredAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
     [Fact]
