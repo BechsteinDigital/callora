@@ -122,7 +122,7 @@ rather than leaving a reader to assume the ticket authenticated someone.
 | **ISurfaceContextBroadcaster** | Resolvable | Push a context value to the surfaces a visitor has open, so a server-side event reaches the views that declared they need it. |
 | **ISharedContextKeyContributor** | Contributable | Declare shared context keys — anchor, purpose, field visibility, time to live. Declaration is a precondition for publishing. |
 | **ISharedContextService** | Resolvable | Publish context that crosses surface boundaries, anchored to a subject or a conversation. |
-| **IHostSurfaceDataContributor** | Contributable | Contribute data a server-rendered surface template reads — a product for `/produkt/schuhe`, opening hours for `/kontakt`. |
+| **IHostSurfaceDataContributor** | Contributable | Contribute data a server-rendered surface template reads — a product for `/products/shoes`, opening hours for `/contact`. |
 | **ISurfaceLayoutSource** | Contributable | Supply composed surface layouts. Implemented by the composer plugin; no composer installed means no layout, and a surface renders from `.njk` as before. |
 
 ::: warning Everything a data contributor returns reaches the delivered HTML
@@ -227,7 +227,7 @@ listening. A key defaults to a single owner; a second claimant is refused and re
 rather than silently overwriting.
 
 ```ts
-import { createSurfaceContextScope } from '@callora/surface-sdk'
+import { createSurfaceContextScope } from '@callora/surface'
 
 const scope = createSurfaceContextScope()
 const leads = scope.publish({ key: 'crm.lead-selection/v1', publisherPluginId: 'crm' })
