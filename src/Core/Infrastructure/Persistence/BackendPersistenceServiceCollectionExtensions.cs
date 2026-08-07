@@ -47,6 +47,13 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddScoped<ITenantManagementStore, EfTenantManagementStore>();
         services.AddScoped<IWorkspaceManagementStore, EfWorkspaceManagementStore>();
         services.AddScoped<IWorkspaceSurfaceStore, EfWorkspaceSurfaceStore>();
+        // Der verengte Vertrag für Plugins: lesen, anlegen, löschen — ohne die
+        // Identity-Provider-Zuweisung, die der volle Store mitträgt.
+        // Singleton, nicht scoped: Ein Plugin löst seine Dienste einmal beim Start aus dem
+        // Root-Provider auf, und von dort lässt sich nichts Scoped auflösen. Der Editor
+        // öffnet den Scope pro Aufruf selbst.
+        services.AddSingleton<Callora.Core.Application.Workspaces.Contracts.ISurfaceTreeEditor,
+            Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor>();
         services.AddScoped<Callora.Core.Application.Surfaces.ISurfaceSessionStore, EfSurfaceSessionStore>();
         services.AddScoped<Callora.Core.Application.Surfaces.ISurfaceHandoffTicketStore, EfSurfaceHandoffTicketStore>();
         // Registered as the concrete type only: plugins reach resume tickets from outside any request
