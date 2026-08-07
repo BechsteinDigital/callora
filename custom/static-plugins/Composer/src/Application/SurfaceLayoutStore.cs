@@ -119,6 +119,27 @@ public sealed class SurfaceLayoutStore(
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Entfernt ein Layout samt aller Versionen. Ohne Layout gibt es nichts zu tun — das ist
+    /// kein Fehler, sondern der Normalfall bei einer Gliederungsebene.
+    /// </summary>
+    public async Task DeleteAsync(string layoutKey, CancellationToken cancellationToken = default)
+    {
+        await using var db = factory.CreateDbContext();
+
+        // Die Versionen zuerst: Sie tragen den Inhalt, und ein Layout ohne sie ist eine leere
+        // Hülle. Andersherum blieben verwaiste Versionen zurück, die niemand mehr findet.
+        await db.Versions
+            .Where(version => version.LayoutKey == layoutKey)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        await db.Layouts
+            .Where(layout => layout.Key == layoutKey)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     /// <summary>Creates a layout with its first, empty draft.</summary>
     public async Task<SurfaceLayout> CreateAsync(
         string key,

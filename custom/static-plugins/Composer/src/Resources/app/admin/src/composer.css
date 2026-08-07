@@ -299,3 +299,19 @@
   flex-wrap: wrap;
   margin-block: 0.5rem 1rem;
 }
+
+.composer-pages__move,
+.composer-pages__delete {
+  font-size: 0.75rem;
+}
+
+/* Löschen bleibt schlicht — es ist die einzige Aktion hier, die sich nicht zurücknehmen lässt. */
+.composer-pages__delete {
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+}

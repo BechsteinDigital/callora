@@ -213,6 +213,73 @@ async function createPage(): Promise<void> {
   }
 }
 
+/**
+ * Entfernt eine Seite samt ihrer Erlebniswelt.
+ *
+ * Mit Rückfrage: Anders als jede andere Aktion hier ist das nicht rückgängig zu machen, und der
+ * Autosave macht es sofort endgültig.
+ */
+async function deletePage(page: PageNode): Promise<void> {
+  if (!window.confirm(`Seite „${page.label}" mit ihrer Erlebniswelt löschen?`)) {
+    return
+  }
+
+  error.value = null
+  try {
+    const response = await fetch(
+      `/api/ext/admin/composer/pages/${encodeURIComponent(page.surfaceKey)}`,
+      { method: 'DELETE', credentials: 'same-origin' },
+    )
+    if (!response.ok) {
+      // 409 heißt: Es gibt sie, sie lässt sich nur nicht so löschen. Das ist eine andere
+      // Auskunft als „nicht gefunden" und verdient einen anderen Satz.
+      error.value = response.status === 409
+        ? 'Diese Seite hat Unterseiten oder ist eine Anwendungswurzel.'
+        : 'Die Seite konnte nicht gelöscht werden.'
+      return
+    }
+
+    if (layout.value?.surfaceKey === page.surfaceKey) {
+      // Der Editor zeigte gerade, was es nicht mehr gibt.
+      layout.value = null
+      layoutKey.value = ''
+    }
+
+    await loadPages()
+    void loadLayouts()
+  } catch {
+    error.value = 'Die Seite konnte nicht gelöscht werden.'
+  }
+}
+
+/** Hängt eine Seite unter ein anderes Übergeordnetes. */
+async function movePage(page: PageNode, parentSurfaceKey: string): Promise<void> {
+  if (!parentSurfaceKey || parentSurfaceKey === page.parentSurfaceKey) {
+    return
+  }
+
+  error.value = null
+  try {
+    const response = await fetch(
+      `/api/ext/admin/composer/pages/${encodeURIComponent(page.surfaceKey)}/parent`,
+      {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ parentSurfaceKey, position: page.position }),
+      },
+    )
+    if (!response.ok) {
+      error.value = 'Die Seite konnte nicht verschoben werden — das Ziel liegt womöglich darunter.'
+      return
+    }
+
+    await loadPages()
+  } catch {
+    error.value = 'Die Seite konnte nicht verschoben werden.'
+  }
+}
+
 /** Öffnet die Seite eines Baumknotens. Ohne Layout gibt es nichts zu öffnen. */
 async function openPage(page: PageNode): Promise<void> {
   if (!page.layoutKey) {
@@ -556,6 +623,30 @@ function draftUrl(key: string): string {
           -->
           <span v-if="!row.page.layoutKey" class="composer__status">ohne Erlebniswelt</span>
           <span v-else-if="!row.page.hasPublishedVersion" class="composer__status">Entwurf</span>
+
+          <!--
+            Verschieben und Löschen nur für Seiten, nicht für Anwendungswurzeln: Eine Wurzel
+            trägt Host, Zugangsmodus und Identitätsanbieter, und die verwaltet der Workspace.
+          -->
+          <template v-if="row.page.parentSurfaceKey">
+            <select
+              class="composer-pages__move"
+              :value="row.page.parentSurfaceKey"
+              :aria-label="`Übergeordnete Seite von ${row.page.label}`"
+              @change="movePage(row.page, ($event.target as HTMLSelectElement).value)"
+            >
+              <option
+                v-for="candidate in pageRows.filter((entry) => entry.page.surfaceKey !== row.page.surfaceKey)"
+                :key="candidate.page.surfaceKey"
+                :value="candidate.page.surfaceKey"
+              >
+                {{ candidate.page.label }}
+              </option>
+            </select>
+            <button type="button" class="composer-pages__delete" @click="deletePage(row.page)">
+              Löschen
+            </button>
+          </template>
         </li>
       </ul>
 
