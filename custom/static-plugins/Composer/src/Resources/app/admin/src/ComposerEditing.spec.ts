@@ -78,6 +78,16 @@ function stubFetch(): void {
         }
       }
 
+      if (url.endsWith('/composer/layouts')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => [
+            { layoutKey: 'portal', name: 'Portal', surfaceKey: 'portal', hasPublishedVersion: true },
+          ],
+        }
+      }
+
       return {
         ok: true,
         status: 200,
@@ -111,6 +121,7 @@ afterEach(() => {
 
 async function openEditor() {
   const wrapper = mount(ComposerAdminPage)
+  await flushPromises()
   await wrapper.find('#composer-layout-key').setValue('portal')
   await wrapper.find('form').trigger('submit')
   await flushPromises()
@@ -125,6 +136,76 @@ async function settleAutosave(): Promise<void> {
 
 const saves = () => requests.filter((request) => request.init?.method === 'PUT')
 const savedBody = (index: number) => JSON.parse(String(saves()[index].init?.body))
+
+describe('Die Layout-Auswahl', () => {
+  it('bietet die Layouts des Workspaces an, statt den Schlüssel tippen zu lassen', async () => {
+    // Wer den Schlüssel tippen muss, muss ihn kennen — und ein Tippfehler sieht aus wie ein
+    // fehlendes Layout.
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    const options = wrapper.find('#composer-layout-key').findAll('option').map((o) => o.text())
+    expect(options.some((text) => text.includes('Portal'))).toBe(true)
+  })
+
+  it('lässt das Textfeld übrig, wenn die Liste nicht geladen werden konnte', async () => {
+    // Wer den Schlüssel kennt, soll dann weiterarbeiten können, statt vor einer leeren Auswahl
+    // zu stehen.
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      throw new Error('offline')
+    }))
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    expect(wrapper.find('select#composer-layout-key').exists()).toBe(false)
+    expect(wrapper.find('input#composer-layout-key').exists()).toBe(true)
+  })
+})
+
+describe('Veröffentlichen und Verwerfen', () => {
+  it('speichert erst, dann veröffentlicht es', async () => {
+    // Sonst ginge ein Stand live, der die letzte Änderung nicht enthält — und niemand sähe,
+    // dass etwas fehlt.
+    const wrapper = await openEditor()
+    await wrapper.find('[data-cal-editor-block]').trigger('click')
+    await wrapper.find('#control-title').setValue('Neu')
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Veröffentlichen')!.trigger('click')
+    await flushPromises()
+
+    const methods = requests.map((request) => `${request.init?.method ?? 'GET'} ${request.url}`)
+    const save = methods.findIndex((entry) => entry.startsWith('PUT'))
+    const publish = methods.findIndex((entry) => entry.includes('/publish'))
+    expect(save).toBeGreaterThanOrEqual(0)
+    expect(publish).toBeGreaterThan(save)
+  })
+
+  it('veröffentlicht nicht, wenn das Speichern in einen Konflikt lief', async () => {
+    // Der fremde Stand wäre sonst das, was live geht.
+    saveResponses = [{ status: 409 }]
+    const wrapper = await openEditor()
+    await wrapper.find('[data-cal-editor-block]').trigger('click')
+    await wrapper.find('#control-title').setValue('Neu')
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Veröffentlichen')!.trigger('click')
+    await flushPromises()
+
+    expect(requests.some((request) => request.url.includes('/publish'))).toBe(false)
+  })
+
+  it('lädt nach dem Verwerfen neu', async () => {
+    // Verwerfen ersetzt den Entwurf durch den veröffentlichten Stand. Weiter gegen den alten
+    // Stempel zu speichern gäbe einen Konflikt gegen sich selbst.
+    const wrapper = await openEditor()
+    const before = requests.filter((request) => request.url.includes('/draft')).length
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Verwerfen')!.trigger('click')
+    await flushPromises()
+
+    expect(requests.some((request) => request.url.includes('/discard'))).toBe(true)
+    expect(requests.filter((r) => r.url.includes('/draft')).length).toBeGreaterThan(before)
+  })
+})
 
 describe('Blöcke auswählen und einstellen', () => {
   it('öffnet beim Klick auf einen Block sein generiertes Panel', async () => {

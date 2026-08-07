@@ -53,6 +53,18 @@ interface LoadedLayout {
 const AUTOSAVE_DELAY_MS = 800
 
 const layoutKey = ref('')
+/**
+ * Die Layouts dieses Workspaces. Eine Auswahl statt eines Textfelds: Wer den Schlüssel tippen
+ * muss, muss ihn kennen — und ein Tippfehler sieht aus wie ein fehlendes Layout.
+ */
+interface LayoutSummary {
+  layoutKey: string
+  name: string
+  surfaceKey: string | null
+  hasPublishedVersion: boolean
+}
+
+const layouts = ref<LayoutSummary[]>([])
 const layout = ref<LoadedLayout | null>(null)
 const document = ref<LayoutDocument>(emptyDocument())
 /** Der Stand, der auf dem Server liegt — der Vergleich, der das Laden vom Ändern trennt. */
@@ -73,6 +85,7 @@ const error = ref<string | null>(null)
 const conflict = ref(false)
 const saving = ref(false)
 const loading = ref(false)
+const publishing = ref(false)
 
 /**
  * Die Token-Rollen, aus denen ein Erscheinungs-Control wählen darf — gelesen aus genau dem CSS,
@@ -104,6 +117,23 @@ const selectedDefinition = computed<BlockDefinition | undefined>(() => {
   return blockId ? availableBlocks.value.find((block) => block.id === blockId) : undefined
 })
 
+/**
+ * Holt die Auswahl. Ein Fehler hier lässt das Textfeld übrig, statt die Seite zu blockieren:
+ * Wer den Schlüssel kennt, soll weiterarbeiten können.
+ */
+async function loadLayouts(): Promise<void> {
+  try {
+    const response = await fetch('/api/ext/admin/composer/layouts', { credentials: 'same-origin' })
+    if (response.ok) {
+      layouts.value = await response.json()
+    }
+  } catch {
+    layouts.value = []
+  }
+}
+
+void loadLayouts()
+
 async function load(): Promise<void> {
   if (!layoutKey.value) {
     return
@@ -130,11 +160,15 @@ async function load(): Promise<void> {
       workspaceKey: draft.workspaceKey,
       surfaceKey: draft.surfaceKey ?? null,
     }
+    published.value = false
     document.value = readDocument(draft.document)
     savedDocument.value = document.value
     changedAtUtc.value = draft.changedAtUtc ?? null
 
     await loadPreview(layout.value)
+    // Nach dem Laden aktualisieren: Ein gerade veröffentlichtes Layout soll in der Auswahl
+    // nicht weiter als unveröffentlicht stehen.
+    void loadLayouts()
   } catch {
     error.value = 'Der Entwurf konnte nicht geladen werden.'
   } finally {
@@ -306,6 +340,54 @@ async function save(): Promise<void> {
   }
 }
 
+/**
+ * Veröffentlichen und Verwerfen — die beiden Übergänge, die über den Unterschied zwischen dem
+ * entscheiden, was jemand gebaut hat, und dem, was Besucher sehen (§7.2).
+ *
+ * Vor beiden wird der ausstehende Autosave abgewartet. Sonst veröffentlichte man einen Stand,
+ * der die letzte Änderung noch nicht enthält — und niemand sähe, dass etwas fehlt.
+ */
+async function transition(action: 'publish' | 'discard'): Promise<void> {
+  const current = layout.value
+  if (!current || publishing.value) {
+    return
+  }
+
+  clearTimeout(autosaveTimer)
+  await save()
+  if (conflict.value) {
+    return
+  }
+
+  publishing.value = true
+  error.value = null
+  try {
+    const response = await fetch(
+      `/api/ext/admin/composer/layouts/${encodeURIComponent(current.layoutKey)}/${action}`,
+      { method: 'POST', credentials: 'same-origin' },
+    )
+    if (!response.ok) {
+      error.value = action === 'publish'
+        ? 'Die Veröffentlichung ist fehlgeschlagen.'
+        : 'Der Entwurf konnte nicht verworfen werden.'
+      return
+    }
+
+    published.value = action === 'publish'
+    // Neu laden: Verwerfen ersetzt den Entwurf durch den veröffentlichten Stand, und
+    // Veröffentlichen beginnt einen neuen mit neuer Nummer und neuem Stempel. Beides weiter
+    // gegen den alten Stempel zu speichern gäbe einen Konflikt gegen sich selbst.
+    await load()
+  } catch {
+    error.value = 'Die Aktion konnte nicht ausgeführt werden.'
+  } finally {
+    publishing.value = false
+  }
+}
+
+/** Ob seit dem letzten Laden veröffentlicht wurde — für die Rückmeldung, sonst nichts. */
+const published = ref(false)
+
 function draftUrl(key: string): string {
   return `/api/ext/admin/composer/layouts/${encodeURIComponent(key)}/draft`
 }
@@ -317,7 +399,19 @@ function draftUrl(key: string): string {
       <h1>Flächen gestalten</h1>
       <form class="composer__load" @submit.prevent="load">
         <label for="composer-layout-key">Layout</label>
-        <input id="composer-layout-key" v-model="layoutKey" type="text" placeholder="portal" />
+        <!--
+          Auswahl, wo es etwas zu wählen gibt; Textfeld, wo die Liste nicht geladen werden
+          konnte. Wer den Schlüssel kennt, soll dann weiterarbeiten können.
+        -->
+        <select v-if="layouts.length > 0" id="composer-layout-key" v-model="layoutKey">
+          <option value="">Layout wählen …</option>
+          <option v-for="entry in layouts" :key="entry.layoutKey" :value="entry.layoutKey">
+            {{ entry.name }}{{ entry.surfaceKey ? ` — ${entry.surfaceKey}` : ' — ohne Fläche' }}{{
+              entry.hasPublishedVersion ? '' : ' (nicht veröffentlicht)'
+            }}
+          </option>
+        </select>
+        <input v-else id="composer-layout-key" v-model="layoutKey" type="text" placeholder="portal" />
         <button type="submit" :disabled="loading || !layoutKey">Laden</button>
       </form>
     </header>
@@ -361,6 +455,26 @@ function draftUrl(key: string): string {
           Blöcke auswählen statt bedienen
         </label>
         <span class="composer__status">{{ saving ? 'Wird gespeichert …' : '' }}</span>
+
+        <!--
+          Der Entwurf ist der Normalzustand; Veröffentlichen ist die Entscheidung. Deshalb
+          steht der Zustand links und die Aktion rechts, und „Verwerfen" ist zurückhaltender
+          gestaltet als „Veröffentlichen" — es wirft Arbeit weg.
+        -->
+        <div class="composer__transitions">
+          <span class="composer__status">{{ published ? 'Veröffentlicht' : 'Entwurf' }}</span>
+          <button type="button" :disabled="publishing || conflict" @click="transition('discard')">
+            Verwerfen
+          </button>
+          <button
+            type="button"
+            class="composer__publish"
+            :disabled="publishing || conflict"
+            @click="transition('publish')"
+          >
+            Veröffentlichen
+          </button>
+        </div>
       </div>
 
       <!--

@@ -38,6 +38,33 @@ public sealed class SurfaceLayoutStore(
     }
 
     /// <summary>
+    /// Die Layouts eines Workspaces, für die Auswahl im Editor.
+    /// <para>
+    /// Mit der Angabe, ob eine Version veröffentlicht ist — der Unterschied zwischen „gebaut"
+    /// und „für Besucher sichtbar" ist der, den ein Editor am ehesten übersieht.
+    /// </para>
+    /// </summary>
+    public async Task<IReadOnlyList<Admin.LayoutListResponse>> ListAsync(
+        string workspaceKey,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = factory.CreateDbContext();
+
+        return await db.Layouts
+            .AsNoTracking()
+            .Where(layout => layout.WorkspaceKey == workspaceKey)
+            .OrderBy(layout => layout.Name)
+            .Select(layout => new Admin.LayoutListResponse(
+                layout.Key,
+                layout.Name,
+                layout.SurfaceKey,
+                db.Versions.Any(version =>
+                    version.LayoutKey == layout.Key && version.State == SurfaceLayoutState.Published)))
+            .ToArrayAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Die Surface-Schlüssel dieses Workspaces, für die eine Version veröffentlicht ist.
     /// <para>
     /// Eine Abfrage für alle: Die Navigation zeigt bei jedem Aufruf den ganzen Baum, und
