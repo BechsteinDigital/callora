@@ -26,6 +26,14 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IQuiescableChannel, IDispos
     /// </summary>
     private const int ServiceUnavailableStatus = 503;
 
+    /// <summary>
+    /// SIP status for an inbound call the account has no free line for. 486 rather than the drain's
+    /// 503, because the two say different things to a carrier: out of service sends the call down
+    /// another route and invites the carrier to stop routing here at all, which is the wrong answer to
+    /// a busy minute. A full trunk is occupied, and it will free up.
+    /// </summary>
+    private const int BusyHereStatus = 486;
+
     private static readonly IReadOnlyCollection<string> VoiceCapability = [CommunicationCapabilities.Voice];
 
     private readonly IPhoneLine _line;
@@ -174,8 +182,16 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IQuiescableChannel, IDispos
         }
 
         // Inbound calls count against the concurrent-call ceiling so outbound gating reflects the real
-        // trunk load.
-        Interlocked.Increment(ref _activeCalls);
+        // trunk load — and one the account has no line for is refused instead of counted. Counting it
+        // anyway made the ceiling one-sided: outbound was blocked while inbound kept arriving, so the
+        // trunk ran over the limit an operator had set. Reserved the same way as a dial, because
+        // twenty INVITEs at once is a Monday morning and not a stress test.
+        if (Interlocked.Increment(ref _activeCalls) > _maxConcurrentCalls)
+        {
+            Interlocked.Decrement(ref _activeCalls);
+            _ = RejectAtCapacityAsync(e.Call);
+            return;
+        }
 
         // Wrap the SDK call so consumers only ever see the foundation contract (and can open audio).
         var call = new SdkCall(e.Call, _mediaTapFactory);
@@ -241,20 +257,49 @@ public sealed class SdkVoiceChannel : IVoiceChannel, IQuiescableChannel, IDispos
     /// </summary>
     private async Task RejectQuiescedAsync(CalloraVoipSdk.Core.Domain.Calls.ICall call)
     {
-        try
+        if (await TryRejectAsync(call, ServiceUnavailableStatus, "Service Unavailable").ConfigureAwait(false))
         {
-            await call.RejectAsync(ServiceUnavailableStatus, "Service Unavailable").ConfigureAwait(false);
             _logger.LogInformation(
                 "Channel {ChannelId} refused an inbound call with {Status} while draining.",
                 ChannelId,
                 ServiceUnavailableStatus);
         }
+    }
+
+    /// <summary>
+    /// Turns an INVITE away that arrived with every line busy. Fire-and-forget for the same reason as
+    /// the drain: the SDK raises the arrival synchronously.
+    /// </summary>
+    private async Task RejectAtCapacityAsync(CalloraVoipSdk.Core.Domain.Calls.ICall call)
+    {
+        if (await TryRejectAsync(call, BusyHereStatus, "Busy Here").ConfigureAwait(false))
+        {
+            // Worth an operator's attention rather than a debug line: this is what "the trunk is too
+            // small" looks like from the inside.
+            _logger.LogInformation(
+                "Channel {ChannelId} refused an inbound call with {Status}: all {Limit} line(s) are in use.",
+                ChannelId,
+                BusyHereStatus,
+                _maxConcurrentCalls);
+        }
+    }
+
+    /// <summary>
+    /// Refuses one call, reporting whether it worked. The caller hearing nothing is bad; a background
+    /// exception tearing down the process is worse, and the carrier times the invitation out either way.
+    /// </summary>
+    private async Task<bool> TryRejectAsync(CalloraVoipSdk.Core.Domain.Calls.ICall call, int status, string reason)
+    {
+        try
+        {
+            await call.RejectAsync(status, reason).ConfigureAwait(false);
+            return true;
+        }
         catch (Exception ex)
         {
-            // The caller hearing nothing is bad; a background exception tearing down the process is
-            // worse. The carrier times the invitation out either way.
             _logger.LogWarning(
-                ex, "Channel {ChannelId} failed to refuse an inbound call while draining.", ChannelId);
+                ex, "Channel {ChannelId} failed to refuse an inbound call with {Status}.", ChannelId, status);
+            return false;
         }
     }
 
