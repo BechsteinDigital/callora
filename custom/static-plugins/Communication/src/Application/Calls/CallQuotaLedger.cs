@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Callora.Plugin.Communication.Abstractions;
 
 namespace Callora.Plugin.Communication.Application.Calls;
 
@@ -16,30 +17,30 @@ namespace Callora.Plugin.Communication.Application.Calls;
 /// <para><b>An origin without a quota is unlimited.</b> Splitting a trunk is deliberate, and an
 /// operator who configured nothing wanted no split — not a silent limit of zero.</para>
 /// </remarks>
-public sealed class CallQuotaLedger
+public sealed class CallQuotaLedger : ICallQuotaRegistry
 {
     private readonly ConcurrentDictionary<CallQuotaKey, int> _limits = new();
     private readonly ConcurrentDictionary<CallQuotaKey, int> _inUse = new();
 
-    /// <summary>
-    /// Sets the quotas for one account, replacing whatever was configured before. Takes effect for the
-    /// next reservation: an operator raising a quota expects it to apply now, not once the calls that
-    /// were running under the old one have ended.
-    /// </summary>
-    public void Configure(string workspaceKey, string accountId, IReadOnlyDictionary<string, int> quotas)
+    /// <inheritdoc />
+    /// <remarks>
+    /// Takes effect for the next reservation: an operator raising a quota expects it to apply now, not
+    /// once the calls running under the old one have ended.
+    /// </remarks>
+    public void Configure(string workspaceKey, string channelId, IReadOnlyDictionary<string, int> quotas)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
-        ArgumentException.ThrowIfNullOrWhiteSpace(accountId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
         ArgumentNullException.ThrowIfNull(quotas);
 
-        foreach (var key in _limits.Keys.Where(k => k.Matches(workspaceKey, accountId)).ToList())
+        foreach (var key in _limits.Keys.Where(k => k.Matches(workspaceKey, channelId)).ToList())
         {
             _limits.TryRemove(key, out _);
         }
 
         foreach (var (origin, limit) in quotas)
         {
-            _limits[new CallQuotaKey(workspaceKey, accountId, origin)] = limit;
+            _limits[new CallQuotaKey(workspaceKey, channelId, origin)] = limit;
         }
     }
 
@@ -47,13 +48,13 @@ public sealed class CallQuotaLedger
     /// Claims one line for <paramref name="origin"/>, or returns <see langword="null"/> when its quota
     /// is exhausted. Dispose the reservation to give the line back.
     /// </summary>
-    public IDisposable? TryReserve(string workspaceKey, string accountId, string origin)
+    public IDisposable? TryReserve(string workspaceKey, string channelId, string origin)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
-        ArgumentException.ThrowIfNullOrWhiteSpace(accountId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
         ArgumentException.ThrowIfNullOrWhiteSpace(origin);
 
-        var key = new CallQuotaKey(workspaceKey, accountId, origin);
+        var key = new CallQuotaKey(workspaceKey, channelId, origin);
         if (!_limits.TryGetValue(key, out var limit))
         {
             return new CallQuotaReservation(this, key, counted: false);

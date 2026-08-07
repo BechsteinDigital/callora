@@ -69,6 +69,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
     private CommunicationRuntimeCapabilitySource? _capabilitySource;
     private CallAudioPlaybackService? _callAudioPlayback;
     private IncomingCallOwnerRegistry? _incomingCallOwners;
+    private CallQuotaLedger? _callQuotas;
 
     // Call-control primitive, exported for in-process consumers (and the REST adapter); set when the
     // plugin has a database (it records call history). Disposed on stop so no call handler dangles.
@@ -157,6 +158,11 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
             // Media teardown is wired into call control from the start: a call that ends must close
             // its streams (#114), and that has to hold for the very first call the host places.
             mediaStreamSessionStore = new EfMediaStreamSessionStore(dbContextFactory);
+            // Line quotas (#159). Built before call control, which reserves through it, and exported so
+            // quotas can be configured at all — a ledger nobody can fill limits nothing.
+            _callQuotas = new CallQuotaLedger();
+            context.Export<ICallQuotaRegistry>(_callQuotas);
+
             _callControlService = new CallControlService(
                 _channelRegistry,
                 callLogStore,
@@ -167,7 +173,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                     mediaConnections,
                     TimeProvider.System,
                     ResolveLogger<CallMediaStreamTerminator>(context.Services)),
-                _callEventBroadcaster);
+                _callEventBroadcaster,
+                _callQuotas);
             context.Export<ICallControlService>(_callControlService);
 
             // The same instance under its observation face: one tracked-call state, so a consumer
