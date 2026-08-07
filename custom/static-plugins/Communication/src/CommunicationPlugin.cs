@@ -68,6 +68,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
     private SipAccountRuntimeReconciler? _sipRuntimeReconciler;
     private CommunicationRuntimeCapabilitySource? _capabilitySource;
     private CallAudioPlaybackService? _callAudioPlayback;
+    private IncomingCallOwnerRegistry? _incomingCallOwners;
 
     // Call-control primitive, exported for in-process consumers (and the REST adapter); set when the
     // plugin has a database (it records call history). Disposed on stop so no call handler dangles.
@@ -231,7 +232,17 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
             // Observe inbound calls on every channel (present and future) → call.ringing + history +
             // lifecycle. Started now so it catches channels as voice provisioning registers them below.
             // It never answers or routes — that is a consumer plugin's (PBX) decision.
-            _incomingCallObserver = new IncomingCallObserver(_channelRegistry, _callControlService);
+            // Where a consumer signs up to decide about inbound calls (#159). Built before the observer
+            // that offers calls to it. A registry rather than an export because several consumers may
+            // own calls at once, and a contract resolves to a single provider.
+            _incomingCallOwners = new IncomingCallOwnerRegistry(ResolveLogger<IncomingCallOwnerRegistry>(context.Services));
+            context.Export<IIncomingCallOwnerRegistry>(_incomingCallOwners);
+
+            _incomingCallObserver = new IncomingCallObserver(
+                _channelRegistry,
+                _callControlService,
+                _incomingCallOwners,
+                ResolveLogger<IncomingCallObserver>(context.Services));
             _incomingCallObserver.Start();
         }
 
@@ -257,6 +268,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
             // arrive duplicated and from two threads, and the end of an entry is ambiguous — every
             // consumer would otherwise solve that again, slightly differently.
             context.Export<ICallDtmfCollector>(new CallDtmfCollector(_callControlService, TimeProvider.System));
+
         }
 
         // Operator Admin-API: the status route always; the SIP-account management routes only when
