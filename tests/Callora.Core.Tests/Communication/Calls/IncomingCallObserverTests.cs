@@ -76,13 +76,14 @@ public sealed class IncomingCallObserverTests
 
     private static (IncomingCallObserver Observer, CommunicationChannelRegistry Registry, RecordingCallLogStore Store) Create(
         IncomingCallOwnerRegistry? owners = null,
-        CallJourney? journey = null)
+        CallJourney? journey = null,
+        CallQuotaLedger? quotas = null)
     {
         var registry = new CommunicationChannelRegistry();
         var store = new RecordingCallLogStore();
         var service = new CallControlService(
             registry, store, NullLogger<CallControlService>.Instance, TimeProvider.System,
-            journey: journey);
+            quotas: quotas, journey: journey);
         return (new IncomingCallObserver(registry, service, owners, journey: journey), registry, store);
     }
 
@@ -162,6 +163,101 @@ public sealed class IncomingCallObserverTests
         Assert.Contains("call.ringing", store.Added[0].Journey.Select(step => step.Step));
         Assert.Empty(journey.Read(Workspace, "in-1"));
     }
+
+    // ── Kontingente auf der eingehenden Seite ───────────────────────────────
+
+    [Fact]
+    public async Task ACallBeyondTheNumbersQuota_IsRefusedAndSaysSo()
+    {
+        // Quotas only ever applied to dialling. For a support line, which is mostly called, that was
+        // the wrong half: the number an operator limits is the one nobody could limit.
+        var journey = new CallJourney();
+        var quotas = new CallQuotaLedger();
+        quotas.Configure(Workspace, "ch-1", new Dictionary<string, int> { ["+493012345678"] = 1 });
+        var (observer, registry, store) = Create(journey: journey, quotas: quotas);
+        observer.Start();
+        var channel = new FakeCommunicationChannel { ChannelId = "ch-1" };
+        registry.Register(Workspace, channel);
+
+        channel.RaiseIncoming(InboundTo("in-1", "+493012345678"));
+        await Task.Delay(50);
+        var refused = InboundTo("in-2", "+493012345678");
+        channel.RaiseIncoming(refused);
+        await Task.Delay(50);
+
+        Assert.True(refused.RejectCalled);
+
+        // In der Historie trotzdem: „wir haben um neun zwölf Anrufe verloren" ist genau die Zahl,
+        // wegen der jemand das Kontingent anfasst.
+        Assert.Equal(2, store.Added.Count);
+        Assert.Contains("call.quota-exhausted", store.Added[1].Journey.Select(step => step.Step));
+    }
+
+    [Fact]
+    public async Task AnotherNumbersCall_IsUnaffectedByAFullOne()
+    {
+        var quotas = new CallQuotaLedger();
+        quotas.Configure(Workspace, "ch-1", new Dictionary<string, int> { ["+493012345678"] = 1 });
+        var (observer, registry, _) = Create(quotas: quotas);
+        observer.Start();
+        var channel = new FakeCommunicationChannel { ChannelId = "ch-1" };
+        registry.Register(Workspace, channel);
+
+        channel.RaiseIncoming(InboundTo("in-1", "+493012345678"));
+        await Task.Delay(50);
+        var other = InboundTo("in-2", "+493087654321");
+        channel.RaiseIncoming(other);
+        await Task.Delay(50);
+
+        Assert.False(other.RejectCalled);
+    }
+
+    [Fact]
+    public async Task WhenACallEnds_ItGivesItsLineBack()
+    {
+        var quotas = new CallQuotaLedger();
+        quotas.Configure(Workspace, "ch-1", new Dictionary<string, int> { ["+493012345678"] = 1 });
+        var (observer, registry, _) = Create(quotas: quotas);
+        observer.Start();
+        var channel = new FakeCommunicationChannel { ChannelId = "ch-1" };
+        registry.Register(Workspace, channel);
+        var first = InboundTo("in-1", "+493012345678");
+
+        channel.RaiseIncoming(first);
+        await Task.Delay(50);
+        first.Transition(CallState.Terminated);
+        await Task.Delay(50);
+
+        var next = InboundTo("in-2", "+493012345678");
+        channel.RaiseIncoming(next);
+        await Task.Delay(50);
+
+        Assert.False(next.RejectCalled);
+    }
+
+    [Fact]
+    public async Task WithoutAConfiguredQuota_NothingIsLimited()
+    {
+        // Keine Konfiguration heißt unbegrenzt, nicht null — dieselbe Regel wie ausgehend.
+        var (observer, registry, _) = Create(quotas: new CallQuotaLedger());
+        observer.Start();
+        var channel = new FakeCommunicationChannel { ChannelId = "ch-1" };
+        registry.Register(Workspace, channel);
+
+        channel.RaiseIncoming(InboundTo("in-1", "+493012345678"));
+        await Task.Delay(50);
+        var second = InboundTo("in-2", "+493012345678");
+        channel.RaiseIncoming(second);
+        await Task.Delay(50);
+
+        Assert.False(second.RejectCalled);
+    }
+
+    private static ControllableCall InboundTo(string id, string calledNumber) =>
+        new(id, initial: CallState.Ringing, direction: CallDirection.Inbound)
+        {
+            Inbound = new InboundCallIdentity(CalledNumber: calledNumber),
+        };
 
     private static ControllableCall Inbound(string id = "in-1") =>
         new(id, initial: CallState.Ringing, direction: CallDirection.Inbound);
