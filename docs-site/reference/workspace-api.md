@@ -39,7 +39,8 @@ Sources: `src/Workspace/Api/WorkspacePublicEndpoints.cs` and
 | GET | `/workspace/public/bootstrap.js` | JavaScript that sets `window.__CALLORA_WORKSPACE_CONTEXT__`. | Anonymous | `application/javascript` (no-store) |
 | GET | `/workspace/public/context` | The resolved workspace + public route metadata. | Anonymous | JSON `{ workspace, route }` or `404` |
 | GET | `/workspace/public/ui-chain` | The workspace's ordered UI-chain plugin ids. | Anonymous (Public); `Authenticated` → `404` for anonymous callers | JSON `{ workspaceKey, chain }` or `404` |
-| GET | `/workspace/public/theme` | The workspace's effective theme tokens. | Anonymous | JSON `{ workspaceKey, themePluginId, themeVersion, valuesByKey }` |
+| GET | `/workspace/public/theme` | The workspace's effective theme tokens **and its section layouts**. | Anonymous | JSON `{ workspaceKey, themePluginId, themeVersion, valuesByKey, sectionLayouts }` |
+| GET | `/workspace/public/navigation` | A surface's navigation — the children of its application root, each with its full path. | Anonymous | JSON `{ workspaceKey, surfaceKey, items }` or `404` |
 | GET | `/surface/render` | Server-render the workspace's own template chain (or the SPA shell). | Anonymous (Public); `Authenticated` → `302 /login` for anonymous callers | `text/html`, `302`, or `404` |
 
 > The same file also maps a few public **redirect** routes on this host —
