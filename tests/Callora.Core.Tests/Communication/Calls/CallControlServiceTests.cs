@@ -660,6 +660,11 @@ internal sealed class ControllableCall : ICall
 
     public CallTerminationReason? TerminationReason { get; set; }
 
+    /// <summary>Which of our numbers the caller reached; only inbound calls report one.</summary>
+    public InboundCallIdentity? Inbound { get; init; }
+
+    public InboundCallIdentity? InboundIdentity => Inbound;
+
     public bool HangupCalled { get; private set; }
 
     public event EventHandler<CallStateChangedEventArgs>? StateChanged;
