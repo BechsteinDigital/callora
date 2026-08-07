@@ -344,6 +344,128 @@ public sealed class SipAccountAdminRoutesTests
         Assert.NotEqual("ref", digest.PasswordSecretRef); // rotated to a fresh protected reference
     }
 
+    // ── Call quotas ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Create_WithQuotas_PersistsAndEchoesThem()
+    {
+        var store = new InMemorySipAccountStore();
+        var handler = new CreateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        var response = await handler.HandleAsync(Request("POST", "sip-accounts", "ws-a", body: new
+        {
+            displayName = "Berlin Trunk",
+            host = "sip.example.com",
+            username = "user",
+            password = "s3cret",
+            maxConcurrentCalls = 12,
+            callQuotas = new[]
+            {
+                new { origin = "crm", maxConcurrentCalls = 10 },
+                new { origin = "dialer:campaign-x", maxConcurrentCalls = 2 },
+            },
+        }));
+
+        Assert.Equal(201, response.StatusCode);
+        var persisted = Assert.Single(await store.ListAsync("ws-a"));
+        Assert.Equal(
+            [("crm", 10), ("dialer:campaign-x", 2)],
+            persisted.CallQuotas.Select(q => (q.Origin, q.MaxConcurrentCalls)));
+        Assert.Contains("dialer:campaign-x", JsonSerializer.Serialize(response.Payload), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Create_WithTheSameOriginTwice_IsRejected()
+    {
+        var handler = new CreateSipAccountRouteHandler(new InMemorySipAccountStore(), new CapturingDataProtector(), PluginId);
+
+        var response = await handler.HandleAsync(Request("POST", "sip-accounts", "ws-a", body: new
+        {
+            displayName = "A",
+            host = "sip.example.com",
+            username = "user",
+            password = "s3cret",
+            callQuotas = new[]
+            {
+                new { origin = "crm", maxConcurrentCalls = 10 },
+                new { origin = "crm", maxConcurrentCalls = 2 },
+            },
+        }));
+
+        // 400 rather than a 500 out of the domain: a typo in a form is the operator's mistake to fix,
+        // and they need to be told which origin.
+        Assert.Equal(400, response.StatusCode);
+        Assert.Contains("crm", JsonSerializer.Serialize(response.Payload), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Create_WithAQuotaBelowOne_IsRejected()
+    {
+        var handler = new CreateSipAccountRouteHandler(new InMemorySipAccountStore(), new CapturingDataProtector(), PluginId);
+
+        var response = await handler.HandleAsync(Request("POST", "sip-accounts", "ws-a", body: new
+        {
+            displayName = "A",
+            host = "sip.example.com",
+            username = "user",
+            password = "s3cret",
+            callQuotas = new[] { new { origin = "crm", maxConcurrentCalls = 0 } },
+        }));
+
+        Assert.Equal(400, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_WithoutQuotas_KeepsThem()
+    {
+        // Same rule as maxConcurrentCalls: an omitted field is not an instruction to clear.
+        var store = new InMemorySipAccountStore();
+        store.Seed(Account("a1", "ws-a", quotas: [new CallQuota("crm", 10)]));
+        var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a",
+            routeValues: new() { ["accountId"] = "a1" },
+            body: new { displayName = "Renamed", host = "sip.example.com", username = "user" }));
+
+        Assert.Equal(10, Assert.Single((await store.GetAsync("ws-a", "a1"))!.CallQuotas).MaxConcurrentCalls);
+    }
+
+    [Fact]
+    public async Task Update_WithAnEmptyList_ClearsThem()
+    {
+        // ...and an empty list is: there has to be a way back to an undivided trunk.
+        var store = new InMemorySipAccountStore();
+        store.Seed(Account("a1", "ws-a", quotas: [new CallQuota("crm", 10)]));
+        var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a",
+            routeValues: new() { ["accountId"] = "a1" },
+            body: new { displayName = "A", host = "sip.example.com", username = "user", callQuotas = Array.Empty<object>() }));
+
+        Assert.Empty((await store.GetAsync("ws-a", "a1"))!.CallQuotas);
+    }
+
+    [Fact]
+    public async Task Update_WithNewQuotas_ReplacesThem()
+    {
+        var store = new InMemorySipAccountStore();
+        store.Seed(Account("a1", "ws-a", quotas: [new CallQuota("crm", 10)]));
+        var handler = new UpdateSipAccountRouteHandler(store, new CapturingDataProtector(), PluginId);
+
+        await handler.HandleAsync(Request("PUT", "sip-accounts/a1", "ws-a",
+            routeValues: new() { ["accountId"] = "a1" },
+            body: new
+            {
+                displayName = "A",
+                host = "sip.example.com",
+                username = "user",
+                callQuotas = new[] { new { origin = "dialer", maxConcurrentCalls = 3 } },
+            }));
+
+        var quota = Assert.Single((await store.GetAsync("ws-a", "a1"))!.CallQuotas);
+        Assert.Equal(("dialer", 3), (quota.Origin, quota.MaxConcurrentCalls));
+    }
+
     [Fact]
     public async Task Update_ForeignWorkspaceAccount_IsNotFound()
     {
@@ -407,11 +529,15 @@ public sealed class SipAccountAdminRoutesTests
         Assert.Equal("Renamed", (await store.GetAsync("ws-a", "a1"))!.DisplayName);
     }
 
-    private static SipAccount Account(string id, string workspaceKey, bool enabled = true)
+    private static SipAccount Account(
+        string id,
+        string workspaceKey,
+        bool enabled = true,
+        CallQuota[]? quotas = null)
     {
         var auth = new DigestAuthentication("user", authId: null, passwordSecretRef: "ref");
         var connection = new SipConnection("sip.example.com", 5060, SipTransport.Udp, SipAccountMode.Register, auth, 300);
-        return new SipAccount(id, workspaceKey, $"Account {id}", connection, maxConcurrentCalls: 1, enabled);
+        return new SipAccount(id, workspaceKey, $"Account {id}", connection, maxConcurrentCalls: 1, enabled, quotas);
     }
 
     private static HostAdminApiRequest Request(

@@ -10,6 +10,11 @@ namespace Callora.Plugin.Communication.Application.Admin.SipAccounts;
 /// what the provider last reported (#112), so an operator can tell a never-connected account from
 /// one that worked until a given moment. <c>LastError</c> is redacted in the domain.
 /// </para>
+/// <para>
+/// <c>CallQuotas</c> hands the domain value straight back: it is exactly what the operator sent, it
+/// carries nothing they may not see, and a view type of its own would be the same two fields under a
+/// second name.
+/// </para>
 /// </summary>
 public sealed record SipAccountResponse(
     string Id,
@@ -25,6 +30,7 @@ public sealed record SipAccountResponse(
     string? OutboundProxy,
     IReadOnlyList<string> InboundNumbers,
     int MaxConcurrentCalls,
+    IReadOnlyList<CallQuota> CallQuotas,
     bool Enabled,
     string Status,
     string? LastError,
@@ -53,6 +59,7 @@ public sealed record SipAccountResponse(
             connection.OutboundProxy,
             connection.InboundNumbers,
             account.MaxConcurrentCalls,
+            account.CallQuotas,
             account.Enabled,
             account.Status.ToString(),
             account.LastError,

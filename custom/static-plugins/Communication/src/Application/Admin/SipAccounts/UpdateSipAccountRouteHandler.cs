@@ -86,7 +86,18 @@ public sealed class UpdateSipAccountRouteHandler(
             return Bad("maxConcurrentCalls must be at least 1.");
         }
 
-        account.Reconfigure(body.DisplayName!, connection!, maxConcurrentCalls);
+        // Omitted keeps, an empty list clears — the same rule maxConcurrentCalls follows, and the only
+        // way back to an undivided trunk.
+        if (!CallQuotaValidation.TryBuild(body.CallQuotas, out var callQuotas, out var quotaError))
+        {
+            return Bad(quotaError!);
+        }
+
+        account.Reconfigure(
+            body.DisplayName!,
+            connection!,
+            maxConcurrentCalls,
+            body.CallQuotas is null ? account.CallQuotas : callQuotas);
         await store.UpdateAsync(account, cancellationToken).ConfigureAwait(false);
 
         // Credential, endpoint or capacity changes reconnect the live channel (#110).

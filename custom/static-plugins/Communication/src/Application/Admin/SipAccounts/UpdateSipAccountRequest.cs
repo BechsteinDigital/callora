@@ -25,4 +25,5 @@ public sealed record UpdateSipAccountRequest(
     int? RegistrationExpirySeconds,
     string? OutboundProxy,
     IReadOnlyList<string>? InboundNumbers,
-    int? MaxConcurrentCalls) : ISipConnectionInput;
+    int? MaxConcurrentCalls,
+    IReadOnlyList<CallQuotaRequest>? CallQuotas = null) : ISipConnectionInput;
