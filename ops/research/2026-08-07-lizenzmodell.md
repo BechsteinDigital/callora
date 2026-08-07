@@ -159,6 +159,40 @@ Dritte beigetragen haben.
    verschieden lizenziert sind.
 3. **Einen `NOTICE`- oder Lizenz-Abschnitt in der Doku**, der die drei Schichten benennt. Ein
    Plugin-Autor muss ohne Nachfrage wissen, was für ihn gilt.
-4. **Contributor-Frage klären.** Wer beiträgt, muss die Rechte so einräumen, dass ein späterer
-   Lizenzwechsel oder eine kommerzielle Ausnahme möglich bleibt (CLA oder DCO plus
-   Lizenzhinweis). Ohne das ist §5 in einem Jahr nicht mehr umsetzbar.
+4. **Contributor-Frage: DCO, nicht CLA.** Siehe §7.
+
+## 7. DCO statt CLA
+
+**Empfehlung: DCO** (`Signed-off-by:`-Trailer), sobald Beiträge von außen kommen.
+
+**Der Grund, der oft übersehen wird:** Apache-2.0 **§5** leistet bereits, was ein License-CLA
+leisten würde — jeder Beitrag steht automatisch unter der Projektlizenz, sofern nichts anderes
+vereinbart ist. Ein CLA würde diesen Teil nur wiederholen.
+
+Was §5 **nicht** abdeckt, ist die Frage, ob der Beitragende überhaupt berechtigt war.
+Arbeitgeber-IP ist das reale Risiko, gerade wenn Agenturentwickler beitragen — und genau das
+bestätigt der DCO. Eine Zeile im Commit, kein Vertrag, kein Bot.
+
+**Wofür man ein CLA bräuchte, und warum es hier nicht zutrifft:**
+
+| Zweck eines CLA | Trifft zu? |
+|---|---|
+| Späterer Lizenzwechsel | Nein — Apache ist die Endentscheidung, und ein Wechsel zu Copyleft ist die Richtung, die §4.5 gerade ausschließt |
+| Dual-Licensing verkaufen | Nein — bei einer permissiven Lizenz gibt es nichts, wovon ein Kunde freigekauft werden müsste |
+| Code ins proprietäre Plugin übernehmen | Nein — Apache erlaubt das, es braucht nur Attribution |
+
+Dazu der politische Preis: Viele Entwickler lehnen CLAs grundsätzlich ab, weil sie Rechte an ein
+Unternehmen abtreten. Für ein junges Projekt, das Beitragende gewinnen will, ist das teuer
+erkauft.
+
+### 7.1 Der Marketplace braucht etwas anderes
+
+Beides wird leicht verwechselt, richtet sich aber an verschiedene Gruppen:
+
+- Der **DCO** regelt, wer an **Callora beiträgt**.
+- Ein **Publisher-Vertrag** regelt, wer **auf Callora verkauft**: Rechtegarantie am eigenen Code,
+  Haftung, Supportzusage, Provision, Rücknahme bei Verstoß.
+
+Der Marketplace braucht kein CLA. Er braucht Publisher-Verträge, und die sind ein eigenes
+Vorhaben — sie hängen am Zahlungsanbieter und am Signatur-/Provenance-Modell, nicht an der
+Lizenz des Kerns.
