@@ -1,4 +1,6 @@
 using Callora.Plugin.Communication.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Callora.Plugin.Communication.Application.Calls;
 
@@ -13,6 +15,8 @@ internal sealed class IncomingCallObserver : IDisposable
 {
     private readonly ICommunicationChannelRegistry _registry;
     private readonly CallControlService _callControl;
+    private readonly IncomingCallOwnerRegistry? _owners;
+    private readonly ILogger _logger;
 
     // One IncomingCall subscription per registered channel, keyed by the channel instance so it can be
     // detached on unregister/dispose. Guarded because registry callbacks can arrive concurrently.
@@ -20,10 +24,16 @@ internal sealed class IncomingCallObserver : IDisposable
     private readonly object _gate = new();
     private bool _disposed;
 
-    public IncomingCallObserver(ICommunicationChannelRegistry registry, CallControlService callControl)
+    public IncomingCallObserver(
+        ICommunicationChannelRegistry registry,
+        CallControlService callControl,
+        IncomingCallOwnerRegistry? owners = null,
+        ILogger? logger = null)
     {
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _callControl = callControl ?? throw new ArgumentNullException(nameof(callControl));
+        _owners = owners;
+        _logger = logger ?? NullLogger.Instance;
     }
 
     /// <summary>Attaches to the registry and to every channel already registered.</summary>
@@ -52,9 +62,51 @@ internal sealed class IncomingCallObserver : IDisposable
             }
 
             void Handler(object? sender, IncomingCallEventArgs e) =>
-                _ = _callControl.ObserveIncomingAsync(workspaceKey, channel, e.Call);
+                _ = HandleAsync(workspaceKey, channel, e.Call);
             _subscriptions[channel] = Handler;
             channel.IncomingCall += Handler;
+        }
+    }
+
+    /// <summary>
+    /// Tracks the call, then offers it to whoever signed up to decide about it.
+    /// </summary>
+    /// <remarks>
+    /// Tracked first, offered second: history and the <c>call.ringing</c> event describe what arrived,
+    /// and that is true whether or not anybody wants it. An owner that answers immediately would
+    /// otherwise race the record of the call it answered.
+    /// <para>
+    /// With nobody signed up nothing is offered and nothing is refused — the behaviour before owners
+    /// existed. Refusing here as soon as this shipped would reject every inbound call in every
+    /// deployment, because no consumer registers yet. Once a workspace has an owner, a call none of
+    /// them claims is rejected: at that point somebody has taken responsibility for the workspace's
+    /// calls, and letting an unclaimed one ring unanswered is the worse answer.
+    /// </para>
+    /// </remarks>
+    private async Task HandleAsync(string workspaceKey, ICommunicationChannel channel, ICall call)
+    {
+        await _callControl.ObserveIncomingAsync(workspaceKey, channel, call).ConfigureAwait(false);
+
+        if (_owners is null || !_owners.HasOwners(workspaceKey))
+        {
+            return;
+        }
+
+        try
+        {
+            if (await _owners.OfferAsync(workspaceKey, call).ConfigureAwait(false))
+            {
+                return;
+            }
+
+            await call.RejectAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // Rejecting can fail on its own (the caller hung up meanwhile). Logged rather than
+            // propagated: this runs fire-and-forget off the channel's event dispatch.
+            _logger.LogWarning(ex,
+                "Offering inbound call {CallId} to its owners failed.", call.CallId);
         }
     }
 
