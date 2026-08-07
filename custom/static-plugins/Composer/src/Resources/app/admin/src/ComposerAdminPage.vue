@@ -15,6 +15,7 @@ import { readDragPayload } from './block-palette'
 import { fetchSurfaceStyles, fetchTheme, type SectionLayout } from './preview-assets'
 import { sectionsWithUnknownLayout, themeDeclaresLayouts } from './section-layouts'
 import { collectTokenRoles } from './token-roles'
+import { flattenPages, type PageNode } from './page-tree'
 import {
   addSection,
   blockAt,
@@ -65,6 +66,13 @@ interface LayoutSummary {
 }
 
 const layouts = ref<LayoutSummary[]>([])
+
+/**
+ * Die Seiten des Workspaces — der Surface-Baum mit seinen Layouts. Aus EINER Antwort, damit
+ * ein gerade angelegter Knoten nicht ohne sein Layout erscheint.
+ */
+const pages = ref<PageNode[]>([])
+const pageRows = computed(() => flattenPages(pages.value))
 const layout = ref<LoadedLayout | null>(null)
 const document = ref<LayoutDocument>(emptyDocument())
 /** Der Stand, der auf dem Server liegt — der Vergleich, der das Laden vom Ändern trennt. */
@@ -132,6 +140,31 @@ async function loadLayouts(): Promise<void> {
   }
 }
 
+/**
+ * Holt den Seitenbaum. Fehlt die Route — ein Host ohne Flächenverwaltung —, bleibt die
+ * Layout-Auswahl der Weg hinein; der Editor ist dann schmaler, aber nicht kaputt.
+ */
+async function loadPages(): Promise<void> {
+  try {
+    const response = await fetch('/api/ext/admin/composer/pages', { credentials: 'same-origin' })
+    pages.value = response.ok ? await response.json() : []
+  } catch {
+    pages.value = []
+  }
+}
+
+void loadPages()
+
+/** Öffnet die Seite eines Baumknotens. Ohne Layout gibt es nichts zu öffnen. */
+async function openPage(page: PageNode): Promise<void> {
+  if (!page.layoutKey) {
+    return
+  }
+
+  layoutKey.value = page.layoutKey
+  await load()
+}
+
 void loadLayouts()
 
 async function load(): Promise<void> {
@@ -169,6 +202,7 @@ async function load(): Promise<void> {
     // Nach dem Laden aktualisieren: Ein gerade veröffentlichtes Layout soll in der Auswahl
     // nicht weiter als unveröffentlicht stehen.
     void loadLayouts()
+    void loadPages()
   } catch {
     error.value = 'Der Entwurf konnte nicht geladen werden.'
   } finally {
@@ -442,6 +476,31 @@ function draftUrl(key: string): string {
       Blöcke aus {{ bundleFailures.map((failure) => failure.pluginId).join(', ') }} konnten nicht
       geladen werden. Sie erscheinen im Canvas als Platzhalter.
     </p>
+
+    <!--
+      Der Seitenbaum: die Gliederung, in der jemand denkt. Die Layout-Auswahl oben bleibt als
+      zweiter Weg — ein Layout ohne Fläche steht in keinem Baum und wäre sonst unerreichbar.
+    -->
+    <nav v-if="pageRows.length > 0" class="composer-pages" aria-label="Seiten">
+      <ul>
+        <li v-for="row in pageRows" :key="row.page.surfaceKey" :style="{ '--depth': row.depth }">
+          <button
+            type="button"
+            :class="{ 'is-current': layout?.surfaceKey === row.page.surfaceKey }"
+            :disabled="!row.page.layoutKey"
+            @click="openPage(row.page)"
+          >
+            {{ row.page.label }}
+          </button>
+          <!--
+            Eine Seite ohne Layout ist eine Gliederungsebene, kein Fehler — das muss dranstehen,
+            sonst sieht ein deaktivierter Knopf nach einem Defekt aus.
+          -->
+          <span v-if="!row.page.layoutKey" class="composer__status">ohne Erlebniswelt</span>
+          <span v-else-if="!row.page.hasPublishedVersion" class="composer__status">Entwurf</span>
+        </li>
+      </ul>
+    </nav>
 
     <template v-if="layout">
       <div class="composer__modes">

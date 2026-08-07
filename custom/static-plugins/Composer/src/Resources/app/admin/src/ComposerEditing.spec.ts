@@ -78,6 +78,17 @@ function stubFetch(): void {
         }
       }
 
+      if (url.endsWith('/composer/pages')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => [
+            { surfaceKey: 'portal', label: 'Portal', parentSurfaceKey: null, position: 0,
+              layoutKey: 'portal', hasPublishedVersion: true },
+          ],
+        }
+      }
+
       if (url.endsWith('/composer/layouts')) {
         return {
           ok: true,
@@ -159,6 +170,47 @@ describe('Die Layout-Auswahl', () => {
 
     expect(wrapper.find('select#composer-layout-key').exists()).toBe(false)
     expect(wrapper.find('input#composer-layout-key').exists()).toBe(true)
+  })
+})
+
+describe('Der Seitenbaum', () => {
+  it('zeigt die Seiten des Workspaces und öffnet eine davon', async () => {
+    // Die Gliederung, in der jemand denkt — statt eines Schlüssels, den er kennen muss.
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    const entry = wrapper.findAll('.composer-pages button').find((b) => b.text() === 'Portal')
+    expect(entry).toBeDefined()
+
+    await entry!.trigger('click')
+    await flushPromises()
+
+    expect(requests.some((request) => request.url.includes('/layouts/portal/draft'))).toBe(true)
+  })
+
+  it('lässt eine Seite ohne Erlebniswelt nicht öffnen, sagt aber warum', async () => {
+    // Sie ist eine Gliederungsebene, kein Fehler — ohne den Hinweis sähe ein deaktivierter
+    // Knopf nach einem Defekt aus.
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.endsWith('/composer/pages')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => [
+            { surfaceKey: 'bereich', label: 'Bereich', parentSurfaceKey: null, position: 0,
+              layoutKey: null, hasPublishedVersion: false },
+          ],
+        }
+      }
+
+      return { ok: true, status: 200, json: async () => [] }
+    }))
+    const wrapper = mount(ComposerAdminPage)
+    await flushPromises()
+
+    const entry = wrapper.findAll('.composer-pages button').find((b) => b.text() === 'Bereich')
+    expect(entry!.attributes('disabled')).toBeDefined()
+    expect(wrapper.find('.composer-pages').text()).toContain('ohne Erlebniswelt')
   })
 })
 

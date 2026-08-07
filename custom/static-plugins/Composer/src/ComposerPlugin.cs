@@ -1,6 +1,7 @@
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Surfaces.Layout;
+using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Composer.Application;
 using Callora.Plugin.Composer.Application.Admin;
@@ -61,7 +62,13 @@ public sealed class ComposerPlugin : IHostManagedPlugin
 
         // Die Admin-Fläche, mit der der Editor spricht. Nach dem Layout-Source exportiert, damit
         // ein Host, dessen Migration scheitert, nicht mit halber Fläche dasteht.
-        context.Export<IHostAdminApiExtensionContributor>(new ComposerAdminApiExtensionContributor(store));
+        //
+        // Der Surface-Store kommt vom Host: Der Editor zeigt den Seitenbaum, und der gehört dem
+        // Workspace, nicht dem Composer. Fehlt er — ein sehr schlanker Host —, entfällt die
+        // Baum-Ansicht, und der Editor bleibt über die Layout-Auswahl bedienbar.
+        var surfaces = context.Services.GetService(typeof(IWorkspaceSurfaceStore)) as IWorkspaceSurfaceStore;
+        context.Export<IHostAdminApiExtensionContributor>(
+            new ComposerAdminApiExtensionContributor(store, surfaces));
     }
 
     /// <inheritdoc />

@@ -26,6 +26,11 @@ vi.mock('./preview-assets', () => ({
   fetchTheme: (...args: unknown[]) => fetchTheme(...args),
 }))
 
+/** Antworten, die nicht der Entwurf sind: Seitenbaum und Layout-Liste. */
+function listResponse() {
+  return { ok: true, status: 200, json: async () => [] }
+}
+
 function draftResponse(surfaceKey: string | null) {
   return {
     ok: true,
@@ -59,7 +64,8 @@ async function loadLayout(surfaceKey: string | null) {
 
 describe('ComposerAdminPage', () => {
   it('lädt die Bundles der Fläche, für die das Layout gedacht ist — und bindet nichts ein', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => draftResponse('kiosk')))
+    vi.stubGlobal('fetch', vi.fn(async (url: string) =>
+      url.includes('/composer/') && !url.includes('/draft') ? listResponse() : draftResponse('kiosk')))
 
     await loadLayout('kiosk')
 
@@ -73,7 +79,8 @@ describe('ComposerAdminPage', () => {
   it('sagt es, wenn das Layout noch keiner Fläche zugeordnet ist', async () => {
     // Sonst wundert sich später jemand, warum ein Block fehlt: Geladen werden dann die Blöcke
     // der Standardfläche, und nichts auf der Seite sagt das.
-    vi.stubGlobal('fetch', vi.fn(async () => draftResponse(null)))
+    vi.stubGlobal('fetch', vi.fn(async (url: string) =>
+      url.includes('/composer/') && !url.includes('/draft') ? listResponse() : draftResponse(null)))
 
     const wrapper = await loadLayout(null)
 
@@ -84,7 +91,8 @@ describe('ComposerAdminPage', () => {
   })
 
   it('nennt das Plugin, dessen Bundle nicht lud, statt nur Platzhalter zu zeigen', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => draftResponse('kiosk')))
+    vi.stubGlobal('fetch', vi.fn(async (url: string) =>
+      url.includes('/composer/') && !url.includes('/draft') ? listResponse() : draftResponse('kiosk')))
     loadSurfaceBundles.mockResolvedValue({
       registry: {},
       results: [
@@ -113,7 +121,8 @@ describe('ComposerAdminPage', () => {
     // Die Basis-Token lädt auf einer Fläche die Runtime selbst; im Canvas tut das niemand.
     // Ohne sie fiele ein Block, der `var(--cal-color-fg)` liest, auf nichts zurück — die
     // Vorschau sähe anders aus als das Ergebnis, ohne dass etwas kaputt wirkt.
-    vi.stubGlobal('fetch', vi.fn(async () => draftResponse('kiosk')))
+    vi.stubGlobal('fetch', vi.fn(async (url: string) =>
+      url.includes('/composer/') && !url.includes('/draft') ? listResponse() : draftResponse('kiosk')))
 
     const wrapper = await loadLayout('kiosk')
 
