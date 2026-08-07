@@ -9,7 +9,12 @@
     "MD034": false, // bare URLs — occasionally intentional
     "MD046": false, // code block style — allow both fenced and indented
     "MD049": false, // emphasis style — allow * and _
-    "MD004": false // unordered list marker style — allow - and *
+    "MD004": false, // unordered list marker style — allow - and *
+    // table column style — padding around pipes. Arrived with a markdownlint minor and
+    // failed 148 lines across 11 untouched files at once; the same stylistic taste MD004,
+    // MD046 and MD049 are off for. A rule that turns the gate red without anyone changing
+    // a document teaches people to ignore the gate.
+    "MD060": false
   },
   "globs": ["**/*.md"],
   "ignores": ["node_modules", ".vitepress/cache", ".vitepress/dist"]
