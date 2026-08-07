@@ -307,6 +307,13 @@ Workspaces dürfen unabhängig konfiguriert, berechtigt und lizenziert werden.
 
 ## 5.1 Definition
 
+> **Abgelöst durch ADR-019.** Surfaces bilden seither einen **Baum**. Was hier beschrieben
+> ist, gilt weiterhin für eine **Anwendungswurzel** — einen Knoten ohne Elternteil. Ein
+> Kind-Knoten erbt Host, Zugriffspolitik, Theme und Locale von ihr und überschreibt nur,
+> was es eigenes braucht; er entspricht dem, was Shopware eine Kategorie nennt. Der Grund:
+> Es gab genau ein Layout je Surface, also hätte eine Website mit drei Seiten drei
+> Zugangsflächen gebraucht.
+
 Eine Surface ist eine konkrete Nutzungs-, Zugangs- oder Ausgabefläche innerhalb eines Workspaces.
 
 Eine Surface kann beispielsweise sein:
@@ -361,6 +368,12 @@ Beispiel:
 ```
 
 ## 5.3 Mehrere Surfaces pro Workspace
+
+> **Abgelöst durch ADR-019.** Die Liste unten beschreibt die **Wurzeln** eines Workspaces —
+> die getrennten Anwendungen auf gemeinsamen Daten. Unter jeder von ihnen hängt seither ein
+> Baum von Kind-Surfaces, aus dem die Navigation entsteht und in dem jeder Knoten eine
+> eigene Erlebniswelt tragen kann. Die Aufzählung der Unterschiede (Domains, Templates,
+> Themes, Zielgruppen, Loginverfahren) gilt weiterhin — für Wurzeln.
 
 Ein Workspace kann mehrere Surfaces besitzen.
 
