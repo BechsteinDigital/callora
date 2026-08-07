@@ -7,6 +7,12 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- Die Admin-UI-Quelle (Vite/npm, inkl. node_modules) gehört nicht ins Paket — nur das
+         gebaute Bundle unter Resources/public/admin reist mit. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);src\Resources\app\**</DefaultItemExcludes>
+    <!-- Die Admin-UI-Quelle (Vite/npm, inkl. node_modules) gehört nicht ins Paket — nur das
+         gebaute Bundle unter Resources/public/admin reist mit. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);src\Resources\app\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +41,18 @@
 
   <ItemGroup>
     <None Include="registry.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Das gebaute Admin-Bundle. Der PluginUiAssetPublisher findet es unter
+         src/Resources/public/admin und erkennt daran die 'admin'-Fläche; der relative
+         Ausgabepfad muss deshalb erhalten bleiben. -->
+    <None Include="src/Resources/public/admin/**/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- Das gebaute Admin-Bundle. Der PluginUiAssetPublisher findet es unter
+         src/Resources/public/admin und erkennt daran die 'admin'-Fläche; der relative
+         Ausgabepfad muss deshalb erhalten bleiben. -->
+    <None Include="src/Resources/public/admin/**/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
