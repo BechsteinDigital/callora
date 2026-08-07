@@ -234,10 +234,11 @@ public static class WorkspacePublicEndpoints
                         themePluginId = theme?.ThemePluginId,
                         themeVersion = theme?.ThemeVersion,
                         valuesByKey = theme?.ValuesByKey ?? new Dictionary<string, string>(),
-                        // Die Sektionslayouts gehören dem Theme (§7.1). Der Editor bietet
-                        // ausschließlich sie an — so bleibt die Token-Achse die
-                        // Design-Autorität, und es stehen keine Layout-Namen im Core.
-                        sectionLayouts = theme?.SectionLayouts ?? []
+                        // Die Sektionslayouts gehören dem Theme (§7.1). Ohne zugewiesenes Theme
+                        // gelten die des Basis-Themes: Sonst hätte eine frische Installation
+                        // nichts, womit sich etwas komponieren ließe, und ein Editor ohne
+                        // Auswahl sähe nach einem Fehler aus statt nach einem fehlenden Theme.
+                        sectionLayouts = theme?.SectionLayouts ?? SurfaceBaseSectionLayouts.All
                     });
                 })
             .AllowAnonymous()

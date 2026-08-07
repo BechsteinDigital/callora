@@ -316,8 +316,12 @@ function draftUrl(key: string): string {
           Kein Layout heißt nicht „Editor kaputt", sondern „dieses Theme bringt keine mit". Ohne
           diesen Satz sucht jemand den Fehler im Editor.
         -->
+        <!--
+          Der Server liefert immer mindestens die Basis-Layouts. Leer heißt hier also: Das
+          Theme war nicht erreichbar — nicht „dieses Theme kann keine".
+        -->
         <p v-if="!hasLayouts" class="composer__status">
-          Dieses Theme deklariert keine Sektionslayouts.
+          Die Sektionslayouts konnten nicht geladen werden.
         </p>
       </div>
 

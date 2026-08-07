@@ -87,11 +87,13 @@ public sealed class ThemeJsonWorkspaceTemplateSyncService(
         }
 
         IReadOnlyList<SectionLayoutDefinition> layouts;
+        bool inheritsBase;
         try
         {
             var json = await File.ReadAllTextAsync(themeJsonPath, cancellationToken).ConfigureAwait(false);
             using var document = JsonDocument.Parse(json);
             layouts = SectionLayoutManifestReader.Parse(document.RootElement);
+            inheritsBase = SectionLayoutManifestReader.ParseInheritsBase(document.RootElement);
         }
         catch (JsonException ex)
         {
@@ -103,7 +105,7 @@ public sealed class ThemeJsonWorkspaceTemplateSyncService(
         }
 
         await sectionLayoutStore
-            .ReplaceForPluginAsync(pluginId, version, layouts, cancellationToken)
+            .ReplaceForPluginAsync(pluginId, version, layouts, inheritsBase, cancellationToken)
             .ConfigureAwait(false);
     }
 

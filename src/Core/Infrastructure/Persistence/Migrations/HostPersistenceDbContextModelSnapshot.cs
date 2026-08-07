@@ -357,6 +357,10 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
+                    b.Property<bool>("InheritsBase")
+                        .HasColumnType("boolean")
+                        .HasColumnName("inherits_base");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");

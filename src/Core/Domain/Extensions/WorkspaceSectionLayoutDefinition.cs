@@ -32,6 +32,17 @@ public sealed class WorkspaceSectionLayoutDefinition
 
     public int SortOrder { get; set; }
 
+    /// <summary>
+    /// Ob dieses Theme die Basis-Layouts erbt.
+    /// <para>
+    /// Eine Eigenschaft des Themes, hier auf jeder Zeile — die Tabelle ist ein Abbild des
+    /// Manifests, keine normalisierte Domäne, und eine zweite Tabelle für einen Schalter wäre
+    /// mehr Aufwand als der Schaden der Wiederholung. Gelesen wird sie aus der ersten Zeile;
+    /// ein Theme ohne eigene Layouts hat keine und erbt, was die richtige Degradation ist.
+    /// </para>
+    /// </summary>
+    public bool InheritsBase { get; set; } = true;
+
     public bool IsActive { get; set; }
 
     public DateTimeOffset CreatedAtUtc { get; set; }

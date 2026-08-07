@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Callora.Core.Infrastructure.Persistence.Migrations;
 
 [DbContext(typeof(HostPersistenceDbContext))]
-[Migration("20260807102656_AddWorkspaceSectionLayoutDefinitions")]
+[Migration("20260807105859_AddWorkspaceSectionLayoutDefinitions")]
 partial class AddWorkspaceSectionLayoutDefinitions
 {
     /// <inheritdoc />
@@ -359,6 +359,10 @@ partial class AddWorkspaceSectionLayoutDefinitions
                 b.Property<DateTimeOffset>("CreatedAtUtc")
                     .HasColumnType("timestamp with time zone")
                     .HasColumnName("created_at_utc");
+
+                b.Property<bool>("InheritsBase")
+                    .HasColumnType("boolean")
+                    .HasColumnName("inherits_base");
 
                 b.Property<bool>("IsActive")
                     .HasColumnType("boolean")

@@ -20,8 +20,31 @@ namespace Callora.Core.Infrastructure.Extensions;
 public static class SectionLayoutManifestReader
 {
     /// <summary>
+    /// Whether this manifest inherits the base theme's section layouts.
+    /// <para>
+    /// Default true, and that is the safe direction: the runtime's base stylesheet is always
+    /// loaded, so the base layouts work under a foreign theme too, and a theme that only wants
+    /// to add <c>sidebar-right</c> need not repeat the whole palette. Setting it false means
+    /// standing alone for everything the theme's own layouts need.
+    /// </para>
+    /// </summary>
+    public static bool ParseInheritsBase(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            return true;
+        }
+
+        return root.TryGetProperty("inheritSectionLayouts", out var found) &&
+               found.ValueKind is JsonValueKind.True or JsonValueKind.False
+            ? found.GetBoolean()
+            : true;
+    }
+
+    /// <summary>
     /// The declared layouts, in file order. Empty when the manifest declares none — which is a
-    /// valid state: a theme that only styles tokens has no layouts to offer.
+    /// valid state: a theme that only styles tokens has no layouts to offer, and inherits the
+    /// base ones.
     /// </summary>
     public static IReadOnlyList<SectionLayoutDefinition> Parse(JsonElement root)
     {
