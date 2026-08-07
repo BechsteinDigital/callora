@@ -113,9 +113,13 @@ public sealed class WorkspacePublicThemeResolver(
             }
         }
 
-        var sectionLayouts = await sectionLayoutStore
+        // Die Basis plus das, was dieses Theme beisteuert. Ein Theme, das nur
+        // `sidebar-right` ergänzen will, muss die ganze Palette nicht wiederholen; eines, das
+        // ein eigenes Rastersystem durchsetzt, setzt `inheritSectionLayouts` auf false.
+        var declared = await sectionLayoutStore
             .ListAsync(themePluginId, themeVersion, cancellationToken)
             .ConfigureAwait(false);
+        var sectionLayouts = SurfaceBaseSectionLayouts.Compose(declared.Layouts, declared.InheritsBase);
 
         return new WorkspacePublicTheme(themePluginId, themeVersion, valuesByKey, sectionLayouts);
     }

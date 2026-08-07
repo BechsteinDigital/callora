@@ -10,8 +10,11 @@ namespace Callora.Core.Application.Extensions;
 /// </summary>
 public interface IWorkspaceSectionLayoutStore
 {
-    /// <summary>The active layouts of one theme version, in declared order.</summary>
-    Task<IReadOnlyList<SectionLayoutDefinition>> ListAsync(
+    /// <summary>
+    /// What one theme version declared: its own layouts in declared order, and whether it
+    /// inherits the base theme's. A theme with no layouts of its own inherits.
+    /// </summary>
+    Task<ThemeSectionLayouts> ListAsync(
         string pluginId,
         string version,
         CancellationToken cancellationToken = default);
@@ -28,6 +31,7 @@ public interface IWorkspaceSectionLayoutStore
         string pluginId,
         string version,
         IReadOnlyList<SectionLayoutDefinition> layouts,
+        bool inheritsBase,
         CancellationToken cancellationToken = default);
 
     Task ClearForPluginAsync(string pluginId, CancellationToken cancellationToken = default);

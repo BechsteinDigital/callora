@@ -21,6 +21,7 @@ public sealed class WorkspaceSectionLayoutDefinitionEntityTypeConfiguration
         builder.Property(x => x.Label).HasColumnName("label").HasMaxLength(300).IsRequired();
         builder.Property(x => x.RegionsJson).HasColumnName("regions_json").IsRequired();
         builder.Property(x => x.SortOrder).HasColumnName("sort_order").IsRequired();
+        builder.Property(x => x.InheritsBase).HasColumnName("inherits_base").IsRequired();
         builder.Property(x => x.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc").IsRequired();
         builder.Property(x => x.UpdatedAtUtc).HasColumnName("updated_at_utc").IsRequired();

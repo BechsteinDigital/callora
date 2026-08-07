@@ -273,23 +273,17 @@ public static class SurfaceRenderEndpoints
             return null;
         }
 
-        // Ersetzt wird nur, wenn das Theme überhaupt etwas über Layouts sagt.
+        // Was gilt: die Layouts des Themes, oder — ohne zugewiesenes Theme — die des
+        // Basis-Themes. Die Liste ist nie leer, denn ein Theme ohne eigene Layouts erbt die
+        // Basis; nur ein Theme, das ausdrücklich nicht erbt, engt sie ein.
         //
-        // Zwei Fälle sehen sonst gleich aus und sind es nicht: Ein Theme, das `two-2-1` NICHT
-        // MEHR kennt, hat es abgelehnt — da ist der Rückfall richtig. Ein Theme, das gar keine
-        // Layouts deklariert (heute die meisten), sagt zu keinem etwas; jede Sektion auf
-        // `single` zu setzen, weil eine Liste leer ist, wäre eine sichtbare Layout-Änderung aus
-        // einem Nicht-Ereignis. Dasselbe gilt, wenn der Resolver ganz fehlte.
-        var knownLayouts = theme?.SectionLayouts.Count > 0
-            ? new HashSet<string>(
-                theme.SectionLayouts.Select(layout => layout.LayoutKey),
-                StringComparer.Ordinal)
-            : null;
+        // Deshalb kann ein Rückfall hier nur eines heißen: Dieses Layout kennt niemand mehr, der
+        // es stylen könnte (§7.8) — und nicht „es hat nur gerade niemand etwas dazu gesagt".
+        var knownLayouts = new HashSet<string>(
+            (theme?.SectionLayouts ?? SurfaceBaseSectionLayouts.All).Select(layout => layout.LayoutKey),
+            StringComparer.Ordinal);
 
-        var renderer = new SurfaceCompositionRenderer(
-            layoutIsKnown: knownLayouts is null ? null : knownLayouts.Contains);
-
-        return renderer.Render(document);
+        return new SurfaceCompositionRenderer(layoutIsKnown: knownLayouts.Contains).Render(document);
     }
 
     /// <summary>

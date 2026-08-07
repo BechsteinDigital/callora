@@ -124,6 +124,36 @@ public sealed class SectionLayoutManifestReaderTests
         Assert.True(layouts[1].SortOrder < layouts[2].SortOrder);
     }
 
+    // ── Was ein Theme von der Basis erbt ────────────────────────────────────
+
+    [Fact]
+    public void AManifestInheritsTheBaseLayoutsUnlessItSaysOtherwise()
+    {
+        // Die sichere Richtung: Das Basis-Stylesheet der Runtime ist immer geladen, also
+        // funktionieren die Basis-Layouts auch unter einem fremden Theme — und ein Theme, das
+        // nur eine Variante beisteuern will, muss die ganze Palette nicht wiederholen.
+        Assert.True(InheritsBase("""{ "sectionLayouts": [] }"""));
+        Assert.True(InheritsBase("""{ }"""));
+        Assert.True(InheritsBase("""{ "inheritSectionLayouts": true }"""));
+        Assert.False(InheritsBase("""{ "inheritSectionLayouts": false }"""));
+    }
+
+    [Fact]
+    public void AnUnreadableFlagMeansInherit()
+    {
+        // Ein Tippfehler im Schalter darf nicht heimlich alle Basis-Layouts abschalten: Der
+        // Editor böte dann nur noch das eine Layout des Themes an, und niemand käme darauf,
+        // dass es an einer Zeichenkette statt eines Wahrheitswerts liegt.
+        Assert.True(InheritsBase("""{ "inheritSectionLayouts": "false" }"""));
+        Assert.True(InheritsBase("""[]"""));
+    }
+
+    private static bool InheritsBase(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return SectionLayoutManifestReader.ParseInheritsBase(document.RootElement);
+    }
+
     [Fact]
     public void LetsTheThemeDeclareItsOwnOrder()
     {

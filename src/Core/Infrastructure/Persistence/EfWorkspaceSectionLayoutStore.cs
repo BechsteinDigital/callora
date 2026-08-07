@@ -10,7 +10,7 @@ public sealed class EfWorkspaceSectionLayoutStore(HostPersistenceDbContext dbCon
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    public async Task<IReadOnlyList<SectionLayoutDefinition>> ListAsync(
+    public async Task<ThemeSectionLayouts> ListAsync(
         string pluginId,
         string version,
         CancellationToken cancellationToken = default)
@@ -29,13 +29,17 @@ public sealed class EfWorkspaceSectionLayoutStore(HostPersistenceDbContext dbCon
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return rows.Select(Read).ToArray();
+        // Ein Theme ohne eigene Layouts hat keine Zeile — und erbt.
+        return new ThemeSectionLayouts(
+            rows.Select(Read).ToArray(),
+            rows.Length == 0 || rows[0].InheritsBase);
     }
 
     public async Task ReplaceForPluginAsync(
         string pluginId,
         string version,
         IReadOnlyList<SectionLayoutDefinition> layouts,
+        bool inheritsBase,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
@@ -66,6 +70,7 @@ public sealed class EfWorkspaceSectionLayoutStore(HostPersistenceDbContext dbCon
                 Label = string.IsNullOrWhiteSpace(layout.Label) ? layout.LayoutKey.Trim() : layout.Label.Trim(),
                 RegionsJson = JsonSerializer.Serialize(layout.Regions, Json),
                 SortOrder = layout.SortOrder,
+                InheritsBase = inheritsBase,
                 IsActive = true,
                 CreatedAtUtc = nowUtc,
                 UpdatedAtUtc = nowUtc
