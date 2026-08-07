@@ -1,4 +1,4 @@
-namespace Callora.Core.Application.Surfaces;
+namespace Callora.Core.Application.Surfaces.Contracts;
 
 /// <summary>
 /// Who a published context value is for.
