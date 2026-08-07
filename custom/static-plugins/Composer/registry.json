@@ -1,0 +1,15 @@
+{
+  "contractVersion": "v1",
+  "schemaVersion": "1.0",
+  "name": "Surface Composer",
+  "pluginId": "composer",
+  "version": "0.1.0",
+  "assemblyFileName": "Callora.Plugin.Composer.dll",
+  "entryTypeName": "Callora.Plugin.Composer.ComposerPlugin",
+  "capabilities": [
+    "surface.composer"
+  ],
+  "dependencies": {
+    "Callora.Core": ">=0.1.0-local"
+  }
+}

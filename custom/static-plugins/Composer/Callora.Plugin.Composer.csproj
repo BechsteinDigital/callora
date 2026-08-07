@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Die Übergangslogik ist der Kern; das Testprojekt prüft sie direkt. -->
+    <InternalsVisibleTo Include="Callora.Core.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Gegen die Core-Contracts kompilieren, Core aber nicht mitliefern: der Host stellt es,
+         und der Plugin-ALC teilt die Typidentität. -->
+    <ProjectReference Include="..\..\..\src\Core\Callora.Core.csproj" Private="false" ExcludeAssets="runtime" />
+    <!-- Als Plugin vom Governance-Analyzer geprüft (CAL0001–0004). -->
+    <ProjectReference Include="..\..\..\src\Analyzers\Callora.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="registry.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
