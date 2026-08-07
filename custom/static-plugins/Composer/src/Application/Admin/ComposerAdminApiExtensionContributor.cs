@@ -1,4 +1,5 @@
 using Callora.Core.Application.Plugins.Contracts;
+using Callora.Core.Application.Workspaces;
 
 namespace Callora.Plugin.Composer.Application.Admin;
 
@@ -21,12 +22,27 @@ public sealed class ComposerAdminApiExtensionContributor : IHostAdminApiExtensio
 {
     private readonly IReadOnlyList<HostAdminApiRouteRegistration> _routes;
 
-    public ComposerAdminApiExtensionContributor(SurfaceLayoutStore store)
+    /// <param name="surfaces">
+    /// Der Surface-Store des Hosts, oder null. Ohne ihn entfällt die Baum-Route: Ein sehr
+    /// schlanker Host hat keine Flächenverwaltung, und eine Route, die dann 500 wirft, wäre
+    /// schlechter als eine, die es nicht gibt.
+    /// </param>
+    public ComposerAdminApiExtensionContributor(
+        SurfaceLayoutStore store,
+        IWorkspaceSurfaceStore? surfaces = null)
     {
         ArgumentNullException.ThrowIfNull(store);
 
         _routes =
         [
+            .. surfaces is null
+                ? Array.Empty<HostAdminApiRouteRegistration>()
+                : [new HostAdminApiRouteRegistration(
+                    "GET",
+                    "pages",
+                    ComposerPermissionKeys.LayoutRead,
+                    new PageTreeRouteHandler(store, surfaces))],
+
             new HostAdminApiRouteRegistration(
                 "GET",
                 "layouts",
