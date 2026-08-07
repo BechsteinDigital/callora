@@ -20,6 +20,28 @@ const AUTH_METHODS = [
   { value: 'Digest', label: 'Digest (Registrierung)' },
 ] as const
 
+/** One step of what happened to a call, as its participants recorded it. */
+interface CallJourneyStep {
+  source: string
+  step: string
+  detail: string | null
+  at: string
+}
+
+/** A call as the history returns it. */
+interface CallHistoryEntry {
+  callId: string
+  direction: string
+  remoteParty: string
+  startedAt: string
+  answeredAt: string | null
+  endedAt: string | null
+  durationSeconds: number
+  outcome: string
+  disconnectCause: string | null
+  journey: CallJourneyStep[]
+}
+
 interface SipAccount {
   id: string
   displayName: string
@@ -53,8 +75,35 @@ function formatMoment(value: string | null): string {
   return value ? new Date(value).toLocaleString() : '-'
 }
 
+function formatTime(value: string): string {
+  const at = new Date(value)
+  return Number.isNaN(at.getTime()) ? value : at.toLocaleTimeString()
+}
+
+/** Outcomes an operator reads differently: a call nobody answered is not a failure of the line. */
+const OUTCOME_LABELS: Record<string, string> = {
+  InProgress: 'läuft',
+  Completed: 'beendet',
+  Missed: 'nicht angenommen',
+  Rejected: 'abgewiesen',
+  Failed: 'fehlgeschlagen',
+  Interrupted: 'abgebrochen',
+}
+
+function outcomeOf(call: CallHistoryEntry): string {
+  return OUTCOME_LABELS[call.outcome] ?? call.outcome
+}
+
+function toggleJourney(call: CallHistoryEntry): void {
+  openCall.value = openCall.value === call.callId ? null : call.callId
+}
+
 const workspaceKey = ref(new URLSearchParams(window.location.search).get('workspaceKey') ?? '')
 const accounts = ref<SipAccount[]>([])
+const calls = ref<CallHistoryEntry[]>([])
+// One call open at a time: the interesting thing is one call's sequence, and several expanded at
+// once turns a list into a wall.
+const openCall = ref<string | null>(null)
 const loading = ref(false)
 const busy = ref(false)
 const error = ref<string | null>(null)
@@ -106,6 +155,14 @@ async function reload(): Promise<void> {
   error.value = null
   try {
     accounts.value = ((await request('GET', 'sip-accounts')) as SipAccount[]) ?? []
+
+    // Loaded after the accounts and allowed to fail on its own: an operator whose history is
+    // unavailable should still be able to fix the account that is probably the reason.
+    try {
+      calls.value = ((await request('GET', 'calls?limit=25')) as CallHistoryEntry[]) ?? []
+    } catch {
+      calls.value = []
+    }
   } catch (err) {
     error.value = (err as Error).message
     accounts.value = []
@@ -269,6 +326,61 @@ onMounted(() => {
       </table>
 
       <CallDialer :workspace-key="workspaceKey" />
+
+      <h2 style="margin-top: 2rem">Letzte Anrufe</h2>
+      <p style="font-size: 0.85rem; color: var(--cal-color-text-muted, #777); margin-top: 0">
+        Ein Anruf zeigt auf Klick, was mit ihm passiert ist — welche Nummer er erreicht hat, wer ihn
+        übernommen hat und woran es lag, wenn er nirgends ankam.
+      </p>
+
+      <p v-if="!calls.length">{{ loading ? 'Lädt…' : 'Noch keine Anrufe in diesem Workspace.' }}</p>
+      <table v-else style="width: 100%; border-collapse: collapse">
+        <thead>
+          <tr>
+            <th v-for="c in ['Zeit', 'Richtung', 'Gegenstelle', 'Ergebnis', 'Dauer', '']" :key="c" style="text-align: left; padding: 0.4rem; border-bottom: 1px solid var(--cal-color-surface, #ddd)">
+              {{ c }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-for="call in calls" :key="call.callId">
+            <tr>
+              <td style="padding: 0.4rem">{{ formatMoment(call.startedAt) }}</td>
+              <td style="padding: 0.4rem">{{ call.direction === 'Inbound' ? 'eingehend' : 'ausgehend' }}</td>
+              <td style="padding: 0.4rem">{{ call.remoteParty }}</td>
+              <td style="padding: 0.4rem">
+                {{ outcomeOf(call) }}
+                <span v-if="call.disconnectCause" style="display: block; font-size: 0.75rem; color: var(--cal-color-text-muted, #777)">
+                  {{ call.disconnectCause }}
+                </span>
+              </td>
+              <td style="padding: 0.4rem">{{ call.durationSeconds }}s</td>
+              <td style="padding: 0.4rem">
+                <button v-if="call.journey.length" @click="toggleJourney(call)">
+                  {{ openCall === call.callId ? 'Verlauf schließen' : `Verlauf (${call.journey.length})` }}
+                </button>
+                <span v-else style="font-size: 0.75rem; color: var(--cal-color-text-muted, #777)">
+                  nichts aufgezeichnet
+                </span>
+              </td>
+            </tr>
+            <tr v-if="openCall === call.callId">
+              <td colspan="6" style="padding: 0 0.4rem 0.8rem">
+                <ol style="margin: 0; padding-left: 1.2rem">
+                  <li v-for="(step, index) in call.journey" :key="index" style="font-size: 0.85rem; line-height: 1.6">
+                    <span style="font-variant-numeric: tabular-nums; color: var(--cal-color-text-muted, #777)">
+                      {{ formatTime(step.at) }}
+                    </span>
+                    <code style="margin: 0 0.4rem">{{ step.step }}</code>
+                    <span v-if="step.detail">{{ step.detail }}</span>
+                    <span style="font-size: 0.75rem; color: var(--cal-color-text-muted, #777)"> — {{ step.source }}</span>
+                  </li>
+                </ol>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
     </template>
   </section>
 </template>
