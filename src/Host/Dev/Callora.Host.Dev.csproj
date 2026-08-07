@@ -25,4 +25,15 @@
     <ProjectReference Include="../../../custom/static-plugins/Communication/src/Abstractions/Callora.Plugin.Communication.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- `dotnet ef` sucht das Design-Paket im STARTPROJEKT, nicht im Migrations-Projekt.
+         Ohne diese Zeile bricht jeder Tooling-Aufruf mit „doesn't reference
+         Microsoft.EntityFrameworkCore.Design" ab — und Migrationen entstehen von Hand,
+         inklusive Designer-Datei und Snapshot. Das ging schon mehrfach schief.
+
+         Nur hier, nie im Distributions-Host: Das Paket zieht das Tooling-Gerüst mit,
+         und `IsPackable=false` hält es aus jedem Paket heraus. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+  </ItemGroup>
+
 </Project>
