@@ -13,4 +13,14 @@ public sealed record UpsertSurfaceApiRequest(
     string? TemplateVersion,
     string? ThemePluginId,
     string? ThemeVersion,
-    bool IsActive);
+    bool IsActive)
+{
+    /// <summary>
+    /// Der Elternknoten innerhalb desselben Workspaces, oder null für eine Anwendungswurzel
+    /// (ADR-019). Weggelassen heißt Wurzel — was jeder bestehende Aufruf meint.
+    /// </summary>
+    public string? ParentSurfaceKey { get; init; }
+
+    /// <summary>Reihenfolge unter Geschwistern; die Reihenfolge der Navigation.</summary>
+    public int Position { get; init; }
+}

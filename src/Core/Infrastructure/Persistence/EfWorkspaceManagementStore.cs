@@ -186,7 +186,33 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
     {
         var best = await MatchSurfaceByPublicRouteAsync(requestHost, requestPath, tenantKey, cancellationToken)
             .ConfigureAwait(false);
-        return best is null ? null : ToSurfaceSnapshot(best);
+        if (best is null)
+        {
+            return null;
+        }
+
+        // Der Renderpfad bekommt die EFFEKTIVEN Werte — was für diesen Knoten gilt, geerbt oder
+        // eigen. Die Verwaltung (GetSurfaceAsync, ListSurfacesAsync) bekommt weiterhin die
+        // eigenen: Sonst könnte eine Oberfläche einen geerbten Wert nicht von einem gesetzten
+        // unterscheiden und machte beim Speichern aus der Vererbung eine Kopie.
+        var byId = await LoadWorkspaceSurfacesAsync(best.WorkspaceId, cancellationToken)
+            .ConfigureAwait(false);
+        return ToEffectiveSurfaceSnapshot(best, EffectiveSurface.From(AncestryOf(best, byId)));
+    }
+
+    private async Task<IReadOnlyDictionary<Guid, WorkspaceSurface>> LoadWorkspaceSurfacesAsync(
+        Guid workspaceId,
+        CancellationToken cancellationToken)
+    {
+        var surfaces = await dbContext.WorkspaceSurfaces
+            .AsNoTracking()
+            .Include(x => x.Workspace)
+            .ThenInclude(w => w.Tenant)
+            .Where(x => x.WorkspaceId == workspaceId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return surfaces.ToDictionary(surface => surface.Id);
     }
 
     private async Task<WorkspaceSurface?> MatchSurfaceByPublicRouteAsync(
@@ -215,6 +241,11 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         var normalizedHost = (requestHost ?? string.Empty).Trim().ToLowerInvariant();
         var normalizedPath = PublicRouteMatching.NormalizePath(requestPath);
 
+        // Gematcht wird gegen die EFFEKTIVEN Werte (ADR-019): Ein Kind trägt sein Segment, sein
+        // Host kommt von der Wurzel. `/portal/partner` gegen `partner` zu prüfen fände nichts,
+        // und ein Kind ohne eigenen Host fiele durch jede Host-Prüfung.
+        var byId = surfaces.ToDictionary(surface => surface.Id);
+
         WorkspaceSurface? best = null;
         var bestScore = int.MinValue;
         foreach (var surface in surfaces)
@@ -224,13 +255,14 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
                 continue;
             }
 
-            if (!PublicRouteMatching.HostMatches(surface.PublicHost, normalizedHost) ||
-                !PublicRouteMatching.PathMatches(surface.PublicPathPrefix, normalizedPath))
+            var effective = EffectiveSurface.From(AncestryOf(surface, byId));
+            if (!PublicRouteMatching.HostMatches(effective.PublicHost, normalizedHost) ||
+                !PublicRouteMatching.PathMatches(effective.PublicPathPrefix, normalizedPath))
             {
                 continue;
             }
 
-            var score = PublicRouteMatching.Score(surface.PublicHost, surface.PublicPathPrefix);
+            var score = PublicRouteMatching.Score(effective.PublicHost, effective.PublicPathPrefix);
             if (score <= bestScore)
             {
                 continue;
@@ -242,6 +274,21 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
 
         return best;
     }
+
+    /// <summary>
+    /// Die Kette eines Knotens aufwärts. Ein Vorfahre, der nicht in der geladenen Menge liegt —
+    /// etwa weil ein Mandantenfilter ihn ausschloss —, beendet die Kette, statt sie zu sprengen:
+    /// Der Knoten gilt dann als Wurzel, was zu einer Fläche ohne geerbtes Theme führt und nicht
+    /// zu einem Fehler beim Besucher.
+    /// </summary>
+    private static IReadOnlyList<WorkspaceSurface> AncestryOf(
+        WorkspaceSurface surface,
+        IReadOnlyDictionary<Guid, WorkspaceSurface> byId) =>
+        SurfaceTree.AncestryOf(
+            surface,
+            node => node.Id,
+            node => node.ParentSurfaceId,
+            byId);
 
     public async Task<bool> RemoveAsync(
         string workspaceKey,
@@ -512,6 +559,43 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             IdentityVersion = surface.IdentityVersion,
             IdentityAssignedBy = surface.IdentityAssignedBy,
             IdentityAssignedAtUtc = surface.IdentityAssignedAtUtc,
+        };
+    }
+
+    /// <summary>
+    /// Der Knoten mit dem, was für ihn gilt. Identität, Locale und Theme können von einem
+    /// Vorfahren kommen; Name, Typ und Zeitstempel gehören immer dem Knoten selbst.
+    /// </summary>
+    private static WorkspaceSurfaceSnapshot ToEffectiveSurfaceSnapshot(
+        WorkspaceSurface surface,
+        EffectiveSurface effective)
+    {
+        return new WorkspaceSurfaceSnapshot(
+            surface.Id,
+            surface.Workspace.WorkspaceKey,
+            surface.SurfaceKey,
+            surface.DisplayName,
+            surface.SurfaceType,
+            surface.PublicBaseUrl,
+            effective.PublicHost,
+            effective.PublicPathPrefix,
+            effective.AccessMode,
+            effective.Locale,
+            effective.TemplatePluginId,
+            effective.TemplateVersion,
+            effective.ThemePluginId,
+            effective.ThemeVersion,
+            surface.IsActive,
+            surface.CreatedAtUtc,
+            surface.UpdatedAtUtc)
+        {
+            TenantKey = surface.Workspace.Tenant.TenantKey,
+            // Der Identity-Provider kommt von der WURZEL (ADR-019 §4). `IdentityAssignedBy`
+            // bleibt beim Knoten leer: Wer eine Zuweisung verantwortet, steht an der Wurzel und
+            // wäre hier eine Behauptung über diesen Knoten, die niemand gemacht hat.
+            IdentityPluginId = effective.IdentityPluginId,
+            IdentityVersion = effective.IdentityVersion,
+            IdentityAssignedAtUtc = effective.IdentityAssignedAtUtc,
         };
     }
 

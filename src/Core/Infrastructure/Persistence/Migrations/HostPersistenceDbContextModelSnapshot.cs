@@ -1675,6 +1675,14 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("locale");
 
+                    b.Property<Guid?>("ParentSurfaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_surface_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
                     b.Property<string>("PublicBaseUrl")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)")
@@ -1743,6 +1751,8 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PublicHost");
+
+                    b.HasIndex("ParentSurfaceId", "Position");
 
                     b.HasIndex("WorkspaceId", "SurfaceKey")
                         .IsUnique();
@@ -1831,11 +1841,18 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Callora.Core.Domain.Workspaces.WorkspaceSurface", b =>
                 {
+                    b.HasOne("Callora.Core.Domain.Workspaces.WorkspaceSurface", "Parent")
+                        .WithMany()
+                        .HasForeignKey("ParentSurfaceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Callora.Core.Domain.Workspaces.Workspace", "Workspace")
                         .WithMany("Surfaces")
                         .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Parent");
 
                     b.Navigation("Workspace");
                 });
