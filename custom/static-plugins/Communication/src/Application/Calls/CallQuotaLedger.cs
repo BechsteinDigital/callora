@@ -40,7 +40,7 @@ public sealed class CallQuotaLedger : ICallQuotaRegistry
 
         foreach (var (origin, limit) in quotas)
         {
-            _limits[new CallQuotaKey(workspaceKey, channelId, origin)] = limit;
+            _limits[new CallQuotaKey(workspaceKey, channelId, NormalizeOrigin(origin))] = limit;
         }
     }
 
@@ -54,7 +54,7 @@ public sealed class CallQuotaLedger : ICallQuotaRegistry
         ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
         ArgumentException.ThrowIfNullOrWhiteSpace(origin);
 
-        var key = new CallQuotaKey(workspaceKey, channelId, origin);
+        var key = new CallQuotaKey(workspaceKey, channelId, NormalizeOrigin(origin));
         if (!_limits.TryGetValue(key, out var limit))
         {
             return new CallQuotaReservation(this, key, counted: false);
@@ -71,6 +71,15 @@ public sealed class CallQuotaLedger : ICallQuotaRegistry
 
         return new CallQuotaReservation(this, key, counted: true);
     }
+
+    /// <summary>
+    /// Brings an origin into the form it is matched by. A telephone number is reduced to its digits,
+    /// because an operator writes it the way their provider prints it and the trunk delivers it the
+    /// way the network happens to. Anything else — <c>crm</c>, <c>dialer:campaign-x</c> — is a name a
+    /// plugin passes and is matched as written; reducing it to digits would leave nothing at all.
+    /// </summary>
+    private static string NormalizeOrigin(string origin) =>
+        PhoneNumberFormat.IsPhoneNumber(origin) ? PhoneNumberFormat.Normalize(origin) : origin.Trim();
 
     /// <summary>Gives a claimed line back. Called by the reservation, once.</summary>
     internal void Release(CallQuotaKey key) => _inUse.AddOrUpdate(key, 0, (_, current) => current - 1);
