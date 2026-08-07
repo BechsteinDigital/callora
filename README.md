@@ -1,145 +1,160 @@
-# Callora Framework
+<div align="center">
 
-Modular .NET application framework for communication products: a domain-neutral
-core plus an Administration UI, Workspaces, RBAC and a real backend/frontend
-plugin model.
+# Callora
 
-This repository is the **framework** — a set of packable libraries — not a
-standalone host. The runnable process entrypoint and package composition live in
-the separate **`callora-production`** repository, which assembles these packages
-into a distribution (one app container + Postgres). The same framework can back
-several distributions (community, enterprise, OEM/customer-specific hosts).
+**Die offene Plattform für Kommunikationsprodukte.**
 
-## Repository layout
-- `src/Core` — domain-neutral platform core (packable library `Callora.Core`)
-- `src/Administration` — Administration module + colocated Vue 3 admin shell
-  (`Resources/app/administration`); ships its built SPA as a static web asset,
-  served at `/admin` in the consuming host
-- `src/Workspace` — Workspace module
-- `src/Analyzers` — Roslyn analyzers guarding the public API surface
-- `src/Host/Cli` — `callora` CLI (e.g. the plugin contract-test kit)
-- `src/Host/Dev` — this repository's own runnable composition, for `docker compose`
-  and F5. Not packed and not a product: a distribution composes the packages itself
-- `custom/static-plugins/*` — system-tier plugins (e.g. Communication)
-- `custom/plugins/*` — dynamically installable plugins
-- Shipping composition / process entrypoint: external `callora-production` repository
+Ein domänenneutraler .NET-Kern, ein echtes Plugin-Modell und ein visueller Editor, mit dem
+Arbeitsplätze und Portale gebaut werden — nicht programmiert.
 
-## Build & test
+[Dokumentation](docs-site/) · [Architektur](docs/adr/) · [Erweiterungspunkte](docs-site/developers/extension-points.md)
+
+</div>
+
+---
+
+## Was Callora ist
+
+Eine Plattform, kein Produkt. Der Kern weiß nichts von Telefonie, Terminen oder Kunden — er
+weiß, wie **Plugins** geladen, isoliert, versorgt und ausgeliefert werden. Alles Fachliche kommt
+aus Plugins, auch das, was wir selbst mitliefern.
+
+Das ist dieselbe Wette wie bei Shopware oder Odoo, nur für einen anderen Markt: Wer ein
+Contact Center, ein Kundenportal oder einen Agenten-Arbeitsplatz braucht, soll ihn
+**zusammensetzen** statt ihn bauen zu lassen.
+
+### Die drei Ebenen, die das tragen
+
+```
+Workspace          — die Daten (ein Mandant, ein Datenbestand)
+ └─ Surface        — der Zugang (Domain, Anmeldung, Design)
+     └─ Surface    — die Struktur (Seiten, beliebig tief, vom Kunden gebaut)
+         └─ Layout — was der Composer daraus macht
+```
+
+Ein Workspace kann mehrere Zugänge auf denselben Daten haben — eine öffentliche Website, ein
+Agenten-Desktop, ein Dialer. Jeder davon ist ein Baum aus Seiten, und jede Seite kann eine
+Erlebniswelt tragen ([ADR-019](docs/adr/ADR-019-surfaces-als-baum.md)).
+
+## Was es besonders macht
+
+**Plugins laufen im Prozess, nicht daneben.** Jedes bekommt seinen eigenen
+`AssemblyLoadContext` und sein eigenes Datenbankschema (`plugin_<id>`), teilt aber die
+Typidentität mit dem Host. Ein Plugin exportiert Verträge, die andere Plugins konsumieren —
+ohne HTTP dazwischen ([ADR-013](docs/adr/ADR-013-trust-model-trusted-in-process.md)).
+
+**Die Vertragsfläche wird vom Compiler bewacht.** `[CalloraInternal]`, CAL0001–0003 und
+PublicApiAnalyzers sorgen dafür, dass „öffentliche API" keine Absichtserklärung ist: Wer die
+Grenze überschreitet, sieht es beim Bauen, nicht beim Kunden.
+
+**Der Editor rendert die echten Komponenten.** Kein iframe, kein zweiter Renderpfad, keine
+Vorschau, die driftet: Der Canvas lädt dieselben Vue-Komponenten und dasselbe Stylesheet wie die
+Fläche, nur gescoped. Was im Editor steht, steht auch live.
+
+**Gestaltung hat Leitplanken.** Das Konfigurationspanel eines Blocks wird aus seinem Vertrag
+generiert, und die Erscheinungs-Controls wählen aus `--cal-*`-Rollen — kein freier Farbwähler,
+keine Pixelfelder. Eine zusammengesetzte Seite sieht deshalb weiterhin nach dem Produkt aus.
+
+**Kontext überquert Flächengrenzen.** Ein Anruf, den der Agenten-Desktop annimmt, ist derselbe,
+den das Kundenportal sieht — über einen deklarierten, feldweise sichtbaren Kanal
+([ADR-017](docs/adr/ADR-017-surface-identitaet-und-session-transport.md)).
+
+## Schnellstart
+
 ```bash
+git clone https://github.com/BechsteinDigital/callora.git
+cd callora
 dotnet restore Callora.Host.sln
-dotnet build Callora.Host.sln          # also builds the admin SPA (vue-tsc + vite)
+dotnet build Callora.Host.sln        # baut die Admin-SPA mit (vue-tsc + vite)
 dotnet test Callora.Host.sln
 ```
-The admin SPA is built by the .NET build; run its Vitest suite directly:
+
+Ohne Node bauen: `dotnet build -p:SkipAdminFrontend=true`
+
+Laufende Entwicklungsumgebung:
+
 ```bash
-cd src/Administration/Resources/app/administration
-npm ci && npm run test
+docker compose up -d                 # Postgres
+dotnet run --project src/Host/Dev    # Admin unter /admin
 ```
-Skip the frontend build (no Node required): `dotnet build -p:SkipAdminFrontend=true`.
 
-## Administration (admin shell)
-- Vue 3 SPA (Vite + TypeScript), colocated in
-  `src/Administration/Resources/app/administration`.
-- Management modules: users/operators, RBAC roles, plugins, workspaces (+ members),
-  system configuration, media.
-- Extensibility (Vue-native, not free component overrides): additive **Slots**,
-  intervening **Hooks** (mutate/cancel/observe), controlled **Service-Overrides**.
-- Plugin admin UIs are loaded at runtime by the micro-frontend loader (backend
-  manifest → `/plugin-assets`), so install + activate + browser refresh surfaces
-  a plugin's UI without a restart.
+Die Vitest-Suiten der Frontends laufen eigenständig:
 
-## Plugin signing
-Installing a plugin is a fully privileged act — a plugin runs as host code and its
-admin bundle as privileged admin-frontend code. The install gate verifies a detached
-signature manifest (`plugin.signature.json`, ECDSA-P256) against a **trusted signer's
-public key** and checks the hash of every file in the package, so
-capabilities and entry type are tamper-evident. Unsigned plugins are rejected unless
-`BackendHost__AllowUnsignedPlugins=true`. Signature standing is shown per plugin in
-Admin → Plugins.
-
-- **Development**: the dev stack sets `BackendHost__AllowUnsignedPlugins=true`
-  (`docker-compose.yml`), so locally built plugins load without signing.
-- **Production**: `AllowUnsignedPlugins` is `false` — every deployed plugin (including
-  bundled system-tier plugins under `custom/static-plugins/`) must be signed and its
-  signer trusted, or it will not load.
-
-Signing a plugin for production:
 ```bash
-# 1) Generate an ECDSA P-256 keypair (keep the private key secret; publish the public key)
-openssl ecparam -name prime256v1 -genkey -noout -out callora-signing.key.pem
-openssl ec -in callora-signing.key.pem -pubout -out callora-signing.pub.pem
-
-# 2) Build the plugin, then sign its directory (writes plugin.signature.json next to registry.json)
-dotnet build custom/static-plugins/Communication/Callora.Plugin.Communication.csproj
-callora plugin sign --plugin <plugin-directory> --key callora-signing.key.pem
+cd src/Administration/Resources/app/administration && npm ci && npm run test
+cd src/Surface.Rendering/Resources/app/surface     && npm ci && npm run test
 ```
-Then trust the signer in the host config (the fingerprint is derived from the key):
-```jsonc
-"BackendHost": {
-  "TrustedSigners": [
-    { "publisherId": "callora", "displayName": "Callora", "publicKey": "-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----" }
-  ]
+
+## Ein Plugin bauen
+
+```csharp
+public sealed class MyPlugin : IHostManagedPlugin
+{
+    public string PluginId => "my-plugin";
+    public string DisplayName => "Mein Plugin";
+
+    public ValueTask StartAsync(IHostPluginContext context, CancellationToken ct = default)
+    {
+        // Verträge exportieren, die andere Plugins konsumieren
+        context.Export<IMyContract>(new MyImplementation());
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask StopAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 }
 ```
-Revoke a compromised signer or a specific bad build via `BackendHost__RevokedSignerFingerprints`
-/ `BackendHost__RevokedContentHashes` (enforced at install and, through runtime
-rehydration, at load). Signing Callora's own system plugins in the release pipeline is
-tracked as an operations task.
 
-## Environment
-- Template: `.env.example`
-- Local file: `.env` (is ignored by git)
-- ASP.NET configuration keys use double underscore mapping, e.g. `BackendHost__DatabaseConnectionString`.
+Dazu ein `registry.json`, optional ein eigenes Datenbankschema, eine Admin-UI als IIFE-Bundle
+und Blöcke für den Editor. Der Weg dahin steht in
+[Build your first Callora plugin](docs-site/guides/getting-started/) und
+[Building a surface plugin](docs-site/guides/surface/building-a-surface-plugin.md).
 
-Beispiel fuer lokale Shell-Session:
+## Aufbau des Repositories
+
+| Pfad | Was |
+|---|---|
+| `src/Core` | Der domänenneutrale Kern (`Callora.Core`) |
+| `src/Administration` | Admin-Modul samt colocated Vue-3-Shell |
+| `src/Workspace` | Workspaces, Surfaces, öffentliches Routing |
+| `src/Surface.Rendering` | Flächen-Rendering (Nunjucks-SSR) und `@callora/surface` |
+| `src/Analyzers` | Roslyn-Analyzer, die die Vertragsfläche bewachen |
+| `src/Host/Cli` | Die `callora`-CLI |
+| `src/Host/Dev` | Die lauffähige Zusammenstellung dieses Repos — kein Produkt |
+| `custom/static-plugins/*` | Mitgelieferte System-Plugins (Communication, Composer) |
+| `custom/plugins/*` | Dynamisch installierbare Plugins |
+| `docs-site/` | Die Dokumentation (VitePress) |
+| `docs/adr/` | Architekturentscheidungen |
+
+Dieses Repository ist das **Framework** — ein Satz paketierbarer Bibliotheken. Der lauffähige
+Prozess und die Zusammenstellung einer Distribution liegen im separaten Repository
+`callora-production`; dasselbe Framework kann mehrere Distributionen tragen.
+
+## Dokumentation
+
 ```bash
-set -a
-source .env
-set +a
-dotnet run --project src/Host/Dev/Callora.Host.Dev.csproj
+cd docs-site && npm ci && npm run dev
 ```
 
-Lokalen Dev-Stack (Backend + Postgres) starten:
-```bash
-docker compose -f docker-compose.dev.yml up -d
-```
+- **[Nutzer](docs-site/users/)** — Workspaces, Surfaces, Administration
+- **[Entwickler](docs-site/developers/)** — Verträge, Erweiterungspunkte, Plugin-Bau
+- **[Referenz](docs-site/reference/)** — APIs, Manifeste, Analyzer-Regeln, Berechtigungen
+- **[Betrieb](docs-site/maintainer/)** — Deployment, Migrationen, Sicherheit
 
-API ist danach erreichbar unter:
+## Mitmachen
 
-- `http://localhost:5000/health`
+Fehlerberichte und Vorschläge sind willkommen. Bevor du Code beisteuerst, wirf einen Blick in
+`docs-site/maintainer/` — das Repo hat erzwungene Regeln (Analyzer, API-Baselines,
+Architektur-Tests), und es hilft zu wissen, welche.
 
-## Knowledge Base
-- Zentraler Einstieg: `docs/HOST_KNOWLEDGE_INDEX.md`
-- Zielbild: `Callora_Targetstruktur_fuer_KI.md`
-- Host API: `docs/portal/architecture/host-backend-api.md`
-- Pluginmodell: `docs/portal/modules/plugins.md`
-- Compliance: `docs/compliance/COMPLIANCE_BASELINE_DSGVO_EU_AI_ACT.md`
-- Lokales Env-Setup: `docs/LOCAL_ENVIRONMENT.md`
+## Lizenz
 
-## Notes
-- Backend API supports the plugin lifecycle (`install/activate/deactivate/uninstall`) and `install/nuget`.
-- Admin shell source lives in `src/Administration/Resources/app/administration` (colocated) and ships with the Administration package.
-- The tenant surface runtime is server-side rendered in `src/Surface.Rendering` (colocated Vue at `Resources/app/surface`, served at `/surface-app`).
+> **In Klärung.** `LICENSE` steht aktuell auf „All rights reserved", während die
+> Vertragspakete `@callora/surface` und `@callora/admin` Apache-2.0 deklarieren — ein
+> Widerspruch, der aufzulösen ist, bevor jemand darauf baut.
+>
+> Die Analyse der Optionen samt Empfehlung steht in
+> [`ops/research/2026-08-07-lizenzmodell.md`](ops/research/2026-08-07-lizenzmodell.md). Der Kern:
+> Die Vertragspakete bleiben Apache-2.0, der Kern wird offen (LGPL oder AGPL mit
+> Plugin-Ausnahme), kommerzielle Plugins bleiben proprietär.
 
-## Communication Plugin (System-Tier)
-- Projekt: `custom/static-plugins/Communication/Callora.Plugin.Communication.csproj`
-- Entrypoint: `Callora.Plugin.Communication.CommunicationPlugin`
-- Registry: `custom/static-plugins/Communication/registry.json` (pluginId `communication`, tier `system`)
-- Öffentliche Verträge: `custom/static-plugins/Communication/Abstractions` (`Callora.Plugin.Communication.Abstractions`)
-
-Build + Install-Beispiel:
-```bash
-dotnet build custom/static-plugins/Communication/Callora.Plugin.Communication.csproj
-curl -s -X POST http://localhost:5000/api/plugins/install \
-  -H "X-Callora-Api-Key: callora-local-dev-key-change-me" \
-  -H "Content-Type: application/json" \
-  -d '{"assemblyPath":"/abs/path/to/Callora.Plugin.Communication.dll"}'
-```
-
-Contract-Test-Kit (lokal/CI):
-```bash
-dotnet run --project src/Host/Cli/Callora.Host.Cli.csproj -- \
-  plugin test-contract \
-  --assembly custom/static-plugins/Communication/bin/Debug/net10.0/Callora.Plugin.Communication.dll \
-  --registry custom/static-plugins/Communication/registry.json
-```
+© 2026 Bechstein Digital
