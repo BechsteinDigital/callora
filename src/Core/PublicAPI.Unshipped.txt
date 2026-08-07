@@ -4851,6 +4851,7 @@ Callora.Core.Infrastructure.Http.HostApiEventStream
 Callora.Core.Infrastructure.Http.HostApiEventStream.HostApiEventStream(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> void
 Callora.Core.Infrastructure.Http.HostApiRequest
 Callora.Core.Infrastructure.Http.HostApiRequest.HostApiRequest(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> void
+Callora.Core.Infrastructure.Http.PlatformOwnedPathSegments
 Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource
 Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource.PluginApiEndpointDataSource(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource!>! logger) -> void
 Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource.Refresh() -> void
@@ -6766,6 +6767,7 @@ static Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.oper
 static Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.operator ==(Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult? left, Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult? right) -> bool
 static Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult.operator !=(Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? left, Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? right) -> bool
 static Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult.operator ==(Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? left, Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? right) -> bool
+static Callora.Core.Infrastructure.Http.PlatformOwnedPathSegments.IsPlatformOwned(string? requestPath) -> bool
 static Callora.Core.Infrastructure.Http.ReservedHostRoutePrefixes.Collides(string? pathTemplate) -> bool
 static Callora.Core.Infrastructure.Persistence.BackendPersistenceServiceCollectionExtensions.AddBackendPersistence(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.Persistence.DbContextMigrationExtensions.ApplyMigrationsAsync(this Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

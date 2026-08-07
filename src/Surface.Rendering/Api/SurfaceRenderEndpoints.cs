@@ -10,6 +10,8 @@ using Callora.Surface.Rendering.Rendering;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
+using Callora.Core.Infrastructure.Http;
+
 namespace Callora.Surface.Rendering.Api;
 
 /// <summary>
@@ -81,6 +83,20 @@ public static class SurfaceRenderEndpoints
     {
         var host = httpContext.Request.Host.Host;
         var path = httpContext.Request.Path.HasValue ? httpContext.Request.Path.Value! : "/";
+
+        // Der Catch-All /{**surfacePath} fängt JEDEN unaufgelösten Pfad — auch /api/…, wenn
+        // dort ein Endpunkt fehlt oder der Aufrufer sich vertippt. Ohne diese Prüfung kam
+        // darauf 200 mit einer gerenderten Seite und einem gesetzten Surface-Cookie zurück,
+        // statt 404. Ein 200 mit falschem Inhalt ist die unangenehmste Sorte Fehler: Der
+        // Aufrufer meldet einen Parse-Fehler, und niemand sucht beim Routing. Genau so blieb
+        // ein falscher API-Pfad im Composer-Bundle unsichtbar, bis jemand die Oberfläche
+        // öffnete.
+        // Der Workspace-Catch-All hatte diese Abgrenzung von Anfang an; in einer colocated
+        // Komposition gewinnt aber dieser hier.
+        if (PlatformOwnedPathSegments.IsPlatformOwned(path))
+        {
+            return Results.NotFound();
+        }
 
         var surface = await workspaceStore
             .ResolveSurfaceByPublicRouteAsync(host, path, cancellationToken: cancellationToken)
