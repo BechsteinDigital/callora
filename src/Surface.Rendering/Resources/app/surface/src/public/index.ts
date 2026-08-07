@@ -65,3 +65,13 @@ export {
   registerControlType,
   registerSurfaceView,
 } from './register'
+
+// ── Loading a surface's bundles, for hosts that are not the surface ──────────
+export {
+  ensureSurfaceRegistry,
+  loadSurfaceBundles,
+  type SurfaceBundleLoad,
+  type SurfaceBundleOptions,
+} from './bundles'
+
+export type { PluginLoadResult } from '../plugin-loader'
