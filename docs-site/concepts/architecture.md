@@ -32,10 +32,21 @@ modeling mistake.
 | --- | --- | --- |
 | **Tenant** | Who pays / who is billed? | The customer account |
 | **Workspace** | Which logical system and data set? | A Shopware sales channel's data |
-| **Surface** | Which access point / front-end? | A sales channel / storefront |
+| **Surface** | Which access point, and which page within it? | A sales channel, plus its category tree |
 
 - Data shared across access points → **one workspace, several surfaces**.
 - Systems that must stay isolated → **several workspaces**.
+
+Surfaces form a **tree** (ADR-019). A node without a parent is an **application root** and
+carries the access — host, access mode, theme, identity provider. A node with a parent is a
+**page**: it inherits all of that and overrides only what it needs. Every node may carry a
+layout, which is what makes a website with several pages possible without several access
+channels.
+
+Inheritance and navigation end at the next root: two nodes under one root are the same
+application, two under different roots are not. Only a root assigns an identity provider, so the
+session boundary coincides with the application boundary rather than sitting somewhere inside a
+tree.
 
 A workspace is, by definition, **not** a front-end. The tenant-facing rendering layer is
 the **Surface runtime** (ADR-015),

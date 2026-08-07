@@ -9,7 +9,7 @@ straight is the key to setting the platform up correctly.
 |---|---|---|
 | **Tenant** | Who pays / who owns this | Billing account |
 | **Workspace** | Which system + data boundary | An isolated installation |
-| **Surface** | Which access channel | A sales channel |
+| **Surface** | Which access channel *and* which page within it | A sales channel, plus its category tree |
 
 They are independent. A tenant can own several workspaces. A single workspace —
 one system and one dataset — can expose several surfaces (channels). Put another
@@ -55,9 +55,23 @@ ordered by user id, so large workspaces page cleanly.
 
 ## Surfaces
 
-A **surface** is an access channel into a workspace — roughly a sales channel.
-Surfaces live under a workspace (API base
-`/api/workspaces/{workspaceKey}/surfaces`):
+Surfaces form a **tree** (ADR-019). A node without a parent is an **application root** — what
+you would call a sales channel: a website, a dialer, an agent desktop. It carries the access
+itself. A node *with* a parent is a **page**: it inherits the access and overrides only what it
+needs, the way a Shopware category sits inside a sales channel.
+
+```text
+Contact Center            ← root: host, access mode, theme, login
+├── Arbeitsplatz          ← page: inherits all of it
+├── Kunden
+│   └── Detail
+└── Auswertungen
+```
+
+**Every node can carry a layout** — that is the point of the tree. Before it, there was exactly
+one layout per surface, so a website with three pages would have needed three access channels.
+
+Surfaces live under a workspace (API base `/api/workspaces/{workspaceKey}/surfaces`):
 
 | Action | Endpoint |
 |---|---|
@@ -68,8 +82,12 @@ Surfaces live under a workspace (API base
 
 Each surface defines:
 
-- **Public routing** — an optional `publicHost` and a `publicPathPrefix` (plus an
-  optional `publicBaseUrl`) that place the surface at a URL.
+- **Its place in the tree** — `parentSurfaceKey` (empty for an application root) and `position`
+  among siblings, which is the order the navigation shows.
+- **Public routing** — an optional `publicHost` and a `publicPathPrefix` (plus an optional
+  `publicBaseUrl`). On a child, the path prefix is **its own segment only** (`partner`, not
+  `/portal/partner`): the full path is composed from the chain, so moving a subtree does not
+  require rewriting every descendant.
 - **Access mode** — one of:
 
   | Mode | Meaning |
@@ -82,7 +100,24 @@ Each surface defines:
   `templateVersion`) and an optional **theme** (`themePluginId` /
   `themeVersion`), and an active flag.
 
-Because surfaces hang off one workspace, several surfaces can present the same
+- **Who may see it** — `requiredClaims`, comma-separated. A visitor without them gets a 404,
+  not a 403: a node they may not see behaves like one that does not exist. Requirements are
+  **cumulative down the tree** — what a parent demands also holds for its children, because a
+  child has its own URL and could otherwise be reached around the protection.
+
+  This is deliberately unlike the access mode, which a child may override in *both* directions:
+  a public imprint under an authenticated portal is as legitimate as a protected partner area
+  under an open website.
+
+  > These are the **visitor's** claims from their surface identity — not the operator RBAC. A
+  > portal visitor is not an operator and has no backend role.
+
+Inheritance runs up to the next **root** and no further. Two nodes under one root belong to the
+same application; two under different roots do not, even in the same workspace. That is also
+where a login ends: only a root assigns an identity provider, so signing in at one covers its
+whole tree and nothing beyond it.
+
+Because surfaces hang off one workspace, several application roots can present the same
 workspace data through different channels and access modes at once.
 
 ## Themes and branding
