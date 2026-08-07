@@ -57,6 +57,21 @@ public sealed class SdkCall : IVoipCall
     public CallTerminationReason? TerminationReason => MapTerminationReason(_sdkCall.TerminationReason);
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Built per read rather than cached: the SDK fills these from the inbound INVITE, and reading
+    /// through means a value that arrives late is not frozen out by a snapshot taken too early.
+    /// </remarks>
+    public InboundCallIdentity? InboundIdentity =>
+        _sdkCall.Direction != SdkCallDirection.Inbound
+            ? null
+            : new InboundCallIdentity(
+                _sdkCall.CalledNumber,
+                _sdkCall.RemoteNumber,
+                _sdkCall.RemoteDisplayName,
+                _sdkCall.RemoteAssertedIdentity,
+                _sdkCall.Diversion);
+
+    /// <inheritdoc />
     public event EventHandler<CallStateChangedEventArgs>? StateChanged;
 
     /// <inheritdoc />

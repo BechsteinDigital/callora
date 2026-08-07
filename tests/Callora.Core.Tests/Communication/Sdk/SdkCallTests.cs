@@ -209,6 +209,56 @@ public sealed class SdkCallTests
     }
 
     [Fact]
+    public void InboundIdentity_CarriesWhoCalledAndWhichNumberTheyReached()
+    {
+        var sdk = new FakeSdkCall
+        {
+            Direction = SdkCallDirection.Inbound,
+            RemoteParty = "sip:+4930111@pbx.example.com",
+            CalledNumber = "+4930222",
+            RemoteNumber = "+4930111",
+            RemoteDisplayName = "Alice",
+        };
+
+        var identity = NewCall(sdk).InboundIdentity;
+
+        // The dialed number is what a consumer routes on — which of our numbers was called decides
+        // whose call it is. The caller's name is what a screen-pop shows.
+        Assert.NotNull(identity);
+        Assert.Equal("+4930222", identity!.CalledNumber);
+        Assert.Equal("+4930111", identity.CallerNumber);
+        Assert.Equal("Alice", identity.CallerDisplayName);
+    }
+
+    [Fact]
+    public void InboundIdentity_CarriesTheAssertedAndDivertedHeaders()
+    {
+        var sdk = new FakeSdkCall
+        {
+            Direction = SdkCallDirection.Inbound,
+            AssertedIdentity = "sip:+4930999@trusted.example.com",
+            Diversion = "sip:+4930888@pbx.example.com",
+        };
+
+        var identity = NewCall(sdk).InboundIdentity;
+
+        // On a trunk the asserted identity is the caller you can believe, and the diversion says the
+        // call reached you via somebody else's number — both change how a call should be handled.
+        Assert.Equal("sip:+4930999@trusted.example.com", identity!.AssertedIdentity);
+        Assert.Equal("sip:+4930888@pbx.example.com", identity.DivertedFrom);
+    }
+
+    [Fact]
+    public void InboundIdentity_IsAbsentForAnOutboundCall()
+    {
+        var call = NewCall(new FakeSdkCall { Direction = SdkCallDirection.Outbound });
+
+        // Nothing here applies when we placed the call; an empty record would invite consumers to
+        // check five fields for null instead of one.
+        Assert.Null(call.InboundIdentity);
+    }
+
+    [Fact]
     public void DtmfReceived_ReRaisesToneAndDurationFromSdk()
     {
         var sdk = new FakeSdkCall();
@@ -433,9 +483,19 @@ internal sealed class FakeSdkCall : NativeCall
 
     public CalloraVoipSdk.Core.Domain.Calls.CallIceState IceConnectionState => throw new NotSupportedException();
 
-    public string? RemoteAssertedIdentity => throw new NotSupportedException();
+    public string? RemoteAssertedIdentity => AssertedIdentity;
 
-    public string? Diversion => throw new NotSupportedException();
+    public string? Diversion { get; init; }
+
+    public string? AssertedIdentity { get; init; }
+
+    public string? CalledNumber { get; init; }
+
+    public string? RemoteNumber { get; init; }
+
+    public string? RemoteDisplayName { get; init; }
+
+    public string? LocalParty { get; init; }
 
     public Task HoldAsync(CancellationToken ct = default) => throw new NotSupportedException();
 
