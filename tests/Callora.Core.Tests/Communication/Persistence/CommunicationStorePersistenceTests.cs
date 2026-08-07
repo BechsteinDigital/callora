@@ -87,6 +87,35 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task CallLog_Journey_RoundTrips_AndAnOlderRowReadsAsEmpty()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        var store = new EfCallLogStore(_factory);
+        var withJourney = CallLog.Start(
+            "call-journey", "ws-j", "acc-1", CallDirection.Inbound, "+4917012345678", "+493012345678",
+            handledBy: null, correlationId: null, startedAt: DateTimeOffset.UnixEpoch);
+        withJourney.RecordJourney([
+            new CallJourneyStep("communication", "call.ringing", "Reached +493012345678."),
+            new CallJourneyStep("videoconference", "room.attached"),
+        ]);
+        await store.AddAsync(withJourney);
+
+        // Ohne Journey: Die NULL-Spalte umgeht den Wertkonverter, EF weist direkt null zu — jede Zeile,
+        // die es vor dieser Spalte gab, ist genau in diesem Zustand.
+        var plain = CallLog.Start(
+            "call-plain", "ws-j", "acc-1", CallDirection.Inbound, "+4917012345678", "+493012345678",
+            handledBy: null, correlationId: null, startedAt: DateTimeOffset.UnixEpoch);
+        await store.AddAsync(plain);
+
+        var recent = await store.ListRecentAsync("ws-j", 10);
+        var loaded = recent.Single(entry => entry.Id == "call-journey");
+        Assert.Equal(["call.ringing", "room.attached"], loaded.Journey.Select(step => step.Step));
+        Assert.Equal("Reached +493012345678.", loaded.Journey[0].Detail);
+        Assert.Empty(recent.Single(entry => entry.Id == "call-plain").Journey);
+    }
+
+    [SkippableFact]
     public async Task SipAccount_CallQuotas_RoundTrip_AndAreReplacedOnUpdate()
     {
         Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");

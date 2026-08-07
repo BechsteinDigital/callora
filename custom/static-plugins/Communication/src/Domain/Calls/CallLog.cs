@@ -9,6 +9,8 @@ namespace Callora.Plugin.Communication.Domain.Calls;
 /// </summary>
 public sealed class CallLog
 {
+    private IReadOnlyList<CallJourneyStep>? _journey;
+
     private CallLog(
         Guid recordId,
         string id,
@@ -179,6 +181,31 @@ public sealed class CallLog
         Outcome = outcome;
         DisconnectCause = disconnectCause;
         DurationSeconds = wasAnswered ? (int)(endedAt - AnsweredAt!.Value).TotalSeconds : 0;
+    }
+
+    /// <summary>
+    /// What happened to the call, in order, as its participants recorded it. Written once when the
+    /// call ends: a history row says a call ended, this says why it went where it went.
+    /// </summary>
+    /// <remarks>
+    /// Reads as empty when nothing was materialized — a NULL column bypasses the value converter, so
+    /// EF hands the field null rather than the empty list the converter would produce. Every row that
+    /// predates this column is in exactly that state.
+    /// </remarks>
+    public IReadOnlyList<CallJourneyStep> Journey
+    {
+        get => _journey ?? [];
+        private set => _journey = value;
+    }
+
+    /// <summary>
+    /// Attaches the call's steps to its record. Called once, where the call is finalized — replacing
+    /// rather than appending, because the buffer holds the whole story and hands it over as one.
+    /// </summary>
+    public void RecordJourney(IReadOnlyList<CallJourneyStep> steps)
+    {
+        ArgumentNullException.ThrowIfNull(steps);
+        Journey = steps;
     }
 
     /// <summary>Outcomes a call that was answered may end with.</summary>

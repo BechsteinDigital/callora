@@ -25,8 +25,33 @@ public sealed class IncomingCallOwnershipTests
 
         var claimed = await owners.OfferAsync(Workspace, call);
 
-        Assert.True(claimed);
+        Assert.NotNull(claimed);
         Assert.Same(call, owner.Offered);
+    }
+
+    [Fact]
+    public async Task TheChainSaysWhoTookTheCall()
+    {
+        // An operator asking "who answered this" has no way to tell today: owners are anonymous
+        // instances, and the call history says only that somebody did.
+        var owners = new IncomingCallOwnership(
+            [new RecordingOwner(claims: false), new NamedOwner("videoconference", "Telefon-Einwahl")]);
+
+        var claimed = await owners.OfferAsync(Workspace, new ControllableCall("call-1", CallState.Ringing, CallDirection.Inbound));
+
+        Assert.Equal(("videoconference", "Telefon-Einwahl"), (claimed!.Id, claimed.DisplayName));
+    }
+
+    [Fact]
+    public async Task AnOwnerThatNamesNothing_IsReportedAsUnnamed()
+    {
+        // Additive: an owner written before identities existed still works, and the journey says so
+        // rather than inventing a name for it.
+        var owners = new IncomingCallOwnership([new RecordingOwner(claims: true)]);
+
+        var claimed = await owners.OfferAsync(Workspace, new ControllableCall("call-1", CallState.Ringing, CallDirection.Inbound));
+
+        Assert.Equal(CallOwnerIdentity.Anonymous, claimed);
     }
 
     [Fact]
@@ -53,7 +78,7 @@ public sealed class IncomingCallOwnershipTests
 
         var claimed = await owners.OfferAsync(Workspace, new ControllableCall("call-1", CallState.Ringing, CallDirection.Inbound));
 
-        Assert.True(claimed);
+        Assert.NotNull(claimed);
         Assert.NotNull(declining.Offered);
         Assert.NotNull(claiming.Offered);
     }
@@ -63,7 +88,7 @@ public sealed class IncomingCallOwnershipTests
     {
         var owners = new IncomingCallOwnership([]);
 
-        Assert.False(await owners.OfferAsync(Workspace, new ControllableCall("call-1", CallState.Ringing, CallDirection.Inbound)));
+        Assert.Null(await owners.OfferAsync(Workspace, new ControllableCall("call-1", CallState.Ringing, CallDirection.Inbound)));
     }
 
     [Fact]
@@ -74,7 +99,7 @@ public sealed class IncomingCallOwnershipTests
         var owners = new IncomingCallOwnership([throwing, claiming]);
 
         // One broken consumer must not make the whole trunk unreachable — the call moves on.
-        Assert.True(await owners.OfferAsync(Workspace, new ControllableCall("call-1", CallState.Ringing, CallDirection.Inbound)));
+        Assert.NotNull(await owners.OfferAsync(Workspace, new ControllableCall("call-1", CallState.Ringing, CallDirection.Inbound)));
         Assert.NotNull(claiming.Offered);
     }
 }
@@ -91,9 +116,25 @@ internal sealed class RecordingOwner(bool claims) : IIncomingCallOwner
     }
 }
 
+/// <summary>An owner that says who it is, so the journey can name it.</summary>
+internal sealed class NamedOwner(string id, string displayName) : IIncomingCallOwner
+{
+    public CallOwnerIdentity Identity { get; } = new(id, displayName);
+
+    public Task<bool> TryClaimAsync(string workspaceKey, ICall call, CancellationToken cancellationToken = default) =>
+        Task.FromResult(true);
+}
+
 /// <summary>An owner that fails, to prove a broken consumer does not strand the call.</summary>
 internal sealed class ThrowingOwner : IIncomingCallOwner
 {
     public Task<bool> TryClaimAsync(string workspaceKey, ICall call, CancellationToken cancellationToken = default) =>
         throw new InvalidOperationException("owner is broken");
+}
+
+/// <summary>An owner that wants nothing, so the call reaches the "nobody claimed it" path.</summary>
+internal sealed class DecliningOwner : IIncomingCallOwner
+{
+    public Task<bool> TryClaimAsync(string workspaceKey, ICall call, CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
 }
