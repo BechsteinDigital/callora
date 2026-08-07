@@ -9,8 +9,10 @@ export interface Workspace {
   workspaceType: string
   isActive: boolean
   tenantIsActive: boolean
-  // No route here: an address belongs to a surface (ADR-014 §5). The theme is the
-  // default its surfaces inherit.
+  // Eine Basis-URL kann den WORKSPACE bezeichnen — dann steht sie hier. Ein PFAD gehört
+  // dagegen immer einer Oberfläche (ADR-021). Das Theme ist der Standard, den die
+  // Oberflächen erben.
+  publicHost: string | null
   themePluginId: string | null
   themeVersion: string | null
   themeAssignedBy: string | null
@@ -28,6 +30,9 @@ export interface WorkspaceUpsert {
   // Convenience for the common one-surface case: configures the route of the
   // workspace's "default" surface. Further routes are managed per surface.
   defaultSurfaceBaseUrl: string | null
+  // Der Host dieses Workspaces — `kunde.de`. Leer lassen, wenn er über einen Pfad
+  // erreicht wird: dann beginnt jede Oberflächen-URL mit dem Workspace-Schlüssel.
+  publicHost: string | null
 }
 
 // Mirrors WorkspaceMemberApiResponse. The role is a workspace-scoped role name

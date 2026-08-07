@@ -17,8 +17,12 @@ public interface IWorkspaceManagementStore
     /// <summary>
     /// Creates or updates a workspace and ensures it has a "default" surface.
     /// <paramref name="defaultSurfaceBaseUrl"/> is a convenience for the common
-    /// one-surface case: it configures the route of that default surface. The
-    /// workspace itself has no address — every route lives on a surface.
+    /// one-surface case: it configures the route of that default surface.
+    /// <para>
+    /// <paramref name="publicHost"/> adressiert den WORKSPACE selbst — eine Basis-URL kann
+    /// einen Workspace bezeichnen (<c>kunde.de</c>) oder eine Oberfläche
+    /// (<c>portal.kunde.de</c>). Ohne beides beginnt der Pfad mit dem Workspace-Schlüssel.
+    /// </para>
     /// </summary>
     Task<WorkspaceUpsertResult> UpsertAsync(
         string tenantKey,
@@ -27,6 +31,7 @@ public interface IWorkspaceManagementStore
         string workspaceType,
         bool isActive,
         string? defaultSurfaceBaseUrl = null,
+        string? publicHost = null,
         CancellationToken cancellationToken = default);
 
     Task<WorkspaceSnapshot?> ResolveByPublicRouteAsync(

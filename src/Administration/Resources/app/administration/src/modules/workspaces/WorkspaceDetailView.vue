@@ -48,6 +48,15 @@
             />
           </CalField>
 
+          <CalField
+            v-slot="{ id }"
+            label="Eigener Host"
+            hint="optional"
+            description="z. B. kunde.de — ohne ihn beginnt jede öffentliche URL dieses Workspaces mit seinem Schlüssel."
+          >
+            <CalInput :id="id" v-model="publicHost" name="publicHost" :icon="Globe" />
+          </CalField>
+
           <CalField label="Zustand">
             <CalSwitch v-model="isActive" name="isActive">Aktiv</CalSwitch>
           </CalField>
@@ -121,6 +130,7 @@ const workspaceKey = ref('')
 const displayName = ref('')
 const workspaceType = ref('')
 const defaultSurfaceBaseUrl = ref('')
+const publicHost = ref('')
 const isActive = ref(true)
 const loaded = ref<Workspace | null>(null)
 const error = ref<string | null>(null)
@@ -166,7 +176,9 @@ async function load(): Promise<void> {
     workspaceKey.value = workspace.workspaceKey
     displayName.value = workspace.displayName
     workspaceType.value = workspace.workspaceType
-    
+    // Muss geladen werden: Das Speichern ist ein vollständiges Ersetzen, ein leeres Feld
+    // löscht den Host — und mit ihm die Adresse, unter der der Workspace erreichbar war.
+    publicHost.value = workspace.publicHost ?? ''
     isActive.value = workspace.isActive
   } catch (e) {
     error.value = (e as Error).message
@@ -182,6 +194,7 @@ interface WorkspaceSaveDraft {
   workspaceType: string
   isActive: boolean
   defaultSurfaceBaseUrl: string | null
+  publicHost: string | null
 }
 
 async function save(): Promise<void> {
@@ -199,6 +212,7 @@ async function save(): Promise<void> {
     workspaceType: workspaceType.value,
     isActive: isActive.value,
     defaultSurfaceBaseUrl: defaultSurfaceBaseUrl.value || null,
+    publicHost: publicHost.value.trim() || null,
   }
   const before = await runHook('workspaces.before-save', draft)
   if (before.canceled) {
@@ -214,6 +228,7 @@ async function save(): Promise<void> {
       workspaceType: draft.workspaceType,
       isActive: draft.isActive,
       defaultSurfaceBaseUrl: draft.defaultSurfaceBaseUrl,
+      publicHost: draft.publicHost,
     })
     await runHook('workspaces.after-save', { workspaceKey: key })
     toast.success(isEdit.value ? `Workspace „${key}“ gespeichert.` : `Workspace „${key}“ angelegt.`)

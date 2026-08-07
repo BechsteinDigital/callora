@@ -73,6 +73,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         string workspaceType,
         bool isActive,
         string? defaultSurfaceBaseUrl = null,
+        string? publicHost = null,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -102,6 +103,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             workspaceType.Trim(),
             isActive,
             tenantIsActive,
+            string.IsNullOrWhiteSpace(publicHost) ? null : publicHost.Trim().ToLowerInvariant(),
             existed ? existing!.ThemePluginId : null,
             existed ? existing!.ThemeVersion : null,
             existed ? existing!.ThemeAssignedBy : null,

@@ -21,6 +21,7 @@ internal sealed class EmptyWorkspaceManagementStore : IWorkspaceManagementStore
                 WorkspaceType: "default",
                 IsActive: true,
                 TenantIsActive: true,
+                PublicHost: null,
                 ThemePluginId: null,
                 ThemeVersion: null,
                 ThemeAssignedBy: null,
@@ -53,6 +54,7 @@ internal sealed class EmptyWorkspaceManagementStore : IWorkspaceManagementStore
         string workspaceType,
         bool isActive,
         string? defaultSurfaceBaseUrl = null,
+        string? publicHost = null,
         CancellationToken cancellationToken = default) =>
         Task.FromResult(new WorkspaceUpsertResult(WorkspaceUpsertStatus.TenantNotFound));
 

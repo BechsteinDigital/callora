@@ -48,6 +48,7 @@ function ws(over: Partial<Workspace>): Workspace {
     workspaceType: 'standard',
     isActive: true,
     tenantIsActive: true,
+    publicHost: null,
     themePluginId: null,
     themeVersion: null,
     themeAssignedBy: null,

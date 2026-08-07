@@ -80,6 +80,7 @@ public static class WorkspaceEndpoints
                     request.WorkspaceType,
                     request.IsActive,
                     request.DefaultSurfaceBaseUrl,
+                    request.PublicHost,
                     cancellationToken)
                 .ConfigureAwait(false);
 
@@ -293,6 +294,7 @@ public static class WorkspaceEndpoints
             workspace.WorkspaceType,
             workspace.IsActive,
             workspace.TenantIsActive,
+            workspace.PublicHost,
             workspace.ThemePluginId,
             workspace.ThemeVersion,
             workspace.ThemeAssignedBy,

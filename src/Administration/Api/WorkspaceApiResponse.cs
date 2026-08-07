@@ -7,6 +7,7 @@ public sealed record WorkspaceApiResponse(
     string WorkspaceType,
     bool IsActive,
     bool TenantIsActive,
+    string? PublicHost,
     string? ThemePluginId,
     string? ThemeVersion,
     string? ThemeAssignedBy,

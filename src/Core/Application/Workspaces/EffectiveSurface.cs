@@ -83,8 +83,8 @@ public sealed record EffectiveSurface(
             node.Id,
             node.Workspace.WorkspaceKey,
             node.SurfaceKey,
-            SurfaceTree.Inherited(ancestry, surface => surface.PublicHost),
-            SurfaceTree.ComposePath(ancestry.Select(surface => surface.PublicPathPrefix).ToArray()),
+            HostOf(ancestry),
+            PathOf(ancestry),
             node.AccessMode,
             SurfaceTree.Inherited(ancestry, surface => surface.Locale),
             templateFrom?.TemplatePluginId,
@@ -102,5 +102,48 @@ public sealed record EffectiveSurface(
                     .SelectMany(node => SurfaceVisibility.Parse(node.RequiredClaims))
                     .Distinct(StringComparer.Ordinal)),
         };
+    }
+
+    /// <summary>
+    /// Der Host dieser Fläche: der eigene oder geerbte, sonst der des Workspaces.
+    /// </summary>
+    /// <remarks>
+    /// Eine Basis-URL kann eine Fläche bezeichnen oder einen Workspace. Die Fläche ist dabei
+    /// das speziellere Signal und gewinnt: Wer <c>portal.kunde.de</c> auf eine Fläche legt,
+    /// meint diese Fläche, auch wenn der Workspace <c>kunde.de</c> trägt.
+    /// </remarks>
+    private static string? HostOf(IReadOnlyList<WorkspaceSurface> ancestry) =>
+        SurfaceTree.Inherited(ancestry, surface => surface.PublicHost)
+        ?? ancestry[0].Workspace?.PublicHost;
+
+    /// <summary>
+    /// Der Pfad dieser Fläche, zusammengesetzt aus der Kette — und dem Workspace-Schlüssel
+    /// davor, wenn kein Host den Workspace bereits benennt.
+    /// </summary>
+    /// <remarks>
+    /// <c>host.de/&lt;workspace&gt;/&lt;fläche&gt;/&lt;seite&gt;</c> ist der Normalfall nach
+    /// dem Anlegen. Ohne das Workspace-Segment beanspruchte jeder Workspace die gesamte
+    /// Origin: Zwei frisch angelegte waren nicht unterscheidbar, und der zweite blieb
+    /// unerreichbar, ohne dass irgendwo etwas darauf hinwies.
+    ///
+    /// <para>
+    /// Benennt ein Host den Workspace oder die Fläche bereits, entfällt das Segment — es
+    /// zweimal zu sagen wäre keine Unterscheidung, sondern eine Wiederholung.
+    /// </para>
+    ///
+    /// <para>
+    /// Das Segment steht ANS ENDE des Arrays: ComposePath bekommt die Kette von Knoten zu
+    /// Wurzel und dreht sie um.
+    /// </para>
+    /// </remarks>
+    private static string PathOf(IReadOnlyList<WorkspaceSurface> ancestry)
+    {
+        var segments = ancestry.Select(surface => (string?)surface.PublicPathPrefix).ToList();
+        if (HostOf(ancestry) is null)
+        {
+            segments.Add(ancestry[0].Workspace?.WorkspaceKey);
+        }
+
+        return SurfaceTree.ComposePath(segments);
     }
 }

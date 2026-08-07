@@ -77,6 +77,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         string workspaceType,
         bool isActive,
         string? defaultSurfaceBaseUrl = null,
+        string? publicHost = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tenantKey);
@@ -88,6 +89,9 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         var normalizedWorkspaceKey = workspaceKey.Trim();
         var normalizedDisplayName = displayName.Trim();
         var normalizedWorkspaceType = workspaceType.Trim();
+        var normalizedPublicHost = string.IsNullOrWhiteSpace(publicHost)
+            ? null
+            : publicHost.Trim().ToLowerInvariant();
         if (!WorkspacePublicUrlNormalizer.TryNormalize(defaultSurfaceBaseUrl, out var publicUrl, out _))
         {
             return new WorkspaceUpsertResult(WorkspaceUpsertStatus.InvalidPublicUrl);
@@ -116,6 +120,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
                 DisplayName = normalizedDisplayName,
                 WorkspaceType = normalizedWorkspaceType,
                 IsActive = isActive,
+                PublicHost = normalizedPublicHost,
                 CreatedAtUtc = nowUtc,
                 UpdatedAtUtc = nowUtc
             };
@@ -127,12 +132,13 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             workspace.DisplayName = normalizedDisplayName;
             workspace.WorkspaceType = normalizedWorkspaceType;
             workspace.IsActive = isActive;
+            workspace.PublicHost = normalizedPublicHost;
             workspace.UpdatedAtUtc = nowUtc;
         }
 
         // Every workspace has a "default" surface — it is the one way into the data
         // until an operator adds more. The route given here configures THAT surface;
-        // the workspace itself carries no address (ADR-014 §5).
+        // der Workspace trägt höchstens einen Host, nie einen Pfad (ADR-021).
         var defaultSurface = await dbContext.WorkspaceSurfaces
             .SingleOrDefaultAsync(
                 x => x.WorkspaceId == workspace.Id && x.SurfaceKey == "default",
@@ -523,6 +529,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             workspace.WorkspaceType,
             workspace.IsActive,
             tenant.IsActive,
+            workspace.PublicHost,
             workspace.ThemePluginId,
             workspace.ThemeVersion,
             workspace.ThemeAssignedBy,
@@ -609,6 +616,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             x.WorkspaceType,
             x.IsActive,
             x.Tenant.IsActive,
+            x.PublicHost,
             x.ThemePluginId,
             x.ThemeVersion,
             x.ThemeAssignedBy,
