@@ -10,11 +10,6 @@ import {
   type PluginManifest,
 } from './plugin-loader'
 
-const guestCaller = {
-  state: 'guest' as const,
-  subject: { issuer: 'callora.surface-guest', subjectId: '' },
-}
-
 // The environment (vite.config: disableCSSFileLoading/disableJavaScriptFileLoading)
 // keeps injected tags inert; clear the head so each injection test starts clean.
 beforeEach(() => {
@@ -143,7 +138,7 @@ describe('injectPluginScript', () => {
 })
 
 describe('loadSurfacePlugins', () => {
-  const context = { workspaceKey: 'acme', surfaceKey: 'portal', caller: guestCaller }
+  const context = { workspaceKey: 'acme', surfaceKey: 'portal' }
   // A loader that behaves like the browser's: it injects the script (so DOM order is
   // observable) and resolves, unless the src is in `failing`, where it rejects.
   const injectingLoader = (failing: string[] = []) =>
@@ -161,7 +156,7 @@ describe('loadSurfacePlugins', () => {
     let clock = 0
     const now = () => (clock += 5)
 
-    const results = await loadSurfacePlugins(
+    const { results } = await loadSurfacePlugins(
       context,
       {},
       { fetchJson, doc: document, loadScript: injectingLoader(), now },
@@ -198,7 +193,7 @@ describe('loadSurfacePlugins', () => {
     )
 
     await loadSurfacePlugins(
-      { workspaceKey: 'acme', surfaceKey: '', caller: guestCaller },
+      { workspaceKey: 'acme', surfaceKey: '' },
       {},
       { fetchJson, doc: document, loadScript: injectingLoader() },
     )
@@ -212,7 +207,7 @@ describe('loadSurfacePlugins', () => {
     )
 
     await loadSurfacePlugins(
-      { workspaceKey: 'acme', surfaceKey: 'a b/c', caller: guestCaller },
+      { workspaceKey: 'acme', surfaceKey: 'a b/c' },
       {},
       { fetchJson, doc: document, loadScript: injectingLoader() },
     )
@@ -228,7 +223,7 @@ describe('loadSurfacePlugins', () => {
     )
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    const results = await loadSurfacePlugins(
+    const { results } = await loadSurfacePlugins(
       context,
       {},
       { fetchJson, doc: document, loadScript: injectingLoader(['theme']) },
@@ -258,7 +253,7 @@ describe('loadSurfacePlugins', () => {
       { once: true },
     )
 
-    const results = await loadSurfacePlugins(
+    const { results } = await loadSurfacePlugins(
       context,
       {},
       { fetchJson, doc: document, loadScript: injectingLoader() },
@@ -274,7 +269,7 @@ describe('loadSurfacePlugins', () => {
   it('injects nothing and returns an empty result set when the chain is empty', async () => {
     const fetchJson = vi.fn(async () => ({ chain: [] }))
 
-    const results = await loadSurfacePlugins(context, {}, { fetchJson, doc: document })
+    const { results } = await loadSurfacePlugins(context, {}, { fetchJson, doc: document })
 
     expect(results).toEqual([])
     expect(document.querySelectorAll('script[data-callora-plugin-entry]')).toHaveLength(0)
@@ -288,7 +283,7 @@ describe('loadSurfacePlugins', () => {
 
     await expect(
       loadSurfacePlugins(context, {}, { fetchJson, doc: document }),
-    ).resolves.toEqual([])
+    ).resolves.toEqual({ results: [], styles: [] })
     expect(document.querySelectorAll('script[data-callora-plugin-entry]')).toHaveLength(0)
     expect(warn).toHaveBeenCalledTimes(1)
 
