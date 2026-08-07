@@ -32,18 +32,20 @@ updates:
       npm-all:
         patterns: ["*"]
 
-  # Surface-SDK (an Plugin-Autoren ausgeliefert)
+  # Communication-Plugin: Admin- und Surface-Bundles. Die package.json liegt am
+  # Plugin-Wurzelverzeichnis, nicht bei den Quellen — der frühere Pfad
+  # (src/Resources/app/admin) enthielt kein Manifest, Dependabot lief dort ins Leere.
   - package-ecosystem: npm
-    directory: /custom/static-plugins/Communication/src/Resources/app/admin
+    directory: /custom/static-plugins/Communication
     schedule:
       interval: weekly
     groups:
       npm-all:
         patterns: ["*"]
 
-  # SurfaceDemo-Referenzplugin
+  # Composer-Plugin
   - package-ecosystem: npm
-    directory: /custom/plugins/SurfaceDemo
+    directory: /custom/static-plugins/Composer
     schedule:
       interval: weekly
     groups:

@@ -121,7 +121,7 @@ und Blöcke für den Editor. Der Weg dahin steht in
 | `src/Host/Cli` | Die `callora`-CLI |
 | `src/Host/Dev` | Die lauffähige Zusammenstellung dieses Repos — kein Produkt |
 | `custom/static-plugins/*` | Mitgelieferte System-Plugins (Communication, Composer) |
-| `custom/plugins/*` | Dynamisch installierbare Plugins |
+| `custom/plugins/` | Installationsziel für dynamische Plugins — im Repository leer |
 | `docs-site/` | Die Dokumentation (VitePress) |
 | `docs/adr/` | Architekturentscheidungen |
 

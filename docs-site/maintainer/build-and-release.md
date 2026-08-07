@@ -116,8 +116,9 @@ Additional repo-wide quality automation (per `docs/QUALITY_STANDARDS.md`): CodeQ
 
 ### `.github/workflows/docs.yml`
 
-Builds the DocFX site on changes to `docfx/**`, `src/**`, `custom/plugins/**`, or
-the workflow itself.
+Builds the DocFX site on changes to `docfx/**`, `src/**`, or the workflow itself.
+The .NET API reference covers the platform packages only — plugins document their
+own surface in their own repositories.
 
 ```bash
 dotnet tool restore

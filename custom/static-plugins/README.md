@@ -1,12 +1,12 @@
 # custom/static-plugins
 
-Bundled **System/Foundation-tier** plugins (REV2 §3). Plugins here ship with the
-distribution, are scanned **before** `custom/plugins` (so a foundation loads
-before anything that depends on it), and are not marketplace-installable.
+Mitgelieferte **System/Foundation-Tier**-Plugins (REV2 §3). Sie kommen mit der
+Distribution, werden **vor** `custom/plugins` gescannt (eine Foundation lädt also
+vor allem, was sie braucht) und sind nicht über den Marketplace installierbar.
 
-A plugin's tier comes from its `registry.json` `"tier"` field; a plugin in this
-directory defaults to `system` when the field is absent. Plugins in
-`custom/plugins` default to `application`.
+Der Tier eines Plugins kommt aus dem `tier`-Feld seines `registry.json`; fehlt es,
+gilt hier `system` und in `custom/plugins` `application`.
 
-The Communication foundation will live here once extracted from the host
-(Phase 1, WP-2/WP-3).
+Hier liegen **Communication** (Voice-Foundation) und **Composer** (der
+Flächen-Editor). Beide bekommen eigene, private Repositories und werden als
+NuGet-Pakete bezogen — bis dahin liegen sie im Monorepo.
