@@ -1,60 +1,64 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { LayoutBlock, LayoutSection } from './layout-document'
 
 /**
- * One section of the canvas, with its blocks.
+ * Eine Sektion des Canvas mit ihren Blöcken.
  *
- * The canvas does NOT rebuild what the composition renderer produces. That renderer emits islands
- * — placeholders the browser later fills with Vue components. Here the components are already at
- * hand, so the canvas renders them directly: same components, one step shorter.
+ * Der Canvas baut NICHT nach, was der Kompositions-Renderer erzeugt. Jener emittiert Inseln —
+ * Platzhalter, die der Browser später mit Vue-Komponenten füllt. Hier liegen die Komponenten
+ * schon vor, also rendert der Canvas sie direkt: dieselben Komponenten, ein Schritt weniger.
  *
- * Rebuilding the island markup instead would give the editor a second rendering path, and a second
- * path is a path that drifts. This way there is only one thing that can differ between canvas and
- * live — the data — and that difference is deliberate (§7.6: simulated context values).
+ * Das Insel-Markup nachzubauen gäbe dem Editor einen zweiten Renderpfad, und ein zweiter Pfad
+ * ist einer, der driftet. So kann sich zwischen Canvas und Live nur die *Daten* unterscheiden —
+ * und dieser Unterschied ist gewollt (§7.6: simulierte Kontextwerte).
+ *
+ * **Der Editier-Marker ist ein durchgereichtes Attribut, kein Hüllelement.** Ein Wrapper um
+ * jeden Block wäre der bequemere Weg und der falsche: Ein Theme setzt Abstände typischerweise
+ * über `.cal-region > * + *`, und dazwischen ein Element zu schieben bricht genau das —
+ * `display: contents` erst recht, denn ein Element ohne Box hat auch keine Margins. Vue reicht
+ * Nicht-Prop-Attribute an die Wurzel der Komponente durch, also markieren wir den Block selbst.
  */
-interface CanvasBlock {
-  blockId: string
-  region: string
-  position: number
-  config?: Record<string, { source: string; value?: unknown; key?: string; path?: string }>
-}
-
-interface CanvasSectionModel {
-  layout: string
-  position: number
-  spacing?: string
-  surfaceRole?: string
-  blocks: CanvasBlock[]
-}
-
 const props = defineProps<{
-  section: CanvasSectionModel
-  /** Registered blocks by id. A block whose plugin is not loaded is missing here. */
+  section: LayoutSection
+  /** Der Index dieser Sektion im Dokument — Teil der Adresse eines Blocks. */
+  sectionIndex: number
+  /** Registrierte Blöcke nach id. Ein Block, dessen Plugin nicht geladen ist, fehlt hier. */
   components: Record<string, unknown>
+  /** Der ausgewählte Block, sofern er in dieser Sektion liegt. */
+  selectedBlockIndex: number | null
 }>()
 
+const emit = defineEmits<{ select: [blockIndex: number] }>()
+
+interface PlacedBlock {
+  block: LayoutBlock
+  /** Der Index im `blocks`-Array der Sektion — die Adresse, nicht die Anzeigereihenfolge. */
+  index: number
+}
+
 const regions = computed(() => {
-  const grouped = new Map<string, CanvasBlock[]>()
-  for (const block of props.section.blocks) {
+  const grouped = new Map<string, PlacedBlock[]>()
+  props.section.blocks.forEach((block, index) => {
     const list = grouped.get(block.region) ?? []
-    list.push(block)
+    list.push({ block, index })
     grouped.set(block.region, list)
-  }
+  })
 
   return [...grouped.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([region, blocks]) => ({
+    .map(([region, placed]) => ({
       region,
-      blocks: [...blocks].sort((a, b) => a.position - b.position),
+      blocks: [...placed].sort((a, b) => a.block.position - b.block.position),
     }))
 })
 
 /**
- * The props a block gets in the canvas. Only static bindings resolve to a value here — a context
- * binding has no value yet, and inventing one would show the editor something the surface will
- * not render.
+ * Die Props, die ein Block im Canvas bekommt. Nur statische Bindungen ergeben hier einen Wert —
+ * eine Kontext-Bindung hat noch keinen, und einen zu erfinden zeigte dem Redakteur etwas, das
+ * die Fläche so nicht rendert.
  */
-function propsFor(block: CanvasBlock): Record<string, unknown> {
+function propsFor(block: LayoutBlock): Record<string, unknown> {
   const resolved: Record<string, unknown> = {}
   for (const [name, binding] of Object.entries(block.config ?? {})) {
     if (binding.source === 'static') {
@@ -74,19 +78,30 @@ function propsFor(block: CanvasBlock): Record<string, unknown> {
     :data-cal-surface="section.surfaceRole"
   >
     <div v-for="group in regions" :key="group.region" class="cal-region" :data-cal-region="group.region">
-      <template v-for="block in group.blocks" :key="`${block.region}:${block.position}`">
+      <template v-for="placed in group.blocks" :key="placed.index">
         <component
-          :is="components[block.blockId]"
-          v-if="components[block.blockId]"
-          v-bind="propsFor(block)"
+          :is="components[placed.block.blockId]"
+          v-if="components[placed.block.blockId]"
+          v-bind="propsFor(placed.block)"
+          :data-cal-editor-block="placed.index"
+          :data-cal-editor-selected="placed.index === selectedBlockIndex ? 'true' : undefined"
+          @click="emit('select', placed.index)"
         />
         <!--
           Ein verwaister Block — sein Plugin ist nicht geladen. Im Editor benannt stehen lassen,
           nicht weglassen: Das Frontend lässt ihn weg, aber wer hier gestaltet, muss sehen, dass
-          da etwas ist, das zurückkommt, sobald das Plugin wieder da ist.
+          da etwas ist, das zurückkommt, sobald das Plugin wieder da ist. Auswählbar bleibt er
+          auch, denn seine Einstellungen stehen weiter im Layout.
         -->
-        <div v-else class="cal-canvas__orphan" :data-block-id="block.blockId">
-          {{ block.blockId }}
+        <div
+          v-else
+          class="cal-canvas__orphan"
+          :data-block-id="placed.block.blockId"
+          :data-cal-editor-block="placed.index"
+          :data-cal-editor-selected="placed.index === selectedBlockIndex ? 'true' : undefined"
+          @click="emit('select', placed.index)"
+        >
+          {{ placed.block.blockId }}
         </div>
       </template>
     </div>

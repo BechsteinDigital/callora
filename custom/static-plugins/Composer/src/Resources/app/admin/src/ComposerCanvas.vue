@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import CanvasSection from './CanvasSection.vue'
+import type { BlockAddress, LayoutDocument } from './layout-document'
 import {
   applyScopedSurfaceStyles,
   CANVAS_SCOPE,
@@ -8,30 +9,45 @@ import {
 } from './scoped-surface-styles'
 
 /**
- * The canvas: the surface as it will look, inside the admin.
+ * Der Canvas: die Fläche, wie sie aussehen wird, im Admin.
  *
- * Not an iframe and not a second renderer. The blocks are the same Vue components the surface
- * mounts, taken from the same registry; the styling is the same stylesheet, scoped so it does not
- * escape into the shell. There is nothing here that approximates the result — which is the only
- * way a preview stays honest as the product grows.
+ * Kein iframe und kein zweiter Renderer. Die Blöcke sind dieselben Vue-Komponenten, die die
+ * Fläche mountet, aus derselben Registry; das Styling ist dasselbe Stylesheet, gescoped, damit
+ * es nicht in die Shell entkommt. Nichts hier nähert das Ergebnis an — anders bleibt eine
+ * Vorschau nicht ehrlich, während das Produkt wächst.
  */
 const props = defineProps<{
-  /** The layout document being edited. */
-  document: { sections?: unknown[] }
-  /** The surface stylesheet, as text. Scoped before it is applied. */
+  /** Das bearbeitete Layout-Dokument. */
+  document: LayoutDocument
+  /** Das Stylesheet der Fläche als Text. Wird vor dem Anwenden gescoped. */
   surfaceCss?: string
-  /** The theme's tokens, as the server would render them. */
+  /** Die Token des Themes, wie der Server sie rendern würde. */
   tokens?: Readonly<Record<string, string>>
+  /** Der ausgewählte Block. */
+  selected?: BlockAddress | null
+  /**
+   * Ob der Editier-Modus aktiv ist. Aktiv fängt der Canvas Klicks auf Blockebene ab; aus
+   * verhält sich ein Block wie auf der Fläche — der „Interaktiv testen"-Umschalter aus §7.6.
+   */
+  editing?: boolean
 }>()
+
+const emit = defineEmits<{ select: [address: BlockAddress] }>()
 
 const sections = computed(() => {
   const raw = Array.isArray(props.document?.sections) ? props.document.sections : []
-  return [...raw].sort((a: any, b: any) => (a?.position ?? 0) - (b?.position ?? 0)) as any[]
+  // Die Anzeigereihenfolge folgt `position`; die Adresse bleibt der Index im Dokument. Beides
+  // zu vermischen hieße, dass eine Umsortierung stumm die Auswahl auf einen anderen Block
+  // verschiebt.
+  return raw
+    .map((section, index) => ({ section, index }))
+    .sort((a, b) => (a.section.position ?? 0) - (b.section.position ?? 0))
 })
 
 /**
- * The blocks the runtime knows about. Read on every render rather than captured once: a plugin
- * bundle may load after the canvas mounted, and a block that appears later should appear.
+ * Die Blöcke, die die Runtime kennt. Bei jedem Render gelesen statt einmal festgehalten: Ein
+ * Plugin-Bundle kann nach dem Mounten des Canvas laden, und ein Block, der später auftaucht,
+ * soll auftauchen.
  */
 const components = computed<Record<string, unknown>>(() => {
   const registry = (globalThis as { calloraSurface?: { blocks?: { blocks: { id: string; component: unknown }[] } } })
@@ -44,6 +60,10 @@ const components = computed<Record<string, unknown>>(() => {
   return known
 })
 
+function selectedIndexIn(sectionIndex: number): number | null {
+  return props.selected?.sectionIndex === sectionIndex ? props.selected.blockIndex : null
+}
+
 function applyStyles(): void {
   const css = [props.surfaceCss ?? '', props.tokens ? scopeThemeTokens(props.tokens) : ''].join('\n')
   applyScopedSurfaceStyles(css)
@@ -54,12 +74,15 @@ watch(() => [props.surfaceCss, props.tokens], applyStyles, { deep: true })
 </script>
 
 <template>
-  <div :class="CANVAS_SCOPE">
+  <div :class="CANVAS_SCOPE" :data-cal-editing="editing === false ? 'false' : 'true'">
     <CanvasSection
-      v-for="(section, index) in sections"
-      :key="index"
-      :section="section"
+      v-for="entry in sections"
+      :key="entry.index"
+      :section="entry.section"
+      :section-index="entry.index"
       :components="components"
+      :selected-block-index="selectedIndexIn(entry.index)"
+      @select="emit('select', { sectionIndex: entry.index, blockIndex: $event })"
     />
     <p v-if="sections.length === 0" class="cal-canvas__empty">
       Noch keine Sektion. Ziehen Sie einen Block hierher, um zu beginnen.

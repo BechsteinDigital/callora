@@ -135,6 +135,18 @@ would restyle the shell around the canvas. The URLs come back either way, so the
 fetches their text and scopes it (`@scope`, rewriting `:root`/`html`/`body` onto the scope
 root — `:root` is the document element and escapes every `@scope`).
 
+The package also exports the neutral base tokens as text, for the same host:
+
+```ts
+import { surfaceBaseTokens } from '@callora/surface'
+```
+
+On a surface the runtime loads `tokens.scss` itself. In an editor canvas nobody does, so a
+block reading `var(--cal-color-fg)` would fall back to nothing — a preview that looks wrong
+without anything appearing broken. Text rather than a file because the host has to scope it
+before applying it, and because a `?inline` import across a package boundary would force
+sass and an out-of-project file read on every consumer.
+
 ## App-surface or content-surface?
 
 Pick the shape from how the surface behaves, not from a technology preference.
