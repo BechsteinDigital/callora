@@ -5,8 +5,8 @@
     <MinVerTagPrefix>v</MinVerTagPrefix>
     <MinVerMinimumMajorMinor>0.1</MinVerMinimumMajorMinor>
     <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
-    <Authors>Bechstein Digital</Authors>
-    <Company>Bechstein Digital</Company>
+    <Authors>Bechstein.Digital Ecommerce UG (haftungsbeschränkt)</Authors>
+    <Company>Bechstein.Digital Ecommerce UG (haftungsbeschränkt)</Company>
     <Product>Callora.Host</Product>
     <RepositoryType>git</RepositoryType>
     <!-- Paket-Metadaten für den lokalen Feed (Baustein 1). Wirken nur, wenn ein
