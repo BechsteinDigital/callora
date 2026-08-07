@@ -1,9 +1,9 @@
 import * as Vue from 'vue'
 import './styles/tokens.scss'
-import { createSurfaceRegistry, type SurfaceRegistry } from './surface-registry'
+import { type SurfaceRegistry } from './surface-registry'
 import { mountSurface } from './mount'
 import { resolveSurfaceContext } from './surface-context'
-import { loadSurfacePlugins } from './plugin-loader'
+import { ensureSurfaceRegistry, loadSurfaceBundles } from './public/bundles'
 import { connectSurfaceContextBridge } from './context-bridge'
 
 declare global {
@@ -25,10 +25,9 @@ const rootElement =
   document.getElementById('callora-app') ?? document.querySelector<HTMLElement>('[data-workspace]')
 const rootContext = rootElement ? resolveSurfaceContext(rootElement) : null
 
-const registry =
-  window.calloraSurface ??
-  createSurfaceRegistry(rootContext?.workspaceKey, rootContext?.surfaceKey)
-window.calloraSurface = registry
+// Through the same capability an editor uses (@callora/surface → ensureSurfaceRegistry),
+// so there is one way a registry comes into existence rather than two that can diverge.
+const registry = ensureSurfaceRegistry(rootContext?.workspaceKey, rootContext?.surfaceKey)
 
 // Mount whichever surface shape the SSR output rendered — whole app (#callora-app)
 // and/or islands (data-callora-island). Absent both, the runtime does nothing.
@@ -38,7 +37,10 @@ mountSurface(registry)
 // reactive mounts pick them up. Loading is fire-and-forget and self-tolerant, so it
 // never blocks or breaks the already-mounted shell.
 if (rootContext) {
-  void loadSurfacePlugins(rootContext)
+  void loadSurfaceBundles({
+    workspaceKey: rootContext.workspaceKey,
+    surfaceKey: rootContext.surfaceKey,
+  })
 
   // And open the realtime bridge, so a server-side event reaches the views that declared
   // they need it. Non-blocking and self-tolerant like the loader: a surface renders and

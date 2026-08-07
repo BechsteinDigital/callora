@@ -4,6 +4,7 @@ using Callora.Core.Application.Plugins.Contracts;
 using Callora.Plugin.Composer.Application;
 using Callora.Plugin.Composer.Infrastructure.Persistence;
 using Callora.Plugin.Composer.Application.Admin;
+using Callora.Plugin.Composer.Domain;
 using Xunit;
 
 namespace Callora.Core.Tests.Composer;
@@ -138,6 +139,39 @@ public sealed class ComposerAdminApiTests
 
         Assert.Equal(400, response.StatusCode);
     }
+
+    // ── Wohin ein Entwurf gehört ────────────────────────────────────────────
+
+    [Fact]
+    public void TheDraftSaysWhichSurfaceItIsFor()
+    {
+        // Der Editor lädt die Block-Bundles dieser Fläche. Ohne die Angabe könnte er nur raten,
+        // und ein Layout für den Kiosk würde aus den Blöcken der Standardfläche gebaut.
+        var layout = new SurfaceLayout("portal", "acme", "kiosk", "Portal");
+
+        var response = LayoutDraftResponse.For(layout, Draft());
+
+        Assert.Equal("acme", response.WorkspaceKey);
+        Assert.Equal("kiosk", response.SurfaceKey);
+        Assert.Equal("portal", response.LayoutKey);
+    }
+
+    [Fact]
+    public void AnUnboundLayoutKeepsAnEmptySurfaceInsteadOfTheDefaultOne()
+    {
+        // Ein Layout darf gebaut werden, bevor jemand entscheidet, wo es hingeht. Hier "default"
+        // einzusetzen sähe auf der Leitung genauso aus wie ein Layout, das WIRKLICH an die
+        // Standardfläche gebunden ist — der Editor würde stumm gegen die falschen Blöcke bauen,
+        // statt zu sagen, dass die Entscheidung noch aussteht.
+        var layout = new SurfaceLayout("portal", "acme", surfaceKey: null, "Portal");
+
+        var response = LayoutDraftResponse.For(layout, Draft());
+
+        Assert.Null(response.SurfaceKey);
+    }
+
+    private static SurfaceLayoutVersion Draft() => SurfaceLayoutVersion.NewDraft(
+        "portal", versionNumber: 1, SurfaceLayoutStore.EmptyDocument, "operator", DateTimeOffset.UnixEpoch);
 
     private static HostAdminApiRequest Request(string method, JsonElement? body) => new(
         "composer",

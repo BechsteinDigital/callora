@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Plugin.Composer.Domain;
 
@@ -17,6 +16,11 @@ namespace Callora.Plugin.Composer.Application.Admin;
 /// The response carries the change stamp. The editor sends it back when saving, which is how a
 /// second writer with a stale view gets a conflict instead of overwriting the first.
 /// </para>
+/// <para>
+/// It also carries the layout's workspace and surface, which is why the layout is read alongside
+/// the draft: the editor loads that surface's block bundles, and composing against another
+/// surface's blocks would offer blocks that vanish the moment the layout goes live.
+/// </para>
 /// </summary>
 public sealed class LayoutDraftRouteHandler(SurfaceLayoutStore store) : IHostAdminApiRouteHandler
 {
@@ -33,16 +37,13 @@ public sealed class LayoutDraftRouteHandler(SurfaceLayoutStore store) : IHostAdm
             return new HostAdminApiResponse(400, new { error = "layoutKey is required." });
         }
 
+        var layout = await store.GetLayoutAsync(layoutKey, cancellationToken).ConfigureAwait(false);
         var draft = await store.GetDraftAsync(layoutKey, cancellationToken).ConfigureAwait(false);
-        if (draft is null)
+        if (layout is null || draft is null)
         {
             return new HostAdminApiResponse(404);
         }
 
-        return new HostAdminApiResponse(200, new LayoutDraftResponse(
-            draft.LayoutKey,
-            draft.VersionNumber,
-            JsonSerializer.Deserialize<JsonElement>(draft.Document),
-            draft.ChangedAtUtc));
+        return new HostAdminApiResponse(200, LayoutDraftResponse.For(layout, draft));
     }
 }

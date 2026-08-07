@@ -37,6 +37,21 @@ public sealed class SurfaceLayoutStore(
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A layout's identity — which workspace and which surface it renders. The editor needs it to
+    /// load the right surface's block bundles; the versions alone do not carry it.
+    /// </summary>
+    public async Task<SurfaceLayout?> GetLayoutAsync(
+        string layoutKey,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = factory.CreateDbContext();
+        return await db.Layouts
+            .AsNoTracking()
+            .SingleOrDefaultAsync(layout => layout.Key == layoutKey, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     /// <summary>The working draft, for the editor.</summary>
     public async Task<SurfaceLayoutVersion?> GetDraftAsync(
         string layoutKey,
