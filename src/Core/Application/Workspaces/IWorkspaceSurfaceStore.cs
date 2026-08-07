@@ -46,8 +46,12 @@ public interface IWorkspaceSurfaceStore
         string? assignedBy,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Removes a surface. True when a surface was removed.</summary>
-    Task<bool> DeleteAsync(
+    /// <summary>
+    /// Entfernt eine Surface — oder sagt, warum nicht. Ein Knoten mit Kindern wird NICHT
+    /// gelöscht: Der Fremdschlüssel steht auf Restrict, und ohne diese Prüfung liefe der
+    /// Versuch in eine Datenbankausnahme, die als Serverfehler beim Operator ankäme.
+    /// </summary>
+    Task<SurfaceDeleteResult> DeleteAsync(
         string workspaceKey,
         string surfaceKey,
         CancellationToken cancellationToken = default);

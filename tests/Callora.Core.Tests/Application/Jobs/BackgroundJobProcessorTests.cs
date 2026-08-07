@@ -52,12 +52,23 @@ public sealed class BackgroundJobProcessorTests
         Assert.Equal(BackgroundJobStatus.Pending, job.Status);
         Assert.True(job.ScheduledAtUtc > beforeProcessing);
         Assert.Equal("Simulated job failure.", job.LastError);
+    }
 
-        // Retry sofort fällig machen und erneut verarbeiten.
-        var retryJob = BackgroundJob.Create("test.job", "{}", DateTimeOffset.UtcNow, maxAttempts: 1, null, DateTimeOffset.UtcNow);
-        await store.AddAsync(retryJob);
+    [Fact]
+    public async Task ProcessNext_LastAttemptFails_MarksTheJobFailed()
+    {
+        // Eigener Prozessor, eigener Store — bewusst. Zusammen mit dem Test oben stand hier ein
+        // Job, der nach 100 ms Rückfallzeit wieder fällig wurde und sich unter Last vor diesen
+        // drängte: Dann blieb der hier auf Pending, und der Test war rot, ohne dass am Code
+        // etwas falsch war. Zwei Aussagen in einem Test sind der Grund, aus dem sie sich stören.
+        var handler = new RecordingBackgroundJobHandler("test.job", failuresBeforeSuccess: 5);
+        var (processor, store, _) = CreateProcessor(handler);
+        var job = BackgroundJob.Create("test.job", "{}", DateTimeOffset.UtcNow, maxAttempts: 1, null, DateTimeOffset.UtcNow);
+        await store.AddAsync(job);
+
         Assert.True(await processor.ProcessNextAsync(CancellationToken.None));
-        Assert.Equal(BackgroundJobStatus.Failed, retryJob.Status);
+
+        Assert.Equal(BackgroundJobStatus.Failed, job.Status);
     }
 
     [Fact]
