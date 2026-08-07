@@ -4,3 +4,5 @@
 app/admin/node_modules/
 # Build config moved to the plugin root; its node_modules is covered by the repo-level rule.
 public/admin/
+# Dasselbe für das Surface-Bundle: Quelle unter app/surface/src, Artefakt aus build.sh.
+public/surface/

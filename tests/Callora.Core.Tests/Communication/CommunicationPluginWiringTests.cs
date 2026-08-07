@@ -128,6 +128,23 @@ public sealed class CommunicationPluginWiringTests
     }
 
     [Fact]
+    public async Task StartAsync_ContributesTheTelephoneBlocks()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // Ohne die Serverhälfte gibt es die Blöcke nur im Browser: Der Editor bietet sie an, der
+        // Host emittiert nie eine Insel dafür, und die bedarfsgesteuerte Kontext-Auslieferung hat
+        // niemanden, der Bedarf anmeldet.
+        var views = ((IHostSurfaceViewContributor)context.Exports[typeof(IHostSurfaceViewContributor)]).Views;
+        Assert.Contains(views, v => v.ViewId == CommunicationSurfaceViewContributor.ActiveCallViewId);
+        Assert.Contains(views, v => v.ViewId == CommunicationSurfaceViewContributor.IncomingCallViewId);
+        Assert.Contains(views, v => v.ViewId == CommunicationSurfaceViewContributor.CallLogViewId);
+        Assert.All(views, v => Assert.Contains(SurfaceCallAccess.ClaimKey, v.RequiredClaims!));
+    }
+
+    [Fact]
     public async Task StartAsync_ContributesTheSurfaceCallRoutes()
     {
         var context = new CapturingHostPluginContext(hasDbFactory: true);
