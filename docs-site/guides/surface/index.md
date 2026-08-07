@@ -96,6 +96,7 @@ A surface plugin contributes one of three things:
 | Contribution | Layer | You ship | Learn in |
 | --- | --- | --- | --- |
 | A **Vue view** | Client | An IIFE bundle under `Resources/public/<surface>` that calls `registerSurfaceView` | [Building a surface plugin](./building-a-surface-plugin) |
+| A **block** | Client | The same bundle, calling `registerBlock` — a view plus the metadata an editor needs to offer and configure it | [Building a surface plugin](./building-a-surface-plugin) |
 | A **`.njk` template** | SSR | Nunjucks views under `Resources/views/surface/` (entry `index.njk`) | [SSR Templates](./ssr-templates) |
 | A **theme** | Both | A `theme.json` declaring `--cal-*` tokens + settings | [Themes & Tokens](./themes-and-tokens) |
 
@@ -107,6 +108,32 @@ The surface runtime registers **no views of its own**. An unconfigured surface r
 neutral "no surface registered" placeholder. That is a valid state, not an error — like a
 shop framework with no shop installed yet.
 :::
+
+### Showing surface blocks somewhere that is not a surface
+
+An editor's canvas has to render the real block components, not an approximation of them,
+or the preview drifts from the result. `@callora/surface` exports the loading itself for
+that case:
+
+```ts
+import { loadSurfaceBundles } from '@callora/surface'
+
+const { registry, results, styles } = await loadSurfaceBundles({
+  workspaceKey: 'acme',
+  surfaceKey: 'portal',
+  injectStyles: false, // the host scopes them itself — see below
+})
+```
+
+It resolves the workspace's UI chain, injects the bundles in chain order, and creates the
+registry **before** the first bundle runs — a bundle that executes without one registers
+into nothing, warns to the console, and leaves an empty canvas with no error to find.
+
+`injectStyles: false` matters outside a surface. A surface stylesheet claims names like
+`.cal-header` that mean something on both sides, so injecting it into an admin document
+would restyle the shell around the canvas. The URLs come back either way, so the host
+fetches their text and scopes it (`@scope`, rewriting `:root`/`html`/`body` onto the scope
+root — `:root` is the document element and escapes every `@scope`).
 
 ## App-surface or content-surface?
 
@@ -132,7 +159,7 @@ and is the default the shell already emits.
 ## Learning path
 
 1. **[Building a surface plugin](./building-a-surface-plugin)** — the flagship tutorial:
-   scaffold a Vue bundle with `@callora/surface-sdk`, register a view, build, ship the assets,
+   scaffold a Vue bundle with `@callora/surface`, register a view, build, ship the assets,
    and see it render.
 2. **[App vs Islands](./app-vs-islands)** — the two mount modes in depth, context
    inheritance, and reactive late registration.
