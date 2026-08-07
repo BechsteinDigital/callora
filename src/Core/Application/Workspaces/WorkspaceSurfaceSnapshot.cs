@@ -23,6 +23,15 @@ public sealed record WorkspaceSurfaceSnapshot(
     DateTimeOffset UpdatedAtUtc)
 {
     /// <summary>
+    /// Der Elternknoten, oder null für eine Anwendungswurzel (ADR-019). Die Verwaltung braucht
+    /// ihn, um einen geerbten Wert von einem eigenen zu unterscheiden.
+    /// </summary>
+    public string? ParentSurfaceKey { get; init; }
+
+    /// <summary>Reihenfolge unter Geschwistern.</summary>
+    public int Position { get; init; }
+
+    /// <summary>
     /// Tenant that owns the surface's workspace. Additive to the read model so the
     /// public render path can build a per-surface context; defaults to empty for
     /// callers that do not project it.

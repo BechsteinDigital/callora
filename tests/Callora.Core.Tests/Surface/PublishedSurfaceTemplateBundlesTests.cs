@@ -13,6 +13,10 @@ namespace Callora.Core.Tests.Surface;
 /// entry and renders through the confined loader — the same path the /surface/render
 /// endpoint drives.
 /// </summary>
+// Rendert wie die anderen und gehört deshalb in dieselbe serialisierte Sammlung. Er war
+// übersehen worden und lief weiter parallel — was ihn sporadisch in die Wanduhr-Grenze des
+// Renderers laufen ließ: grün, wenn er allein läuft, rot in der vollen Suite.
+[Collection(SurfaceRenderingCollection.Name)]
 public sealed class PublishedSurfaceTemplateBundlesTests : IDisposable
 {
     private readonly DirectoryInfo _temp = Directory.CreateTempSubdirectory("callora-published-");
