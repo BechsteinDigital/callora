@@ -406,6 +406,12 @@ public static class CalloraHostCompositionExtensions
             // revalidate. Other static roots keep the framework default.
             OnPrepareResponse = PluginAssetCaching.Apply
         });
+
+        // Veröffentlichte Plugin-Assets: eigene Auslieferung, weil der Aufruf oben an
+        // WebRootPath hängt und der bei einem Kompositionsprojekt ohne wwwroot/ leer ist.
+        // Begründung und Vorgeschichte in PluginAssetStaticFiles.
+        PluginAssetStaticFiles.Use(app, app.Environment);
+
         app.UseRateLimiter();
         app.UseAuthentication();
         // CSRF guard: cookie-authenticated state changes must originate same-origin

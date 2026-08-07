@@ -1,0 +1,49 @@
+using Callora.Core.Extensibility;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.FileProviders;
+
+namespace Callora.Core.Infrastructure.Plugins;
+
+/// <summary>
+/// Liefert veröffentlichte Plugin-Assets unter <c>/plugin-assets</c> aus — aus genau dem
+/// Verzeichnis, in das <see cref="PluginUiAssetPublisher"/> schreibt.
+/// </summary>
+/// <remarks>
+/// Ein zusätzliches <c>UseStaticFiles</c> und nicht der voreingestellte Aufruf: Der hängt an
+/// <see cref="IWebHostEnvironment.WebRootPath"/>, und der ist LEER, wenn das Projekt kein
+/// <c>wwwroot/</c>-Verzeichnis hat. Für ein Kompositionsprojekt, das seine statischen Dateien
+/// aus Paketen bezieht, ist das der Normalfall.
+///
+/// <para>
+/// Vorher wich nur der Publisher auf <c>AppContext.BaseDirectory/wwwroot</c> aus; die
+/// Auslieferung kannte diesen Rückfall nicht. Jedes Plugin-Bundle lief in einen 404, die
+/// Admin-Shell meldete für jedes Plugin einen Ladefehler, und das sah nach einem Fehler im
+/// Plugin aus. Als eigene Methode, weil ein Test sie sonst nicht aufrufen kann, ohne die
+/// gesamte Host-Komposition zu bauen — und ein Test, den niemand schreibt, ist der Grund,
+/// warum zwei Rückfälle auseinanderlaufen.
+/// </para>
+/// </remarks>
+[CalloraInternal("Auslieferung veröffentlichter Plugin-Assets — kein Plugin-Vertrag")]
+public static class PluginAssetStaticFiles
+{
+    /// <summary>Hängt die Auslieferung in die Pipeline. Legt das Verzeichnis an, falls es fehlt.</summary>
+    public static void Use(IApplicationBuilder app, IWebHostEnvironment environment)
+    {
+        ArgumentNullException.ThrowIfNull(app);
+        ArgumentNullException.ThrowIfNull(environment);
+
+        var root = Path.Combine(PluginAssetWebRoot.Resolve(environment), "plugin-assets");
+
+        // PhysicalFileProvider verlangt ein existierendes Verzeichnis; der Publisher legt es
+        // erst später an.
+        Directory.CreateDirectory(root);
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            RequestPath = "/plugin-assets",
+            FileProvider = new PhysicalFileProvider(root),
+            OnPrepareResponse = PluginAssetCaching.Apply
+        });
+    }
+}
