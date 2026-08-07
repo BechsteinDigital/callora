@@ -1,4 +1,14 @@
-import type { SurfaceContext } from './surface-context'
+/**
+ * Which surface's bundles to load. A {@link SurfaceContext} satisfies this structurally,
+ * so the runtime passes its own context unchanged — but a caller that has no context
+ * (the editor loads bundles for a surface it is not standing on) needs only these two
+ * keys, and inventing a caller identity to satisfy a wider type would be a lie the
+ * loader never reads.
+ */
+export interface SurfaceBundleTarget {
+  workspaceKey: string
+  surfaceKey?: string
+}
 
 /**
  * The client-side chain loader: it reads the workspace's ordered UI chain and the
@@ -66,6 +76,27 @@ export interface PluginLoaderOptions {
   manifestUrl?: string
   /** The workspace UI-chain endpoint (ordered plugin ids for the workspace). */
   uiChainUrl?: string
+  /**
+   * Whether to put the resolved stylesheets into the document. True on a surface, where
+   * they ARE the page's styling.
+   *
+   * False for a host that is not the surface. A surface stylesheet claims names like
+   * `.cal-header` that mean something on both sides, so injecting it into an admin
+   * document would restyle the shell around the canvas — the exact escape `@scope`
+   * exists to prevent. Such a host takes the URLs from the result and scopes them itself.
+   */
+  injectStyles?: boolean
+}
+
+/** What one load produced. */
+export interface SurfacePluginLoad {
+  /** One entry per bundle, in chain order. */
+  results: PluginLoadResult[]
+  /**
+   * The resolved stylesheet URLs, whether or not they were injected. Returned rather
+   * than only injected so a host that scopes them can fetch their text.
+   */
+  styles: string[]
 }
 
 export interface PluginLoaderDeps {
@@ -190,14 +221,15 @@ export function injectPluginScript(doc: Document, src: string): HTMLScriptElemen
 
 /**
  * Fetches, resolves and loads this workspace's surface plugin bundles, returning one
- * PluginLoadResult per bundle (chain order). Never throws — discovery failures resolve
- * to an empty result set, a single bundle's load error is isolated to that plugin.
+ * PluginLoadResult per bundle (chain order) and the resolved stylesheet URLs. Never
+ * throws — discovery failures resolve to an empty result set, a single bundle's load
+ * error is isolated to that plugin.
  */
 export async function loadSurfacePlugins(
-  context: SurfaceContext,
+  target: SurfaceBundleTarget,
   options: PluginLoaderOptions = {},
   deps: PluginLoaderDeps = {},
-): Promise<PluginLoadResult[]> {
+): Promise<SurfacePluginLoad> {
   const surface = options.surface ?? DEFAULTS.surface
   const assetBase = options.assetBase ?? DEFAULTS.assetBase
   const manifestUrl = options.manifestUrl ?? DEFAULTS.manifestUrl
@@ -209,9 +241,9 @@ export async function loadSurfacePlugins(
 
   let assets: ResolvedSurfaceAssets
   try {
-    const chain = await fetchChain(fetchJson, uiChainUrl, context.workspaceKey, context.surfaceKey)
+    const chain = await fetchChain(fetchJson, uiChainUrl, target.workspaceKey, target.surfaceKey)
     if (chain.length === 0) {
-      return publishResults(doc, [])
+      return { results: publishResults(doc, []), styles: [] }
     }
     const manifest = ((await fetchJson(manifestUrl)) ?? {}) as PluginManifest
     assets = resolveSurfaceAssets(manifest, chain, surface, assetBase)
@@ -219,10 +251,12 @@ export async function loadSurfacePlugins(
     // Discovery (chain/manifest) failed entirely — the surface renders whatever
     // registered (often nothing). Fail-soft, but recorded and logged, not silent.
     console.warn('[callora-surface] plugin discovery failed; rendering without plugins.', error)
-    return publishResults(doc, [])
+    return { results: publishResults(doc, []), styles: [] }
   }
 
-  injectSurfaceStyles(doc, assets.styles)
+  if (options.injectStyles ?? true) {
+    injectSurfaceStyles(doc, assets.styles)
+  }
 
   const results: PluginLoadResult[] = []
   for (const script of assets.scripts) {
@@ -253,7 +287,7 @@ export async function loadSurfacePlugins(
     }
   }
 
-  return publishResults(doc, results)
+  return { results: publishResults(doc, results), styles: assets.styles }
 }
 
 /**

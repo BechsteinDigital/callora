@@ -10,11 +10,6 @@ import { injectPluginScript, loadSurfacePlugins } from './plugin-loader'
 // Vite's filesystem guard denies such ids by default since the path-traversal hardening.
 import surfaceDemoBundle from '../../../../../../custom/plugins/SurfaceDemo/src/Resources/public/surface/main.js?raw'
 
-const guestCaller = {
-  state: 'guest' as const,
-  subject: { issuer: 'callora.surface-guest', subjectId: '' },
-}
-
 /**
  * End-to-end golden path, exercised with the REAL reference-plugin bundle: chain loader →
  * asset injection → the plugin bundle executes and registers its view → the runtime mount
@@ -62,8 +57,8 @@ describe('surface golden path (real SurfaceDemo bundle)', () => {
     const loadScript = async (doc: Document, src: string) => {
       injectPluginScript(doc, src)
     }
-    const results = await loadSurfacePlugins(
-      { workspaceKey: 'acme', surfaceKey: 'portal', caller: guestCaller },
+    const { results } = await loadSurfacePlugins(
+      { workspaceKey: 'acme', surfaceKey: 'portal' },
       {},
       { fetchJson, loadScript },
     )

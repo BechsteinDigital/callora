@@ -122,19 +122,22 @@ jobs:
             gates: build
             test: false
             # Consumes @callora/admin as a file: dependency — see the build step.
-            sdkPath: src/Administration/Resources/app/administration
+            sdkPaths: src/Administration/Resources/app/administration
           - name: Composer Admin
             path: custom/static-plugins/Composer
             gates: test + build
             test: true
-            # Consumes @callora/admin as a file: dependency — see the build step.
-            sdkPath: src/Administration/Resources/app/administration
+            # The editor consumes BOTH: the admin shell it lives in, and the surface
+            # runtime whose block bundles its canvas loads.
+            sdkPaths: >-
+              src/Administration/Resources/app/administration
+              src/Surface.Rendering/Resources/app/surface
           - name: SurfaceDemo
             path: custom/plugins/SurfaceDemo
             gates: build
             test: false
             # Consumes @callora/surface as a file: dependency — see the build step.
-            sdkPath: src/Surface.Rendering/Resources/app/surface
+            sdkPaths: src/Surface.Rendering/Resources/app/surface
           - name: Docs Site
             path: docs-site
             gates: lint + build
@@ -157,12 +160,13 @@ jobs:
       # library output is gitignored. So the dependency resolves, the install succeeds,
       # and the build then fails on ERR_MODULE_NOT_FOUND for the preset — which is how
       # this job failed on every run before it built its dependency first.
-      - name: Build local package dependency
-        if: matrix.sdkPath
-        working-directory: ${{ matrix.sdkPath }}
+      - name: Build local package dependencies
+        if: matrix.sdkPaths
+        working-directory: .
         run: |
-          npm ci
-          npm run build:lib
+          for sdk in ${{ matrix.sdkPaths }}; do
+            ( cd "$sdk" && npm ci && npm run build:lib )
+          done
 
       - name: Install
         run: npm ci

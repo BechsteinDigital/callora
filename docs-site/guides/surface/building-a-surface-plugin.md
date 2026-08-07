@@ -1,7 +1,7 @@
 # Building a surface plugin
 
 In this tutorial you'll build a real surface front-end from nothing: scaffold a Vue
-bundle with `@callora/surface-sdk`, register a **surface view**, build it to the plugin's
+bundle with `@callora/surface`, register a **surface view**, build it to the plugin's
 published assets folder, and watch the surface runtime load and render it live — no host
 restart. The view is minimal on purpose (a single greeting page reading its
 `SurfaceContext`), but every step is the one you'd use for a production surface.
@@ -29,10 +29,13 @@ You'll need:
   scaffold one first with **[Build your first Callora plugin](/guides/getting-started/your-first-plugin)**.
 - **A running Callora host** in development, so you can install/activate the plugin and
   open its surface.
-- **The `@callora/surface-sdk` package** (`custom/surface-sdk/`, Apache-2.0) — the typed
-  contract plus the Vite preset you compile against. It builds to `dist/` with
-  `npm run build`; today you consume it as a `file:` dependency from the Callora repo, and
-  as `@callora/surface-sdk` from your registry once it is published there.
+- **The `@callora/surface` package** (`src/Surface.Rendering/Resources/app/surface/`,
+  Apache-2.0) — the typed contract plus the Vite preset you compile against. It is the
+  surface **runtime itself**: the contract is not restated in a second package, so there
+  is nothing that can drift from what actually runs. Its library output builds to
+  `dist-lib/` with `npm run build:lib`; today you consume it as a `file:` dependency from
+  the Callora repo, and as `@callora/surface` from your registry once it is published
+  there.
 :::
 
 ## The mental model
@@ -42,7 +45,7 @@ A surface plugin ships **one self-registering IIFE bundle** — `main.js` plus a
 at runtime from the runtime's shared `window.CalloraVue`, so every plugin runs inside the
 *same* Vue instance instead of shipping its own.
 
-The default `<surface>` segment is `workspace`. The build outputs to
+The default `<surface>` segment is `surface`. The build outputs to
 `src/Resources/public/surface`; on publish the host copies that to
 `/plugin-assets/<pluginId>/app/surface/`. The client loader finds it via the manifest
 and injects it in chain order. (Sources under `app/` stay with the vendor; only the built
@@ -78,7 +81,7 @@ my-plugin/                       # plugin root — also holds registry.json / .c
     "build": "vite build"
   },
   "dependencies": {
-    "@callora/surface-sdk": "file:../../surface-sdk"
+    "@callora/surface": "file:../../../src/Surface.Rendering/Resources/app/surface"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.0",
@@ -94,12 +97,16 @@ bundled. At runtime the component's `import ... from 'vue'` resolves to
 `window.CalloraVue`.
 :::
 
-::: warning Build the SDK first
+::: warning Build the package first
 The `file:` path is relative to this `package.json` — from `custom/plugins/my-plugin/` it
-is two levels up to reach `custom/surface-sdk/`. It resolves to the SDK's built `dist/`,
-so run `npm run build` in `custom/surface-sdk/` once before installing your plugin. A
-published `@callora/surface-sdk` (`"^0.1.0"`) ships `dist/` prebuilt and needs no path, so
-this step disappears once it is on a registry.
+climbs three levels to the repository root and back down to the runtime. It resolves to
+the package's built `dist-lib/`, which is gitignored, so run `npm run build:lib` in
+`src/Surface.Rendering/Resources/app/surface/` once before installing your plugin.
+
+Skipping it does not fail the install — a `file:` dependency links the source directory,
+so `npm install` succeeds and the *build* then fails with `ERR_MODULE_NOT_FOUND` for the
+preset. A published `@callora/surface` (`"^0.1.0"`) ships `dist-lib/` prebuilt and needs
+no path, so this step disappears once it is on a registry.
 :::
 
 ## Step 2 — Configure the build
@@ -111,7 +118,7 @@ and output to `src/Resources/public/<surface>`.
 `vite.config.ts`:
 
 ```ts
-import { calloraSurfacePlugin } from '@callora/surface-sdk/vite-preset'
+import { calloraSurfacePlugin } from '@callora/surface/vite-preset'
 
 export default calloraSurfacePlugin({
   // Paths are relative to the plugin root (where this vite.config.ts lives).
@@ -120,13 +127,13 @@ export default calloraSurfacePlugin({
 })
 ```
 
-The preset options (`custom/surface-sdk/src/vite-preset.ts`):
+The preset options (`src/Surface.Rendering/Resources/app/surface/src/public/vite-preset.ts`):
 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `entry` | — | Entry module of the bundle (required) |
 | `name` | — | Global name of the IIFE bundle; unique per plugin (required) |
-| `surface` | `'workspace'` | Which surface the bundle targets; also the output-dir segment |
+| `surface` | `'surface'` | Which surface the bundle targets; also the output-dir segment |
 | `outDir` | `src/Resources/public/<surface>` | Build output directory |
 
 ::: warning Keep the default output directory
@@ -137,14 +144,18 @@ empty.
 
 ## Step 3 — Write the view component
 
-The component receives the `SurfaceContext` — `{ workspaceKey, surfaceKey }` — as a
-`context` prop (`custom/surface-sdk/src/index.ts`).
+The component receives two props (`SurfaceViewProps`): the `SurfaceContext` as `context`
+— `{ workspaceKey, surfaceKey, caller }` — and the island's instance parameters as
+`params`. `params` is what the SSR template passed at the slot's call site, so an
+embedded view can point at a concrete lead or room instead of deriving everything from
+the URL; in app mode it is empty
+(`src/Surface.Rendering/Resources/app/surface/src/public/index.ts`).
 
 `src/GreetingPage.vue`:
 
 ```vue
 <script setup lang="ts">
-import type { SurfaceContext } from '@callora/surface-sdk'
+import type { SurfaceContext } from '@callora/surface'
 
 const props = defineProps<{ context: SurfaceContext }>()
 </script>
@@ -180,7 +191,7 @@ runs it at load time:
 `src/main.ts`:
 
 ```ts
-import { registerSurfaceView } from '@callora/surface-sdk'
+import { registerSurfaceView } from '@callora/surface'
 import GreetingPage from './GreetingPage.vue'
 
 registerSurfaceView({
@@ -190,19 +201,51 @@ registerSurfaceView({
 })
 ```
 
-`SurfaceView` is `{ id, component, order? }`:
+`SurfaceView` is `{ id, component, order?, surfaceKeys? }`:
 
 - `id` — a stable, unique id. It's also the value a `data-callora-island` placeholder uses
   to mount this view (see [App vs Islands](./app-vs-islands)). A second registration with
   the same id is ignored.
-- `component` — your Vue component; it receives the `SurfaceContext` as `context`.
+- `component` — your Vue component; it receives `context` and `params` (see above).
 - `order` — ascending render order in app mode; unset sorts as `0`.
+- `surfaceKeys` — an allowlist of surfaces this view appears on. Omit it and the view is
+  workspace-wide.
 
 ::: info It never breaks the shell
 If the runtime is somehow absent when your bundle runs, `registerSurfaceView` is a no-op
 with a `console.warn` — it never throws. A broken or late plugin leaves the surface
-degraded, never crashed (`custom/surface-sdk/src/index.ts`).
+degraded, never crashed (`src/Surface.Rendering/Resources/app/surface/src/public/index.ts`).
 :::
+
+### Register a block if editors should place it
+
+A **view** is something a developer places, by writing the island into a template. A
+**block** is the same component with the metadata an editor needs to offer it: a label, a
+category, and the controls that generate its configuration panel.
+
+```ts
+import { registerBlock } from '@callora/surface'
+import GreetingPage from './GreetingPage.vue'
+
+registerBlock({
+  id: 'my-plugin.greeting', // same id space as a view — and the island attribute
+  label: 'Greeting',
+  category: 'content',
+  component: GreetingPage,
+  controls: {
+    title: { type: 'text', label: 'Headline', default: 'Hello' },
+  },
+})
+```
+
+A block is not a second kind of thing: registering one registers its view too, under the
+same id. So there is one identity for "what the editor placed" and "what the server
+rendered", instead of two registries to keep in step.
+
+The control types that shape **appearance** — `colorToken`, `spacingToken`, `typeToken`,
+`variant` — are closed, and that is what lets a composed page still look like the product:
+each one picks a `--cal-*` role, never a free value. Content and source types are open; a
+plugin can contribute its own with `registerControlType`.
 
 ## Step 5 — Build
 

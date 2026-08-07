@@ -48,7 +48,7 @@ reviewable diff).
 | `custom/static-plugins/Communication` | System-tier VoIP/communication plugin (`Callora.Plugin.Communication`), bundled with the distribution. Ships its public contracts in `Communication/Abstractions` (`Callora.Plugin.Communication.Abstractions`). |
 | `custom/plugins/Dialer` | Dynamically installable Dialer plugin (`Callora.Plugins.Dialer`). |
 | `custom/plugins/*`, `custom/static-plugins/*` | Additional first-party plugins (e.g. TemplateAlpha). |
-| `custom/surface-sdk` | `@callora/surface-sdk` — the plugin surface SDK. Apache-2.0. |
+| `src/Surface.Rendering/Resources/app/surface` | `@callora/surface` — the surface runtime, and the package plugins compile against. Its `src/public/` directory **is** the contract; there is no separate SDK package restating it. Apache-2.0. |
 
 Plugins carry their **own EF Core migrations** and live in an isolated
 `plugin_<id>` PostgreSQL schema (e.g. `plugin_communication`). See
