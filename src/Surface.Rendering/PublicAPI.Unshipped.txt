@@ -45,7 +45,7 @@ Callora.Surface.Rendering.PublishedSurfaceTemplateBundles.TryReadEntryTemplate(s
 Callora.Surface.Rendering.Rendering.Composition.SurfaceBlockPropsSerializer
 Callora.Surface.Rendering.Rendering.Composition.SurfaceCompositionRenderer
 Callora.Surface.Rendering.Rendering.Composition.SurfaceCompositionRenderer.Render(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument! document) -> string!
-Callora.Surface.Rendering.Rendering.Composition.SurfaceCompositionRenderer.SurfaceCompositionRenderer(System.Func<string!, bool>? blockIsAvailable = null, System.Func<string!, System.Collections.Generic.IReadOnlySet<string!>?>? confidentialControls = null) -> void
+Callora.Surface.Rendering.Rendering.Composition.SurfaceCompositionRenderer.SurfaceCompositionRenderer(System.Func<string!, bool>? blockIsAvailable = null, System.Func<string!, System.Collections.Generic.IReadOnlySet<string!>?>? confidentialControls = null, System.Func<string!, bool>? layoutIsKnown = null) -> void
 Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer
 Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer() -> void
 Callora.Surface.Rendering.Rendering.NunjucksSurfaceRenderer.NunjucksSurfaceRenderer(Callora.Surface.Rendering.ISurfaceTemplateBundleProvider! bundleProvider) -> void
@@ -104,6 +104,7 @@ Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException() ->
 Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message) -> void
 Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message, System.Exception! innerException) -> void
 Callora.Surface.Rendering.SurfaceThemeTokens
+const Callora.Surface.Rendering.Rendering.Composition.SurfaceCompositionRenderer.FallbackLayout = "single" -> string!
 const Callora.Surface.Rendering.SurfaceCallerView.AuthenticatedState = "authenticated" -> string!
 const Callora.Surface.Rendering.SurfaceCallerView.GuestState = "guest" -> string!
 const Callora.Surface.Rendering.SurfaceThemeTokens.ThemePluginIdKey = "themePluginId" -> string!

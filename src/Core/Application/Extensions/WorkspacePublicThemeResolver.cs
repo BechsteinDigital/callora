@@ -22,7 +22,8 @@ namespace Callora.Core.Application.Extensions;
 public sealed class WorkspacePublicThemeResolver(
     IWorkspaceManagementStore workspaceStore,
     IWorkspaceSurfaceStore surfaceStore,
-    IWorkspaceThemeSettingsStore settingsStore)
+    IWorkspaceThemeSettingsStore settingsStore,
+    IWorkspaceSectionLayoutStore sectionLayoutStore)
 {
     /// <summary>
     /// The workspace-level theme, without any surface override. Used where no
@@ -112,7 +113,11 @@ public sealed class WorkspacePublicThemeResolver(
             }
         }
 
-        return new WorkspacePublicTheme(themePluginId, themeVersion, valuesByKey);
+        var sectionLayouts = await sectionLayoutStore
+            .ListAsync(themePluginId, themeVersion, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new WorkspacePublicTheme(themePluginId, themeVersion, valuesByKey, sectionLayouts);
     }
 
     private static string? FirstSet(string? preferred, string? fallback)

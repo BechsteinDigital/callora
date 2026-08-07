@@ -17,10 +17,13 @@ vi.mock('@callora/surface', () => ({
 }))
 
 const fetchSurfaceStyles = vi.fn(async () => '.cal-header { color: red }')
-const fetchThemeTokens = vi.fn(async () => ({ 'color-primary': '#123456' }))
+const fetchTheme = vi.fn(async () => ({
+  valuesByKey: { 'color-primary': '#123456' },
+  sectionLayouts: [],
+}))
 vi.mock('./preview-assets', () => ({
   fetchSurfaceStyles: (...args: unknown[]) => fetchSurfaceStyles(...args),
-  fetchThemeTokens: (...args: unknown[]) => fetchThemeTokens(...args),
+  fetchTheme: (...args: unknown[]) => fetchTheme(...args),
 }))
 
 function draftResponse(surfaceKey: string | null) {
@@ -115,7 +118,7 @@ describe('ComposerAdminPage', () => {
     const wrapper = await loadLayout('kiosk')
 
     expect(fetchSurfaceStyles).toHaveBeenCalledWith(['/plugin-assets/voip/app/workspace/main.css'])
-    expect(fetchThemeTokens).toHaveBeenCalledWith('acme')
+    expect(fetchTheme).toHaveBeenCalledWith('acme')
     const canvas = wrapper.findComponent({ name: 'ComposerCanvas' })
     expect(canvas.props('surfaceCss')).toContain('--cal-color-fg')
     expect(canvas.props('surfaceCss')).toContain('.cal-header { color: red }')

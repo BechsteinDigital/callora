@@ -2,6 +2,7 @@
 import { computed, onMounted, watch } from 'vue'
 import CanvasSection from './CanvasSection.vue'
 import type { BlockAddress, LayoutDocument } from './layout-document'
+import type { SectionLayout } from './preview-assets'
 import {
   applyScopedSurfaceStyles,
   CANVAS_SCOPE,
@@ -23,6 +24,8 @@ const props = defineProps<{
   surfaceCss?: string
   /** Die Token des Themes, wie der Server sie rendern würde. */
   tokens?: Readonly<Record<string, string>>
+  /** Die Sektionslayouts des Themes — sie sagen, welche Regionen eine Sektion hat. */
+  layouts?: readonly SectionLayout[]
   /** Der ausgewählte Block. */
   selected?: BlockAddress | null
   /**
@@ -81,6 +84,7 @@ watch(() => [props.surfaceCss, props.tokens], applyStyles, { deep: true })
       :section="entry.section"
       :section-index="entry.index"
       :components="components"
+      :layouts="layouts ?? []"
       :selected-block-index="selectedIndexIn(entry.index)"
       @select="emit('select', { sectionIndex: entry.index, blockIndex: $event })"
     />

@@ -11,7 +11,8 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
     {
         var store = new InMemoryWorkspaceTemplateRegistryStore();
         var settingsStore = new InMemoryWorkspaceThemeSettingsStore();
-        var sut = new ThemeJsonWorkspaceTemplateSyncService(store, settingsStore, NullLogger<ThemeJsonWorkspaceTemplateSyncService>.Instance);
+        var layoutStore = new InMemoryWorkspaceSectionLayoutStore();
+        var sut = new ThemeJsonWorkspaceTemplateSyncService(store, settingsStore, layoutStore, NullLogger<ThemeJsonWorkspaceTemplateSyncService>.Instance);
         var pluginId = "theme-acme";
         var tempDir = Path.Combine(Path.GetTempPath(), $"callora-theme-sync-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
@@ -118,7 +119,8 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
     {
         var store = new InMemoryWorkspaceTemplateRegistryStore();
         var settingsStore = new InMemoryWorkspaceThemeSettingsStore();
-        var sut = new ThemeJsonWorkspaceTemplateSyncService(store, settingsStore, NullLogger<ThemeJsonWorkspaceTemplateSyncService>.Instance);
+        var layoutStore = new InMemoryWorkspaceSectionLayoutStore();
+        var sut = new ThemeJsonWorkspaceTemplateSyncService(store, settingsStore, layoutStore, NullLogger<ThemeJsonWorkspaceTemplateSyncService>.Instance);
         var pluginId = "theme-acme";
 
         await store.UpsertDefinitionAsync(
@@ -159,7 +161,8 @@ public sealed class ThemeJsonWorkspaceTemplateSyncServiceTests
     {
         var store = new InMemoryWorkspaceTemplateRegistryStore();
         var settingsStore = new InMemoryWorkspaceThemeSettingsStore();
-        var sut = new ThemeJsonWorkspaceTemplateSyncService(store, settingsStore, NullLogger<ThemeJsonWorkspaceTemplateSyncService>.Instance);
+        var layoutStore = new InMemoryWorkspaceSectionLayoutStore();
+        var sut = new ThemeJsonWorkspaceTemplateSyncService(store, settingsStore, layoutStore, NullLogger<ThemeJsonWorkspaceTemplateSyncService>.Instance);
 
         await store.UpsertDefinitionAsync(
             templateKey: "workspace.layout",

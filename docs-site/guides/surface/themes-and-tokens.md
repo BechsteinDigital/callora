@@ -128,6 +128,57 @@ does not itself name a `--cal-*` variable. You bind a setting value to a `--cal-
 yourself — see *Consuming tokens* below.
 :::
 
+## Declaring section layouts
+
+A theme also declares which **section layouts** it can render, and which regions exist inside
+them. The editor offers exactly these and nothing else:
+
+```json
+{
+  "sectionLayouts": [
+    { "key": "single", "label": "One column", "regions": ["main"] },
+    {
+      "key": "two-2-1",
+      "label": "Two columns (2:1)",
+      "regions": [
+        { "key": "main", "label": "Content" },
+        { "key": "aside", "label": "Sidebar" }
+      ]
+    }
+  ]
+}
+```
+
+A region may be written as a plain string or as `{ key, label }`. The **declared order is the
+reading order** — sorting them would put a sidebar before the content it sits next to.
+
+The layout key is what the composition renderer writes into `data-cal-layout`, and the region
+key into `data-cal-region`. Your CSS selects on those:
+
+```css
+.cal-section[data-cal-layout='two-2-1'] {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--cal-space-4);
+}
+```
+
+::: info Layouts live in the theme, not in the core
+This is what keeps the token axis the design authority: nobody can compose a grid the theme
+cannot style, and no layout names end up in Callora. Bring a layout nobody anticipated and the
+editor offers it without a change to the platform.
+:::
+
+::: warning Dropping a layout does not break a page
+If a theme stops declaring a layout — usually because somebody switched themes — sections still
+naming it fall back to `single` when rendered. The blocks all stay; the section just becomes one
+readable column instead of a grid nothing styles. The editor names the affected sections so the
+change is visible rather than mysterious.
+
+A theme that declares **no** layouts at all says nothing about any of them, and nothing falls
+back. That is deliberately different from a theme that dropped one.
+:::
+
 ## Reading a workspace's tokens
 
 The resolved values are exposed anonymously at

@@ -233,7 +233,11 @@ public static class WorkspacePublicEndpoints
                         workspaceKey = normalizedKey,
                         themePluginId = theme?.ThemePluginId,
                         themeVersion = theme?.ThemeVersion,
-                        valuesByKey = theme?.ValuesByKey ?? new Dictionary<string, string>()
+                        valuesByKey = theme?.ValuesByKey ?? new Dictionary<string, string>(),
+                        // Die Sektionslayouts gehören dem Theme (§7.1). Der Editor bietet
+                        // ausschließlich sie an — so bleibt die Token-Achse die
+                        // Design-Autorität, und es stehen keine Layout-Namen im Core.
+                        sectionLayouts = theme?.SectionLayouts ?? []
                     });
                 })
             .AllowAnonymous()
