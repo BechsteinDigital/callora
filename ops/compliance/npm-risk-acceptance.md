@@ -35,5 +35,6 @@ aktualisieren und diesen Abschnitt löschen.
 
 ## Nicht geprüft
 
-- `custom/plugins/*` — Beispiel- und Vorlagen-Plugins, werden entfernt.
-- `custom/static-plugins/_archive/*` — archiviert, wird weder gebaut noch ausgeliefert.
+Nichts mehr. Die Beispiel- und Vorlagen-Plugins unter `custom/plugins/*` und das Archiv
+unter `custom/static-plugins/_archive/*` sind aus dem Repository entfernt; jede
+verbleibende `package.json` liegt im Dependabot- und Audit-Umfang.

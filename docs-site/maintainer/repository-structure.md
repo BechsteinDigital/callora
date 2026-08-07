@@ -14,7 +14,7 @@ tests/               xUnit test projects (Core + analyzers) and test plugins
 docfx/               this documentation site
 docs/                local design notes, ADRs, runbooks (gitignored in part)
 scripts/             dev helpers (dev-build.sh, dev-test.sh, dev-check.sh, build-repo-map.sh)
-ops/                 local frontdoor config, plans, specs
+ops/                 frontdoor config, Asterisk interop fixtures, runbooks
 Callora.Host.sln     the solution
 Directory.Build.props / Directory.Packages.props   shared build + Central Package Management
 global.json          pinned .NET 10 SDK
