@@ -1,0 +1,130 @@
+/*
+ * Die Editier-Schicht des Composers.
+ *
+ * Diese Regeln gehören dem ADMIN, nicht der Fläche: Sie werden im Admin-Bundle ausgeliefert
+ * und nicht in den Canvas gescoped. Nur so können sie über den gescopten Flächen-Styles
+ * liegen, statt mit ihnen eingesperrt zu sein.
+ */
+
+/*
+ * Der Klick-Konflikt (§7.6).
+ *
+ * Im Editier-Modus nimmt die WURZEL eines Blocks den Klick, seine Innereien nehmen keinen.
+ * Ein Button im Block feuert also nicht, der Block wird stattdessen ausgewählt. Der Weg über
+ * die Kinder statt über den Block selbst ist der Punkt: Läge `pointer-events: none` auf dem
+ * Block, ginge der Klick an die Region, und dann wüsste niemand mehr, welcher Block gemeint
+ * war.
+ */
+.cal-canvas[data-cal-editing='true'] [data-cal-editor-block] * {
+  pointer-events: none;
+}
+
+.cal-canvas[data-cal-editing='true'] [data-cal-editor-block] {
+  cursor: pointer;
+  position: relative;
+}
+
+.cal-canvas[data-cal-editing='true'] [data-cal-editor-block]:hover {
+  outline: 1px dashed color-mix(in srgb, currentColor 40%, transparent);
+  outline-offset: 2px;
+}
+
+/*
+ * Die Auswahl bleibt sichtbar, wenn „Interaktiv testen" läuft — der Umschalter ändert, wie der
+ * Block auf Zeigereingaben reagiert, nicht was gerade bearbeitet wird.
+ */
+.cal-canvas [data-cal-editor-selected='true'] {
+  outline: 2px solid Highlight;
+  outline-offset: 2px;
+}
+
+.cal-canvas__orphan {
+  padding: 0.75rem 1rem;
+  border: 1px dashed color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 0.375rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+.cal-canvas__empty {
+  padding: 2rem;
+  text-align: center;
+  opacity: 0.6;
+}
+
+/* ── Die Editor-Oberfläche um den Canvas herum ─────────────────────────────── */
+
+.composer__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 60rem) {
+  .composer__workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.composer__modes {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-block: 0.75rem;
+}
+
+.composer-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 0.5rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.composer-inspector__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.composer-inspector__description,
+.composer-inspector__hint,
+.composer-inspector__unsupported,
+.composer-inspector__orphan {
+  margin: 0;
+  font-size: 0.8125rem;
+  opacity: 0.75;
+}
+
+.composer-inspector__confidential {
+  margin-inline-start: 0.5rem;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.composer-inspector__reset {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+  color: inherit;
+}
+
+.composer__status {
+  font-size: 0.8125rem;
+  opacity: 0.75;
+}
+
+.composer__conflict {
+  color: color-mix(in srgb, currentColor 60%, red);
+}
