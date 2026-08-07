@@ -239,7 +239,16 @@ Group `/api/workspaces/{workspaceKey}/surfaces`.
 | GET | `.../surfaces/` | List a workspace's surfaces. | `workspace.read` |
 | GET | `.../surfaces/{surfaceKey}` | Get a surface. | `workspace.read` |
 | PUT | `.../surfaces/{surfaceKey}` | Create or update a surface. | `workspace.update` |
-| DELETE | `.../surfaces/{surfaceKey}` | Delete a surface. | `workspace.update` |
+| DELETE | `.../surfaces/{surfaceKey}` | Delete a surface. `409` when it has children. | `workspace.update` |
+
+A surface upsert carries its place in the tree: `parentSurfaceKey` (empty for an application
+root), `position` among siblings, and `requiredClaims` for who may see it. A child's
+`publicPathPrefix` is **its own segment only** — the full path is composed from the chain, so
+moving a subtree does not rewrite its descendants.
+
+Deleting is refused with `409` in two cases, and both mean the same thing — there is a decision
+to make first: the node still has children (move or delete them), or it is an application root
+(roots carry host, access mode and identity provider and are removed deliberately).
 
 ### Themes (operator)
 
