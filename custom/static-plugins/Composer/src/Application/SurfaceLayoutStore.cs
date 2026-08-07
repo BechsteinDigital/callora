@@ -87,10 +87,16 @@ public sealed class SurfaceLayoutStore(
     }
 
     /// <summary>
-    /// Writes into the draft. False when the editor's stamp is stale — the second writer gets a
-    /// conflict rather than overwriting the first without anyone noticing.
+    /// Writes into the draft and returns the draft's new change stamp, or null when the editor's
+    /// stamp was stale — the second writer gets a conflict rather than overwriting the first
+    /// without anyone noticing.
+    /// <para>
+    /// Returning the new stamp rather than just success is what lets an editor save more than
+    /// once: after the first write its own stamp is out of date, so a bare acknowledgement would
+    /// send the next autosave into a conflict with itself.
+    /// </para>
     /// </summary>
-    public async Task<bool> TryAutosaveAsync(
+    public async Task<DateTimeOffset?> TryAutosaveAsync(
         string layoutKey,
         string document,
         DateTimeOffset expectedChangedAtUtc,
@@ -102,11 +108,11 @@ public sealed class SurfaceLayoutStore(
         if (!SurfaceLayoutTransitions.TryAutosave(
                 draft, document, expectedChangedAtUtc, timeProvider.GetUtcNow()))
         {
-            return false;
+            return null;
         }
 
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return true;
+        return draft.ChangedAtUtc;
     }
 
     /// <summary>Publishes the draft and starts the next one.</summary>

@@ -56,7 +56,7 @@ public sealed class LayoutSaveRouteHandler(SurfaceLayoutStore store) : IHostAdmi
             return new HostAdminApiResponse(400, new { error = "The document must be an object." });
         }
 
-        var saved = await store
+        var changedAtUtc = await store
             .TryAutosaveAsync(
                 layoutKey,
                 save.Document.GetRawText(),
@@ -64,8 +64,11 @@ public sealed class LayoutSaveRouteHandler(SurfaceLayoutStore store) : IHostAdmi
                 cancellationToken)
             .ConfigureAwait(false);
 
-        return saved
-            ? new HostAdminApiResponse(204)
+        // Der neue Stempel geht zurück, weil der Editor sonst genau einmal speichern könnte:
+        // Nach dem ersten Schreiben ist sein eigener Stempel veraltet, und der nächste Autosave
+        // liefe in einen Konflikt mit sich selbst.
+        return changedAtUtc is { } stamp
+            ? new HostAdminApiResponse(200, new LayoutSaveResponse(stamp))
             : new HostAdminApiResponse(409, new
             {
                 error = "The draft changed since it was loaded.",
