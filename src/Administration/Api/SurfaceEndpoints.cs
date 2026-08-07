@@ -90,6 +90,7 @@ public static class SurfaceEndpoints
             {
                 ParentSurfaceKey = request.ParentSurfaceKey,
                 Position = request.Position,
+                RequiredClaims = request.RequiredClaims,
             };
 
             var result = await surfaceStore.UpsertAsync(workspaceKey, input, cancellationToken).ConfigureAwait(false);
@@ -169,5 +170,6 @@ public static class SurfaceEndpoints
     {
         ParentSurfaceKey = surface.ParentSurfaceKey,
         Position = surface.Position,
+        RequiredClaims = surface.RequiredClaims,
     };
 }

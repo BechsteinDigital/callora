@@ -50,6 +50,7 @@ function surface(over: Partial<WorkspaceSurface>): WorkspaceSurface {
     updatedAtUtc: '',
     parentSurfaceKey: null,
     position: 0,
+    requiredClaims: null,
     ...over,
   }
 }
@@ -183,6 +184,37 @@ describe('WorkspaceSurfaces', () => {
     expect(offered).not.toContain('portal')
     expect(offered).not.toContain('partner')
     expect(offered).toContain('dialer')
+  })
+
+  it('trennt eigene von geerbten Sichtbarkeits-Anforderungen', async () => {
+    // Was von oben gilt, kann man hier nicht ändern — es sähe sonst aus wie eine Einstellung
+    // dieses Knotens, und ein Speichern schriebe es hier fest.
+    listSurfacesMock.mockResolvedValue([
+      surface({ surfaceKey: 'portal', requiredClaims: 'kunde' }),
+      surface({ id: '2', surfaceKey: 'partner', parentSurfaceKey: 'portal', requiredClaims: 'partner' }),
+    ])
+    const wrapper = mountSurfaces(true)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('partner')
+    expect(text).toContain('kunde ↑')
+  })
+
+  it('speichert nur die eigenen Claims, nicht die geerbten', async () => {
+    listSurfacesMock.mockResolvedValue([surface({ surfaceKey: 'portal', requiredClaims: 'kunde' })])
+    const wrapper = mountSurfaces(true)
+    await flushPromises()
+
+    await wrapper.find('input[name="surfaceKey"]').setValue('partner')
+    await wrapper.find('input[name="surfaceDisplayName"]').setValue('Partner')
+    await wrapper.find('select[name="surfaceParent"]').setValue('portal')
+    await wrapper.find('input[name="surfaceRequiredClaims"]').setValue(' partner , partner ')
+    await wrapper.find('form.surfaces__form').trigger('submit')
+    await flushPromises()
+
+    // Entdoppelt und ohne Leerraum — und ohne „kunde", das vom Elternteil kommt.
+    expect(upsertSurfaceMock.mock.calls[0][2].requiredClaims).toBe('partner')
   })
 
   it('does not submit without a key, name and path prefix', async () => {
