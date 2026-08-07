@@ -1,0 +1,4 @@
+# Das gebaute Admin-Bundle ist ein Artefakt: es entsteht aus app/admin und reist über das
+# NuGet-Paket mit, nicht über das Repo. Eingecheckt wäre es eine zweite Wahrheit, die bei
+# jedem Build unbemerkt vom Quellstand abweichen kann.
+public/admin/
