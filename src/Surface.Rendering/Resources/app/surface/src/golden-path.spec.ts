@@ -4,11 +4,12 @@ import { nextTick } from 'vue'
 import { createSurfaceRegistry } from './surface-registry'
 import { mountSurface } from './mount'
 import { injectPluginScript, loadSurfacePlugins } from './plugin-loader'
-// The real, committed bundle of the SurfaceDemo reference plugin, imported as raw text
-// (built by the @callora/surface preset: Vue external → CalloraVue, registerSurfaceView).
-// The path sits outside this project's root, so vite.config.ts allowlists it explicitly —
-// Vite's filesystem guard denies such ids by default since the path-traversal hardening.
-import surfaceDemoBundle from '../../../../../../custom/plugins/SurfaceDemo/src/Resources/public/surface/main.js?raw'
+// A real bundle built by the @callora/surface preset (Vue external → CalloraVue,
+// registerView), kept as a fixture. It used to be imported straight out of the SurfaceDemo
+// reference plugin; that plugin left the repository with the other examples, and a plugin
+// living next to the platform could not prove what a third party's build produces anyway.
+// See src/__fixtures__/README.md for the limitation a frozen bundle carries.
+import surfaceDemoBundle from './__fixtures__/demo-plugin-bundle.js?raw'
 
 /**
  * End-to-end golden path, exercised with the REAL reference-plugin bundle: chain loader →
@@ -16,7 +17,7 @@ import surfaceDemoBundle from '../../../../../../custom/plugins/SurfaceDemo/src/
  * renders it. In this unit environment the injected `<script src>` is inert (no server), so
  * the bundle is executed directly — the same code the browser would run — instead of fetched.
  */
-describe('surface golden path (real SurfaceDemo bundle)', () => {
+describe('surface golden path (real preset-built bundle)', () => {
   beforeEach(() => {
     document.body.replaceChildren()
     document.head.replaceChildren()

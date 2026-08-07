@@ -1,6 +1,6 @@
 {
   "name": "@callora/surface",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "description": "The Callora surface runtime and the contract surface plugins compile against — views, blocks, the context channel, and the blessed Vite preset.",
   "license": "Apache-2.0",
   "type": "module",
@@ -46,8 +46,7 @@
     }
   },
   "dependencies": {
-    "@vitejs/plugin-vue": "^5.1.0",
-    "vue": "^3.5.0"
+    "@vitejs/plugin-vue": "^5.1.0"
   },
   "devDependencies": {
     "@vue/test-utils": "^2.4.6",
@@ -56,6 +55,13 @@
     "typescript": "^5.6.0",
     "vite": "^6.0.0",
     "vitest": "^4.1.10",
-    "vue-tsc": "^2.1.0"
-  }
+    "vue-tsc": "^2.1.0",
+    "vue": "^3.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BechsteinDigital/callora.git",
+    "directory": "src/Surface.Rendering/Resources/app/surface"
+  },
+  "homepage": "https://github.com/BechsteinDigital/callora"
 }

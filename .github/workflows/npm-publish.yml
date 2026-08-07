@@ -1,0 +1,85 @@
+name: npm publish
+
+# Veröffentlicht @callora/surface und @callora/admin auf einen Tag v*, denselben Tag, der
+# release.yml für die NuGet-Pakete auslöst. Beide Seiten kommen aus einem Release, weil sie
+# zwei Hälften desselben Vertrags sind: @callora/surface ist die Client-Hälfte, deren
+# Server-Hälfte Callora.Surface.Rendering ist. Driften sie auseinander, merkt das niemand
+# außer einem Kunden.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Nur packen und den Inhalt zeigen, nicht veröffentlichen"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: "@callora/surface"
+            path: src/Surface.Rendering/Resources/app/surface
+          - package: "@callora/admin"
+            path: src/Administration/Resources/app/administration
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm run test
+
+      # Die Bibliothek, nicht die App: dist-lib ist das, was die files-Liste ausliefert.
+      - name: Build library
+        run: npm run build:lib
+
+      # Der Tag bestimmt die Version, nicht umgekehrt. Ohne diese Prüfung veröffentlicht
+      # ein v0.9.1-Tag stillschweigend erneut 0.9.0 — npm lehnt das ab, aber erst nach dem
+      # Bauen, und die Fehlermeldung nennt den Grund nicht.
+      - name: Tag und Paketversion stimmen überein
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME sagt $TAG, package.json sagt $PKG."
+            exit 1
+          fi
+          echo "Version: $PKG"
+
+      # Was wirklich im Tarball landet — im Log nachlesbar, bevor es unwiderruflich ist.
+      - name: Paketinhalt zeigen
+        run: npm pack --dry-run
+
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
