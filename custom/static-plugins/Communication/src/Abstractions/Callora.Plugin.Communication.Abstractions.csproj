@@ -12,7 +12,6 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Description>Callora Communication foundation — stable cross-plugin contracts (channels, calls, voice audio, capabilities, consent) shared via the host load context. Assembly name starts with "Callora." so it is unified across plugin load contexts.</Description>
     <IsPackable>true</IsPackable>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

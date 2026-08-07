@@ -10,7 +10,23 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
     <!-- Framework CLI; may consume Core's [CalloraInternal] surface. -->
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
+
+    <!-- Als globales dotnet-Tool ausliefern: `dotnet tool install -g Callora.Cli`, danach
+         `callora plugin scaffold|contract-test|sign`. Ohne das kann ein Plugin in einem
+         eigenen Repository sich nicht signieren — und unsigniert kommt es weder in eine
+         Distribution noch in den Marketplace. Bis hierher packte das Projekt als
+         gewöhnliches Bibliothekspaket: erzeugt, aber nicht ausführbar und damit nutzlos. -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>callora</ToolCommandName>
+    <PackageId>Callora.Cli</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>callora;cli;dotnet-tool;plugin</PackageTags>
+    <Description>The Callora CLI: scaffold a plugin, test it against the platform contract, and sign it for distribution.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Callora.Core.csproj" />

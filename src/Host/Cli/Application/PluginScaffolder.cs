@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 
@@ -62,22 +63,47 @@ internal sealed class PluginScaffolder
         var repositoryRoot = FindRepositoryRoot(currentDirectory);
         if (repositoryRoot is null)
         {
-            // Compile against the host contracts (now part of Callora.Core) but do
-            // not ship Core with the plugin — the host provides it, the plugin ALC
-            // shares its type identity (REV2 §10.1A).
-            return "<PackageReference Include=\"Callora.Core\" Version=\"0.1.0\" ExcludeAssets=\"runtime\" />";
+            // Callora.Plugin.Sdk statt Callora.Core: Es bringt dieselbe Vertragsfläche mit,
+            // dazu die Governance-Analyzer und die Build-Regel, die Plattform-Assemblies aus
+            // dem Ausgabeordner hält. Vorher stand hier ExcludeAssets="runtime" von Hand —
+            // eine Zeile, die ein Plugin-Autor beim Umbauen streicht, ohne dass etwas
+            // fehlschlägt; der Bruch der Typidentität fällt erst beim Laden auf.
+            // Die Version ist die der CLI: Beide kommen aus demselben Release, also
+            // scaffoldet ein Werkzeug niemals gegen ein SDK, das es nicht gibt.
+            return $"<PackageReference Include=\"Callora.Plugin.Sdk\" Version=\"{SdkPackageVersion()}\" />";
         }
 
-        var projectReferenceAbsolutePath = Path.Combine(
-            repositoryRoot,
-            "src",
-            "Core",
-            "Callora.Core.csproj");
+        var relativeTo = new Func<string[], string>(segments => Path
+            .GetRelativePath(outputDirectory, Path.Combine([repositoryRoot, .. segments]))
+            .Replace('\\', '/'));
 
-        var relativePath = Path.GetRelativePath(outputDirectory, projectReferenceAbsolutePath)
-            .Replace('\\', '/');
+        // Im Repository selbst gibt es keine Pakete, also die Einzelteile, die das SDK
+        // sonst bündelt — inklusive Analyzer, der hier bisher fehlte: Ein so erzeugtes
+        // Plugin lief ohne CAL0001-CAL0003 und merkte einen Grenzübertritt nicht.
+        return $"""
+                <ProjectReference Include="{relativeTo(["src", "Core", "Callora.Core.csproj"])}" Private="false" ExcludeAssets="runtime" />
+                    <ProjectReference Include="{relativeTo(["src", "Analyzers", "Callora.Analyzers.csproj"])}"
+                                      OutputItemType="Analyzer"
+                                      ReferenceOutputAssembly="false" />
+                """;
+    }
 
-        return $"<ProjectReference Include=\"{relativePath}\" Private=\"false\" ExcludeAssets=\"runtime\" />";
+    /// <summary>
+    /// Die Version dieser CLI, ohne Build-Metadaten — MinVer hängt "+&lt;sha&gt;" an, was in
+    /// einer Paketversion nichts zu suchen hat.
+    /// </summary>
+    private static string SdkPackageVersion()
+    {
+        var informational = typeof(PluginScaffolder).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+        if (string.IsNullOrWhiteSpace(informational))
+        {
+            return "0.1.0";
+        }
+
+        var plus = informational.IndexOf('+', StringComparison.Ordinal);
+        return plus < 0 ? informational : informational[..plus];
     }
 
     private static string? FindRepositoryRoot(string currentDirectory)

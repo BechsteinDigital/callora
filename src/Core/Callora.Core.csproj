@@ -14,7 +14,6 @@
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
     <!-- Baustein 1: als NuGet-Paket in den lokalen Feed. -->
     <IsPackable>true</IsPackable>
-    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <Description>Callora platform core: framework runtime, domain logic (Identity/RBAC, tenancy), persistence and hosting composition.</Description>
   </PropertyGroup>
 
@@ -44,12 +43,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
-    <!-- Security-Remediation: DataProtection zieht transitiv System.Security.Cryptography.Xml
-         10.0.9 (HIGH-Advisory NU1903). Direkt-Pin auf den Patch 10.0.10; Core ist die
-         Abhängigkeitsspine, daher solution-weit wirksam. NU1510 (Pruning-Hinweis "Referenz
-         überflüssig") ist hier gewollt unterdrückt — die Referenz erzwingt die Patch-Version;
-         KEINE Security-Advisory wird unterdrückt. -->
-    <PackageReference Include="System.Security.Cryptography.Xml" NoWarn="NU1510" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

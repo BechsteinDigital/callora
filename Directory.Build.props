@@ -9,10 +9,14 @@
     <Company>Bechstein.Digital Ecommerce UG (haftungsbeschränkt)</Company>
     <Product>Callora.Host</Product>
     <RepositoryType>git</RepositoryType>
-    <!-- Paket-Metadaten für den lokalen Feed (Baustein 1). Wirken nur, wenn ein
-         Projekt IsPackable setzt — sonst inert. Lizenz/IsPackable/Description
-         stehen pro Modul, weil die Core-Module (AGPL) und der SDK-Contract
-         (Apache) unterschiedlich lizenziert sind. -->
+    <!-- Paket-Metadaten. Wirken nur, wenn ein Projekt IsPackable setzt — sonst inert.
+         Die Lizenz stand früher pro Modul, weil die Core-Module AGPL waren und nur der
+         Plugin-Contract Apache. Seit dem Wechsel auf Apache-2.0 für das ganze
+         Repository ist das eine Aussage, die nur einmal getroffen werden sollte: Vier
+         Module trugen nach dem Wechsel monatelang weiter AGPL im Paket, weil niemand
+         alle vier Stellen nachzog. Hier kann das nicht mehr auseinanderlaufen. -->
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Copyright>Copyright 2026 Bechstein.Digital Ecommerce UG (haftungsbeschränkt)</Copyright>
     <RepositoryUrl>https://github.com/BechsteinDigital/callora</RepositoryUrl>
     <PackageProjectUrl>https://github.com/BechsteinDigital/callora</PackageProjectUrl>
     <Nullable>enable</Nullable>

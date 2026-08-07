@@ -108,13 +108,24 @@ if wanted dotnet; then
     rm -rf ./test-results
     dotnet test Callora.Host.sln --no-build --configuration Release \
       --collect:"XPlat Code Coverage" --results-directory ./test-results
-    REPORT="$(find ./test-results -name coverage.cobertura.xml | head -1)"
-    [[ -n "$REPORT" ]] || { echo "Kein Coverage-Report gefunden." >&2; exit 1; }
-    python3 - "$REPORT" <<'PY'
-import sys, xml.etree.ElementTree as ET
+    # Über ALLE Berichte, nicht über den ersten — derselbe Fehler wie in ci.yml:
+    # der Lauf erzeugt zwei, und der kleine (Analyzer-Tests) meldet 93,6 % statt 33,6 %.
+    python3 - <<'PY'
+import glob, sys, xml.etree.ElementTree as ET
+
 threshold = 0.25
-rate = float(ET.parse(sys.argv[1]).getroot().get("line-rate"))
-print(f"line coverage: {rate:.1%} (threshold {threshold:.0%})")
+reports = glob.glob("./test-results/**/coverage.cobertura.xml", recursive=True)
+if not reports:
+    sys.exit("Kein Coverage-Report gefunden.")
+
+covered = valid = 0
+for report in reports:
+    root = ET.parse(report).getroot()
+    covered += int(root.get("lines-covered"))
+    valid += int(root.get("lines-valid"))
+
+rate = covered / valid if valid else 0.0
+print(f"line coverage: {rate:.1%} über {valid} Zeilen (threshold {threshold:.0%})")
 sys.exit(0 if rate >= threshold else 1)
 PY
   )

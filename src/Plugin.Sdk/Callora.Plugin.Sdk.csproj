@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Ein Paket ohne Code. Es bringt zusammen, was ein Plugin braucht, um gegen Callora
+       zu bauen: die Vertragsfläche, den Governance-Analyzer und die Build-Regeln, ohne
+       die ein Plugin zwar kompiliert, aber zur Laufzeit die Typidentität bricht.
+
+       Der Zweck ist nicht Bequemlichkeit. Bisher stand ExcludeAssets="runtime" in jedem
+       Plugin-csproj von Hand; ein externes Plugin, das es vergisst, kopiert Callora.Core
+       neben sich und scheitert erst beim Laden. Hier ist der Fehler nicht dokumentiert,
+       sondern unerreichbar. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!-- Kein lib/, also auch nichts, was ein Symbolpaket tragen könnte — sonst bricht
+         der Pack mit NU5017 ab (dieselbe Falle wie bei Callora.Analyzers). -->
+    <IncludeSymbols>false</IncludeSymbols>
+    <!-- NU5128: Abhängigkeitsgruppe ohne lib/-Ordner. Für ein reines MSBuild-Paket
+         strukturell, es liefert bewusst keine Assembly aus. -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>callora;plugin;sdk;msbuild</PackageTags>
+    <Description>Everything a Callora plugin needs to build correctly: the platform contract surface, the governance analyzers, and the build rules that keep platform assemblies out of the plugin's output.</Description>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Beide Zeilen tragen ausdrückliche Asset-Angaben, weil NuGets Vorgaben hier
+         genau das Gegenteil dessen bewirken, was das Paket leisten soll — und zwar
+         lautlos, sichtbar erst in der nuspec eines gebauten Pakets.
+
+         ExcludeAssets="runtime" auf Core: kompilieren ja, mitliefern nein. Ohne das
+         landen mit Core auch EF Core, ASP.NET, Npgsql, OpenTelemetry und der Rest im
+         Plugin-Ausgabeordner — rund 50 Assemblies, die der Host ohnehin stellt und die
+         der Ladekontext auf die Host-Kopie auflöst. Genau dafür stand bisher
+         ExcludeAssets in jedem Plugin-csproj; hier steht es einmal.
+
+         PrivateAssets="none" auf Analyzers: Der Vorgabewert für ProjectReference ist
+         "contentfiles;analyzers;build" — der Analyzer wäre also von der Weitergabe
+         AUSGESCHLOSSEN, und das SDK hätte sein wichtigstes Versprechen still gebrochen. -->
+    <ProjectReference Include="..\Core\Callora.Core.csproj"
+                      ExcludeAssets="runtime" PrivateAssets="none" />
+    <ProjectReference Include="..\Analyzers\Callora.Analyzers.csproj"
+                      PrivateAssets="none" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- NuGet importiert build/$(PackageId).props und .targets beim Konsumenten
+         automatisch — der Dateiname MUSS der Paket-ID entsprechen. -->
+    <None Include="build\Callora.Plugin.Sdk.props" Pack="true" PackagePath="build\" />
+    <None Include="build\Callora.Plugin.Sdk.targets" Pack="true" PackagePath="build\" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>
