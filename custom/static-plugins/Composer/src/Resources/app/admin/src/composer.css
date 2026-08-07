@@ -101,15 +101,85 @@
 
 .composer__workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr) minmax(16rem, 22rem);
   gap: 1.5rem;
   align-items: start;
 }
 
-@media (max-width: 60rem) {
+@media (max-width: 75rem) {
   .composer__workspace {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ── Die Palette ───────────────────────────────────────────────────────────── */
+
+.composer-palette {
+  position: sticky;
+  top: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 0.5rem;
+}
+
+.composer-palette h2 {
+  margin-block: 0 0.75rem;
+  font-size: 0.875rem;
+}
+
+.composer-palette h3 {
+  margin-block: 0.75rem 0.375rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.composer-palette ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.composer-palette__block {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  cursor: grab;
+}
+
+.composer-palette__block:active {
+  cursor: grabbing;
+}
+
+/* ── Die Ablegezonen ───────────────────────────────────────────────────────── */
+
+/*
+ * Es gibt sie nur, während gezogen wird — sie sind echte Elemente zwischen den Blöcken, und
+ * dauerhaft eingefügt bräche jede `+`- und `>`-Regel des Themes.
+ *
+ * Die Fläche ist größer als der sichtbare Strich: Ein Ziel, das man treffen muss, ist ein
+ * Ziel, das man verfehlt.
+ */
+.cal-canvas__dropzone {
+  min-height: 0.5rem;
+  margin-block: -0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.1s;
+}
+
+.cal-canvas__dropzone--empty {
+  min-height: 4rem;
+  margin-block: 0;
+  border: 1px dashed color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.cal-canvas__dropzone:hover {
+  background: Highlight;
 }
 
 .composer__modes {

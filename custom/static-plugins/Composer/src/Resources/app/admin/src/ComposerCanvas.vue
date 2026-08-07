@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import CanvasSection from './CanvasSection.vue'
-import type { BlockAddress, LayoutDocument } from './layout-document'
+import type { BlockAddress, DropTarget, LayoutDocument } from './layout-document'
 import type { SectionLayout } from './preview-assets'
 import {
   applyScopedSurfaceStyles,
@@ -33,9 +33,15 @@ const props = defineProps<{
    * verhält sich ein Block wie auf der Fläche — der „Interaktiv testen"-Umschalter aus §7.6.
    */
   editing?: boolean
+  /** Ob gerade etwas gezogen wird. Nur dann gibt es Ablegezonen. */
+  dragging?: boolean
 }>()
 
-const emit = defineEmits<{ select: [address: BlockAddress] }>()
+const emit = defineEmits<{
+  select: [address: BlockAddress]
+  dropBlock: [target: DropTarget, data: string]
+  dragBlock: [address: BlockAddress]
+}>()
 
 const sections = computed(() => {
   const raw = Array.isArray(props.document?.sections) ? props.document.sections : []
@@ -86,7 +92,10 @@ watch(() => [props.surfaceCss, props.tokens], applyStyles, { deep: true })
       :components="components"
       :layouts="layouts ?? []"
       :selected-block-index="selectedIndexIn(entry.index)"
+      :dragging="dragging"
       @select="emit('select', { sectionIndex: entry.index, blockIndex: $event })"
+      @drag-block="emit('dragBlock', { sectionIndex: entry.index, blockIndex: $event })"
+      @drop-block="(target, data) => emit('dropBlock', target, data)"
     />
     <p v-if="sections.length === 0" class="cal-canvas__empty">
       Noch keine Sektion. Ziehen Sie einen Block hierher, um zu beginnen.
