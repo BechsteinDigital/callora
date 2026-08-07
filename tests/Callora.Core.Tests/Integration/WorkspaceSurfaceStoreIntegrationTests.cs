@@ -83,7 +83,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
         Assert.Equal("Renamed", updated!.DisplayName);
         Assert.Single(await store.ListAsync("workspace-a"));
 
-        Assert.True(await store.DeleteAsync("workspace-a", "portal"));
+        Assert.Equal(SurfaceDeleteResult.Deleted, await store.DeleteAsync("workspace-a", "portal"));
         Assert.Empty(await store.ListAsync("workspace-a"));
     }
 

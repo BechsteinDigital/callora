@@ -27,6 +27,18 @@ public interface ISurfaceLayoutSource
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Die Surface-Schlüssel dieses Workspaces, für die eine Erlebniswelt veröffentlicht ist.
+    /// <para>
+    /// Eine Abfrage für alle, nicht eine je Knoten: Die Navigation zeigt bei jedem Aufruf den
+    /// ganzen Baum, und einzeln gefragt wären das so viele Datenbankrunden wie Knoten — auf
+    /// dem öffentlichen Renderpfad, bei jedem Besucher.
+    /// </para>
+    /// </summary>
+    Task<IReadOnlySet<string>> ListPublishedSurfaceKeysAsync(
+        string workspaceKey,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The working draft, for the editor. Requires operator permission at its call site — the
     /// public render path must never reach this.
     /// </summary>

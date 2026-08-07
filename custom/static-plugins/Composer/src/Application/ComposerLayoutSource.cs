@@ -29,6 +29,12 @@ public sealed class ComposerLayoutSource(
     }
 
     /// <inheritdoc />
+    public Task<IReadOnlySet<string>> ListPublishedSurfaceKeysAsync(
+        string workspaceKey,
+        CancellationToken cancellationToken = default) =>
+        store.ListPublishedSurfaceKeysAsync(workspaceKey, cancellationToken);
+
+    /// <inheritdoc />
     public async Task<SurfaceLayoutDocument?> GetDraftAsync(
         string layoutKey,
         CancellationToken cancellationToken = default)

@@ -210,14 +210,14 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
         return ToSnapshotObject(normalizedWorkspaceKey, surface);
     }
 
-    public async Task<bool> DeleteAsync(
+    public async Task<SurfaceDeleteResult> DeleteAsync(
         string workspaceKey,
         string surfaceKey,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(workspaceKey) || string.IsNullOrWhiteSpace(surfaceKey))
         {
-            return false;
+            return SurfaceDeleteResult.NotFound;
         }
 
         var normalizedWorkspaceKey = workspaceKey.Trim();
@@ -229,12 +229,23 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             .ConfigureAwait(false);
         if (surface is null)
         {
-            return false;
+            return SurfaceDeleteResult.NotFound;
+        }
+
+        // Vor dem Löschen fragen, nicht die Datenbank fragen lassen: Der Fremdschlüssel steht
+        // auf Restrict, also käme der Versuch als Serverfehler beim Operator an — und ein
+        // Serverfehler sagt nicht, dass da drei Unterseiten hängen.
+        var hasChildren = await dbContext.WorkspaceSurfaces
+            .AnyAsync(x => x.ParentSurfaceId == surface.Id, cancellationToken)
+            .ConfigureAwait(false);
+        if (hasChildren)
+        {
+            return SurfaceDeleteResult.HasChildren;
         }
 
         dbContext.WorkspaceSurfaces.Remove(surface);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return true;
+        return SurfaceDeleteResult.Deleted;
     }
 
     private static Expression<Func<WorkspaceSurface, WorkspaceSurfaceSnapshot>> ToSnapshot(string workspaceKey) =>
