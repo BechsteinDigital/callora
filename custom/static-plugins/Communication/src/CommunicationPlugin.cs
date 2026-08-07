@@ -205,7 +205,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
             // passiert, kommt als Kontext — eine Route dafür wäre ein zweiter Weg zur selben Auskunft,
             // und die beiden würden auseinanderlaufen.
             context.Export<IHostSurfaceApiContributor>(
-                new CommunicationSurfaceApiContributor(Id, _callControlService, _callControlService));
+                new CommunicationSurfaceApiContributor(
+                    Id, _callControlService, _callControlService, new EfSipAccountStore(dbContextFactory)));
 
             // Die Serverhälfte der Blöcke: Sie entscheidet Sichtbarkeit, bevor Markup entsteht, und
             // meldet den Kontextbedarf an — ein Schlüssel, den auf dieser Fläche niemand deklariert

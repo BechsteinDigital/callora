@@ -31,6 +31,9 @@ public sealed class CommunicationSurfaceViewContributor : IHostSurfaceViewContri
     /// <summary>Island id of the call list.</summary>
     public const string CallLogViewId = "communication.call-log";
 
+    /// <summary>Island id of the line-status panel.</summary>
+    public const string ChannelStatusViewId = "communication.channel-status";
+
     /// <summary>
     /// Semantic role the phone panels fill. A workplace theme decides where a side panel appears;
     /// the blocks say what they are, not where they go.
@@ -86,6 +89,17 @@ public sealed class CommunicationSurfaceViewContributor : IHostSurfaceViewContri
             // Ende eines Gesprächs, aber über den Schlüssel, den das Telefon ohnehin deklariert —
             // ihn hier zu wiederholen hieße, ihn auch auf Flächen auszuliefern, die kein Telefon
             // haben.
+            RequiresContexts: null),
+        new(
+            ChannelStatusViewId,
+            PanelSlot,
+            "Leitungsstatus",
+            Weight: 40,
+            Cardinality: SurfaceViewCardinality.AtMostOne,
+            Description: "Ob die Leitungen des Workspaces registriert sind — und seit wann nicht.",
+            RequiredClaims: [SurfaceCallAccess.ClaimKey],
+            // Wie die Anrufliste: Der Zustand einer Leitung ist persistiert und maßgeblich, ein
+            // Kontext-Schlüssel wäre eine zweite Kopie davon.
             RequiresContexts: null),
     ];
 }

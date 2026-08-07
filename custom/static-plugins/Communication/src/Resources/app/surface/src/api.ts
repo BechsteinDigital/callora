@@ -31,6 +31,20 @@ export interface CallSnapshot {
   target: string
 }
 
+/** Eine Leitung des Workspaces, so wie sie jemand am Telefon braucht. */
+export interface ChannelView {
+  channelId: string
+  displayName: string
+  /** Stabiler Zustand: Up, Degraded, Failed, Connecting, Disabled. */
+  status: string
+  /** Wann er zuletzt gewechselt hat. */
+  since: string | null
+  /** Wann die Leitung zuletzt funktioniert hat — überlebt einen späteren Ausfall. */
+  lastRegisteredAt: string | null
+  /** Warum sie nicht steht, falls der Provider es gesagt hat. In der Domäne bereits redigiert. */
+  error: string | null
+}
+
 /** Thrown when a call route answers with a non-OK status; carries what the server said. */
 export class CallApiError extends Error {
   readonly status: number
@@ -72,6 +86,12 @@ export async function listCalls(limit?: number): Promise<CallHistoryEntry[]> {
 export async function listActiveCalls(): Promise<CallSnapshot[]> {
   const data = await request('GET', 'calls/active')
   return Array.isArray(data) ? (data as CallSnapshot[]) : []
+}
+
+/** Die Leitungen des Workspaces und ihr Zustand. */
+export async function listChannels(): Promise<ChannelView[]> {
+  const data = await request('GET', 'channels')
+  return Array.isArray(data) ? (data as ChannelView[]) : []
 }
 
 /** Answers a ringing call. */

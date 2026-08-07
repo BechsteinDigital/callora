@@ -8,6 +8,8 @@ using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Surfaces;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Api.Surface;
+using Callora.Plugin.Communication.Application.Accounts;
+using Callora.Plugin.Communication.Domain.Accounts;
 using Xunit;
 
 namespace Callora.Core.Tests.Communication.Surface;
@@ -99,6 +101,30 @@ public sealed class SurfaceCallApiTests
             Request("GET", "calls/active", caller: Authenticated(SurfaceCallAccess.Read)));
 
         Assert.Single(Assert.IsAssignableFrom<IReadOnlyList<CallSnapshot>>(response.Payload));
+    }
+
+    [Fact]
+    public async Task TheLinesAreReportedWithoutTheirCredentialsOrEndpoints()
+    {
+        // Was jemand am Telefon fragt, ist „warum klingelt nichts" — Host, Port und Transport
+        // beantworten das nicht und gehören nicht auf eine Fläche.
+        var accounts = new FakeAccounts(Account("a1", SipAccountStatus.Failed));
+        var handler = new SurfaceListChannelsRouteHandler(accounts);
+
+        var response = await handler.HandleAsync(
+            Request("GET", "channels", caller: Authenticated(SurfaceCallAccess.Read)));
+
+        var line = Assert.Single(Assert.IsType<SurfaceChannelView[]>(response.Payload));
+        Assert.Equal(("a1", "Trunk a1", "Failed"), (line.ChannelId, line.DisplayName, line.Status));
+        Assert.DoesNotContain("sip.example.com", JsonSerializer.Serialize(response.Payload), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AVisitorWithoutTheClaim_DoesNotLearnWhetherTheTrunkIsUp()
+    {
+        var handler = new SurfaceListChannelsRouteHandler(new FakeAccounts());
+
+        Assert.Equal(403, (await handler.HandleAsync(Request("GET", "channels", caller: Authenticated()))).StatusCode);
     }
 
     // ── Handeln ─────────────────────────────────────────────────────────────
@@ -223,6 +249,39 @@ public sealed class SurfaceCallApiTests
             WorkspaceKey: Workspace,
             SurfaceKey: SurfaceKey,
             Caller: caller);
+
+    private static SipAccount Account(string id, SipAccountStatus status)
+    {
+        var account = new SipAccount(
+            id, Workspace, $"Trunk {id}",
+            new SipConnection("sip.example.com", 5060, SipTransport.Udp, SipAccountMode.Trunk,
+                IpAuthentication.Instance, registrationExpirySeconds: null),
+            maxConcurrentCalls: 4, enabled: true);
+        account.ReportStatus(status, "die Zugangsdaten wurden abgelehnt", DateTimeOffset.UnixEpoch);
+        return account;
+    }
+
+    private sealed class FakeAccounts(params SipAccount[] accounts) : ISipAccountStore
+    {
+        public Task<IReadOnlyList<SipAccount>> ListAsync(string workspaceKey, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<SipAccount>>([.. accounts]);
+
+        public Task<IReadOnlyList<SipAccount>> ListEnabledAsync(CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
+        public Task<SipAccount?> GetAsync(string workspaceKey, string accountId, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
+        public Task AddAsync(SipAccount account, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task UpdateAsync(SipAccount account, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task<bool> DeleteAsync(string workspaceKey, string accountId, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
+        public Task<int> DeleteByWorkspaceAsync(string workspaceKey, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+    }
 
     private sealed class FakeHistory(params CallHistoryEntry[] calls) : ICallHistory
     {

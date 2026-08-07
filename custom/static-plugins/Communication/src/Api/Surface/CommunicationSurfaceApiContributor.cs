@@ -1,5 +1,6 @@
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Plugin.Communication.Abstractions;
+using Callora.Plugin.Communication.Application.Accounts;
 
 namespace Callora.Plugin.Communication.Api.Surface;
 
@@ -23,13 +24,21 @@ public sealed class CommunicationSurfaceApiContributor : IHostSurfaceApiContribu
     /// <summary>Route template for what is live right now.</summary>
     public const string ActiveCallsRouteTemplate = "calls/active";
 
+    /// <summary>Route template for whether the phone can ring at all.</summary>
+    public const string ChannelsRouteTemplate = "channels";
+
     private readonly IReadOnlyList<HostSurfaceApiRouteRegistration> _routes;
 
     /// <summary>Wires the surface call routes over call control and the history.</summary>
+    /// <param name="accounts">
+    /// The workspace's lines, for the status panel. Null in a deployment without persistence, where
+    /// there are no configured lines to report on and the route is simply not offered.
+    /// </param>
     public CommunicationSurfaceApiContributor(
         string pluginId,
         ICallControlService calls,
-        ICallHistory history)
+        ICallHistory history,
+        ISipAccountStore? accounts = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ArgumentNullException.ThrowIfNull(calls);
@@ -49,6 +58,13 @@ public sealed class CommunicationSurfaceApiContributor : IHostSurfaceApiContribu
                 "POST", "calls/{callId}/hangup", new SurfaceCallCommandRouteHandler(calls, SurfaceCallCommand.Hangup)),
             new HostSurfaceApiRouteRegistration(
                 "POST", "calls/{callId}/dtmf", new SurfaceSendDtmfRouteHandler(calls)),
+            .. accounts is null
+                ? Array.Empty<HostSurfaceApiRouteRegistration>()
+                : new[]
+                {
+                    new HostSurfaceApiRouteRegistration(
+                        "GET", ChannelsRouteTemplate, new SurfaceListChannelsRouteHandler(accounts)),
+                },
         ];
     }
 

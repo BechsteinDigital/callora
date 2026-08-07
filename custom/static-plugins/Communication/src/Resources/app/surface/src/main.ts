@@ -1,6 +1,7 @@
 import { registerBlock, registerBlockCategory } from '@callora/surface'
 import ActiveCallBlock from './ActiveCallBlock.vue'
 import CallLogBlock from './CallLogBlock.vue'
+import ChannelStatusBlock from './ChannelStatusBlock.vue'
 import IncomingCallBlock from './IncomingCallBlock.vue'
 import { ACTIVE_CALL_KEY, INCOMING_CALL_KEY } from './context-keys'
 import './blocks.css'
@@ -104,4 +105,31 @@ registerBlock({
   },
   component: CallLogBlock,
   order: 30,
+})
+
+registerBlock({
+  id: 'communication.channel-status',
+  label: 'Leitungsstatus',
+  description: 'Ob die Leitungen des Workspaces registriert sind — und seit wann nicht.',
+  category: CATEGORY,
+  // Kein `requires`: Der Zustand einer Leitung ist persistiert und maßgeblich. Ein Kontext-Schlüssel
+  // wäre eine zweite Kopie dessen, was die Datenbank schon hält — und die beiden würden sich
+  // irgendwann uneinig darüber sein, welche stimmt.
+  controls: {
+    title: {
+      type: 'text',
+      label: 'Überschrift',
+      default: 'Leitungen',
+      group: 'Inhalt',
+    },
+    onlyWhenDegraded: {
+      type: 'toggle',
+      label: 'Nur bei Störung zeigen',
+      description: 'Für eine Fläche, auf der der Normalfall kein Thema ist.',
+      default: false,
+      group: 'Verhalten',
+    },
+  },
+  component: ChannelStatusBlock,
+  order: 40,
 })
