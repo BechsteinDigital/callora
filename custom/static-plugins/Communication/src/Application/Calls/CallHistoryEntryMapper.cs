@@ -19,6 +19,7 @@ internal static class CallHistoryEntryMapper
             log.Id,
             log.Direction.ToString(),
             log.RemoteParty,
+            log.LocalIdentity,
             log.StartedAt,
             log.AnsweredAt,
             log.EndedAt,

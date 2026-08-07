@@ -8,6 +8,11 @@ namespace Callora.Plugin.Communication.Abstractions;
 /// <param name="CallId">Stable call identifier.</param>
 /// <param name="Direction">Call direction (<c>Outbound</c>/<c>Inbound</c>).</param>
 /// <param name="RemoteParty">Remote participant address (personal data).</param>
+/// <param name="LocalIdentity">
+/// Our side of the call: for an inbound call the number the caller reached, which is what decides
+/// whose call it was — for an outbound one the line it went out on. Falls back to the channel's name
+/// when the transport reports no number.
+/// </param>
 /// <param name="StartedAt">When the call started.</param>
 /// <param name="AnsweredAt">When it was answered, if it was.</param>
 /// <param name="EndedAt">When it ended, once finalized.</param>
@@ -23,6 +28,7 @@ public sealed record CallHistoryEntry(
     string CallId,
     string Direction,
     string RemoteParty,
+    string LocalIdentity,
     DateTimeOffset StartedAt,
     DateTimeOffset? AnsweredAt,
     DateTimeOffset? EndedAt,
