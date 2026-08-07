@@ -13,7 +13,11 @@ public sealed class WorkspaceSurfaceEntityTypeConfiguration : IEntityTypeConfigu
         builder.HasIndex(x => new { x.WorkspaceId, x.SurfaceKey }).IsUnique();
         builder.HasIndex(x => x.PublicHost);
 
+        builder.HasIndex(x => new { x.ParentSurfaceId, x.Position });
+
         builder.Property(x => x.WorkspaceId).HasColumnName("workspace_id").IsRequired();
+        builder.Property(x => x.ParentSurfaceId).HasColumnName("parent_surface_id");
+        builder.Property(x => x.Position).HasColumnName("position").IsRequired();
         builder.Property(x => x.SurfaceKey).HasColumnName("surface_key").HasMaxLength(120).IsRequired();
         builder.Property(x => x.DisplayName).HasColumnName("display_name").HasMaxLength(300).IsRequired();
         builder.Property(x => x.SurfaceType).HasColumnName("surface_type").HasMaxLength(100).IsRequired();
@@ -41,5 +45,15 @@ public sealed class WorkspaceSurfaceEntityTypeConfiguration : IEntityTypeConfigu
             .WithMany(x => x.Surfaces)
             .HasForeignKey(x => x.WorkspaceId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Restrict, nicht Cascade: Was mit den Kindern eines gelöschten Knotens geschieht, ist
+        // eine Produktentscheidung (ADR-019 §7) — sie an den Großelternknoten zu hängen ändert
+        // stillschweigend URLs, sie mitzulöschen verliert Layouts. Bis jemand danach fragt,
+        // scheitert das Löschen sichtbar, statt still das eine oder andere zu tun.
+        builder
+            .HasOne(x => x.Parent)
+            .WithMany()
+            .HasForeignKey(x => x.ParentSurfaceId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

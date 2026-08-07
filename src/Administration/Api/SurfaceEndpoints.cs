@@ -86,11 +86,20 @@ public static class SurfaceEndpoints
                 request.TemplateVersion,
                 request.ThemePluginId,
                 request.ThemeVersion,
-                request.IsActive);
+                request.IsActive)
+            {
+                ParentSurfaceKey = request.ParentSurfaceKey,
+                Position = request.Position,
+            };
 
             var result = await surfaceStore.UpsertAsync(workspaceKey, input, cancellationToken).ConfigureAwait(false);
+            // Null heißt hier zweierlei: kein solcher Workspace, oder ein Elternknoten, den es
+            // nicht gibt beziehungsweise der einen Zyklus erzeugte. Die Meldung nennt beides,
+            // statt einen Zyklusfehler als fehlenden Workspace auszugeben.
             return result is null
-                ? ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.")
+                ? ApiProblems.BadRequest(
+                    $"Workspace '{workspaceKey}' not found, or the parent surface does not exist " +
+                    "or would create a cycle.")
                 : Results.Ok(ToResponse(result));
         }).WithName("Workspaces_Surfaces_Upsert")
             .RequirePermission(BackendPermissionKeys.WorkspaceUpdate);
@@ -149,5 +158,9 @@ public static class SurfaceEndpoints
         surface.ThemeVersion,
         surface.IsActive,
         surface.CreatedAtUtc,
-        surface.UpdatedAtUtc);
+        surface.UpdatedAtUtc)
+    {
+        ParentSurfaceKey = surface.ParentSurfaceKey,
+        Position = surface.Position,
+    };
 }
