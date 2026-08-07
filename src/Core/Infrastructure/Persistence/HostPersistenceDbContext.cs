@@ -58,6 +58,9 @@ public sealed class HostPersistenceDbContext(
     public DbSet<Callora.Core.Domain.Extensions.WorkspaceThemeSettingValue> WorkspaceThemeSettingValues =>
         Set<Callora.Core.Domain.Extensions.WorkspaceThemeSettingValue>();
 
+    public DbSet<Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition> WorkspaceSectionLayoutDefinitions =>
+        Set<Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition>();
+
     public DbSet<Callora.Core.Domain.Configuration.SystemConfigDefinition> SystemConfigDefinitions =>
         Set<Callora.Core.Domain.Configuration.SystemConfigDefinition>();
 

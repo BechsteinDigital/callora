@@ -495,6 +495,8 @@ public sealed class WorkspacePublicEndpointsTests
         builder.Services.AddSingleton<Callora.Core.Application.Extensions.IWorkspaceThemeSettingsStore>(
             new InMemoryWorkspaceThemeSettingsStore());
         builder.Services.AddScoped<Callora.Core.Application.Extensions.WorkspaceUiChainResolver>();
+        builder.Services.AddSingleton<Callora.Core.Application.Extensions.IWorkspaceSectionLayoutStore>(
+            new Callora.Core.Tests.Support.InMemoryWorkspaceSectionLayoutStore());
         builder.Services.AddScoped<Callora.Core.Application.Extensions.WorkspacePublicThemeResolver>();
         if (authenticate)
         {

@@ -22,8 +22,17 @@ namespace Callora.Surface.Rendering.Rendering.Composition;
 /// </summary>
 public sealed class SurfaceCompositionRenderer
 {
+    /// <summary>
+    /// What a section falls back to when its theme no longer knows the declared layout. Not a
+    /// theme-declared value: a theme that dropped `single` too has nothing left to fall back to,
+    /// and the point of the fallback is that the CONTENT survives a theme change, not that it
+    /// still looks right.
+    /// </summary>
+    public const string FallbackLayout = "single";
+
     private readonly Func<string, bool> _blockIsAvailable;
     private readonly Func<string, IReadOnlySet<string>?> _confidentialControls;
+    private readonly Func<string, bool> _layoutIsKnown;
 
     /// <param name="blockIsAvailable">
     /// Whether a block id still resolves to an installed, visible block. An orphan — its plugin
@@ -31,12 +40,21 @@ public sealed class SurfaceCompositionRenderer
     /// stays intact and becomes whole again when the plugin returns.
     /// </param>
     /// <param name="confidentialControls">Controls a block declared confidential, by block id.</param>
+    /// <param name="layoutIsKnown">
+    /// Whether the active theme still declares this section layout. It stops declaring one when
+    /// somebody switches themes — and then <c>data-cal-layout="two-2-1"</c> would name a grid
+    /// nothing styles, so the section would collapse into whatever the browser does with
+    /// unstyled divs. Falling back to <see cref="FallbackLayout"/> keeps the blocks in one
+    /// readable column instead (§7.8): the page looks plainer, and nothing is lost.
+    /// </param>
     public SurfaceCompositionRenderer(
         Func<string, bool>? blockIsAvailable = null,
-        Func<string, IReadOnlySet<string>?>? confidentialControls = null)
+        Func<string, IReadOnlySet<string>?>? confidentialControls = null,
+        Func<string, bool>? layoutIsKnown = null)
     {
         _blockIsAvailable = blockIsAvailable ?? (_ => true);
         _confidentialControls = confidentialControls ?? (_ => null);
+        _layoutIsKnown = layoutIsKnown ?? (_ => true);
     }
 
     /// <summary>Renders the document. Sections and blocks come out in their declared order.</summary>
@@ -55,8 +73,13 @@ public sealed class SurfaceCompositionRenderer
 
     private void RenderSection(StringBuilder markup, SurfaceLayoutSection section)
     {
+        // Ein Layout, das das Theme nicht mehr kennt, wird ersetzt statt ausgeliefert. Der
+        // Inhalt bleibt vollständig; er steht nur einspaltig, bis das Theme das Layout wieder
+        // mitbringt.
+        var layout = _layoutIsKnown(section.Layout) ? section.Layout : FallbackLayout;
+
         markup.Append("<div class=\"cal-section\" data-cal-layout=\"")
-            .Append(Attribute(section.Layout))
+            .Append(Attribute(layout))
             .Append('"');
 
         // Token STEPS, not values — the attribute names a step the theme resolves, so a section

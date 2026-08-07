@@ -53,6 +53,50 @@
   opacity: 0.6;
 }
 
+/*
+ * Eine leere Region ist im Editor sichtbar und auf der Fläche nicht. Sie IST der Ort, an den
+ * sich etwas ziehen lässt — ohne Umriss gäbe es nichts zu treffen, und eine zweispaltige
+ * Sektion mit leerer Spalte sähe aus wie eine einspaltige.
+ */
+.cal-canvas__region-empty {
+  margin: 0;
+  padding: 1.5rem;
+  border: 1px dashed color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 0.375rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  opacity: 0.5;
+}
+
+.cal-canvas__region-orphan {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.cal-canvas [data-cal-editor-undeclared='true'] {
+  outline: 1px dotted color-mix(in srgb, currentColor 35%, transparent);
+  outline-offset: 4px;
+}
+
+.composer__sections,
+.composer__section-list {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-block: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.composer__section-list li {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
 /* ── Die Editor-Oberfläche um den Canvas herum ─────────────────────────────── */
 
 .composer__workspace {

@@ -13,9 +13,30 @@ vi.mock('@callora/surface', () => ({
   surfaceBaseTokens: ':root { --cal-color-fg: #111; --cal-color-bg: #fff; --cal-space-4: 1rem }',
 }))
 
+// Inline statt über eine äußere Konstante: Die Factory läuft beim ersten Import des gemockten
+// Moduls, also bevor die Konstanten dieser Datei ausgewertet sind.
 vi.mock('./preview-assets', () => ({
   fetchSurfaceStyles: async () => '',
-  fetchThemeTokens: async () => ({}),
+  fetchTheme: async () => ({
+    valuesByKey: {},
+    sectionLayouts: [
+      {
+        layoutKey: 'single',
+        label: 'Eine Spalte',
+        regions: [{ regionKey: 'main', label: 'Inhalt' }],
+        sortOrder: 10,
+      },
+      {
+        layoutKey: 'two-2-1',
+        label: 'Zwei Spalten',
+        regions: [
+          { regionKey: 'main', label: 'Inhalt' },
+          { regionKey: 'aside', label: 'Seitenspalte' },
+        ],
+        sortOrder: 20,
+      },
+    ],
+  }),
 }))
 
 const HERO = {
@@ -201,6 +222,102 @@ describe('Blöcke auswählen und einstellen', () => {
     await wrapper.find('[data-cal-editor-block]').trigger('click')
 
     expect(wrapper.find('[data-cal-editor-selected="true"]').exists()).toBe(true)
+  })
+})
+
+describe('Sektionslayouts aus dem Theme', () => {
+  it('bietet ausschließlich an, was das Theme deklariert', async () => {
+    // Der Guardrail aus §7.7: Sektionslayouts kommen aus dem Theme, nicht aus dem Editor. So
+    // bleibt die Token-Achse die Design-Autorität, und es steht kein Layout-Name im Core.
+    const wrapper = await openEditor()
+
+    const offered = wrapper
+      .find('#composer-new-section')
+      .findAll('option')
+      .map((option) => option.attributes('value'))
+
+    expect(offered).toEqual(['', 'single', 'two-2-1'])
+  })
+
+  it('legt eine Sektion mit dem gewählten Layout an und speichert sie', async () => {
+    const wrapper = await openEditor()
+
+    await wrapper.find('#composer-new-section').setValue('two-2-1')
+    await settleAutosave()
+
+    const body = savedBody(saves().length - 1)
+    expect(body.document.sections).toHaveLength(2)
+    expect(body.document.sections[1]).toMatchObject({ layout: 'two-2-1', position: 1, blocks: [] })
+  })
+
+  it('zeigt jede Region des Layouts, auch die leere', async () => {
+    // Ohne die leere Region gäbe es keinen Ort, an den sich etwas ziehen ließe — und eine
+    // zweispaltige Sektion mit leerer Spalte sähe aus wie eine einspaltige.
+    const wrapper = await openEditor()
+    await wrapper.find('#composer-new-section').setValue('two-2-1')
+
+    const regions = wrapper.findAll('[data-cal-region]').map((el) => el.attributes('data-cal-region'))
+
+    expect(regions).toContain('main')
+    expect(regions).toContain('aside')
+  })
+
+  it('behält beim Layout-Wechsel die Blöcke, wo sie sind', async () => {
+    // Der Block liegt in `aside`, und `single` hat diese Region nicht. Ihn nach `main`
+    // umzuhängen wäre die scheinbar hilfreiche Variante und die, die Arbeit vernichtet: Wer
+    // zurückwechselt, fände seine Seitenspalte im Hauptbereich wieder.
+    DOCUMENT.sections[0].layout = 'two-2-1'
+    DOCUMENT.sections[0].blocks[0].region = 'aside'
+    try {
+      const wrapper = await openEditor()
+
+      await wrapper.find('#composer-section-0').setValue('single')
+      await settleAutosave()
+
+      const body = savedBody(saves().length - 1)
+      expect(body.document.sections[0].layout).toBe('single')
+      expect(body.document.sections[0].blocks[0].region).toBe('aside')
+    } finally {
+      DOCUMENT.sections[0].layout = 'single'
+      DOCUMENT.sections[0].blocks[0].region = 'main'
+    }
+  })
+})
+
+describe('Wenn das Theme ein Layout nicht mehr kennt', () => {
+  it('nennt die gestrandeten Sektionen, statt sie nur anders aussehen zu lassen', async () => {
+    // Serverseitig fallen sie beim Rendern auf `single` zurück. Hier zu zeigen, WELCHE es
+    // trifft, ist der Unterschied zwischen „meine Seite sieht anders aus" und „diese Sektion
+    // hängt an einem Layout, das das neue Theme nicht mitbringt".
+    DOCUMENT.sections[0].layout = 'drei-spalten'
+    try {
+      const wrapper = await openEditor()
+
+      expect(wrapper.text()).toContain('drei-spalten')
+      expect(wrapper.text()).toContain('einspaltig ausgeliefert')
+    } finally {
+      DOCUMENT.sections[0].layout = 'single'
+    }
+  })
+
+  it('lässt das unbekannte Layout in der Auswahl stehen', async () => {
+    // Sonst zeigte die Auswahl etwas anderes an, als im Dokument steht, und der nächste Klick
+    // irgendwohin änderte still das Layout.
+    DOCUMENT.sections[0].layout = 'drei-spalten'
+    try {
+      const wrapper = await openEditor()
+
+      const options = wrapper
+        .find('#composer-section-0')
+        .findAll('option')
+        .map((option) => option.attributes('value'))
+
+      expect(options).toContain('drei-spalten')
+      expect((wrapper.find('#composer-section-0').element as HTMLSelectElement).value)
+        .toBe('drei-spalten')
+    } finally {
+      DOCUMENT.sections[0].layout = 'single'
+    }
   })
 })
 

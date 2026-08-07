@@ -68,6 +68,48 @@ export function readDocument(raw: unknown): LayoutDocument {
   }
 }
 
+/**
+ * Hängt eine Sektion mit diesem Layout hinten an.
+ *
+ * `position` wird fortlaufend vergeben statt aus der Länge abgeleitet: Ein Dokument mit Lücken
+ * oder doppelten Positionen (etwa aus einem Rückrollen) bekäme sonst eine Sektion, die vor
+ * einer bestehenden landet.
+ */
+export function addSection(document: LayoutDocument, layout: string): LayoutDocument {
+  const highest = document.sections.reduce(
+    (max, section) => Math.max(max, section.position ?? 0),
+    -1,
+  )
+
+  return {
+    sections: [...document.sections, { layout, position: highest + 1, blocks: [] }],
+  }
+}
+
+/**
+ * Ändert das Layout einer Sektion. Die Blöcke bleiben, wo sie sind — auch die in Regionen, die
+ * das neue Layout nicht hat.
+ *
+ * Sie umzuhängen wäre die scheinbar hilfreiche Variante und die, die Arbeit vernichtet: Wer ein
+ * Layout nur ausprobiert und zurückwechselt, fände seine Seitenspalte im Hauptbereich wieder,
+ * ohne dass irgendetwas das rückgängig machen könnte. So bleibt der Wechsel umkehrbar, und der
+ * Canvas zeigt die heimatlosen Blöcke sichtbar an.
+ */
+export function setSectionLayout(
+  document: LayoutDocument,
+  sectionIndex: number,
+  layout: string,
+): LayoutDocument {
+  const section = document.sections[sectionIndex]
+  if (!section || section.layout === layout) {
+    return document
+  }
+
+  const sections = [...document.sections]
+  sections[sectionIndex] = { ...section, layout }
+  return { sections }
+}
+
 /** Der Block an dieser Stelle, oder undefined. */
 export function blockAt(
   document: LayoutDocument,

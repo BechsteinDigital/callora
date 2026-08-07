@@ -155,6 +155,51 @@ public sealed class SurfaceCompositionRendererTests
         Assert.Contains("data-cal-region=\"aside\"", html, StringComparison.Ordinal);
     }
 
+    // ── Wenn das Theme das Layout nicht mehr kennt (§7.8) ───────────────────
+
+    [Fact]
+    public void ALayoutTheThemeNoLongerKnowsFallsBackWithoutLosingAnything()
+    {
+        // Nach einem Theme-Wechsel benennt `data-cal-layout="two-2-1"` ein Raster, das niemand
+        // stylt — die Sektion zerfiele in das, was der Browser mit ungestylten Divs tut. Der
+        // Rückfall stellt die Blöcke in eine lesbare Spalte: schlichter, aber vollständig.
+        var document = Document(new SurfaceLayoutSection("two-2-1", 0, [
+            Block("haupt", region: "main"),
+            Block("rand", region: "aside"),
+        ]));
+
+        var html = new SurfaceCompositionRenderer(layoutIsKnown: key => key == "single")
+            .Render(document);
+
+        Assert.Contains("data-cal-layout=\"single\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("two-2-1", html, StringComparison.Ordinal);
+        // Beide Blöcke sind noch da — der Rückfall betrifft das Raster, nicht den Inhalt.
+        Assert.Contains("data-callora-island=\"haupt\"", html, StringComparison.Ordinal);
+        Assert.Contains("data-callora-island=\"rand\"", html, StringComparison.Ordinal);
+        Assert.Contains("data-cal-region=\"aside\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ALayoutTheThemeStillKnowsIsLeftAlone()
+    {
+        var html = new SurfaceCompositionRenderer(layoutIsKnown: _ => true)
+            .Render(Document(new SurfaceLayoutSection("two-2-1", 0, [Block("haupt")])));
+
+        Assert.Contains("data-cal-layout=\"two-2-1\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WithoutAnOpinionAboutLayoutsNothingIsReplaced()
+    {
+        // Der Standardwert. Ein Renderer ohne Layout-Wissen darf nicht so tun, als hätte ein
+        // Theme das Layout abgelehnt — das wäre eine sichtbare Änderung aus einem
+        // Nicht-Ereignis.
+        var html = new SurfaceCompositionRenderer()
+            .Render(Document(new SurfaceLayoutSection("erfunden", 0, [Block("haupt")])));
+
+        Assert.Contains("data-cal-layout=\"erfunden\"", html, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void AStoredStringCannotBreakOutOfItsAttribute()
     {

@@ -119,6 +119,8 @@ public sealed class SurfaceRenderEndpointsTests
             configure: services =>
             {
                 services.AddSingleton<IWorkspaceThemeSettingsStore>(settings);
+                services.AddSingleton<IWorkspaceSectionLayoutStore>(
+                    new InMemoryWorkspaceSectionLayoutStore());
                 services.AddScoped<WorkspacePublicThemeResolver>();
                 services.AddSingleton<ISurfaceRenderer>(capturingRenderer);
             });
@@ -284,6 +286,8 @@ public sealed class SurfaceRenderEndpointsTests
         builder.Services.AddSingleton<IWorkspaceThemeSettingsStore>(
             new InMemoryWorkspaceThemeSettingsStore());
         builder.Services.AddScoped<WorkspaceUiChainResolver>();
+        builder.Services.AddSingleton<IWorkspaceSectionLayoutStore>(
+            new InMemoryWorkspaceSectionLayoutStore());
         builder.Services.AddScoped<WorkspacePublicThemeResolver>();
         builder.Services.AddCalloraSurfaceRendering();
         if (authenticate)

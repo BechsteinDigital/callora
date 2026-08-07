@@ -346,6 +346,68 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("plugin_entitlements", (string)null);
                 });
 
+            modelBuilder.Entity("Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("LayoutKey")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)")
+                        .HasColumnName("layout_key");
+
+                    b.Property<string>("PluginId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("plugin_id");
+
+                    b.Property<string>("RegionsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("regions_json");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LayoutKey", "PluginId", "Version")
+                        .IsUnique();
+
+                    b.HasIndex("PluginId", "Version", "IsActive");
+
+                    b.ToTable("workspace_section_layout_definitions", (string)null);
+                });
+
             modelBuilder.Entity("Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition", b =>
                 {
                     b.Property<Guid>("Id")
