@@ -116,6 +116,7 @@ describe('workspacesApi', () => {
       isActive: true,
       parentSurfaceKey: 'portal',
       position: 3,
+      requiredClaims: 'partner',
     })
     expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/surfaces/a%20b')
     expect(fetchMock.mock.calls[0][1].method).toBe('PUT')

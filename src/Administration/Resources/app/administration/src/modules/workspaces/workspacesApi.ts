@@ -80,6 +80,11 @@ export interface WorkspaceSurface {
   parentSurfaceKey: string | null
   /** Reihenfolge unter Geschwistern. */
   position: number
+  /**
+   * Claims, die ein Besucher mitbringen muss (ADR-019 §4) — kommagetrennt, leer heißt keine
+   * Anforderung. Das ist, was DIESER Knoten verlangt; was von oben dazukommt, ist kumulativ.
+   */
+  requiredClaims: string | null
 }
 
 // The mutable slice sent on upsert (the surface key comes from the route). Mirrors
@@ -99,6 +104,7 @@ export interface WorkspaceSurfaceUpsert {
   isActive: boolean
   parentSurfaceKey: string | null
   position: number
+  requiredClaims: string | null
 }
 
 // Product-level workspace assignment. An assignment is effective only when

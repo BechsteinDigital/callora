@@ -41,6 +41,28 @@
           </CalBadge>
         </template>
 
+        <!--
+          Eigene und geerbte Anforderungen getrennt: Was von oben gilt, kann man hier nicht
+          ändern, und es sähe sonst aus wie eine Einstellung dieses Knotens.
+        -->
+        <template #cell-visibility="{ row }">
+          <span v-if="row.ownClaims.length === 0 && row.inheritedClaims.length === 0">Alle</span>
+          <template v-else>
+            <CalBadge v-for="claim in row.ownClaims" :key="claim" tone="warning" variant="outline">
+              {{ claim }}
+            </CalBadge>
+            <CalBadge
+              v-for="claim in row.inheritedClaims"
+              :key="`geerbt-${claim}`"
+              tone="neutral"
+              variant="outline"
+              :title="'Von einer übergeordneten Fläche gefordert'"
+            >
+              {{ claim }} ↑
+            </CalBadge>
+          </template>
+        </template>
+
         <template #cell-accessMode="{ row }">
           <CalBadge :tone="row.accessMode === 'Public' ? 'warning' : 'neutral'">{{ row.accessMode }}</CalBadge>
         </template>
@@ -125,6 +147,16 @@
         >
           <CalInput :id="id" v-model="formPathPrefix" name="surfacePathPrefix" />
         </CalField>
+        <CalField
+          v-slot="{ id }"
+          label="Sichtbar für"
+          hint="optional"
+          :description="formInheritedClaims.length > 0
+            ? `Zusätzlich gefordert von oben: ${formInheritedClaims.join(', ')}`
+            : 'Claims, die ein Besucher mitbringen muss — kommagetrennt. Leer heißt: für alle sichtbar.'"
+        >
+          <CalInput :id="id" v-model="formRequiredClaims" name="surfaceRequiredClaims" />
+        </CalField>
         <CalField v-slot="{ id }" label="Reihenfolge" hint="unter Geschwistern">
           <CalInput :id="id" v-model="formPosition" type="number" name="surfacePosition" />
         </CalField>
@@ -164,7 +196,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { Layers, Palette } from 'lucide-vue-next'
 import { workspacesApi, SURFACE_ACCESS_MODES, type WorkspaceSurface } from './workspacesApi'
-import { eligibleParents, flattenSurfaceTree } from './surfaceTree'
+import { eligibleParents, flattenSurfaceTree, inheritedClaims, parseClaims } from './surfaceTree'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
@@ -216,8 +248,24 @@ const rows = computed(() =>
       depth,
       effectivePath: composePath(chain.map((node) => node.publicPathPrefix)),
       effectiveHost: chain.find((node) => node.publicHost)?.publicHost ?? null,
+      ownClaims: parseClaims(surface.requiredClaims),
+      inheritedClaims: inheritedClaims(surfaces.value, surface.surfaceKey),
     }
   }),
+)
+
+/**
+ * Was von oben zusätzlich gefordert wird. Getrennt vom Eingabefeld, weil man es hier nicht
+ * ändern darf: Stünde die ganze Kette darin, schriebe ein Speichern die Anforderung des
+ * Elternteils hier fest — und ein späteres Lockern dort bliebe wirkungslos.
+ */
+const formInheritedClaims = computed(() =>
+  editingKey.value
+    ? inheritedClaims(surfaces.value, editingKey.value)
+    : formParentKey.value
+      ? [...inheritedClaims(surfaces.value, formParentKey.value),
+         ...parseClaims(surfaces.value.find((s) => s.surfaceKey === formParentKey.value)?.requiredClaims)]
+      : [],
 )
 
 /** Die Kette eines Knotens aufwärts, Knoten zuerst. Bricht ab, statt an einem Zyklus zu hängen. */
@@ -265,6 +313,7 @@ const columns: readonly DataTableColumn[] = [
   { key: 'accessMode', label: 'Zugang', width: '140px' },
   { key: 'location', label: 'Host / Pfad' },
   { key: 'theme', label: 'Design', width: '170px' },
+  { key: 'visibility', label: 'Sichtbar für', width: '160px' },
   { key: 'isActive', label: 'Aktiv', width: '110px' },
   { key: 'actions', label: '', align: 'end', width: '290px' },
 ]
@@ -282,6 +331,7 @@ const formLocale = ref('')
 const formActive = ref(true)
 const formParentKey = ref('')
 const formPosition = ref('0')
+const formRequiredClaims = ref('')
 
 // Template/theme are not edited here (managed via the theme flow / deferred
 // template compiler), but the PUT upsert is a full replace — so carry them from
@@ -328,6 +378,7 @@ function resetForm(): void {
   formActive.value = true
   formParentKey.value = ''
   formPosition.value = '0'
+  formRequiredClaims.value = ''
   carriedTemplatePluginId.value = null
   carriedTemplateVersion.value = null
   carriedThemePluginId.value = null
@@ -347,6 +398,7 @@ function startEdit(surface: WorkspaceSurface): void {
   formActive.value = surface.isActive
   formParentKey.value = surface.parentSurfaceKey ?? ''
   formPosition.value = String(surface.position)
+  formRequiredClaims.value = surface.requiredClaims ?? ''
   carriedTemplatePluginId.value = surface.templatePluginId
   carriedTemplateVersion.value = surface.templateVersion
   carriedThemePluginId.value = surface.themePluginId
@@ -368,6 +420,7 @@ interface SurfaceSaveDraft {
   isActive: boolean
   parentSurfaceKey: string | null
   position: number
+  requiredClaims: string | null
 }
 
 async function save(): Promise<void> {
@@ -390,6 +443,7 @@ async function save(): Promise<void> {
     parentSurfaceKey: formParentKey.value || null,
     // Ein leeres oder unlesbares Feld heißt 0 — nicht NaN, das der Server als 400 zurückgäbe.
     position: Number.parseInt(formPosition.value, 10) || 0,
+    requiredClaims: parseClaims(formRequiredClaims.value).join(',') || null,
   }
   const before = await runHook('workspaces.surface.before-save', draft)
   if (before.canceled) {
@@ -413,6 +467,7 @@ async function save(): Promise<void> {
       isActive: draft.isActive,
       parentSurfaceKey: draft.parentSurfaceKey,
       position: draft.position,
+      requiredClaims: draft.requiredClaims,
     })
     await runHook('workspaces.surface.after-save', { workspaceKey: props.workspaceKey, surfaceKey: key })
     toast.success(draft.isEdit ? `Surface „${key}“ gespeichert.` : `Surface „${key}“ angelegt.`)
