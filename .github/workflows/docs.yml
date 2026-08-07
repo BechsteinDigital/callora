@@ -7,12 +7,14 @@ on:
       - "docs-site/**"
       - "docfx/**"
       - "src/**"
+      - "README.md"
       - ".config/dotnet-tools.json"
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
       - "docs-site/**"
       - "docfx/**"
+      - "README.md"
       - ".config/dotnet-tools.json"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
@@ -41,6 +43,31 @@ jobs:
       - name: Lint Markdown + spelling
         working-directory: docs-site
         run: npm run lint
+
+  # Einige Zusicherungen über die Doku sind xunit-Tests: dass ein zitierter Entry-Type
+  # zum Manifest passt, dass die dokumentierten Communication-Routen existieren, dass der
+  # Extension-Point-Katalog vollständig ist. Die lagen bisher nur in ci.yml — und ci.yml
+  # ignoriert Markdown. Eine Doku-Änderung konnte sie also brechen, ohne dass ein Job lief;
+  # genau so wurde die README-Neufassung grün gemergt und main rot hinterlassen.
+  assertions:
+    name: Doku-Zusicherungen (xunit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup .NET (global.json)
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          global-json-file: global.json
+
+      # Ohne die Admin-SPA: diese Tests lesen Markdown und Manifeste, kein Bundle.
+      - name: Doku-Tests
+        run: >
+          dotnet test tests/Callora.Core.Tests/Callora.Core.Tests.csproj
+          -p:SkipAdminFrontend=true
+          --filter "FullyQualifiedName~Callora.Core.Tests.Documentation"
 
   build:
     name: Build documentation site
@@ -83,7 +110,7 @@ jobs:
 
   deploy:
     name: Deploy to GitHub Pages
-    needs: [lint, build]
+    needs: [lint, assertions, build]
     # Deploy only from main and only once opted in via the DOCS_DEPLOY repo
     # variable. The repository is private today; enable Pages (Settings ->
     # Pages -> Source: GitHub Actions) and set DOCS_DEPLOY=true for the public
