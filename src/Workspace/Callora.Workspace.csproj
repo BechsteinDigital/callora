@@ -13,7 +13,6 @@
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
     <!-- Baustein 1: als NuGet-Paket in den lokalen Feed. -->
     <IsPackable>true</IsPackable>
-    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <Description>Callora tenant storefront surface: workspace store and template resolution served alongside the operator API.</Description>
   </PropertyGroup>
 

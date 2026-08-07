@@ -43,6 +43,19 @@ jobs:
           --configuration Release --no-build
           --output artifacts/packages
 
+      # NuGet lädt einen Analyzer allein anhand des Pfades analyzers/{framework}/{sprache}.
+      # Liegt die DLL eine Ebene tiefer — was etwa BuildOutputTargetFolder verursacht, das
+      # den TFM-Ordner anhängt — installiert sich das Paket klaglos und der Analyzer läuft
+      # einfach nie. Ein Plugin-Autor merkte davon nichts außer, dass CAL0001 ihn nie warnt.
+      - name: Analyzer-Paket liegt am ladbaren Pfad
+        run: |
+          pkg=$(ls artifacts/packages/Callora.Analyzers.*.nupkg)
+          if ! unzip -l "$pkg" | grep -q 'analyzers/dotnet/cs/Callora\.Analyzers\.dll'; then
+            echo "::error::Callora.Analyzers.dll liegt nicht unter analyzers/dotnet/cs — NuGet lädt den Analyzer dann nicht."
+            unzip -l "$pkg"
+            exit 1
+          fi
+
       - name: Generate SBOM (.NET)
         run: |
           dotnet tool install --global CycloneDX

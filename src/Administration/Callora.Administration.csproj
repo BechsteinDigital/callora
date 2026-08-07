@@ -15,7 +15,6 @@
          reist als Static Web Asset mit (staticwebassets/admin/**); ein
          konsumierender Host bekommt sie automatisch unter /admin. -->
     <IsPackable>true</IsPackable>
-    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <Description>Callora operator API and colocated admin shell (Vue SPA served at /admin via static web assets).</Description>
     <!-- The admin SPA (Resources/app/administration) builds into wwwroot/admin.
          As a Web SDK project the static-web-asset base path is already the root,

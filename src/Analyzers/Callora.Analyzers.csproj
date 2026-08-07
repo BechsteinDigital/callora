@@ -11,9 +11,35 @@
          differs from the app projects and would only add noise here. -->
     <ImplicitUsings>disable</ImplicitUsings>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!-- Als Paket ausliefern. Solange die Plugins im selben Repository lagen, genügte
+         eine ProjectReference — ein Plugin in einem eigenen Repository hat die nicht,
+         und ohne Analyzer verlieren CAL0001-CAL0003 ihre Wirkung genau dort, wo sie am
+         meisten zählen: bei Code, den wir nicht selbst schreiben.
+         IncludeBuildOutput=false: Ein Analyzer gehört nicht nach lib/, sonst
+         referenziert der Konsument die Roslyn-Assembly als Bibliothek.
+         DevelopmentDependency=true: er wandert nicht transitiv weiter. -->
+    <IsPackable>true</IsPackable>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- Kein Symbolpaket. Directory.Build.props schaltet IncludeSymbols global ein, was
+         für Bibliotheken richtig ist — hier aber eine leere .snupkg erzeugt (die DLL
+         liegt unter analyzers/, nicht unter lib/) und den Pack mit NU5017 abbricht.
+         Die Meldung nennt das Symbolpaket nicht, sie sieht aus, als wäre das Hauptpaket
+         leer; das ist es nie gewesen. In einen Analyzer steppt ohnehin niemand hinein —
+         er läuft im Compiler des Konsumenten, nicht in seinem Programm. -->
+    <IncludeSymbols>false</IncludeSymbols>
+    <!-- NU5128 („Abhängigkeitsgruppe ohne passenden lib/-Ordner") ist für ein
+         Analyzer-Paket strukturell: Es hat per Definition kein lib/, die leere
+         netstandard2.0-Gruppe bleibt trotzdem stehen. Der Weg über
+         SuppressDependenciesWhenPacking behebt das zwar, lässt NuGet das Paket dann aber
+         für leer halten (NU5017) — die Leer-Heuristik zählt TfmSpecificPackageFile nicht
+         mit. Deshalb dasselbe wie in Microsofts eigener Analyzer-Vorlage. -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <Description>Callora governance analyzers (CAL0001 internal-consumption guard, CAL0002 inheritance guard, CAL0003 contract documentation). Referenced by plugins so the contract boundary fails the build instead of a review.</Description>
+    <PackageTags>callora;analyzers;roslyn;plugin</PackageTags>
     <!-- Analyzer assemblies are not the framework surface themselves. -->
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
     <!-- RS2008: analyzer release tracking. The AnalyzerReleases.*.txt files are present
@@ -35,6 +61,19 @@
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.txt" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.txt" />
+  </ItemGroup>
+
+  <!-- NuGet erkennt Analyzer allein am Pfad: analyzers/{framework}/{sprache}, hier
+       analyzers/dotnet/cs. Eine weitere Ebene darunter wird NICHT geladen — deshalb
+       scheidet BuildOutputTargetFolder aus, das den TFM-Ordner anhängt und den Analyzer
+       still wirkungslos machen würde. Also von Hand, mit IncludeBuildOutput=false, damit
+       die DLL nicht zusätzlich als lib/-Referenz beim Konsumenten landet.
+       Die README ist dabei nicht nur guter Ton: Ohne lib/ und ohne Abhängigkeiten hält
+       NuGet das Paket sonst für leer (NU5017) und bricht den ganzen Solution-Pack ab. -->
+  <ItemGroup>
+    <None Include="$(OutputPath)$(AssemblyName).dll"
+          Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>
