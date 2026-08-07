@@ -10,6 +10,12 @@ namespace Callora.Plugin.Communication.Application.Calls;
 /// <see cref="CallControlService.ObserveIncomingAsync"/> (records history, publishes <c>call.ringing</c>
 /// and follows the lifecycle). It never answers or routes a call — that is a consumer plugin's (e.g. a
 /// PBX's) decision. Started at plugin startup; catches channels registered before and after it starts.
+/// <para>
+/// It does refuse two kinds of call, and both are decisions an operator made rather than routing: one
+/// arriving beyond the quota configured for the number it reached, and one that every registered owner
+/// declined. Each is written into the call's record with its reason, because "rejected" on its own
+/// reads like a fault.
+/// </para>
 /// </summary>
 internal sealed class IncomingCallObserver : IDisposable
 {
@@ -91,7 +97,7 @@ internal sealed class IncomingCallObserver : IDisposable
     /// </remarks>
     private async Task HandleAsync(string workspaceKey, ICommunicationChannel channel, ICall call)
     {
-        await _callControl.ObserveIncomingAsync(workspaceKey, channel, call).ConfigureAwait(false);
+        var admitted = await _callControl.ObserveIncomingAsync(workspaceKey, channel, call).ConfigureAwait(false);
 
         // The first entry in the call's story, and the only one written whether or not anybody wants
         // the call: which of our numbers it reached is exactly what a consumer decides on.
@@ -99,6 +105,19 @@ internal sealed class IncomingCallObserver : IDisposable
             CommunicationPluginId,
             "call.ringing",
             $"Reached {call.InboundIdentity?.CalledNumber ?? "an unreported number"} on channel {channel.ChannelId}."));
+
+        if (!admitted)
+        {
+            // The line has as many calls to this number as an operator allowed it. Refused before it
+            // is offered: a consumer that answered it would put the trunk over the limit that was set.
+            _journey?.Record(workspaceKey, call.CallId, new CallJourneyStep(
+                CommunicationPluginId,
+                "call.quota-exhausted",
+                $"The quota for {call.InboundIdentity?.CalledNumber} on this line is in use."));
+
+            await TryRejectAsync(call).ConfigureAwait(false);
+            return;
+        }
 
         if (_owners is null || !_owners.HasOwners(workspaceKey))
         {
@@ -130,6 +149,19 @@ internal sealed class IncomingCallObserver : IDisposable
             // propagated: this runs fire-and-forget off the channel's event dispatch.
             _logger.LogWarning(ex,
                 "Offering inbound call {CallId} to its owners failed.", call.CallId);
+        }
+    }
+
+    /// <summary>Refuses a call, reporting nothing: the caller hung up meanwhile is an ordinary race.</summary>
+    private async Task TryRejectAsync(ICall call)
+    {
+        try
+        {
+            await call.RejectAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Refusing inbound call {CallId} over its quota failed.", call.CallId);
         }
     }
 

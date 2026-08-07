@@ -126,25 +126,41 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
     /// a consumer's (for example a PBX plugin's) decision. Called by the inbound-call observer,
     /// not by consumers.
     /// </summary>
-    public async Task ObserveIncomingAsync(
+    public async Task<bool> ObserveIncomingAsync(
         string workspaceKey, ICommunicationChannel channel, ICall call, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
         ArgumentNullException.ThrowIfNull(channel);
         ArgumentNullException.ThrowIfNull(call);
 
+        // The number the caller reached is what an inbound call can be limited by — it is known on
+        // arrival, unlike who will end up taking it. Dividing a trunk only for dialling was the wrong
+        // half: a support line is mostly called, so the number an operator wants to cap was the one
+        // nobody could cap.
+        var calledNumber = call.InboundIdentity?.CalledNumber;
+        var reservation = _quotas is null || string.IsNullOrWhiteSpace(calledNumber)
+            ? null
+            : _quotas.TryReserve(workspaceKey, channel.ChannelId, calledNumber);
+        var admitted = _quotas is null || string.IsNullOrWhiteSpace(calledNumber) || reservation is not null;
+
         try
         {
+            // Recorded either way, including the call that is about to be refused: "we lost twelve
+            // calls to the support line at nine" is exactly the number somebody changes a quota over.
             // Invoked fire-and-forget from the channel's IncomingCall event, so a recording
             // failure is logged rather than propagated back into the channel's event dispatch.
             // For an inbound call the remote party is only known from the call itself.
-            await StartTrackingAsync(workspaceKey, channel, call, CallDirection.Inbound, call.Target.Value, cancellationToken)
+            await StartTrackingAsync(
+                    workspaceKey, channel, call, CallDirection.Inbound, call.Target.Value, cancellationToken,
+                    reservation)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to observe inbound call {CallId} on channel {ChannelId}.", call.CallId, channel.ChannelId);
         }
+
+        return admitted;
     }
 
     /// <inheritdoc />
