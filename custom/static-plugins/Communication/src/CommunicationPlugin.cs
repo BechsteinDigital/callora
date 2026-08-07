@@ -201,6 +201,12 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
             // implementation here would be two views of the truth that can disagree.
             context.Export<ICallAccess>(_callControlService);
 
+            // Die Telefon-Fläche für die Besucher einer Surface: nur Befehle und Historie. Was gerade
+            // passiert, kommt als Kontext — eine Route dafür wäre ein zweiter Weg zur selben Auskunft,
+            // und die beiden würden auseinanderlaufen.
+            context.Export<IHostSurfaceApiContributor>(
+                new CommunicationSurfaceApiContributor(Id, _callControlService, _callControlService));
+
             // Flow actions over the same primitive the REST and MCP faces use, so a rule that answers
             // a call is subject to the same ownership check and state machine as an operator's click
             // (#116).
