@@ -138,7 +138,7 @@ public sealed class CommunicationPluginWiringTests
         // Host emittiert nie eine Insel dafür, und die bedarfsgesteuerte Kontext-Auslieferung hat
         // niemanden, der Bedarf anmeldet.
         var views = ((IHostSurfaceViewContributor)context.Exports[typeof(IHostSurfaceViewContributor)]).Views;
-        Assert.Contains(views, v => v.ViewId == CommunicationSurfaceViewContributor.ActiveCallViewId);
+        Assert.Contains(views, v => v.ViewId == CommunicationSurfaceViewContributor.PhoneViewId);
         Assert.Contains(views, v => v.ViewId == CommunicationSurfaceViewContributor.IncomingCallViewId);
         Assert.Contains(views, v => v.ViewId == CommunicationSurfaceViewContributor.CallLogViewId);
         Assert.All(views, v => Assert.Contains(SurfaceCallAccess.ClaimKey, v.RequiredClaims!));

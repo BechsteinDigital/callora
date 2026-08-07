@@ -21,8 +21,12 @@ public sealed class CommunicationSurfaceViewContributor : IHostSurfaceViewContri
     /// <summary>Island id of the ringing-call panel.</summary>
     public const string IncomingCallViewId = "communication.incoming-call";
 
-    /// <summary>Island id of the phone panel.</summary>
-    public const string ActiveCallViewId = "communication.active-call";
+    /// <summary>
+    /// Island id of the phone panel. Named after what it is, not after the one context key it reads:
+    /// it dials as well as talks, and the id is the expensive half of a block — it lives in every
+    /// saved layout document.
+    /// </summary>
+    public const string PhoneViewId = "communication.phone";
 
     /// <summary>Island id of the call list.</summary>
     public const string CallLogViewId = "communication.call-log";
@@ -62,7 +66,7 @@ public sealed class CommunicationSurfaceViewContributor : IHostSurfaceViewContri
             RequiredClaims: [SurfaceCallAccess.ClaimKey],
             RequiresContexts: [SurfaceCallContextKeys.IncomingCall]),
         new(
-            ActiveCallViewId,
+            PhoneViewId,
             PanelSlot,
             "Telefon",
             Weight: 20,

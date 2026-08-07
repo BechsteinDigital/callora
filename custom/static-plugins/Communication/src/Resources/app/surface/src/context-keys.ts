@@ -19,4 +19,12 @@ export interface SurfaceCallView {
   state: string
   /** When the call reached this state — a panel counts up from it. */
   since: string
+  /** Name, wie das Netz ihn gemeldet hat. Kosmetisch und ungeprüft. */
+  callerName: string | null
+  /** Welche unserer Nummern erreicht wurde — auf einem geteilten Trunk die Auskunft, welcher Dienst gemeint ist. */
+  calledNumber: string | null
+  /** Von welcher Nummer weitergeleitet wurde, falls überhaupt. */
+  divertedFrom: string | null
+  /** Ob ein vertrauenswürdiger Peer für den Anrufer geradesteht. */
+  verified: boolean
 }

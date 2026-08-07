@@ -60,7 +60,7 @@ public sealed class SurfaceBlockRegistrationTests
             Assert.True(subscribesToActive, $"Der Block {view.ViewId} fehlt im Bundle.");
         }
 
-        var phone = Assert.Single(views, view => view.ViewId == CommunicationSurfaceViewContributor.ActiveCallViewId);
+        var phone = Assert.Single(views, view => view.ViewId == CommunicationSurfaceViewContributor.PhoneViewId);
         Assert.Contains(SurfaceCallContextKeys.ActiveCall, phone.RequiresContexts!);
     }
 
