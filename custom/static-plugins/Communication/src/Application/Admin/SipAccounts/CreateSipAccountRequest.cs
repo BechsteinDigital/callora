@@ -32,4 +32,5 @@ public sealed record CreateSipAccountRequest(
     string? OutboundProxy,
     IReadOnlyList<string>? InboundNumbers,
     int? MaxConcurrentCalls,
-    bool? Enabled) : ISipConnectionInput;
+    bool? Enabled,
+    IReadOnlyList<CallQuotaRequest>? CallQuotas = null) : ISipConnectionInput;

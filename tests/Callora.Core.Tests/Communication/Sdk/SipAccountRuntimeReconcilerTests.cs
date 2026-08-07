@@ -204,19 +204,88 @@ public sealed class SipAccountRuntimeReconcilerTests
         Assert.Equal(1, connector.ConnectCount("a1"));
     }
 
+    // ── Call quotas ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ProvisioningAnAccount_ConfiguresItsQuotas()
+    {
+        // The one place an account becomes a live channel is the one place its quotas can reach the
+        // ledger — a quota nobody applies limits nothing.
+        var quotas = new RecordingQuotaRegistry();
+        var reconciler = NewReconciler(
+            new FakeVoiceChannelConnector().Returns("a1", new FakeVoiceChannel { ChannelId = "a1" }),
+            new CommunicationChannelRegistry(),
+            quotas);
+
+        await reconciler.ApplyAsync(Account("a1", "w1", [new CallQuota("crm", 4)]));
+
+        Assert.Equal(("w1", "a1"), (quotas.Last!.Value.WorkspaceKey, quotas.Last!.Value.ChannelId));
+        Assert.Equal(4, quotas.Last!.Value.Quotas["crm"]);
+    }
+
+    [Fact]
+    public async Task ChangingOnlyAQuota_DoesNotDropTheRegistration()
+    {
+        // Re-registering would drop every call running under the old quota. An operator raising a
+        // share expects more lines, not a disconnected trunk.
+        var quotas = new RecordingQuotaRegistry();
+        var connector = new FakeVoiceChannelConnector().Returns("a1", new FakeVoiceChannel { ChannelId = "a1" });
+        var reconciler = NewReconciler(connector, new CommunicationChannelRegistry(), quotas);
+        await reconciler.ApplyAsync(Account("a1", "w1", [new CallQuota("crm", 4)]));
+
+        await reconciler.ApplyAsync(Account("a1", "w1", [new CallQuota("crm", 9)]));
+
+        Assert.Equal(1, connector.ConnectCount("a1"));
+        Assert.Equal(9, quotas.Last!.Value.Quotas["crm"]);
+    }
+
+    [Fact]
+    public async Task RemovingAnAccount_ClearsItsQuotas()
+    {
+        // Lines that no longer exist cannot be divided, and a stale share would apply again the moment
+        // an account with the same id came back.
+        var quotas = new RecordingQuotaRegistry();
+        var reconciler = NewReconciler(
+            new FakeVoiceChannelConnector().Returns("a1", new FakeVoiceChannel { ChannelId = "a1" }),
+            new CommunicationChannelRegistry(),
+            quotas);
+        await reconciler.ApplyAsync(Account("a1", "w1", [new CallQuota("crm", 4)]));
+
+        await reconciler.RemoveAsync("w1", "a1");
+
+        Assert.Empty(quotas.Last!.Value.Quotas);
+    }
+
+    [Fact]
+    public async Task AnAccountWithoutQuotas_LeavesEveryOriginUnlimited()
+    {
+        var quotas = new RecordingQuotaRegistry();
+        var reconciler = NewReconciler(
+            new FakeVoiceChannelConnector().Returns("a1", new FakeVoiceChannel { ChannelId = "a1" }),
+            new CommunicationChannelRegistry(),
+            quotas);
+
+        await reconciler.ApplyAsync(Account("a1", "w1"));
+
+        Assert.Empty(quotas.Last!.Value.Quotas);
+    }
+
     private static SipAccountRuntimeReconciler NewReconciler(
         IVoiceChannelConnector connector,
-        CommunicationChannelRegistry registry) =>
+        CommunicationChannelRegistry registry,
+        ICallQuotaRegistry? quotas = null) =>
         new(
             connector,
             registry,
             new SdkCallAudioRegistrar(new SdkCallAudioStreamProvider(), NullLogger<SdkCallAudioRegistrar>.Instance),
-            NullLogger<SipAccountRuntimeReconciler>.Instance);
+            NullLogger<SipAccountRuntimeReconciler>.Instance,
+            statusProjector: null,
+            quotas);
 
     // Digest is the only method the provider connects (#111); an IP-authenticated account
     // would be refused by the reconciler before it ever reached the connector, which would
     // make these provisioning assertions vacuous.
-    private static SipAccount Account(string id, string workspaceKey) =>
+    private static SipAccount Account(string id, string workspaceKey, CallQuota[]? quotas = null) =>
         new(
             id,
             workspaceKey,
@@ -229,7 +298,17 @@ public sealed class SipAccountRuntimeReconcilerTests
                 new DigestAuthentication($"user-{id}", null, "secret-ref"),
                 registrationExpirySeconds: 300),
             maxConcurrentCalls: 1,
-            enabled: true);
+            enabled: true,
+            quotas);
+}
+
+/// <summary>Remembers the last quota configuration applied, so a test can read it back.</summary>
+internal sealed class RecordingQuotaRegistry : ICallQuotaRegistry
+{
+    public (string WorkspaceKey, string ChannelId, IReadOnlyDictionary<string, int> Quotas)? Last { get; private set; }
+
+    public void Configure(string workspaceKey, string channelId, IReadOnlyDictionary<string, int> quotas) =>
+        Last = (workspaceKey, channelId, quotas);
 }
 
 /// <summary>A configurable <see cref="IVoiceChannelConnector"/> double keyed by account id.</summary>

@@ -230,6 +230,86 @@ public sealed class SdkVoiceChannelTests
     }
 
     [Fact]
+    public void InboundAtLimit_IsRefusedAsBusy()
+    {
+        // Counting an inbound call the account has no line for made the ceiling one-sided: outbound
+        // was blocked while inbound kept arriving, so the trunk ran over its own limit.
+        var occupying = new FakeSdkCall { State = SdkCallState.Ringing };
+        var arriving = new FakeSdkCall { State = SdkCallState.Ringing };
+        var line = new FakePhoneLine();
+        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, Tap, maxConcurrentCalls: 1);
+        var delivered = 0;
+        channel.IncomingCall += (_, _) => delivered++;
+
+        line.RaiseIncomingCall(occupying);
+        line.RaiseIncomingCall(arriving);
+
+        // 486, not the drain's 503: a full line is occupied and will free up, and 503 invites a
+        // carrier to mark the whole trunk unreachable over a momentary peak.
+        Assert.Equal(1, delivered);
+        Assert.True(arriving.RejectCalled);
+        Assert.Equal(486, arriving.RejectStatusCode);
+    }
+
+    [Fact]
+    public void ARefusedInboundCall_DoesNotOccupyALine()
+    {
+        // Otherwise the refusal itself would fill the trunk: every rejected call would keep a line
+        // counted, and the channel would never recover.
+        var occupying = new FakeSdkCall { State = SdkCallState.Ringing };
+        var refused = new FakeSdkCall { State = SdkCallState.Ringing };
+        var next = new FakeSdkCall { State = SdkCallState.Ringing };
+        var line = new FakePhoneLine();
+        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, Tap, maxConcurrentCalls: 1);
+        var delivered = 0;
+        channel.IncomingCall += (_, _) => delivered++;
+
+        line.RaiseIncomingCall(occupying);
+        line.RaiseIncomingCall(refused);
+        occupying.RaiseStateChanged(SdkCallState.Ringing, SdkCallState.Terminated);
+        line.RaiseIncomingCall(next);
+
+        Assert.Equal(2, delivered);
+        Assert.False(next.RejectCalled);
+    }
+
+    [Fact]
+    public async Task AnInboundCallAtTheLimit_DoesNotBlockTheNextOutboundCall()
+    {
+        // The refused call must give its reservation back, or one busy moment would cost a line for
+        // the life of the channel.
+        var occupying = new FakeSdkCall { State = SdkCallState.Ringing };
+        var refused = new FakeSdkCall { State = SdkCallState.Ringing };
+        var line = new FakePhoneLine();
+        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, Tap, maxConcurrentCalls: 1);
+        channel.IncomingCall += (_, _) => { };
+
+        line.RaiseIncomingCall(occupying);
+        line.RaiseIncomingCall(refused);
+        occupying.RaiseStateChanged(SdkCallState.Ringing, SdkCallState.Terminated);
+
+        line.DialResult = new FakeSdkCall { State = SdkCallState.Idle };
+        Assert.NotNull(await channel.PlaceCallAsync(new CallTarget("sip:b@example.com")));
+    }
+
+    [Fact]
+    public void InboundWithoutAConsumer_DoesNotOccupyALine()
+    {
+        // Nobody is going to answer it, so counting it would let an unwired channel starve itself.
+        var arriving = new FakeSdkCall { State = SdkCallState.Ringing };
+        var line = new FakePhoneLine();
+        var channel = new SdkVoiceChannel("ch", "Line", "plugin", line, Tap, maxConcurrentCalls: 1);
+
+        line.RaiseIncomingCall(arriving);
+
+        var delivered = 0;
+        channel.IncomingCall += (_, _) => delivered++;
+        line.RaiseIncomingCall(new FakeSdkCall { State = SdkCallState.Ringing });
+
+        Assert.Equal(1, delivered);
+    }
+
+    [Fact]
     public async Task DialFailure_ReleasesReservation_AllowingNextCall()
     {
         // If DialAsync throws, the reserved slot must be released so the next call can proceed.

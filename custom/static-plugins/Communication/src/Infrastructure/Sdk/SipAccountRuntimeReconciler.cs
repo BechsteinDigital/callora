@@ -29,6 +29,7 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
     private readonly ICommunicationChannelRegistry _registry;
     private readonly SdkCallAudioRegistrar _registrar;
     private readonly ISipAccountStatusProjector? _statusProjector;
+    private readonly ICallQuotaRegistry? _quotas;
     private readonly ILogger<SipAccountRuntimeReconciler> _logger;
 
     private readonly ConcurrentDictionary<string, ProvisionedVoiceChannel> _provisioned = new(StringComparer.Ordinal);
@@ -39,12 +40,18 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
     /// Receives the channel's health transitions so they land on the persisted account (#112).
     /// Null in a deployment without persistence, where there is no account row to update.
     /// </param>
+    /// <param name="quotas">
+    /// Where the account's line shares are applied. This is the only place an account becomes a live
+    /// channel, so it is the only place its quotas can reach the ledger — a share nobody applies
+    /// limits nothing. Null in a deployment that does not divide its lines.
+    /// </param>
     public SipAccountRuntimeReconciler(
         IVoiceChannelConnector connector,
         ICommunicationChannelRegistry registry,
         SdkCallAudioRegistrar registrar,
         ILogger<SipAccountRuntimeReconciler> logger,
-        ISipAccountStatusProjector? statusProjector = null)
+        ISipAccountStatusProjector? statusProjector = null,
+        ICallQuotaRegistry? quotas = null)
     {
         ArgumentNullException.ThrowIfNull(connector);
         ArgumentNullException.ThrowIfNull(registry);
@@ -55,6 +62,7 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
         _registry = registry;
         _registrar = registrar;
         _statusProjector = statusProjector;
+        _quotas = quotas;
         _logger = logger;
     }
 
@@ -97,7 +105,10 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
             {
                 if (string.Equals(existing.Fingerprint, fingerprint, StringComparison.Ordinal))
                 {
-                    // Nothing changed that the runtime cares about — idempotent no-op.
+                    // Nothing changed that the registration cares about — but the line shares still
+                    // reach the ledger, because that is the whole point of keeping them out of the
+                    // fingerprint: raising a share must not drop the calls running under the old one.
+                    ApplyQuotas(account, existing.Channel.ChannelId);
                     return SipRuntimeReconciliation.Connected;
                 }
 
@@ -129,7 +140,10 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
             // From here the channel owns the truth about connectivity, so its transitions are
             // projected onto the account instead of the account staying on "Connecting" (#112).
             var subscription = SubscribeToHealth(account, decorated);
-            _provisioned[key] = new ProvisionedVoiceChannel(registration, decorated, fingerprint, subscription);
+            _provisioned[key] = new ProvisionedVoiceChannel(
+                account.WorkspaceKey, registration, decorated, fingerprint, subscription);
+
+            ApplyQuotas(account, decorated.ChannelId);
 
             // Record the state the channel reports right now, so a connector that returns an
             // already-registered channel does not leave the account looking like it is still coming up.
@@ -222,10 +236,26 @@ public sealed class SipAccountRuntimeReconciler : ISipAccountRuntimeReconciler, 
             return;
         }
 
+        // Lines that no longer exist cannot be divided, and a share left behind would apply again the
+        // moment an account with the same channel id came back.
+        _quotas?.Configure(provisioned.WorkspaceKey, provisioned.Channel.ChannelId, new Dictionary<string, int>());
+
         provisioned.HealthSubscription?.Dispose();
         provisioned.Registration.Dispose();
         provisioned.Channel.Dispose();
     }
+
+    /// <summary>
+    /// Hands the account's line shares to the ledger, replacing whatever was there. Called on every
+    /// apply, including the one that changes nothing else — a quota is deliberately not part of the
+    /// fingerprint, because re-registering to raise a share would drop every call running under the
+    /// old one.
+    /// </summary>
+    private void ApplyQuotas(SipAccount account, string channelId) =>
+        _quotas?.Configure(
+            account.WorkspaceKey,
+            channelId,
+            account.CallQuotas.ToDictionary(q => q.Origin, q => q.MaxConcurrentCalls, StringComparer.Ordinal));
 
     /// <summary>
     /// Bridges the channel's health events onto the account, returning a handle that detaches
