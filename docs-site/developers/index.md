@@ -53,5 +53,6 @@ Read [Architecture](../concepts/architecture.md) before writing your first plugi
 The generated type reference for the host and first-party plugins lives under
 [API Reference](/api/).
 
-> **License model:** Callora is open-core — an AGPL-3.0 core plus an Apache-2.0 SDK.
-> Plugins you build against the SDK are yours.
+> **License model:** Callora is **Apache-2.0** — the platform, the analyzers, the CLI and
+> the `@callora/*` packages alike. A plugin you build against it may carry any license you
+> like, including a proprietary one; Apache-2.0 asks nothing of it.

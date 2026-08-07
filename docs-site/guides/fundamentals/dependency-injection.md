@@ -182,10 +182,11 @@ Typed convenience wrappers exist in `CalloraPluginCatalogExtensions`
 There's a subtlety worth knowing. When a plugin resolves a contract from its curated
 `Services` and the *host* doesn't register it, the provider falls back to a **cross-plugin
 export** (`ResolveExport`) — but **only when exactly one plugin exports that contract**.
-That's how the Dialer plugin resolves `ICommunicationChannelRegistry`:
+That is how a dialer resolves `ICommunicationChannelRegistry` without knowing anything
+about SIP:
 
 ```csharp
-// In DialerPlugin.StartAsync — resolved cross-plugin from Communication's export:
+// In StartAsync — resolved cross-plugin from Communication's export:
 var channelRegistry = ResolveRequired<ICommunicationChannelRegistry>(context.Services);
 ```
 
@@ -231,7 +232,7 @@ private static TService ResolveRequired<TService>(IServiceProvider services)
 
 **Expected behavior:** `IPluginDataStore` resolves (plugin-bound to `communication`);
 `IPluginDataProtector` resolves as a published contract; the plugin exports
-`ICommunicationChannelRegistry` (which Dialer will later resolve cross-plugin) and an
+`ICommunicationChannelRegistry` (which a dialer resolves cross-plugin) and an
 `IHostAdminApiExtensionContributor` (which the host collects alongside every other plugin's
 contributors). If any required host service is absent, activation fails at `StartAsync` with
 a named error rather than surfacing later.

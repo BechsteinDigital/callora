@@ -46,7 +46,7 @@ The core manifest is parsed into `PluginRegistryJsonDto`
 | `tier` | Optional | Deployment tier: `"system"` (foundation) or `"application"` (default). |
 | `capabilities` | Optional | Capability strings this plugin **provides** (e.g. `"communication.voice"`). Trimmed and de-duplicated. |
 | `requiresCapabilities` | Optional | Capability strings this plugin **requires** another active plugin to provide. |
-| `dependencies` | Optional | Map of package name → version range (e.g. `"Callora.Host.PluginContracts": ">=0.1.0"`). |
+| `dependencies` | Optional | Map of package name → version range (e.g. `"Callora.Core": ">=0.9.0"`). Enforced at install time — see [plugin dependencies](./plugin-dependencies). |
 | `extensions` | Optional | Declared extension-point participations — an array of `{ extensionPointId, surface }`. |
 | `databaseSchema` | Optional | Explicit EF schema name for cleanup on uninstall. Read separately (see [Fields read outside the core parser](#fields-read-outside-the-core-parser)). |
 | `sensitiveFields` | Optional | Person-related payload field names for webhook data-minimization. Read separately. |
@@ -151,33 +151,32 @@ here — a plausible-looking `phoneNumber` would mask nothing. When you change a
 schema, update `sensitiveFields` in the same commit.
 :::
 
-Contrast the **consumer** side — the Dialer plugin's
-`custom/plugins/Dialer/registry.json` — which *requires* the capability Communication
-provides:
+Contrast the **consumer** side. A dialer plugin *requires* the capability Communication
+provides, and provides none of its own:
 
 ```json
 {
   "contractVersion": "v1",
   "schemaVersion": "1.0",
-  "name": "Callora Dialer Plugin",
-  "pluginId": "dialer",
+  "name": "Acme Dialer",
+  "pluginId": "acme-dialer",
   "version": "0.1.0",
-  "assemblyFileName": "Callora.Plugins.Dialer.dll",
-  "entryTypeName": "Callora.Plugins.Dialer.DialerPlugin",
+  "assemblyFileName": "Acme.Dialer.dll",
+  "entryTypeName": "Acme.Dialer.DialerPlugin",
   "capabilities": [],
   "requiresCapabilities": [
     "communication.voice"
   ],
   "dependencies": {
-    "Callora.Host.PluginContracts": ">=0.1.0",
-    "Callora.Plugin.Communication.Abstractions": ">=0.1.0"
+    "Callora.Core": ">=0.9.0",
+    "Callora.Plugin.Communication.Abstractions": ">=0.9.0"
   }
 }
 ```
 
-Dialer provides no capabilities of its own, requires `communication.voice`, and declares no
+It provides no capabilities of its own, requires `communication.voice`, and declares no
 tier — so it defaults to `application`. This provider/consumer pairing is exactly how
-`requiresCapabilities` and `capabilities` work together: the host can gate Dialer's
+`requiresCapabilities` and `capabilities` work together: the host can gate the dialer's
 activation on Communication being active. See
 [plugin dependencies](/guides/fundamentals/plugin-dependencies) for the full contract.
 

@@ -1,11 +1,11 @@
 # Plugin Dependencies
 
-A Callora plugin rarely lives alone. It depends on the host's **contract packages**, and
-often on **abstraction packages** published by another plugin — the Dialer plugin dials
-calls through the Communication plugin's `ICommunicationChannelRegistry` without ever
-knowing SIP. This page covers how you declare those dependencies in `registry.json`, how
-Callora guarantees every plugin sees the *same* contract types, and how contract versions
-are gated over time.
+A Callora plugin rarely lives alone. It depends on the host's **contract package**, and
+often on **abstraction packages** published by another plugin. The example running through
+this page is a dialer: it places calls through the Communication plugin's
+`ICommunicationChannelRegistry` without ever knowing what SIP is. This page covers how you
+declare those dependencies in `registry.json`, how Callora guarantees every plugin sees the
+*same* contract types, and how contract versions are gated over time.
 
 ## What you'll learn
 
@@ -16,8 +16,8 @@ are gated over time.
 
 ## Declaring dependencies
 
-`dependencies` maps a package (assembly) name to a version range. From the Dialer plugin's
-`custom/plugins/Dialer/registry.json`:
+`dependencies` maps a package (assembly) name to a version range. A dialer's manifest would
+declare:
 
 ```json
 {
@@ -25,32 +25,41 @@ are gated over time.
   "version": "0.1.0",
   "requiresCapabilities": ["communication.voice"],
   "dependencies": {
-    "Callora.Host.PluginContracts": ">=0.1.0",
-    "Callora.Plugin.Communication.Abstractions": ">=0.1.0"
+    "Callora.Core": ">=0.9.0",
+    "Callora.Plugin.Communication.Abstractions": ">=0.9.0"
   }
 }
 ```
 
 Two categories show up here:
 
-- **Contract packages** — the shared host contracts (`Callora.Host.PluginContracts`) that
-  define the interfaces you export and consume.
+- **The host contract package** — `Callora.Core` defines the interfaces you export and
+  consume. You do not reference it directly: `Callora.Plugin.Sdk` brings it, together with
+  the analyzers and the build rules that keep platform assemblies out of your output.
 - **Abstraction packages** — a *sibling plugin's* published abstractions
   (`Callora.Plugin.Communication.Abstractions`). Depending on these lets you consume that
   plugin's exported services (e.g. `ICommunicationChannelRegistry`) by their real .NET
-  types.
+  types. A plugin's contracts are published publicly even when the plugin itself is not —
+  that is what makes building against them possible.
 
 Note the difference between `dependencies` and `requiresCapabilities`. The former is about
-*which assemblies/types* you build against; the latter is about *which running capability*
-must be present at activation. The Dialer needs the Communication.Abstractions assembly to
-**compile**, and a plugin providing the `communication.voice` capability to **run**.
+*which assemblies and types* you build against; the latter is about *which running
+capability* must be present at activation. The dialer needs the Communication abstractions
+assembly to **compile**, and a plugin providing the `communication.voice` capability to
+**run**.
 
-::: info
-**Status:** The `dependencies` block is parsed and preserved as declared metadata
-(`PluginRegistryJsonDto.Dependencies`, a case-insensitive `Dictionary<string,string>`), but
-the platform does **not yet resolve or enforce the version *ranges*** at install time. The
-strong compatibility guarantee that *is* enforced today is at the shared-assembly and
-contract-version level, described below. Treat the ranges as documentation of intent.
+::: warning
+**The ranges are enforced, not documentation.** `PluginDependencyVersionGate` runs at
+install time (from `PluginInstaller`) and rejects a plugin whose declared range does not
+match the version the host actually provides. Write the range you mean.
+
+Two details worth knowing:
+
+- **Only *resolvable* dependencies are checked.** A dependency the host provides no
+  assembly for is skipped here — whether it can be satisfied at all is the activation
+  planner's question, not the gate's.
+- **An unparseable range is a hard error**, not a shrug. `">= 1.0"` with a space, a typo,
+  an empty string: the install is rejected rather than the range ignored.
 :::
 
 ## One identity per contract assembly
@@ -103,9 +112,8 @@ Related registry error/warning codes (`PluginRegistryErrorCodes`):
 - `PLUGIN_CONTRACT_VERSION_REMOVED` — installation blocked (currently `v0`)
 
 ::: warning
-The reference plugins (`Communication`, `Dialer`) currently ship `"contractVersion": "v1"`,
-and the `callora plugin test-contract` CLI validates against **`v1`** as the current
-target. The runtime installer's support matrix already lists `v2` as the *supported* tier
+`callora plugin new` scaffolds `"contractVersion": "v1"`, and `callora plugin test-contract`
+validates against **`v1`** as the current target. The runtime installer's support matrix already lists `v2` as the *supported* tier
 and `v1` as *deprecated-but-installable*. In practice: set `v1` today (it installs and
 passes `test-contract`), and expect `v2` to become the target as the contract surface
 advances. Watch the deprecation warning as your signal to migrate.
@@ -152,16 +160,18 @@ capability:
   "capabilities": [],
   "requiresCapabilities": ["communication.voice"],
   "dependencies": {
-    "Callora.Host.PluginContracts": ">=0.1.0",
-    "Callora.Plugin.Communication.Abstractions": ">=0.1.0"
+    "Callora.Core": ">=0.9.0",
+    "Callora.Plugin.Communication.Abstractions": ">=0.9.0"
   }
 }
 ```
 
 **Expected behavior:** the plugin installs on a host at `contractVersion` `v1` (with the
-deprecation warning). At activation it can resolve `ICommunicationChannelRegistry` from the
-Communication plugin — the same type both sides compiled against, thanks to the shared
-assembly registry — but only if a plugin providing `communication.voice` is active.
+deprecation warning), provided the host's `Callora.Core` satisfies `>=0.9.0` — the
+dependency gate checks that before anything else happens. At activation it can resolve
+`ICommunicationChannelRegistry` from the Communication plugin — the same type both sides
+compiled against, thanks to the shared assembly registry — but only if a plugin providing
+`communication.voice` is active.
 
 ## Next steps
 

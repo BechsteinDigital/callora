@@ -8,8 +8,9 @@ admin shell as an end user, this is not your section; see the
 Callora is a domain-neutral .NET 10 plugin platform. The host is a pure platform
 — authentication and RBAC, user and plugin management, a business-event bus, and
 the surface-rendering layer — while everything domain-specific lives in plugins.
-Distribution follows an **open-core** model: an AGPL-3.0 core and Apache-2.0 SDK.
-The repository is private today; a public Community Edition is planned.
+The platform is **Apache-2.0** throughout; the first-party plugins built on it are
+commercial and live in their own repositories. Their *contracts* are published publicly, so
+a third party can build against them without seeing the implementation (ADR-020).
 
 > **Status:** The repository is the **framework** — a set of packable libraries.
 > The runnable process entrypoint and package composition live in the separate

@@ -10,8 +10,10 @@ handler **may run more than once for the same job**. It must be **idempotent**. 
 how to enqueue and handle a job, then works through each safety property — leases, the reaper,
 the fencing token, the retry budget — and ends with a handler that is safely idempotent.
 
-The worked reference throughout is the Dialer plugin's dial run
-(`custom/plugins/Dialer/src/Application/Runs/`), which runs as a `dialer.run` job.
+The worked reference throughout is a dialer plugin's dial run — a long-running job that
+places calls from a list and must survive a host restart mid-run. It is the shape most
+plugin work takes: triggered by an operator, slow, and worse than useless if it repeats an
+effect on retry.
 
 ## What you'll learn
 
@@ -46,7 +48,7 @@ public sealed record BackgroundJobRequest(
     string? WorkspaceKey = null);      // optional workspace scope
 ```
 
-The Dialer enqueues one run like this (`DialRunCoordinator`):
+A coordinator enqueues one run like this:
 
 ```csharp
 public sealed class DialRunCoordinator(
@@ -194,7 +196,7 @@ becomes `Failed` permanently and stops retrying — a dead letter, visible in `/
 Choose `MaxAttempts` by the nature of the work:
 
 - **`1`** — the effect must happen at most as many times as the operator triggered it, and a
-  retry would be wrong or is handled by the operator (the Dialer and flow-execution jobs use `1`).
+  retry would be wrong or is handled by the operator (dial runs and flow execution use `1`).
 - **`3`–`5`** — transient-failure-prone work like network I/O; the webhook delivery job uses `5`.
 
 ### The idempotency contract
