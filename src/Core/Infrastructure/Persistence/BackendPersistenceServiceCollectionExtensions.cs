@@ -58,6 +58,7 @@ public static class BackendPersistenceServiceCollectionExtensions
             ScopedWorkspaceSurfaceProvisioner>();
         services.AddScoped<IWorkspaceTemplateRegistryStore, EfWorkspaceTemplateRegistryStore>();
         services.AddScoped<IWorkspaceThemeSettingsStore, EfWorkspaceThemeSettingsStore>();
+        services.AddScoped<IWorkspaceSectionLayoutStore, EfWorkspaceSectionLayoutStore>();
         services.AddScoped<IPasswordHasher<BackendUser>, PasswordHasher<BackendUser>>();
 
         services.AddScoped<IHostAuditStore, DatabaseHostAuditStore>();

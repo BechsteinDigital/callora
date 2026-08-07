@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  addSection,
   blockAt,
   clearBlockBinding,
   readDocument,
   setBlockBinding,
+  setSectionLayout,
   type LayoutDocument,
 } from './layout-document'
 
@@ -110,6 +112,57 @@ describe('clearBlockBinding', () => {
     const before = documentWith()
 
     expect(clearBlockBinding(before, { sectionIndex: 0, blockIndex: 0 }, 'title')).toBe(before)
+  })
+})
+
+describe('addSection', () => {
+  it('vergibt die Position fortlaufend, nicht aus der Länge', () => {
+    // Ein Dokument mit Lücken oder doppelten Positionen — etwa aus einem Rückrollen — bekäme
+    // sonst eine Sektion, die VOR einer bestehenden landet.
+    const before: LayoutDocument = {
+      sections: [
+        { layout: 'single', position: 0, blocks: [] },
+        { layout: 'single', position: 7, blocks: [] },
+      ],
+    }
+
+    const after = addSection(before, 'two-2-1')
+
+    expect(after.sections[2].position).toBe(8)
+    expect(after.sections[2].layout).toBe('two-2-1')
+  })
+
+  it('fängt bei einem leeren Dokument bei 0 an', () => {
+    expect(addSection({ sections: [] }, 'single').sections[0].position).toBe(0)
+  })
+})
+
+describe('setSectionLayout', () => {
+  it('lässt die Blöcke, wo sie sind — auch die in Regionen, die es nun nicht gibt', () => {
+    // Sie umzuhängen wäre die scheinbar hilfreiche Variante und die, die Arbeit vernichtet:
+    // Wer ein Layout ausprobiert und zurückwechselt, fände seine Seitenspalte im Hauptbereich
+    // wieder, ohne dass irgendetwas das rückgängig machen könnte.
+    const before: LayoutDocument = {
+      sections: [
+        {
+          layout: 'two-2-1',
+          position: 0,
+          blocks: [{ blockId: 'demo.rand', region: 'aside', position: 0 }],
+        },
+      ],
+    }
+
+    const after = setSectionLayout(before, 0, 'single')
+
+    expect(after.sections[0].layout).toBe('single')
+    expect(after.sections[0].blocks[0].region).toBe('aside')
+  })
+
+  it('tut nichts bei gleichem Layout oder unbekannter Sektion', () => {
+    const before: LayoutDocument = { sections: [{ layout: 'single', position: 0, blocks: [] }] }
+
+    expect(setSectionLayout(before, 0, 'single')).toBe(before)
+    expect(setSectionLayout(before, 5, 'two-2-1')).toBe(before)
   })
 })
 

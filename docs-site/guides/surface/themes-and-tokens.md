@@ -128,6 +128,91 @@ does not itself name a `--cal-*` variable. You bind a setting value to a `--cal-
 yourself — see *Consuming tokens* below.
 :::
 
+## Section layouts
+
+A **section layout** is the grid a section uses — `single`, `two-2-1`, `sidebar-left` — and the
+**regions** inside it are where blocks go. The editor offers exactly what the theme allows, so
+nobody can compose a grid nothing can style.
+
+### What the base surface brings
+
+The runtime ships a base set (`single`, `two-1-1`, `two-2-1`, `sidebar-left`, `three-1-1-1`),
+styled in the same `tokens.scss` that carries the neutral `--cal-*` values. They are the base,
+not the canon: a fresh installation has something to compose with, and a theme replaces or
+extends them.
+
+Without them the composition renderer would emit `data-cal-layout` that nothing listens to, and
+the editor would offer no choice — which looks like a bug rather than a missing theme.
+
+### Declaring your own
+
+A theme declares which layouts it can render, and which regions exist inside them:
+
+```json
+{
+  "sectionLayouts": [
+    { "key": "single", "label": "One column", "regions": ["main"] },
+    {
+      "key": "two-2-1",
+      "label": "Two columns (2:1)",
+      "regions": [
+        { "key": "main", "label": "Content" },
+        { "key": "aside", "label": "Sidebar" }
+      ]
+    }
+  ]
+}
+```
+
+A region may be written as a plain string or as `{ key, label }`. The **declared order is the
+reading order** — sorting them would put a sidebar before the content it sits next to.
+
+The layout key is what the composition renderer writes into `data-cal-layout`, and the region
+key into `data-cal-region`. Your CSS selects on those:
+
+```css
+.cal-section[data-cal-layout='two-2-1'] {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--cal-space-4);
+}
+```
+
+### Inheritance
+
+**Your layouts are added to the base ones**, and one with the same key replaces the base
+version entirely (never merges with it — a `two-2-1` carrying the base's regions while your CSS
+expects two others would put blocks in regions that do not exist).
+
+Adding is the safe direction: the base stylesheet is always loaded, so the base layouts work
+under your theme too, and a theme that only wants to contribute `sidebar-right` need not repeat
+the whole palette.
+
+To stand alone with your own grid system:
+
+```json
+{ "inheritSectionLayouts": false, "sectionLayouts": [ … ] }
+```
+
+Then everything your layouts need is yours to provide. A theme that declares no layouts of its
+own inherits regardless — there would otherwise be nothing left to compose with.
+
+::: info Layouts live in the theme, not in the core
+This is what keeps the token axis the design authority: nobody can compose a grid the theme
+cannot style, and no layout names end up in Callora's contracts. Bring a layout nobody
+anticipated and the editor offers it without a change to the platform.
+:::
+
+::: warning Dropping a layout does not break a page
+If a theme stops declaring a layout — usually because somebody switched themes — sections still
+naming it fall back to `single` when rendered. The blocks all stay; the section just becomes one
+readable column instead of a grid nothing styles. The editor names the affected sections so the
+change is visible rather than mysterious.
+
+A theme that declares **no** layouts at all says nothing about any of them, and nothing falls
+back. That is deliberately different from a theme that dropped one.
+:::
+
 ## Reading a workspace's tokens
 
 The resolved values are exposed anonymously at

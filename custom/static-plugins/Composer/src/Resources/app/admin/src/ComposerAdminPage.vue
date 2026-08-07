@@ -9,14 +9,17 @@ import {
 } from '@callora/surface'
 import ComposerCanvas from './ComposerCanvas.vue'
 import BlockInspector from './BlockInspector.vue'
-import { fetchSurfaceStyles, fetchThemeTokens } from './preview-assets'
+import { fetchSurfaceStyles, fetchTheme, type SectionLayout } from './preview-assets'
+import { sectionsWithUnknownLayout, themeDeclaresLayouts } from './section-layouts'
 import { collectTokenRoles } from './token-roles'
 import {
+  addSection,
   blockAt,
   clearBlockBinding,
   emptyDocument,
   readDocument,
   setBlockBinding,
+  setSectionLayout,
   type BlockAddress,
   type LayoutDocument,
 } from './layout-document'
@@ -48,6 +51,7 @@ const document = ref<LayoutDocument>(emptyDocument())
 const changedAtUtc = ref<string | null>(null)
 const surfaceCss = ref('')
 const tokens = ref<Record<string, string>>({})
+const sectionLayouts = ref<SectionLayout[]>([])
 const bundleFailures = ref<PluginLoadResult[]>([])
 const selected = ref<BlockAddress | null>(null)
 const editing = ref(true)
@@ -132,12 +136,39 @@ async function loadPreview(loaded: LoadedLayout): Promise<void> {
 
   bundleFailures.value = bundles.results.filter((result) => result.status === 'error')
 
-  const [css, themeValues] = await Promise.all([
+  const [css, theme] = await Promise.all([
     fetchSurfaceStyles(bundles.styles),
-    fetchThemeTokens(loaded.workspaceKey),
+    fetchTheme(loaded.workspaceKey),
   ])
   surfaceCss.value = css
-  tokens.value = themeValues
+  tokens.value = theme.valuesByKey
+  sectionLayouts.value = theme.sectionLayouts
+}
+
+/**
+ * Sektionen, deren Layout dieses Theme nicht kennt (§7.8).
+ *
+ * Serverseitig fallen sie beim Rendern auf `single` zurück. Hier zu zeigen, WELCHE es trifft,
+ * ist der Unterschied zwischen „meine Seite sieht anders aus" und „diese Sektionen hängen an
+ * einem Layout, das das neue Theme nicht mitbringt".
+ */
+const strandedSections = computed(() =>
+  sectionsWithUnknownLayout(document.value, sectionLayouts.value),
+)
+
+/** Ob das Theme überhaupt Layouts anbietet — ohne sie lässt sich keine Sektion anlegen. */
+const hasLayouts = computed(() => themeDeclaresLayouts(sectionLayouts.value))
+
+function appendSection(layoutKey: string): void {
+  document.value = addSection(document.value, layoutKey)
+}
+
+function changeSectionLayout(sectionIndex: number, layoutKey: string): void {
+  // Die Blöcke bleiben, wo sie sind. Sie umzuhängen wäre die scheinbar hilfreiche Variante und
+  // die, die Arbeit vernichtet: Wer ein Layout ausprobiert und zurückwechselt, fände seine
+  // Seitenspalte im Hauptbereich wieder.
+  document.value = setSectionLayout(document.value, sectionIndex, layoutKey)
+  selected.value = null
 }
 
 function changeBinding(control: string, binding: Binding<unknown>): void {
@@ -264,11 +295,72 @@ function draftUrl(key: string): string {
         <span class="composer__status">{{ saving ? 'Wird gespeichert …' : '' }}</span>
       </div>
 
+      <!--
+        Die Layouts kommen aus dem Theme, nicht aus dem Editor (§7.1). Angeboten wird
+        ausschließlich, was das Theme stylen kann — so bleibt die Token-Achse die
+        Design-Autorität, und es steht kein Layout-Name im Core.
+      -->
+      <div class="composer__sections">
+        <label for="composer-new-section">Sektion hinzufügen</label>
+        <select
+          id="composer-new-section"
+          :disabled="!hasLayouts"
+          @change="appendSection(($event.target as HTMLSelectElement).value)"
+        >
+          <option value="">Layout wählen …</option>
+          <option v-for="layout in sectionLayouts" :key="layout.layoutKey" :value="layout.layoutKey">
+            {{ layout.label }}
+          </option>
+        </select>
+        <!--
+          Kein Layout heißt nicht „Editor kaputt", sondern „dieses Theme bringt keine mit". Ohne
+          diesen Satz sucht jemand den Fehler im Editor.
+        -->
+        <!--
+          Der Server liefert immer mindestens die Basis-Layouts. Leer heißt hier also: Das
+          Theme war nicht erreichbar — nicht „dieses Theme kann keine".
+        -->
+        <p v-if="!hasLayouts" class="composer__status">
+          Die Sektionslayouts konnten nicht geladen werden.
+        </p>
+      </div>
+
+      <p v-if="strandedSections.length > 0" class="composer__hint" role="status">
+        {{ strandedSections.length }} Sektion(en) benutzen ein Layout, das dieses Theme nicht
+        kennt ({{ [...new Set(strandedSections.map((entry) => entry.section.layout))].join(', ') }}).
+        Sie werden einspaltig ausgeliefert; der Inhalt bleibt vollständig.
+      </p>
+
+      <ul v-if="document.sections.length > 0" class="composer__section-list">
+        <li v-for="(section, index) in document.sections" :key="index">
+          <label :for="`composer-section-${index}`">Sektion {{ index + 1 }}</label>
+          <select
+            :id="`composer-section-${index}`"
+            :value="section.layout"
+            @change="changeSectionLayout(index, ($event.target as HTMLSelectElement).value)"
+          >
+            <!--
+              Das aktuelle Layout steht auch dann in der Liste, wenn das Theme es nicht kennt.
+              Sonst zeigte die Auswahl etwas anderes an, als im Dokument steht, und der nächste
+              Klick irgendwohin änderte still das Layout.
+            -->
+            <option v-if="!sectionLayouts.some((l) => l.layoutKey === section.layout)"
+                    :value="section.layout">
+              {{ section.layout }} (unbekannt)
+            </option>
+            <option v-for="layout in sectionLayouts" :key="layout.layoutKey" :value="layout.layoutKey">
+              {{ layout.label }}
+            </option>
+          </select>
+        </li>
+      </ul>
+
       <div class="composer__workspace">
         <ComposerCanvas
           :document="document"
           :surface-css="canvasCss"
           :tokens="tokens"
+          :layouts="sectionLayouts"
           :selected="selected"
           :editing="editing"
           @select="selected = $event"

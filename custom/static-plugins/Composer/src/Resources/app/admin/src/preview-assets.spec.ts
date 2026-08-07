@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fetchSurfaceStyles, fetchThemeTokens } from './preview-assets'
+import { fetchSurfaceStyles, fetchTheme } from './preview-assets'
 
 describe('fetchSurfaceStyles', () => {
   it('verkettet in Kettenreihenfolge, damit die spätere Regel gewinnt — wie auf der Fläche', async () => {
@@ -33,21 +33,21 @@ describe('fetchSurfaceStyles', () => {
   })
 })
 
-describe('fetchThemeTokens', () => {
+describe('fetchTheme', () => {
   it('fragt den öffentlichen Endpunkt der Fläche, nicht einen admin-eigenen', async () => {
     // Ein zweiter Weg zu denselben Werten wäre ein zweiter Weg, auf dem sie auseinanderlaufen.
     const fetchJson = vi.fn(async () => ({ valuesByKey: { 'color-primary': '#123456' } }))
 
-    const tokens = await fetchThemeTokens('acme', fetchJson)
+    const theme = await fetchTheme('acme', fetchJson)
 
     expect(fetchJson).toHaveBeenCalledWith('/workspace/public/theme?workspaceKey=acme')
-    expect(tokens).toEqual({ 'color-primary': '#123456' })
+    expect(theme.valuesByKey).toEqual({ 'color-primary': '#123456' })
   })
 
   it('kodiert den Workspace-Schlüssel', async () => {
     const fetchJson = vi.fn(async () => ({}))
 
-    await fetchThemeTokens('a b/c', fetchJson)
+    await fetchTheme('a b/c', fetchJson)
 
     expect(fetchJson).toHaveBeenCalledWith('/workspace/public/theme?workspaceKey=a%20b%2Fc')
   })
@@ -55,11 +55,11 @@ describe('fetchThemeTokens', () => {
   it('rendert mit den Standardwerten weiter, wenn das Theme nicht erreichbar ist', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    const tokens = await fetchThemeTokens('acme', vi.fn(async () => {
+    const theme = await fetchTheme('acme', vi.fn(async () => {
       throw new Error('offline')
     }))
 
-    expect(tokens).toEqual({})
+    expect(theme).toEqual({ valuesByKey: {}, sectionLayouts: [] })
     warn.mockRestore()
   })
 })

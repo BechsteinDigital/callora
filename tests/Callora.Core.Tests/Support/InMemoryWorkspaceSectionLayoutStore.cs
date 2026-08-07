@@ -1,0 +1,48 @@
+using Callora.Core.Application.Extensions;
+
+namespace Callora.Core.Tests.Support;
+
+/// <summary>
+/// Sektionslayouts im Speicher — dieselbe Ersetzungs-Semantik wie der EF-Store, ohne Datenbank.
+/// </summary>
+public sealed class InMemoryWorkspaceSectionLayoutStore : IWorkspaceSectionLayoutStore
+{
+    private readonly Dictionary<string, ThemeSectionLayouts> _byPluginVersion =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public Task<ThemeSectionLayouts> ListAsync(
+        string pluginId,
+        string version,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(_byPluginVersion.TryGetValue(Key(pluginId, version), out var found)
+            ? found
+            : new ThemeSectionLayouts([], InheritsBase: true));
+
+    public Task ReplaceForPluginAsync(
+        string pluginId,
+        string version,
+        IReadOnlyList<SectionLayoutDefinition> layouts,
+        bool inheritsBase,
+        CancellationToken cancellationToken = default)
+    {
+        // Wie im EF-Store: Ohne eigene Layouts gibt es keine Zeile, die das Flag tragen könnte —
+        // und ohne Zeile wird geerbt.
+        _byPluginVersion[Key(pluginId, version)] =
+            new ThemeSectionLayouts(layouts, layouts.Count == 0 || inheritsBase);
+        return Task.CompletedTask;
+    }
+
+    public Task ClearForPluginAsync(string pluginId, CancellationToken cancellationToken = default)
+    {
+        foreach (var key in _byPluginVersion.Keys
+            .Where(key => key.StartsWith($"{pluginId} ", StringComparison.OrdinalIgnoreCase))
+            .ToArray())
+        {
+            _byPluginVersion.Remove(key);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static string Key(string pluginId, string version) => $"{pluginId} {version}";
+}

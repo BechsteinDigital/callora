@@ -39,28 +39,57 @@ export async function fetchSurfaceStyles(
   return sheets.filter((sheet) => sheet.length > 0).join('\n')
 }
 
+/** Eine Region eines Sektionslayouts — ein Platz, an den ein Block darf. */
+export interface SectionLayoutRegion {
+  regionKey: string
+  label: string
+}
+
+/** Ein Sektionslayout, wie das Theme es deklariert. */
+export interface SectionLayout {
+  layoutKey: string
+  label: string
+  regions: SectionLayoutRegion[]
+  sortOrder: number
+}
+
+/** Was der Editor vom Theme braucht. */
+export interface ThemeForEditor {
+  /** Die Token-Werte, die der Server einer Fläche gibt. */
+  valuesByKey: Record<string, string>
+  /**
+   * Die Sektionslayouts, die dieses Theme kann. Der Editor bietet ausschließlich sie an —
+   * so bleibt die Token-Achse die Design-Autorität, und es steht kein Layout-Name im Core.
+   */
+  sectionLayouts: SectionLayout[]
+}
+
 /**
- * Die Theme-Werte des Workspace, so wie der Server sie einer Fläche gibt.
+ * Das Theme des Workspace, so wie der Server es einer Fläche gibt.
  *
  * Der Endpunkt ist derselbe öffentliche, den die Fläche selbst abfragt — nicht ein
  * admin-eigener. Ein zweiter Weg zu denselben Werten wäre ein zweiter Weg, auf dem sie
  * auseinanderlaufen können, und genau das soll der Canvas nicht.
  */
-export async function fetchThemeTokens(
+export async function fetchTheme(
   workspaceKey: string,
   fetchJson: FetchJson = defaultFetchJson,
-): Promise<Record<string, string>> {
+): Promise<ThemeForEditor> {
   try {
     const theme = (await fetchJson(
       `/workspace/public/theme?workspaceKey=${encodeURIComponent(workspaceKey)}`,
-    )) as { valuesByKey?: Record<string, string> } | null
+    )) as Partial<ThemeForEditor> | null
 
-    return theme?.valuesByKey ?? {}
+    return {
+      valuesByKey: theme?.valuesByKey ?? {},
+      sectionLayouts: Array.isArray(theme?.sectionLayouts) ? theme.sectionLayouts : [],
+    }
   } catch (error) {
-    // Ohne Tokens rendert der Canvas mit den Standardwerten der Fläche. Das ist eine
-    // schlechtere Vorschau, aber eine, die funktioniert.
-    console.warn('[composer] Theme-Werte konnten nicht geladen werden.', error)
-    return {}
+    // Ohne Theme rendert der Canvas mit den Standardwerten der Fläche und bietet keine
+    // Layouts an. Eine schlechtere Vorschau, aber eine, die funktioniert — und eine leere
+    // Layout-Auswahl ist ehrlicher als eine erfundene.
+    console.warn('[composer] Theme konnte nicht geladen werden.', error)
+    return { valuesByKey: {}, sectionLayouts: [] }
   }
 }
 

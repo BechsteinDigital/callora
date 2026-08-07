@@ -21,7 +21,7 @@ public sealed class WorkspacePublicThemeResolverTests
             new("branding.apiToken", "API-Token", "secret", null, "\"top-secret\"", false, 1, null, null, true)
         ]);
 
-        var resolver = new WorkspacePublicThemeResolver(workspaceStore, new InMemoryWorkspaceSurfaceStore(), settingsStore);
+        var resolver = new WorkspacePublicThemeResolver(workspaceStore, new InMemoryWorkspaceSurfaceStore(), settingsStore, new InMemoryWorkspaceSectionLayoutStore());
         var theme = await resolver.ResolveAsync("workspace-a");
 
         Assert.NotNull(theme);
@@ -34,7 +34,7 @@ public sealed class WorkspacePublicThemeResolverTests
     {
         var (workspaceStore, settingsStore) = await CreateStoresWithWorkspaceAsync(isActive: false);
 
-        var resolver = new WorkspacePublicThemeResolver(workspaceStore, new InMemoryWorkspaceSurfaceStore(), settingsStore);
+        var resolver = new WorkspacePublicThemeResolver(workspaceStore, new InMemoryWorkspaceSurfaceStore(), settingsStore, new InMemoryWorkspaceSectionLayoutStore());
 
         Assert.Null(await resolver.ResolveAsync("workspace-a"));
     }
@@ -45,7 +45,7 @@ public sealed class WorkspacePublicThemeResolverTests
         var (workspaceStore, settingsStore) = await CreateStoresWithWorkspaceAsync(isActive: true);
         workspaceStore.SetTenantActive("tenant-a", isActive: false);
 
-        var resolver = new WorkspacePublicThemeResolver(workspaceStore, new InMemoryWorkspaceSurfaceStore(), settingsStore);
+        var resolver = new WorkspacePublicThemeResolver(workspaceStore, new InMemoryWorkspaceSurfaceStore(), settingsStore, new InMemoryWorkspaceSectionLayoutStore());
 
         Assert.Null(await resolver.ResolveAsync("workspace-a"));
     }
@@ -66,7 +66,7 @@ public sealed class WorkspacePublicThemeResolverTests
         await settingsStore.ReplaceValuesAsync("workspace-a", "shop", ThemePluginId,
             new Dictionary<string, string?> { ["primary.color"] = "\"#ff0000\"" });
 
-        var resolver = new WorkspacePublicThemeResolver(workspaceStore, surfaceStore, settingsStore);
+        var resolver = new WorkspacePublicThemeResolver(workspaceStore, surfaceStore, settingsStore, new InMemoryWorkspaceSectionLayoutStore());
         var theme = await resolver.ResolveForSurfaceAsync("workspace-a", "shop");
 
         Assert.NotNull(theme);
@@ -89,7 +89,7 @@ public sealed class WorkspacePublicThemeResolverTests
         await settingsStore.ReplaceValuesAsync("workspace-a", null, ThemePluginId,
             new Dictionary<string, string?> { ["primary.color"] = "\"#336699\"" });
 
-        var resolver = new WorkspacePublicThemeResolver(workspaceStore, surfaceStore, settingsStore);
+        var resolver = new WorkspacePublicThemeResolver(workspaceStore, surfaceStore, settingsStore, new InMemoryWorkspaceSectionLayoutStore());
         var theme = await resolver.ResolveForSurfaceAsync("workspace-a", "shop");
 
         Assert.NotNull(theme);
@@ -104,7 +104,7 @@ public sealed class WorkspacePublicThemeResolverTests
         await settingsStore.ReplaceDefinitionsForPluginAsync(ThemePluginId, ThemeVersion,
             [new("primary.color", "Primärfarbe", "color", null, "\"#000000\"", false, 0, null, null, true)]);
 
-        var resolver = new WorkspacePublicThemeResolver(workspaceStore, new InMemoryWorkspaceSurfaceStore(), settingsStore);
+        var resolver = new WorkspacePublicThemeResolver(workspaceStore, new InMemoryWorkspaceSurfaceStore(), settingsStore, new InMemoryWorkspaceSectionLayoutStore());
         var theme = await resolver.ResolveForSurfaceAsync("workspace-a", "does-not-exist");
 
         Assert.NotNull(theme);

@@ -135,16 +135,20 @@ public static class SurfaceRenderEndpoints
         // overrides) become allowlisted tokens so a plugin's SSR template can bind
         // {{ tokens.<key> }} onto its --cal-* properties (ADR-015 §8).
         IReadOnlyDictionary<string, string>? effectiveTheme = null;
+        // Auch die Sektionslayouts des Themes: Der Kompositions-Renderer muss erkennen, dass ein
+        // im Dokument gespeichertes Layout nach einem Theme-Wechsel niemanden mehr hat, der es
+        // stylen kann (§7.8).
+        WorkspacePublicTheme? resolvedTheme = null;
         if (themeResolver is not null)
         {
             // Resolved for THIS surface: its own theme and values win over the
             // workspace's. Previously only the workspace values were read, so a
             // surface with its own theme rendered that theme's identity with the
             // workspace theme's values.
-            var theme = await themeResolver
+            resolvedTheme = await themeResolver
                 .ResolveForSurfaceAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
                 .ConfigureAwait(false);
-            effectiveTheme = theme?.ValuesByKey;
+            effectiveTheme = resolvedTheme?.ValuesByKey;
         }
 
         // Everything a contributor needs to tell one page from another. The prefix comes off
@@ -201,7 +205,8 @@ public static class SurfaceRenderEndpoints
         var layouts = httpContext.RequestServices.GetService<ISurfaceLayoutSource>();
         var composition = layouts is null
             ? null
-            : await RenderCompositionAsync(layouts, surface, cancellationToken).ConfigureAwait(false);
+            : await RenderCompositionAsync(layouts, surface, resolvedTheme, cancellationToken)
+                .ConfigureAwait(false);
 
         var context = new SurfaceRenderContext(
             TenantKey: surface.TenantKey,
@@ -257,13 +262,28 @@ public static class SurfaceRenderEndpoints
     private static async Task<string?> RenderCompositionAsync(
         ISurfaceLayoutSource layouts,
         WorkspaceSurfaceSnapshot surface,
+        WorkspacePublicTheme? theme,
         CancellationToken cancellationToken)
     {
         var document = await layouts
             .GetPublishedAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
             .ConfigureAwait(false);
+        if (document is null)
+        {
+            return null;
+        }
 
-        return document is null ? null : new SurfaceCompositionRenderer().Render(document);
+        // Was gilt: die Layouts des Themes, oder — ohne zugewiesenes Theme — die des
+        // Basis-Themes. Die Liste ist nie leer, denn ein Theme ohne eigene Layouts erbt die
+        // Basis; nur ein Theme, das ausdrücklich nicht erbt, engt sie ein.
+        //
+        // Deshalb kann ein Rückfall hier nur eines heißen: Dieses Layout kennt niemand mehr, der
+        // es stylen könnte (§7.8) — und nicht „es hat nur gerade niemand etwas dazu gesagt".
+        var knownLayouts = new HashSet<string>(
+            (theme?.SectionLayouts ?? SurfaceBaseSectionLayouts.All).Select(layout => layout.LayoutKey),
+            StringComparer.Ordinal);
+
+        return new SurfaceCompositionRenderer(layoutIsKnown: knownLayouts.Contains).Render(document);
     }
 
     /// <summary>
