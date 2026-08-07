@@ -128,6 +128,25 @@ public sealed class CommunicationPluginWiringTests
     }
 
     [Fact]
+    public async Task StartAsync_ContributesTheSurfaceCallRoutes()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // Ohne die Registrierung existieren die Handler und niemand erreicht sie: Der Block ruft
+        // annehmen, bekommt 404 vom Host und niemand sieht, warum.
+        var contributor = (IHostSurfaceApiContributor)context.Exports[typeof(IHostSurfaceApiContributor)];
+        Assert.Contains(contributor.Routes, r => r is { HttpMethod: "GET", RouteTemplate: "calls" });
+        Assert.Contains(contributor.Routes, r => r is { HttpMethod: "POST", RouteTemplate: "calls/{callId}/accept" });
+        Assert.Contains(contributor.Routes, r => r is { HttpMethod: "POST", RouteTemplate: "calls/{callId}/dtmf" });
+
+        // Authentifiziert ist die Voreinstellung und muss es bleiben: Ein Gast auf einer Landingpage
+        // hat mit den Telefonaten des Unternehmens nichts zu tun.
+        Assert.All(contributor.Routes, r => Assert.Equal(SurfaceApiRouteAudience.Authenticated, r.Audience));
+    }
+
+    [Fact]
     public async Task StartAsync_ContributesTheNumberPlanRoutes()
     {
         var context = new CapturingHostPluginContext(hasDbFactory: true);
