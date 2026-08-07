@@ -8,8 +8,8 @@
       <CalCard>
         <CalEmptyState
           :icon="Puzzle"
-          title="Dieses Plugin liefert keine eigene Admin-Oberfläche."
-          description="Seine Funktionen sind über die Plugin-API erreichbar. Eine Oberfläche erscheint hier, sobald das Plugin ein Admin-Bundle mitliefert."
+          :title="emptyState.title"
+          :description="emptyState.description"
         />
       </CalCard>
     </CalPage>
@@ -43,6 +43,25 @@ const pageContext = computed(() => ({
 
 // Slot convention for a plugin's full admin page — a stable public contract.
 const pages = computed(() => getExtensions(`extension.page.${pluginId.value}`))
+
+// Ohne Seiten gibt es ZWEI Gründe, und sie zu verwechseln kostet den Betreiber Zeit: Das
+// Plugin bringt keine Oberfläche mit — oder es bringt eine, sie wurde für den aktuellen
+// Bereich nur nicht geladen, weil Plugin-Oberflächen an einen Workspace gebunden sind.
+// Vorher behauptete die Seite immer das Erste. Auf einer frischen Installation war das
+// falsch und schickte den Betreiber auf die Suche nach einem Fehler im Plugin.
+const emptyState = computed(() =>
+  pageContext.value.workspaceKey
+    ? {
+        title: 'Dieses Plugin liefert keine eigene Admin-Oberfläche.',
+        description:
+          'Seine Funktionen sind über die Plugin-API erreichbar. Eine Oberfläche erscheint hier, sobald das Plugin ein Admin-Bundle mitliefert.',
+      }
+    : {
+        title: 'Kein Workspace ausgewählt.',
+        description:
+          'Plugin-Oberflächen sind an einen Workspace gebunden. Wähle oben einen aus — legst du gerade erst einen an, erscheint die Oberfläche danach.',
+      },
+)
 
 onMounted(ensureWorkspace)
 </script>

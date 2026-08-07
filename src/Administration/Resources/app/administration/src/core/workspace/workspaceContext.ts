@@ -30,7 +30,19 @@ function writeStored(key: string): void {
 
 // Loads the operator's workspace list once and restores the persisted selection
 // (falling back to the first workspace). A fixed admin never needs the list.
-function ensureLoaded(fixed: string | null): Promise<void> {
+//
+// Fällt die Auswahl auf den ersten Workspace zurück, wird sie GESPEICHERT und die Shell
+// einmal neu geladen. Ohne das war ein frisch installiertes System dauerhaft ohne
+// Plugin-Oberfläche: Der Bootstrap fragt die Plugin-Kette mit dem gespeicherten Workspace
+// an, hier wurde die Rückfallauswahl aber nur in den Speicher geschrieben. Beim nächsten
+// Start las der Bootstrap wieder nichts, die Kette blieb leer, und jede Plugin-Seite
+// behauptete, das Plugin liefere keine Oberfläche. Dieselbe Begründung wie bei setActive:
+// Ein geladenes Skript lässt sich nicht entladen, also ist ein Neuladen die einzige
+// Antwort, die nicht halb richtig ist.
+//
+// Keine Schleifengefahr: Gespeichert wird VOR dem Neuladen, der nächste Start findet den
+// Wert und die Bedingung greift nicht mehr.
+function ensureLoaded(fixed: string | null, reload: () => void): Promise<void> {
   if (fixed) {
     return Promise.resolve()
   }
@@ -38,10 +50,16 @@ function ensureLoaded(fixed: string | null): Promise<void> {
     loadPromise = (async () => {
       workspaces.value = await workspacesApi.list()
       const stored = readStored()
-      selected.value =
+      const resolved =
         stored && workspaces.value.some((w) => w.workspaceKey === stored)
           ? stored
           : (workspaces.value[0]?.workspaceKey ?? '')
+      selected.value = resolved
+
+      if (resolved !== '' && resolved !== stored) {
+        writeStored(resolved)
+        reload()
+      }
     })().catch((error: unknown) => {
       // Never cache a failed load — a later ensure() (e.g. a remount) may retry.
       loadPromise = null
@@ -98,7 +116,8 @@ export function useWorkspaceContext() {
     activeWorkspace,
     fixedWorkspace,
     canSwitch,
-    ensure: () => ensureLoaded(fixedWorkspace.value),
+    ensure: (reload: () => void = () => window.location.reload()) =>
+      ensureLoaded(fixedWorkspace.value, reload),
     setActive,
   }
 }
