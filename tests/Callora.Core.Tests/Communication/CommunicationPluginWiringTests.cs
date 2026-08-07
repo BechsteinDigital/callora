@@ -86,6 +86,18 @@ public sealed class CommunicationPluginWiringTests
     }
 
     [Fact]
+    public async Task StartAsync_ExportsTheQuotaRegistry_SoQuotasCanBeConfiguredAtAll()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // The ledger is wired into the dial path, but a ledger nobody can configure limits nothing:
+        // every origin stays unlimited and the whole thing is dead weight.
+        Assert.Contains(typeof(ICallQuotaRegistry), context.Exports.Keys);
+    }
+
+    [Fact]
     public async Task StartAsync_ExportsDtmfCollector()
     {
         var context = new CapturingHostPluginContext(hasDbFactory: true);
