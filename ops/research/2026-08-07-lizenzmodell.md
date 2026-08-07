@@ -1,6 +1,8 @@
 # Lizenzmodell für Callora — Analyse und Empfehlung
 
 **Datum:** 2026-08-07
+**Status:** **Entschieden — Apache-2.0.** `LICENSE` ist umgestellt, die Vertragspakete tragen
+eine eigene Kopie. Das Dokument bleibt als Begründung stehen.
 **Anlass:** Vor der Doku-Überarbeitung muss feststehen, was die README behauptet.
 
 > **Keine Rechtsberatung.** Was hier steht, ist eine technische Einordnung mit Blick auf das
@@ -9,9 +11,9 @@
 
 ---
 
-## 1. Der Ist-Stand ist widersprüchlich
+## 1. Der Ist-Stand war widersprüchlich *(behoben)*
 
-`LICENSE` sagt **„All rights reserved"** — Callora ist heute proprietär. Gleichzeitig
+`LICENSE` sagte **„All rights reserved"** — Callora war proprietär. Gleichzeitig
 deklarieren zwei npm-Pakete `Apache-2.0`:
 
 - `src/Administration/Resources/app/administration` (`@callora/admin`)
