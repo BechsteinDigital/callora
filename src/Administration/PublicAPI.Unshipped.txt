@@ -481,6 +481,10 @@ Callora.Administration.Api.SurfaceApiResponse.IsActive.get -> bool
 Callora.Administration.Api.SurfaceApiResponse.IsActive.init -> void
 Callora.Administration.Api.SurfaceApiResponse.Locale.get -> string?
 Callora.Administration.Api.SurfaceApiResponse.Locale.init -> void
+Callora.Administration.Api.SurfaceApiResponse.ParentSurfaceKey.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.ParentSurfaceKey.init -> void
+Callora.Administration.Api.SurfaceApiResponse.Position.get -> int
+Callora.Administration.Api.SurfaceApiResponse.Position.init -> void
 Callora.Administration.Api.SurfaceApiResponse.PublicBaseUrl.get -> string?
 Callora.Administration.Api.SurfaceApiResponse.PublicBaseUrl.init -> void
 Callora.Administration.Api.SurfaceApiResponse.PublicHost.get -> string?
@@ -763,6 +767,10 @@ Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.get -> bool
 Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.init -> void
 Callora.Administration.Api.UpsertSurfaceApiRequest.Locale.get -> string?
 Callora.Administration.Api.UpsertSurfaceApiRequest.Locale.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.ParentSurfaceKey.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.ParentSurfaceKey.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.Position.get -> int
+Callora.Administration.Api.UpsertSurfaceApiRequest.Position.init -> void
 Callora.Administration.Api.UpsertSurfaceApiRequest.PublicBaseUrl.get -> string?
 Callora.Administration.Api.UpsertSurfaceApiRequest.PublicBaseUrl.init -> void
 Callora.Administration.Api.UpsertSurfaceApiRequest.PublicHost.get -> string?

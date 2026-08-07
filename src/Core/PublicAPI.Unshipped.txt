@@ -3673,6 +3673,41 @@ Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.PublicPath.g
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.PublicUrl.get -> string!
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.SurfaceKey.get -> string!
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.WorkspaceKey.get -> string!
+Callora.Core.Application.Workspaces.EffectiveSurface
+Callora.Core.Application.Workspaces.EffectiveSurface.<Clone>$() -> Callora.Core.Application.Workspaces.EffectiveSurface!
+Callora.Core.Application.Workspaces.EffectiveSurface.AccessMode.get -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
+Callora.Core.Application.Workspaces.EffectiveSurface.AccessMode.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out string? IdentityPluginId, out string? IdentityVersion, out System.DateTimeOffset? IdentityAssignedAtUtc) -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.EffectiveSurface(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, string? IdentityPluginId, string? IdentityVersion, System.DateTimeOffset? IdentityAssignedAtUtc) -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.Equals(Callora.Core.Application.Workspaces.EffectiveSurface? other) -> bool
+Callora.Core.Application.Workspaces.EffectiveSurface.Id.get -> System.Guid
+Callora.Core.Application.Workspaces.EffectiveSurface.Id.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.IdentityAssignedAtUtc.get -> System.DateTimeOffset?
+Callora.Core.Application.Workspaces.EffectiveSurface.IdentityAssignedAtUtc.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.IdentityPluginId.get -> string?
+Callora.Core.Application.Workspaces.EffectiveSurface.IdentityPluginId.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.IdentityVersion.get -> string?
+Callora.Core.Application.Workspaces.EffectiveSurface.IdentityVersion.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.Locale.get -> string?
+Callora.Core.Application.Workspaces.EffectiveSurface.Locale.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.PublicHost.get -> string?
+Callora.Core.Application.Workspaces.EffectiveSurface.PublicHost.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.PublicPathPrefix.get -> string!
+Callora.Core.Application.Workspaces.EffectiveSurface.PublicPathPrefix.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.RootId.get -> System.Guid
+Callora.Core.Application.Workspaces.EffectiveSurface.RootId.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.SurfaceKey.get -> string!
+Callora.Core.Application.Workspaces.EffectiveSurface.SurfaceKey.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.TemplatePluginId.get -> string?
+Callora.Core.Application.Workspaces.EffectiveSurface.TemplatePluginId.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.TemplateVersion.get -> string?
+Callora.Core.Application.Workspaces.EffectiveSurface.TemplateVersion.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.ThemePluginId.get -> string?
+Callora.Core.Application.Workspaces.EffectiveSurface.ThemePluginId.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.ThemeVersion.get -> string?
+Callora.Core.Application.Workspaces.EffectiveSurface.ThemeVersion.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.WorkspaceKey.get -> string!
+Callora.Core.Application.Workspaces.EffectiveSurface.WorkspaceKey.init -> void
 Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent
 Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.EventName.get -> string!
 Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ToEventData() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
@@ -3710,6 +3745,7 @@ Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore.UpsertAsync(string! w
 Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger
 Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger.PluginWorkspaceDataPurger(Callora.Core.Application.Plugins.ICalloraPluginCatalog! catalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger!>! logger) -> void
 Callora.Core.Application.Workspaces.PluginWorkspaceDataPurger.PurgeAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Callora.Core.Application.Workspaces.SurfaceTree
 Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult
 Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.<Clone>$() -> Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult!
 Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.Deconstruct(out Callora.Core.Application.Workspaces.WorkspaceMemberDeleteStatus Status) -> void
@@ -3805,6 +3841,10 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.IsActive.get -> bool
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.IsActive.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Locale.get -> string?
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Locale.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.ParentSurfaceKey.get -> string?
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.ParentSurfaceKey.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Position.get -> int
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Position.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.PublicBaseUrl.get -> string?
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.PublicBaseUrl.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.PublicHost.get -> string?
@@ -3848,6 +3888,10 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IsActive.get -> boo
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IsActive.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Locale.get -> string?
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Locale.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.ParentSurfaceKey.get -> string?
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.ParentSurfaceKey.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Position.get -> int
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Position.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.PublicBaseUrl.get -> string?
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.PublicBaseUrl.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.PublicHost.get -> string?
@@ -4623,6 +4667,12 @@ Callora.Core.Domain.Workspaces.WorkspaceSurface.IsActive.get -> bool
 Callora.Core.Domain.Workspaces.WorkspaceSurface.IsActive.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.Locale.get -> string?
 Callora.Core.Domain.Workspaces.WorkspaceSurface.Locale.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.Parent.get -> Callora.Core.Domain.Workspaces.WorkspaceSurface?
+Callora.Core.Domain.Workspaces.WorkspaceSurface.Parent.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.ParentSurfaceId.get -> System.Guid?
+Callora.Core.Domain.Workspaces.WorkspaceSurface.ParentSurfaceId.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.Position.get -> int
+Callora.Core.Domain.Workspaces.WorkspaceSurface.Position.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.PublicBaseUrl.get -> string?
 Callora.Core.Domain.Workspaces.WorkspaceSurface.PublicBaseUrl.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.PublicHost.get -> string?
@@ -5580,6 +5630,7 @@ const Callora.Core.Application.Workspaces.Events.WorkspaceEventTypes.Deleted = "
 const Callora.Core.Application.Workspaces.Events.WorkspaceEventTypes.Updated = "workspace.updated" -> string!
 const Callora.Core.Application.Workspaces.Events.WorkspaceMemberEventTypes.Assigned = "workspace.member-assigned" -> string!
 const Callora.Core.Application.Workspaces.Events.WorkspaceMemberEventTypes.Removed = "workspace.member-removed" -> string!
+const Callora.Core.Application.Workspaces.SurfaceTree.MaxDepth = 32 -> int
 const Callora.Core.Domain.Extensions.CalloraExtensionPoints.AdminApiRoute = "admin.api.route" -> string!
 const Callora.Core.Domain.Extensions.CalloraExtensionPoints.AdminNavigationMain = "admin.navigation.main" -> string!
 const Callora.Core.Domain.Extensions.CalloraExtensionPoints.WorkspaceNavigationMain = "workspace.navigation.main" -> string!
@@ -6076,6 +6127,9 @@ override Callora.Core.Application.Webhooks.WebhookDeliveryPayload.ToString() -> 
 override Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.Equals(object? obj) -> bool
 override Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.GetHashCode() -> int
 override Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.ToString() -> string!
+override Callora.Core.Application.Workspaces.EffectiveSurface.Equals(object? obj) -> bool
+override Callora.Core.Application.Workspaces.EffectiveSurface.GetHashCode() -> int
+override Callora.Core.Application.Workspaces.EffectiveSurface.ToString() -> string!
 override Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.Equals(object? obj) -> bool
 override Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.GetHashCode() -> int
 override Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.ToString() -> string!
@@ -6605,10 +6659,18 @@ static Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.operator ==
 static Callora.Core.Application.Webhooks.WebhookTargetException.Blocked(string! host) -> Callora.Core.Application.Webhooks.WebhookTargetException!
 static Callora.Core.Application.Webhooks.WebhookTargetException.InvalidScheme() -> Callora.Core.Application.Webhooks.WebhookTargetException!
 static Callora.Core.Application.Webhooks.WebhookTelemetry.RecordDelivery(string! eventName, string! outcome, double durationMs) -> void
+static Callora.Core.Application.Workspaces.EffectiveSurface.From(System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Workspaces.WorkspaceSurface!>! ancestry) -> Callora.Core.Application.Workspaces.EffectiveSurface!
+static Callora.Core.Application.Workspaces.EffectiveSurface.operator !=(Callora.Core.Application.Workspaces.EffectiveSurface? left, Callora.Core.Application.Workspaces.EffectiveSurface? right) -> bool
+static Callora.Core.Application.Workspaces.EffectiveSurface.operator ==(Callora.Core.Application.Workspaces.EffectiveSurface? left, Callora.Core.Application.Workspaces.EffectiveSurface? right) -> bool
 static Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ForDeletion(Callora.Core.Application.Workspaces.WorkspaceSnapshot! workspace) -> Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent!
 static Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent.ForUpsert(Callora.Core.Application.Workspaces.WorkspaceSnapshot! workspace) -> Callora.Core.Application.Workspaces.Events.WorkspaceBusinessEvent!
 static Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.Assigned(Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot! member) -> Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent!
 static Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.Removed(string! workspaceKey, string! userId) -> Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent!
+static Callora.Core.Application.Workspaces.SurfaceTree.AncestryOf<T>(T! node, System.Func<T!, System.Guid>! idOf, System.Func<T!, System.Guid?>! parentIdOf, System.Collections.Generic.IReadOnlyDictionary<System.Guid, T!>! byId) -> System.Collections.Generic.IReadOnlyList<T!>!
+static Callora.Core.Application.Workspaces.SurfaceTree.ComposePath(System.Collections.Generic.IReadOnlyList<string?>! segmentsFromNodeToRoot) -> string!
+static Callora.Core.Application.Workspaces.SurfaceTree.Inherited<T, TValue>(System.Collections.Generic.IReadOnlyList<T!>! ancestry, System.Func<T!, TValue?>! select) -> TValue?
+static Callora.Core.Application.Workspaces.SurfaceTree.InheritedFrom<T, TValue>(System.Collections.Generic.IReadOnlyList<T!>! ancestry, System.Func<T!, TValue?>! select) -> T?
+static Callora.Core.Application.Workspaces.SurfaceTree.WouldCreateCycle(System.Guid nodeId, System.Guid? newParentId, System.Collections.Generic.IReadOnlyDictionary<System.Guid, System.Guid?>! parentById) -> bool
 static Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.operator !=(Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult? left, Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult? right) -> bool
 static Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult.operator ==(Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult? left, Callora.Core.Application.Workspaces.WorkspaceMemberDeleteResult? right) -> bool
 static Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot.operator !=(Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot? left, Callora.Core.Application.Workspaces.WorkspaceMemberSnapshot? right) -> bool

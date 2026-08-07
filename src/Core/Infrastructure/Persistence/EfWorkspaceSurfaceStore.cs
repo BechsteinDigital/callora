@@ -100,11 +100,69 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
         surface.ThemePluginId = input.ThemePluginId;
         surface.ThemeVersion = input.ThemeVersion;
         surface.IsActive = input.IsActive;
+        surface.Position = input.Position;
         surface.UpdatedAtUtc = nowUtc;
+
+        // Der Elternteil zuletzt, weil er als Einziger scheitern kann. Ein abgelehnter
+        // Elternteil darf die Surface nicht halb geschrieben zurücklassen.
+        if (!await TrySetParentAsync(surface, workspaceId.Value, input.ParentSurfaceKey, cancellationToken)
+                .ConfigureAwait(false))
+        {
+            return null;
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return ToSnapshotObject(normalizedWorkspaceKey, surface);
+        return ToSnapshotObject(
+            normalizedWorkspaceKey,
+            surface,
+            string.IsNullOrWhiteSpace(input.ParentSurfaceKey) ? null : input.ParentSurfaceKey.Trim());
+    }
+
+    /// <summary>
+    /// Setzt den Elternknoten, oder lehnt ab.
+    /// <para>
+    /// Abgelehnt wird ein Elternteil aus einem anderen Workspace, einer, den es nicht gibt, und
+    /// jeder, der einen Zyklus erzeugte. Die Zyklusprüfung gehört hierher und nicht in den
+    /// Renderpfad: Ein Zyklus, der erst beim Auflösen aufliefe, wäre eine Endlosschleife für
+    /// jeden Besucher — nicht nur für den, der ihn angelegt hat.
+    /// </para>
+    /// </summary>
+    private async Task<bool> TrySetParentAsync(
+        WorkspaceSurface surface,
+        Guid workspaceId,
+        string? parentSurfaceKey,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(parentSurfaceKey))
+        {
+            surface.ParentSurfaceId = null;
+            return true;
+        }
+
+        var normalizedParentKey = parentSurfaceKey.Trim();
+        var siblings = await dbContext.WorkspaceSurfaces
+            .AsNoTracking()
+            .Where(x => x.WorkspaceId == workspaceId)
+            .Select(x => new { x.Id, x.SurfaceKey, x.ParentSurfaceId })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var parent = siblings.SingleOrDefault(x =>
+            string.Equals(x.SurfaceKey, normalizedParentKey, StringComparison.Ordinal));
+        if (parent is null)
+        {
+            return false;
+        }
+
+        var parentById = siblings.ToDictionary(x => x.Id, x => x.ParentSurfaceId);
+        if (SurfaceTree.WouldCreateCycle(surface.Id, parent.Id, parentById))
+        {
+            return false;
+        }
+
+        surface.ParentSurfaceId = parent.Id;
+        return true;
     }
 
     public async Task<WorkspaceSurfaceSnapshot?> AssignIdentityProviderAsync(
@@ -199,13 +257,23 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             x.CreatedAtUtc,
             x.UpdatedAtUtc)
         {
+            ParentSurfaceKey = x.Parent!.SurfaceKey,
+            Position = x.Position,
             IdentityPluginId = x.IdentityPluginId,
             IdentityVersion = x.IdentityVersion,
             IdentityAssignedBy = x.IdentityAssignedBy,
             IdentityAssignedAtUtc = x.IdentityAssignedAtUtc,
         };
 
-    private static WorkspaceSurfaceSnapshot ToSnapshotObject(string workspaceKey, WorkspaceSurface x) =>
+    /// <summary>
+    /// Nach einem Schreibvorgang: Der Elternteil ist als Id gesetzt, aber nicht geladen — sein
+    /// Schlüssel kommt deshalb als Parameter. Ihn aus <c>x.Parent</c> zu lesen ergäbe still
+    /// null, und die Antwort behauptete eine Wurzel, wo gerade ein Kind entstanden ist.
+    /// </summary>
+    private static WorkspaceSurfaceSnapshot ToSnapshotObject(
+        string workspaceKey,
+        WorkspaceSurface x,
+        string? parentSurfaceKey = null) =>
         new(
             x.Id,
             workspaceKey,
@@ -225,6 +293,8 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             x.CreatedAtUtc,
             x.UpdatedAtUtc)
         {
+            ParentSurfaceKey = parentSurfaceKey,
+            Position = x.Position,
             IdentityPluginId = x.IdentityPluginId,
             IdentityVersion = x.IdentityVersion,
             IdentityAssignedBy = x.IdentityAssignedBy,

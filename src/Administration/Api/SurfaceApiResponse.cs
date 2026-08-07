@@ -17,4 +17,11 @@ public sealed record SurfaceApiResponse(
     string? ThemeVersion,
     bool IsActive,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc)
+{
+    /// <summary>Der Elternknoten, oder null für eine Anwendungswurzel (ADR-019).</summary>
+    public string? ParentSurfaceKey { get; init; }
+
+    /// <summary>Reihenfolge unter Geschwistern.</summary>
+    public int Position { get; init; }
+}
