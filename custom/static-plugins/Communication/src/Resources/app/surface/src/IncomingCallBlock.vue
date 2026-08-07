@@ -51,7 +51,20 @@ async function act(action: (callId: string) => Promise<void>): Promise<void> {
     <h3 class="cal-phone__title">{{ props.title }}</h3>
 
     <template v-if="call">
-      <div class="cal-phone__party">{{ call.remoteParty }}</div>
+      <!-- Der Name zuerst, wenn es einen gibt: Eine Ziffernfolge sagt einem Menschen nichts, und
+           der Anrufer wartet, während man sie liest. -->
+      <div class="cal-phone__party">{{ call.callerName || call.remoteParty }}</div>
+      <div v-if="call.callerName" class="cal-phone__meta">{{ call.remoteParty }}</div>
+
+      <div v-if="call.calledNumber" class="cal-phone__meta">
+        angerufen: {{ call.calledNumber }}
+      </div>
+      <!-- Wer weitergeleitet wurde, hat nicht diese Nummer gewählt — das ändert die Begrüßung. -->
+      <div v-if="call.divertedFrom" class="cal-phone__meta">
+        weitergeleitet von {{ call.divertedFrom }}
+      </div>
+      <div v-if="call.verified" class="cal-phone__meta">Rufnummer bestätigt</div>
+
       <div class="cal-phone__meta">wartet seit {{ waiting }}</div>
 
       <div class="cal-phone__actions">

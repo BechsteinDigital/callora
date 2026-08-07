@@ -130,6 +130,48 @@ public sealed class SurfaceCallContextTests
 
     private static DateTimeOffset At(int seconds) => DateTimeOffset.UnixEpoch.AddSeconds(seconds);
 
+    [Fact]
+    public void WhatTheNetworkSaidAboutTheCaller_ReachesThePanel()
+    {
+        // Ohne das zeigt ein Panel eine Ziffernfolge, obwohl das Netz „Praxis Dr. Meier,
+        // weitergeleitet von der Zentrale" gesagt hat — und der Anrufer wartet, während jemand
+        // Ziffern liest.
+        var surface = new RecordingBroadcaster();
+        var publisher = new SurfaceCallContextPublisher(surface);
+
+        publisher.Publish(new CallEventNotification(
+            CallEventTypes.Ringing, Workspace, "call-1", "Inbound", "Ringing", "+4917012345678", At(0),
+            new InboundCallIdentity(
+                CalledNumber: "+493012345678",
+                CallerNumber: "+4917012345678",
+                CallerDisplayName: "Praxis Dr. Meier",
+                AssertedIdentity: "+4917012345678",
+                DivertedFrom: "+493099999")));
+
+        var view = Assert.IsType<SurfaceCallView>(surface.Last(SurfaceCallContextKeys.IncomingCall));
+        Assert.Equal("Praxis Dr. Meier", view.CallerName);
+        Assert.Equal("+493012345678", view.CalledNumber);
+        Assert.Equal("+493099999", view.DivertedFrom);
+        Assert.True(view.Verified);
+    }
+
+    [Fact]
+    public void WithoutAVouchedIdentity_NothingIsClaimedAsVerified()
+    {
+        // Der Haken ist eine Aussage über Vertrauen. Ihn zu setzen, weil eine Nummer da ist, wäre
+        // genau die Art Bequemlichkeit, die eine Anzeige wertlos macht.
+        var surface = new RecordingBroadcaster();
+        var publisher = new SurfaceCallContextPublisher(surface);
+
+        publisher.Publish(new CallEventNotification(
+            CallEventTypes.Ringing, Workspace, "call-1", "Inbound", "Ringing", "+4917012345678", At(0),
+            new InboundCallIdentity(CallerNumber: "+4917012345678")));
+
+        var view = Assert.IsType<SurfaceCallView>(surface.Last(SurfaceCallContextKeys.IncomingCall));
+        Assert.False(view.Verified);
+        Assert.Null(view.CallerName);
+    }
+
     private static CallEventNotification Ringing(string callId, string remoteParty) =>
         new(CallEventTypes.Ringing, Workspace, callId, "Inbound", "Ringing", remoteParty, At(0));
 

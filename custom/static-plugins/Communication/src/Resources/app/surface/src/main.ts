@@ -47,7 +47,7 @@ registerBlock({
 })
 
 registerBlock({
-  id: 'communication.active-call',
+  id: 'communication.phone',
   label: 'Telefon',
   description: 'Das laufende Gespräch mit Auflegen und Ziffernblock — und ein Wählfeld, wenn keines läuft.',
   category: CATEGORY,
