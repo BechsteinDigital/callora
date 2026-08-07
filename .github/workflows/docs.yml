@@ -7,7 +7,6 @@ on:
       - "docs-site/**"
       - "docfx/**"
       - "src/**"
-      - "custom/plugins/**"
       - ".config/dotnet-tools.json"
       - ".github/workflows/docs.yml"
   pull_request:

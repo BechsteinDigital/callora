@@ -55,8 +55,8 @@ and injects it in chain order. (Sources under `app/` stay with the vendor; only 
 
 Inside your plugin, create the surface source tree. The build config
 (`package.json` + `vite.config.ts`) sits at the **plugin root**, next to your
-`registry.json` and (if you have one) the `.csproj` — the same layout the reference
-plugin `custom/plugins/SurfaceDemo/` uses:
+`registry.json` and (if you have one) the `.csproj` — the same layout the shipped
+Communication plugin uses for its own surface bundle:
 
 ```text
 my-plugin/                       # plugin root — also holds registry.json / .csproj

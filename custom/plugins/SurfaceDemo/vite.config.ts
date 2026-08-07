@@ -1,8 +1,0 @@
-import { calloraSurfacePlugin } from '@callora/surface/vite-preset'
-
-// The blessed preset: Vue external → window.CalloraVue, one IIFE (main.js/main.css),
-// output to src/Resources/public/surface. Run `vite build` from the plugin root.
-export default calloraSurfacePlugin({
-  entry: 'src/Resources/app/surface/src/main.ts',
-  name: 'CalloraSurfaceDemo',
-})
