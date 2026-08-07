@@ -52,12 +52,19 @@ public sealed class SurfaceCallContextPublisher(
     private void Project(CallEventNotification notification)
     {
         var address = new SurfaceContextAddress(notification.WorkspaceKey);
+        var identity = notification.InboundIdentity;
         var view = new SurfaceCallView(
             notification.CallId,
             notification.RemoteParty,
             notification.Direction,
             notification.State,
-            notification.OccurredAt);
+            notification.OccurredAt,
+            identity?.CallerDisplayName,
+            identity?.CalledNumber,
+            identity?.DivertedFrom,
+            // Nicht die beglaubigte Nummer selbst: Zwei Ziffernfolgen nebeneinander helfen niemandem
+            // am Telefon. Was zählt, ist ob jemand für den Anrufer geradesteht.
+            Verified: !string.IsNullOrWhiteSpace(identity?.AssertedIdentity));
 
         lock (_gate)
         {

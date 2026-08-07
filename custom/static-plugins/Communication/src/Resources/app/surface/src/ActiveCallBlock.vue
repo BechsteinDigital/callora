@@ -79,7 +79,8 @@ function dial(): void {
     <h3 class="cal-phone__title">{{ props.title }}</h3>
 
     <template v-if="call">
-      <div class="cal-phone__party">{{ call.remoteParty }}</div>
+      <div class="cal-phone__party">{{ call.callerName || call.remoteParty }}</div>
+      <div v-if="call.callerName" class="cal-phone__meta">{{ call.remoteParty }}</div>
       <div class="cal-phone__meta">{{ call.state }} · {{ duration }}</div>
 
       <div class="cal-phone__actions">
