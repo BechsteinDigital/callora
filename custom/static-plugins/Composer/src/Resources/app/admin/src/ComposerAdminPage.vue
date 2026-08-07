@@ -4,11 +4,14 @@ import {
   loadSurfaceBundles,
   surfaceBaseTokens,
   type Binding,
+  type BlockCategory,
   type BlockDefinition,
   type PluginLoadResult,
 } from '@callora/surface'
 import ComposerCanvas from './ComposerCanvas.vue'
 import BlockInspector from './BlockInspector.vue'
+import BlockPalette from './BlockPalette.vue'
+import { readDragPayload } from './block-palette'
 import { fetchSurfaceStyles, fetchTheme, type SectionLayout } from './preview-assets'
 import { sectionsWithUnknownLayout, themeDeclaresLayouts } from './section-layouts'
 import { collectTokenRoles } from './token-roles'
@@ -17,10 +20,14 @@ import {
   blockAt,
   clearBlockBinding,
   emptyDocument,
+  insertBlock,
+  moveBlock,
   readDocument,
+  removeBlock,
   setBlockBinding,
   setSectionLayout,
   type BlockAddress,
+  type DropTarget,
   type LayoutDocument,
 } from './layout-document'
 import './composer.css'
@@ -48,6 +55,8 @@ const AUTOSAVE_DELAY_MS = 800
 const layoutKey = ref('')
 const layout = ref<LoadedLayout | null>(null)
 const document = ref<LayoutDocument>(emptyDocument())
+/** Der Stand, der auf dem Server liegt — der Vergleich, der das Laden vom Ändern trennt. */
+const savedDocument = ref<LayoutDocument | null>(null)
 const changedAtUtc = ref<string | null>(null)
 const surfaceCss = ref('')
 const tokens = ref<Record<string, string>>({})
@@ -55,6 +64,11 @@ const sectionLayouts = ref<SectionLayout[]>([])
 const bundleFailures = ref<PluginLoadResult[]>([])
 const selected = ref<BlockAddress | null>(null)
 const editing = ref(true)
+/**
+ * Ob gerade etwas gezogen wird. Nur dann gibt es Ablegezonen — sie sind echte Elemente
+ * zwischen den Blöcken, und dauerhaft eingefügt bräche jede `+`- und `>`-Regel des Themes.
+ */
+const dragging = ref(false)
 const error = ref<string | null>(null)
 const conflict = ref(false)
 const saving = ref(false)
@@ -71,15 +85,23 @@ const tokenRoles = computed(() => collectTokenRoles(canvasCss.value))
 
 const selectedBlock = computed(() => blockAt(document.value, selected.value))
 
+/**
+ * Die Registry, bei jedem Zugriff gelesen statt einmal festgehalten: Ein Plugin-Bundle kann
+ * nach dem Mounten laden, und was dann dazukommt, soll auch in der Palette auftauchen.
+ */
+const registry = computed(
+  () =>
+    (globalThis as {
+      calloraSurface?: { blocks?: { blocks: BlockDefinition[]; categories: BlockCategory[] } }
+    }).calloraSurface?.blocks,
+)
+
+const availableBlocks = computed(() => registry.value?.blocks ?? [])
+const blockCategories = computed(() => registry.value?.categories ?? [])
+
 const selectedDefinition = computed<BlockDefinition | undefined>(() => {
   const blockId = selectedBlock.value?.blockId
-  if (!blockId) {
-    return undefined
-  }
-
-  const registry = (globalThis as { calloraSurface?: { blocks?: { blocks: BlockDefinition[] } } })
-    .calloraSurface?.blocks
-  return registry?.blocks.find((block) => block.id === blockId)
+  return blockId ? availableBlocks.value.find((block) => block.id === blockId) : undefined
 })
 
 async function load(): Promise<void> {
@@ -109,6 +131,7 @@ async function load(): Promise<void> {
       surfaceKey: draft.surfaceKey ?? null,
     }
     document.value = readDocument(draft.document)
+    savedDocument.value = document.value
     changedAtUtc.value = draft.changedAtUtc ?? null
 
     await loadPreview(layout.value)
@@ -171,6 +194,43 @@ function changeSectionLayout(sectionIndex: number, layoutKey: string): void {
   selected.value = null
 }
 
+/**
+ * Was ein Drop bewirkt: ein neuer Block aus der Palette, oder ein bereits platzierter an eine
+ * andere Stelle.
+ *
+ * Eine Nutzlast, die nicht passt, bewirkt nichts. Ein Drop kann aus einem anderen Fenster, einem
+ * Editor oder einem Dateimanager kommen — das ist kein Grund, dem Dokument etwas hinzuzufügen.
+ */
+function handleDrop(target: DropTarget, data: string): void {
+  dragging.value = false
+  const payload = readDragPayload(data)
+  if (!payload) {
+    return
+  }
+
+  if (payload.kind === 'new') {
+    document.value = insertBlock(document.value, target, payload.blockId)
+    selected.value = null
+    return
+  }
+
+  document.value = moveBlock(
+    document.value,
+    { sectionIndex: payload.sectionIndex, blockIndex: payload.blockIndex },
+    target,
+  )
+  // Die Auswahl zeigt auf einen Index, den das Umsortieren gerade neu vergeben hat. Sie
+  // stehenzulassen hieße, das Panel eines anderen Blocks anzuzeigen als den, den man bewegt hat.
+  selected.value = null
+}
+
+function deleteSelected(): void {
+  if (selected.value) {
+    document.value = removeBlock(document.value, selected.value)
+    selected.value = null
+  }
+}
+
 function changeBinding(control: string, binding: Binding<unknown>): void {
   if (selected.value) {
     document.value = setBlockBinding(document.value, selected.value, control, binding)
@@ -193,7 +253,11 @@ function clearBinding(control: string): void {
  */
 let autosaveTimer: ReturnType<typeof setTimeout> | undefined
 watch(document, () => {
-  if (!layout.value || conflict.value) {
+  // Der Referenzvergleich ist der Grund, aus dem die Dokumentänderungen unveränderlich sind.
+  // Ohne ihn zählte auch das Laden als Änderung, und der Editor schriebe direkt nach dem
+  // Öffnen dasselbe zurück — mit neuem Änderungsstempel. Zwei Leute, die eine Seite nur
+  // ANSEHEN, gäben sich damit gegenseitig einen Konflikt.
+  if (!layout.value || conflict.value || document.value === savedDocument.value) {
     return
   }
 
@@ -208,13 +272,16 @@ async function save(): Promise<void> {
   }
 
   saving.value = true
+  // Festhalten, WAS gerade gesendet wird: Eine Änderung während des Speicherns darf nicht
+  // mitgezählt werden, sonst gilt sie als gespeichert und der nächste Autosave bliebe aus.
+  const sending = document.value
   try {
     const response = await fetch(draftUrl(current.layoutKey), {
       method: 'PUT',
       credentials: 'same-origin',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        document: document.value,
+        document: sending,
         expectedChangedAtUtc: changedAtUtc.value,
       }),
     })
@@ -231,6 +298,7 @@ async function save(): Promise<void> {
 
     const saved = await response.json()
     changedAtUtc.value = saved.changedAtUtc
+    savedDocument.value = sending
   } catch {
     error.value = 'Die Änderung konnte nicht gespeichert werden.'
   } finally {
@@ -355,7 +423,14 @@ function draftUrl(key: string): string {
         </li>
       </ul>
 
-      <div class="composer__workspace">
+      <div
+        class="composer__workspace"
+        @dragstart="dragging = true"
+        @dragend="dragging = false"
+        @drop="dragging = false"
+      >
+        <BlockPalette :blocks="availableBlocks" :categories="blockCategories" />
+
         <ComposerCanvas
           :document="document"
           :surface-css="canvasCss"
@@ -363,7 +438,10 @@ function draftUrl(key: string): string {
           :layouts="sectionLayouts"
           :selected="selected"
           :editing="editing"
+          :dragging="dragging"
           @select="selected = $event"
+          @drop-block="handleDrop"
+          @drag-block="selected = $event"
         />
 
         <BlockInspector
@@ -373,6 +451,7 @@ function draftUrl(key: string): string {
           :token-roles="tokenRoles"
           @change="changeBinding"
           @clear="clearBinding"
+          @remove="deleteSelected"
         />
         <p v-else class="composer__status">Wählen Sie einen Block aus, um ihn einzustellen.</p>
       </div>
