@@ -360,7 +360,8 @@ public sealed class CallControlService : ICallControlService, ICallAccess, ICall
         // After the write, so a live client is never told about a call the database does not hold.
         PublishLive(
             direction == CallDirection.Outbound ? CallEventTypes.Placed : CallEventTypes.Ringing,
-            workspaceKey, call.CallId, direction, call.State, remoteParty, startedAt);
+            workspaceKey, call.CallId, direction, call.State, remoteParty, startedAt,
+            call.InboundIdentity);
 
         void Handler(object? sender, CallStateChangedEventArgs e) => _ = HandleStateChangeAsync(key, e.CurrentState);
 
@@ -489,7 +490,7 @@ public sealed class CallControlService : ICallControlService, ICallAccess, ICall
         PublishLive(
             CallEventTypes.StateChanged,
             tracked.WorkspaceKey, tracked.Key.CallId, tracked.Log.Direction, CallState.Connected,
-            tracked.Log.RemoteParty, answeredAt);
+            tracked.Log.RemoteParty, answeredAt, tracked.Call.InboundIdentity);
     }
 
     /// <summary>
@@ -521,7 +522,7 @@ public sealed class CallControlService : ICallControlService, ICallAccess, ICall
         PublishLive(
             CallEventTypes.Ended,
             tracked.WorkspaceKey, tracked.Key.CallId, tracked.Log.Direction, CallState.Terminated,
-            tracked.Log.RemoteParty, endedAt);
+            tracked.Log.RemoteParty, endedAt, tracked.Call.InboundIdentity);
 
         // The conversation is over, so its media streams are too (#114). After the log write, because
         // history is the durable record and must not depend on media teardown; the terminator itself
@@ -620,7 +621,8 @@ public sealed class CallControlService : ICallControlService, ICallAccess, ICall
         CallDirection direction,
         CallState state,
         string remoteParty,
-        DateTimeOffset occurredAt)
+        DateTimeOffset occurredAt,
+        InboundCallIdentity? inboundIdentity = null)
     {
         if (_liveEvents is null)
         {
@@ -630,7 +632,7 @@ public sealed class CallControlService : ICallControlService, ICallAccess, ICall
         try
         {
             _liveEvents.Publish(CallEventNotification.For(
-                eventName, workspaceKey, callId, direction, state, remoteParty, occurredAt));
+                eventName, workspaceKey, callId, direction, state, remoteParty, occurredAt, inboundIdentity));
         }
         catch (Exception ex)
         {
@@ -724,5 +726,5 @@ public sealed class CallControlService : ICallControlService, ICallAccess, ICall
     }
 
     private static CallSnapshot Snapshot(ICall call) =>
-        new(call.CallId, call.Direction, call.State, call.Target.Value);
+        new(call.CallId, call.Direction, call.State, call.Target.Value, call.InboundIdentity);
 }
