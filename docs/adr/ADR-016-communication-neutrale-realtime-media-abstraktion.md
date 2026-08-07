@@ -214,7 +214,7 @@ Die vier gemergten Branches werden **nicht rückgängig gemacht**, sondern veror
 * **Frontend** (P1c-3, Tiles/ontrack) bleibt in VC unverändert (browser-seitig, unabhängig davon,
   wer serverseitig die SDK bindet).
 
-Ein separater Implementierungs-Spec (`ops/specs/`) schneidet die Migration in Slices
+Ein separater Implementierungs-Spec (intern, `callora-ops`) schneidet die Migration in Slices
 (Provider-Port + Adapter · IConferenceService/SFU-Umzug · VC-Rückführung · Call-Center-Videoanruf
 als zweiter Konsument) im etablierten DEV→Reviewer→Gate-Takt.
 

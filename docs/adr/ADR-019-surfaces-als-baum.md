@@ -8,7 +8,7 @@
 * ADR-014 — Surface-Engine (§5 Surfaces, §6.1 Access Modes, §14 Public Routing)
 * ADR-015 — Surface-Template-Engine
 * ADR-017 — Surface-Identität und Session-Transport (§5.2 Identity-Zuweisung)
-* Spec `ops/specs/2026-08-06-admin-sdk-und-surface-composer-design.md` (§7 Surface Composer)
+* Spec `2026-08-06-admin-sdk-und-surface-composer-design` (§7 Surface Composer) — intern, `callora-ops`
 
 > **Supersedes (teilweise):** Dieses ADR löst **ADR-014 §5.1 „Definition"** und **§5.3
 > „Mehrere Surfaces pro Workspace"** ab. Dort war eine Surface eine flache Liste je

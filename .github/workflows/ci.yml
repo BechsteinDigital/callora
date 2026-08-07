@@ -132,12 +132,6 @@ jobs:
             sdkPaths: >-
               src/Administration/Resources/app/administration
               src/Surface.Rendering/Resources/app/surface
-          - name: SurfaceDemo
-            path: custom/plugins/SurfaceDemo
-            gates: build
-            test: false
-            # Consumes @callora/surface as a file: dependency — see the build step.
-            sdkPaths: src/Surface.Rendering/Resources/app/surface
           - name: Docs Site
             path: docs-site
             gates: lint + build

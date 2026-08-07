@@ -14,7 +14,7 @@ tests/               xUnit test projects (Core + analyzers) and test plugins
 docfx/               this documentation site
 docs/                local design notes, ADRs, runbooks (gitignored in part)
 scripts/             dev helpers (dev-build.sh, dev-test.sh, dev-check.sh, build-repo-map.sh)
-ops/                 local frontdoor config, plans, specs
+ops/                 frontdoor config, Asterisk interop fixtures, runbooks
 Callora.Host.sln     the solution
 Directory.Build.props / Directory.Packages.props   shared build + Central Package Management
 global.json          pinned .NET 10 SDK
@@ -45,9 +45,9 @@ reviewable diff).
 
 | Path | Purpose |
 |---|---|
-| `custom/static-plugins/Communication` | System-tier VoIP/communication plugin (`Callora.Plugin.Communication`), bundled with the distribution. Ships its public contracts in `Communication/Abstractions` (`Callora.Plugin.Communication.Abstractions`). |
-| `custom/plugins/Dialer` | Dynamically installable Dialer plugin (`Callora.Plugins.Dialer`). |
-| `custom/plugins/*`, `custom/static-plugins/*` | Additional first-party plugins (e.g. TemplateAlpha). |
+| `custom/static-plugins/Communication` | System-tier VoIP/communication plugin (`Callora.Plugin.Communication`), bundled with the distribution. Ships its public contracts in `src/Abstractions` (`Callora.Plugin.Communication.Abstractions`). |
+| `custom/static-plugins/Composer` | System-tier surface editor (`Callora.Plugin.Composer`). |
+| `custom/plugins/` | Empty by design — the install target for application-tier plugins, filled at runtime by the distribution or the operator API. |
 | `src/Surface.Rendering/Resources/app/surface` | `@callora/surface` — the surface runtime, and the package plugins compile against. Its `src/public/` directory **is** the contract; there is no separate SDK package restating it. Apache-2.0. |
 
 Plugins carry their **own EF Core migrations** and live in an isolated
