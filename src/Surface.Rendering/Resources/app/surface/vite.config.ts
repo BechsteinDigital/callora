@@ -42,12 +42,4 @@ export default defineConfig({
       happyDOM: { settings: { disableJavaScriptFileLoading: true, disableCSSFileLoading: true } },
     },
   },
-  // The golden-path test imports the SurfaceDemo plugin's BUILT bundle as raw text to prove
-  // the whole chain against a real artifact. That path is outside this project's root, which
-  // Vite's filesystem guard denies by default — the hardening that closed the path-traversal
-  // advisory. Allowing the repository root re-opens exactly that read. It applies to the dev
-  // server and the test run; the production build is a library build with neither.
-  server: {
-    fs: { allow: [fileURLToPath(new URL('../../../../..', import.meta.url))] },
-  },
 })
