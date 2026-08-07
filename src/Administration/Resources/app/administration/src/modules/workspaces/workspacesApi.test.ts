@@ -110,6 +110,7 @@ describe('workspacesApi', () => {
       publicHost: 'portal.example.de',
       publicPathPrefix: '/',
       accessMode: 'Authenticated',
+      routing: 'Tree',
       locale: 'de',
       templatePluginId: null,
       templateVersion: null,

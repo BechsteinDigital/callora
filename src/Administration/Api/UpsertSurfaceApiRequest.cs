@@ -25,6 +25,13 @@ public sealed record UpsertSurfaceApiRequest(
     public int Position { get; init; }
 
     /// <summary>
+    /// Wer über die Adressen unterhalb dieser Fläche entscheidet: <c>Tree</c> (Standard) oder
+    /// <c>Application</c>. Weggelassen heißt Baum — wer nichts sagt, bekommt 404 statt einer
+    /// fremden Seite.
+    /// </summary>
+    public string? Routing { get; init; }
+
+    /// <summary>
     /// Claims, die ein Besucher mitbringen muss (ADR-019 §4) — kommagetrennt, leer heißt keine
     /// Anforderung. Kumulativ entlang der Kette: Was ein Elternteil verlangt, gilt auch hier.
     /// </summary>

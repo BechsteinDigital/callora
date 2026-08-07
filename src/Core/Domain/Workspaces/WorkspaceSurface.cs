@@ -64,6 +64,16 @@ public sealed class WorkspaceSurface
 
     public SurfaceAccessMode AccessMode { get; set; } = SurfaceAccessMode.Mixed;
 
+    /// <summary>
+    /// Wer über die Adressen unterhalb dieser Fläche entscheidet.
+    /// </summary>
+    /// <remarks>
+    /// Standard ist <see cref="SurfaceRouting.Tree"/>: Wer nichts sagt, bekommt 404 statt einer
+    /// fremden Seite. Ein stiller Default in die andere Richtung liefert unter jedem Tippfehler
+    /// 200 mit dem Inhalt der Wurzel — der Fehler, der diese Achse nötig gemacht hat.
+    /// </remarks>
+    public SurfaceRouting Routing { get; set; } = SurfaceRouting.Tree;
+
     public string? Locale { get; set; }
 
     public string? TemplatePluginId { get; set; }

@@ -471,7 +471,7 @@ Callora.Administration.Api.SurfaceApiResponse.AccessMode.get -> string!
 Callora.Administration.Api.SurfaceApiResponse.AccessMode.init -> void
 Callora.Administration.Api.SurfaceApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Administration.Api.SurfaceApiResponse.CreatedAtUtc.init -> void
-Callora.Administration.Api.SurfaceApiResponse.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string! AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.SurfaceApiResponse.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out string! AccessMode, out string! Routing, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Administration.Api.SurfaceApiResponse.DisplayName.get -> string!
 Callora.Administration.Api.SurfaceApiResponse.DisplayName.init -> void
 Callora.Administration.Api.SurfaceApiResponse.Equals(Callora.Administration.Api.SurfaceApiResponse? other) -> bool
@@ -493,7 +493,9 @@ Callora.Administration.Api.SurfaceApiResponse.PublicPathPrefix.get -> string!
 Callora.Administration.Api.SurfaceApiResponse.PublicPathPrefix.init -> void
 Callora.Administration.Api.SurfaceApiResponse.RequiredClaims.get -> string?
 Callora.Administration.Api.SurfaceApiResponse.RequiredClaims.init -> void
-Callora.Administration.Api.SurfaceApiResponse.SurfaceApiResponse(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string! AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Administration.Api.SurfaceApiResponse.Routing.get -> string!
+Callora.Administration.Api.SurfaceApiResponse.Routing.init -> void
+Callora.Administration.Api.SurfaceApiResponse.SurfaceApiResponse(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, string! AccessMode, string! Routing, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Administration.Api.SurfaceApiResponse.SurfaceKey.get -> string!
 Callora.Administration.Api.SurfaceApiResponse.SurfaceKey.init -> void
 Callora.Administration.Api.SurfaceApiResponse.SurfaceType.get -> string!
@@ -781,6 +783,8 @@ Callora.Administration.Api.UpsertSurfaceApiRequest.PublicPathPrefix.get -> strin
 Callora.Administration.Api.UpsertSurfaceApiRequest.PublicPathPrefix.init -> void
 Callora.Administration.Api.UpsertSurfaceApiRequest.RequiredClaims.get -> string?
 Callora.Administration.Api.UpsertSurfaceApiRequest.RequiredClaims.init -> void
+Callora.Administration.Api.UpsertSurfaceApiRequest.Routing.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.Routing.init -> void
 Callora.Administration.Api.UpsertSurfaceApiRequest.SurfaceType.get -> string!
 Callora.Administration.Api.UpsertSurfaceApiRequest.SurfaceType.init -> void
 Callora.Administration.Api.UpsertSurfaceApiRequest.TemplatePluginId.get -> string?

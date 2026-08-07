@@ -13,6 +13,7 @@ public sealed record WorkspaceSurfaceSnapshot(
     string? PublicHost,
     string PublicPathPrefix,
     SurfaceAccessMode AccessMode,
+    SurfaceRouting Routing,
     string? Locale,
     string? TemplatePluginId,
     string? TemplateVersion,

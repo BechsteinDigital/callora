@@ -264,6 +264,7 @@ public sealed class SurfaceSessionServiceTests
             null,
             "/",
             SurfaceAccessMode.Mixed,
+            SurfaceRouting.Tree,
             "de",
             null,
             null,

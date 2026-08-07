@@ -17,7 +17,7 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1550,6 +1550,11 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("PublicHost")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("public_host");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
@@ -1561,11 +1566,6 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("theme_assigned_by");
-
-                    b.Property<string>("PublicHost")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("public_host");
 
                     b.Property<string>("ThemePluginId")
                         .HasMaxLength(200)
@@ -1592,12 +1592,12 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PublicHost");
+
                     b.HasIndex("TenantId");
 
                     b.HasIndex("WorkspaceKey")
                         .IsUnique();
-
-                    b.HasIndex("PublicHost");
 
                     b.ToTable("workspaces", (string)null);
                 });
@@ -1710,6 +1710,12 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("required_claims");
+
+                    b.Property<string>("Routing")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("routing");
 
                     b.Property<string>("SurfaceKey")
                         .IsRequired()

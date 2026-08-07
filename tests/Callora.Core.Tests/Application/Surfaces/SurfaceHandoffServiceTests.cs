@@ -205,7 +205,7 @@ public sealed class SurfaceHandoffServiceTests
             DateTimeOffset? identityAssignedAtUtc = null) =>
             _surfaces.Seed(new WorkspaceSurfaceSnapshot(
                 Guid.NewGuid(), WorkspaceKey, TargetSurface, "Meet", "spa",
-                publicBaseUrl, publicHost, "/", SurfaceAccessMode.Authenticated, "de",
+                publicBaseUrl, publicHost, "/", SurfaceAccessMode.Authenticated, SurfaceRouting.Tree, "de",
                 null, null, null, null, isActive, Now, Now)
             {
                 TenantKey = TenantKey,

@@ -207,6 +207,7 @@ public sealed class SurfaceIdentityResolverTests
             null,
             "/",
             SurfaceAccessMode.Mixed,
+            SurfaceRouting.Tree,
             "de",
             null,
             null,

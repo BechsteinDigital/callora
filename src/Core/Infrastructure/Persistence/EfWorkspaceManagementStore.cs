@@ -550,6 +550,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             surface.PublicHost,
             surface.PublicPathPrefix,
             surface.AccessMode,
+            surface.Routing,
             surface.Locale,
             surface.TemplatePluginId,
             surface.TemplateVersion,
@@ -587,6 +588,9 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             effective.PublicHost,
             effective.PublicPathPrefix,
             effective.AccessMode,
+            // NICHT effective: Routing wird nicht vererbt. Jeder Knoten beantwortet für sich,
+            // ob er seine Unterpfade selbst deutet.
+            surface.Routing,
             effective.Locale,
             effective.TemplatePluginId,
             effective.TemplateVersion,

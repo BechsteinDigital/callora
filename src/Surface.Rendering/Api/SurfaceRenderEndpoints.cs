@@ -29,11 +29,18 @@ namespace Callora.Surface.Rendering.Api;
 /// </summary>
 public static class SurfaceRenderEndpoints
 {
+    /// <summary>
+    /// Der Direktaufruf: rendert die zum HOST aufgelöste Fläche, ohne dass der Pfad eine
+    /// Adresse innerhalb der Fläche wäre. Deshalb greift hier keine Restpfad-Prüfung — sein
+    /// eigener Pfad wäre sonst der Rest, den niemand beansprucht.
+    /// </summary>
+    private const string DirectRenderPath = "/surface/render";
+
     public static IEndpointRouteBuilder MapSurfaceRenderEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        MapSurfaceRoute(endpoints, "/surface/render");
+        MapSurfaceRoute(endpoints, DirectRenderPath);
         MapSurfaceRoute(endpoints, "/{**surfacePath:nonfile}");
 
         // Both Workspace and Surface.Rendering expose an exact root route. In a
@@ -266,15 +273,36 @@ public static class SurfaceRenderEndpoints
             CompositionHtml = composition,
         };
 
-        var html = await RenderSurfaceAsync(
-                renderer,
+        // Ein Restpfad gehört der Fläche nur, wenn sie ihn BEANSPRUCHT (ADR-022).
+        //
+        // Die Auflösung nimmt das längste passende Präfix; was dahinter stand, fiel unter den
+        // Tisch. `/test/blub/gibtsnicht` antwortete mit 200 und dem Inhalt von `/test/blub` —
+        // dieselbe Klasse wie ein `/api/`-Pfad, der eine Flächenseite bekam: kein Statuscode,
+        // kein Log, und die Suche beginnt an der falschen Stelle.
+        //
+        // Entschieden wird es an der FLÄCHE, nicht am Renderweg. Ob ein Plugin ein eigenes
+        // Server-Template mitbringt, sagt nichts über Adressierung: Ein Template ist kein Router,
+        // und eine Anwendung mit History-Routing braucht durchgereichte Unterpfade ganz ohne.
+        //
+        // /surface/render ist ausgenommen: Der Direktaufruf löst über den HOST auf, sein eigener
+        // Pfad wäre sonst der Rest, den niemand beansprucht.
+        if (surface.Routing is not SurfaceRouting.Application &&
+            !string.Equals(path, DirectRenderPath, StringComparison.OrdinalIgnoreCase) &&
+            SurfaceRouteRemainder.Of(surface.PublicPathPrefix, path) is not "")
+        {
+            return Results.NotFound();
+        }
+
+        var shell = await ChooseShellAsync(
                 chainResolver,
                 bundles,
-                loggerFactory,
                 surface.WorkspaceKey,
-                context,
+                surface.SurfaceKey,
+                composition is not null,
                 cancellationToken)
             .ConfigureAwait(false);
+
+        var html = RenderSurface(renderer, loggerFactory, shell, surface.WorkspaceKey, context);
         return Results.Content(html, "text/html; charset=utf-8");
     }
 
@@ -283,22 +311,18 @@ public static class SurfaceRenderEndpoints
     /// <c>/shop/produkt/schuhe</c> into <c>/produkt/schuhe</c>; one mounted at <c>/</c> changes
     /// nothing.
     /// </summary>
-    private static string StripPrefix(string path, string? prefix)
-    {
-        if (string.IsNullOrWhiteSpace(prefix) || prefix == "/")
+    /// <remarks>
+    /// Rechnet nicht selbst: Dieselbe Zerlegung entscheidet auch, ob ein Restpfad überhaupt
+    /// bedient wird. Zwei Implementierungen wären zwei Antworten auf dieselbe Frage — und die
+    /// hier war bereits die falsche, weil sie am Zeichen statt an der Segmentgrenze verglich
+    /// und <c>/test/blubber</c> als <c>/test/blub</c> plus <c>ber</c> las.
+    /// </remarks>
+    private static string StripPrefix(string path, string? prefix) =>
+        SurfaceRouteRemainder.Of(prefix, path) switch
         {
-            return path;
-        }
-
-        var trimmed = prefix.TrimEnd('/');
-        if (!path.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase))
-        {
-            return path;
-        }
-
-        var rest = path[trimmed.Length..];
-        return string.IsNullOrEmpty(rest) ? "/" : rest.StartsWith('/') ? rest : "/" + rest;
-    }
+            "" => "/",
+            var rest => "/" + rest,
+        };
 
     private static async Task<string?> RenderCompositionAsync(
         ISurfaceLayoutSource layouts,
@@ -337,27 +361,26 @@ public static class SurfaceRenderEndpoints
     /// <item>Otherwise the built-in shell, which is itself the host's base bundle.</item>
     /// </list>
     /// </summary>
-    private static async Task<string> RenderSurfaceAsync(
-        ISurfaceRenderer renderer,
+    private static async Task<SurfaceShell> ChooseShellAsync(
         WorkspaceUiChainResolver? chainResolver,
         PublishedSurfaceTemplateBundles bundles,
-        ILoggerFactory loggerFactory,
         string workspaceKey,
-        SurfaceRenderContext context,
+        string surfaceKey,
+        bool hasComposition,
         CancellationToken cancellationToken)
     {
-        if (context.CompositionHtml is not null)
+        if (hasComposition)
         {
-            return renderer.Render(SurfaceShellTemplates.Composed, context);
+            return new SurfaceShell(SurfaceShellTemplates.Composed, []);
         }
 
         if (chainResolver is null)
         {
-            return renderer.Render(SurfaceShellTemplates.SpaRoot, context);
+            return new SurfaceShell(SurfaceShellTemplates.SpaRoot, []);
         }
 
         var chain = await chainResolver
-            .ResolveAsync(workspaceKey, context.SurfaceKey, cancellationToken)
+            .ResolveAsync(workspaceKey, surfaceKey, cancellationToken)
             .ConfigureAwait(false);
 
         // The entry belongs to the primary plugin (chain[0]); relative extends/include
@@ -365,24 +388,37 @@ public static class SurfaceRenderEndpoints
         // rest of the chain.
         if (chain.Count > 0 && bundles.TryReadEntryTemplate(chain[0]) is { } entryTemplate)
         {
-            try
-            {
-                return renderer.Render(entryTemplate, context, chain);
-            }
-            catch (SurfaceTemplateException ex)
-            {
-                // A broken plugin template must not take the whole public surface down:
-                // degrade to the SPA shell and make the failure diagnosable.
-                loggerFactory
-                    .CreateLogger("Callora.Surface.Rendering.SurfaceRender")
-                    .LogWarning(
-                        ex,
-                        "Surface entry template for workspace {WorkspaceKey} (plugin {PluginId}) failed to render; falling back to the SPA shell.",
-                        workspaceKey,
-                        chain[0]);
-            }
+            return new SurfaceShell(entryTemplate, chain);
         }
 
-        return renderer.Render(SurfaceShellTemplates.SpaRoot, context);
+        return new SurfaceShell(SurfaceShellTemplates.SpaRoot, []);
+    }
+
+    private static string RenderSurface(
+        ISurfaceRenderer renderer,
+        ILoggerFactory loggerFactory,
+        SurfaceShell shell,
+        string workspaceKey,
+        SurfaceRenderContext context)
+    {
+        try
+        {
+            return renderer.Render(shell.Template, context, shell.Chain);
+        }
+        catch (SurfaceTemplateException ex)
+        {
+            // A broken plugin template must not take the whole public surface down:
+            // degrade to the SPA shell and make the failure diagnosable.
+            //
+            loggerFactory
+                .CreateLogger("Callora.Surface.Rendering.SurfaceRender")
+                .LogWarning(
+                    ex,
+                    "Surface entry template for workspace {WorkspaceKey} (plugin {PluginId}) failed to render; falling back to the SPA shell.",
+                    workspaceKey,
+                    shell.Chain.Count > 0 ? shell.Chain[0] : "-");
+
+            return renderer.Render(SurfaceShellTemplates.SpaRoot, context);
+        }
     }
 }

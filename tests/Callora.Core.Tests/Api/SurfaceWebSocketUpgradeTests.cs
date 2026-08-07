@@ -153,7 +153,7 @@ public sealed class SurfaceWebSocketUpgradeTests
         var surfaces = new InMemoryWorkspaceSurfaceStore();
         surfaces.Seed(new WorkspaceSurfaceSnapshot(
             Guid.NewGuid(), WorkspaceKey, SurfaceKey, "Portal", "spa", null, null, "/",
-            SurfaceAccessMode.Mixed, "de", null, null, null, null, true, Now, Now)
+            SurfaceAccessMode.Mixed, SurfaceRouting.Tree, "de", null, null, null, null, true, Now, Now)
         {
             TenantKey = TenantKey,
             IdentityPluginId = "crm",

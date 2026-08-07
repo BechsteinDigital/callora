@@ -26,6 +26,7 @@ public sealed class WorkspaceSurfaceEntityTypeConfiguration : IEntityTypeConfigu
         builder.Property(x => x.PublicHost).HasColumnName("public_host").HasMaxLength(500);
         builder.Property(x => x.PublicPathPrefix).HasColumnName("public_path_prefix").HasMaxLength(500).IsRequired();
         builder.Property(x => x.AccessMode).HasColumnName("access_mode").HasConversion<string>().HasMaxLength(40).IsRequired();
+        builder.Property(x => x.Routing).HasColumnName("routing").HasConversion<string>().HasMaxLength(40).IsRequired();
         builder.Property(x => x.Locale).HasColumnName("locale").HasMaxLength(40);
         builder.Property(x => x.TemplatePluginId).HasColumnName("template_plugin_id").HasMaxLength(200);
         builder.Property(x => x.TemplateVersion).HasColumnName("template_version").HasMaxLength(80);

@@ -73,6 +73,12 @@ public static class SurfaceEndpoints
                 return ApiProblems.BadRequest($"Unknown access mode '{request.AccessMode}'. Supported: Public, Authenticated, Mixed.");
             }
 
+            if (!TryParseRouting(request.Routing, out var routing))
+            {
+                return ApiProblems.BadRequest(
+                    $"Unknown routing '{request.Routing}'. Supported: Tree, Application.");
+            }
+
             var input = new WorkspaceSurfaceInput(
                 surfaceKey,
                 request.DisplayName,
@@ -91,6 +97,7 @@ public static class SurfaceEndpoints
                 ParentSurfaceKey = request.ParentSurfaceKey,
                 Position = request.Position,
                 RequiredClaims = request.RequiredClaims,
+                Routing = routing,
             };
 
             var result = await surfaceStore.UpsertAsync(workspaceKey, input, cancellationToken).ConfigureAwait(false);
@@ -133,6 +140,25 @@ public static class SurfaceEndpoints
         return endpoints;
     }
 
+    /// <summary>
+    /// Weggelassen heißt <see cref="SurfaceRouting.Tree"/>, ein unbekannter Wert heißt Fehler.
+    /// </summary>
+    /// <remarks>
+    /// Der Unterschied ist wichtig: Ein Tippfehler still als Baum zu behandeln, machte aus einer
+    /// gemeinten Anwendung eine, die jeden ihrer Instanzpfade mit 404 beantwortet — und niemand
+    /// erführe, dass der Wert nie angekommen ist.
+    /// </remarks>
+    private static bool TryParseRouting(string? value, out SurfaceRouting routing)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            routing = SurfaceRouting.Tree;
+            return true;
+        }
+
+        return Enum.TryParse(value, ignoreCase: true, out routing) && Enum.IsDefined(routing);
+    }
+
     private static async Task<bool> WorkspaceInScopeAsync(
         BackendHostOptions hostOptions,
         IWorkspaceManagementStore workspaceStore,
@@ -159,6 +185,7 @@ public static class SurfaceEndpoints
         surface.PublicHost,
         surface.PublicPathPrefix,
         surface.AccessMode.ToString(),
+        surface.Routing.ToString(),
         surface.Locale,
         surface.TemplatePluginId,
         surface.TemplateVersion,

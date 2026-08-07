@@ -69,6 +69,7 @@ export interface WorkspaceSurface {
   publicHost: string | null
   publicPathPrefix: string
   accessMode: string
+  routing: string
   locale: string | null
   templatePluginId: string | null
   templateVersion: string | null
@@ -101,6 +102,7 @@ export interface WorkspaceSurfaceUpsert {
   publicHost: string | null
   publicPathPrefix: string
   accessMode: string
+  routing: string
   locale: string | null
   templatePluginId: string | null
   templateVersion: string | null
@@ -125,6 +127,17 @@ export interface WorkspacePluginAssignment {
 
 // The backend SurfaceAccessMode enum (ADR-014 §5.2).
 export const SURFACE_ACCESS_MODES = ['Public', 'Authenticated', 'Mixed'] as const
+
+// Das backendseitige SurfaceRouting (ADR-022): wer über die Adressen unterhalb der Fläche
+// entscheidet. `Tree` heißt, der Seitenbaum ist die Wahrheit — was kein Knoten ist, gibt es
+// nicht. `Application` heißt, die Anwendung deutet ihre Unterpfade selbst, weil sie zur
+// Laufzeit entstehen (ein Konferenzraum kann nicht als Seite angelegt worden sein).
+export const SURFACE_ROUTINGS = ['Tree', 'Application'] as const
+
+export const SURFACE_ROUTING_LABELS: Record<string, string> = {
+  Tree: 'Seitenbaum',
+  Application: 'Anwendung',
+}
 
 const basePath = '/api/workspaces'
 

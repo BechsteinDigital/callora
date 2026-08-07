@@ -3881,6 +3881,8 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.PublicPathPrefix.get -
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.PublicPathPrefix.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.RequiredClaims.get -> string?
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.RequiredClaims.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Routing.get -> Callora.Core.Domain.Workspaces.SurfaceRouting
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Routing.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.SurfaceKey.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.SurfaceKey.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.SurfaceType.get -> string!
@@ -3900,7 +3902,7 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.AccessMode.get -> C
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.AccessMode.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.CreatedAtUtc.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, out Callora.Core.Domain.Workspaces.SurfaceRouting Routing, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.DisplayName.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.DisplayName.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Equals(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot? other) -> bool
@@ -3930,6 +3932,8 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.PublicPathPrefix.ge
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.PublicPathPrefix.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.RequiredClaims.get -> string?
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.RequiredClaims.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Routing.get -> Callora.Core.Domain.Workspaces.SurfaceRouting
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Routing.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.SurfaceKey.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.SurfaceKey.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.SurfaceType.get -> string!
@@ -3948,7 +3952,7 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.UpdatedAtUtc.get ->
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.UpdatedAtUtc.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceKey.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceKey.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceSurfaceSnapshot(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceSurfaceSnapshot(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, Callora.Core.Domain.Workspaces.SurfaceRouting Routing, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor
 Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.SurfaceDeleteResult>!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor.GetAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
@@ -4636,6 +4640,9 @@ Callora.Core.Domain.Workspaces.SurfaceAccessMode
 Callora.Core.Domain.Workspaces.SurfaceAccessMode.Authenticated = 1 -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
 Callora.Core.Domain.Workspaces.SurfaceAccessMode.Mixed = 2 -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
 Callora.Core.Domain.Workspaces.SurfaceAccessMode.Public = 0 -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
+Callora.Core.Domain.Workspaces.SurfaceRouting
+Callora.Core.Domain.Workspaces.SurfaceRouting.Application = 1 -> Callora.Core.Domain.Workspaces.SurfaceRouting
+Callora.Core.Domain.Workspaces.SurfaceRouting.Tree = 0 -> Callora.Core.Domain.Workspaces.SurfaceRouting
 Callora.Core.Domain.Workspaces.Workspace
 Callora.Core.Domain.Workspaces.Workspace.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Domain.Workspaces.Workspace.CreatedAtUtc.set -> void
@@ -4721,6 +4728,8 @@ Callora.Core.Domain.Workspaces.WorkspaceSurface.PublicPathPrefix.get -> string!
 Callora.Core.Domain.Workspaces.WorkspaceSurface.PublicPathPrefix.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.RequiredClaims.get -> string?
 Callora.Core.Domain.Workspaces.WorkspaceSurface.RequiredClaims.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.Routing.get -> Callora.Core.Domain.Workspaces.SurfaceRouting
+Callora.Core.Domain.Workspaces.WorkspaceSurface.Routing.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.SurfaceKey.get -> string!
 Callora.Core.Domain.Workspaces.WorkspaceSurface.SurfaceKey.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.SurfaceType.get -> string!
