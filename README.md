@@ -118,6 +118,7 @@ und Blöcke für den Editor. Der Weg dahin steht in
 | `src/Workspace` | Workspaces, Surfaces, öffentliches Routing |
 | `src/Surface.Rendering` | Flächen-Rendering (Nunjucks-SSR) und `@callora/surface` |
 | `src/Analyzers` | Roslyn-Analyzer, die die Vertragsfläche bewachen |
+| `src/Plugin.Sdk` | `Callora.Plugin.Sdk` — eine Referenz, gegen die ein Plugin baut |
 | `src/Host/Cli` | Die `callora`-CLI |
 | `src/Host/Dev` | Die lauffähige Zusammenstellung dieses Repos — kein Produkt |
 | `custom/static-plugins/*` | Mitgelieferte System-Plugins (Communication, Composer) |
@@ -128,6 +129,10 @@ und Blöcke für den Editor. Der Weg dahin steht in
 Dieses Repository ist das **Framework** — ein Satz paketierbarer Bibliotheken. Der lauffähige
 Prozess und die Zusammenstellung einer Distribution liegen im separaten Repository
 `callora-production`; dasselbe Framework kann mehrere Distributionen tragen.
+
+Die Plugins unter `custom/static-plugins` ziehen in eigene, private Repositories und werden
+als Pakete bezogen; ihre **Verträge** bleiben öffentlich, damit ein Dritter dagegen bauen
+kann, ohne die Implementierung zu sehen ([ADR-020](docs/adr/ADR-020-repo-schnitt-und-paketgrenzen.md)).
 
 ## Dokumentation
 

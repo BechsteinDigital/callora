@@ -95,6 +95,28 @@ tests. It is the single most important structural invariant a maintainer protect
   surface. The contract surface (public contracts, `Extensibility`,
   `[CalloraExtensible]`) is the defined extension boundary.
 
+## Where this is heading
+
+The plugins under `custom/static-plugins` move into their own **private**
+repositories and come back as packages. Their **contracts** stay public, so a
+third party can build against `ICommunicationChannelRegistry` without seeing the
+implementation — the surface a marketplace needs. See
+[ADR-020](https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-020-repo-schnitt-und-paketgrenzen.md).
+
+One rule keeps that possible, and it is enforced rather than documented: **no
+project under `src/` may reference a plugin implementation.** A reference to a
+plugin's `.Abstractions` project is fine — the distribution has to load the
+contract into the default assembly load context for type identity to hold. The
+architecture test `PlatformDependsOnPluginContractsOnlyTests` fails the build the
+moment someone draws the other edge, rather than when an outsider's clone stops
+restoring.
+
+`scripts/golden-path.sh` is the counterpart: it packs, installs the CLI as a
+`dotnet tool`, scaffolds a plugin, builds it against the packages, runs the
+contract test and signs it. That is the only run in this repository that crosses
+the package boundary — and every problem the boundary hides was found by crossing
+it, never by the test suite.
+
 > **Status:** `docs/REPO_MAP.md` is auto-generated and, at time of writing, still
 > reflects an older layout (`src/Host`, `src/Contracts`, `src/Abstractions`). The
 > live filesystem and this guide are authoritative; regenerate the map with
