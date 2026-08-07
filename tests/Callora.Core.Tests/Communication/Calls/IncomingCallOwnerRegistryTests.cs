@@ -22,7 +22,7 @@ public sealed class IncomingCallOwnerRegistryTests
 
         var claimed = await registry.OfferAsync(Workspace, NewCall());
 
-        Assert.True(claimed);
+        Assert.NotNull(claimed);
         Assert.NotNull(owner.Offered);
     }
 
@@ -35,7 +35,7 @@ public sealed class IncomingCallOwnerRegistryTests
 
         // A trunk's calls belong to the workspace that owns it; offering them elsewhere would let one
         // tenant answer another's customer.
-        Assert.False(await registry.OfferAsync(Workspace, NewCall()));
+        Assert.Null(await registry.OfferAsync(Workspace, NewCall()));
         Assert.Null(foreign.Offered);
     }
 
@@ -50,7 +50,7 @@ public sealed class IncomingCallOwnerRegistryTests
 
         // A deactivated consumer must take its claim with it, or calls are offered to something that
         // is no longer there and nobody answers.
-        Assert.False(await registry.OfferAsync(Workspace, NewCall()));
+        Assert.Null(await registry.OfferAsync(Workspace, NewCall()));
         Assert.Null(owner.Offered);
     }
 
@@ -63,7 +63,7 @@ public sealed class IncomingCallOwnerRegistryTests
         registry.Register(Workspace, first);
         registry.Register(Workspace, second);
 
-        Assert.True(await registry.OfferAsync(Workspace, NewCall()));
+        Assert.NotNull(await registry.OfferAsync(Workspace, NewCall()));
         Assert.NotNull(first.Offered);
         Assert.NotNull(second.Offered);
     }

@@ -52,17 +52,17 @@ internal sealed class IncomingCallOwnerRegistry : IIncomingCallOwnerRegistry
     }
 
     /// <summary>
-    /// Offers <paramref name="call"/> to the workspace's owners in registration order, returning
-    /// whether one took it.
+    /// Offers <paramref name="call"/> to the workspace's owners in registration order, returning who
+    /// took it or <see langword="null"/> when nobody did.
     /// </summary>
-    public async Task<bool> OfferAsync(string workspaceKey, ICall call, CancellationToken cancellationToken = default)
+    public async Task<CallOwnerIdentity?> OfferAsync(string workspaceKey, ICall call, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
         ArgumentNullException.ThrowIfNull(call);
 
         if (!_owners.TryGetValue(workspaceKey, out var owners))
         {
-            return false;
+            return null;
         }
 
         IIncomingCallOwner[] snapshot;

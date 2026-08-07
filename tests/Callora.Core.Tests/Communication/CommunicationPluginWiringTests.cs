@@ -98,6 +98,19 @@ public sealed class CommunicationPluginWiringTests
     }
 
     [Fact]
+    public async Task StartAsync_ExportsTheCallJourney()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // Every consumer that touches a call writes its own steps. Without the export, only
+        // communication's own half of the story is ever recorded — which is the half that already had
+        // a log line.
+        Assert.Contains(typeof(ICallJourney), context.Exports.Keys);
+    }
+
+    [Fact]
     public async Task StartAsync_ExportsTheInboundNumberCatalog()
     {
         var context = new CapturingHostPluginContext(hasDbFactory: true);

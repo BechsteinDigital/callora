@@ -31,6 +31,7 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
     private readonly ICallMediaStreamTerminator? _mediaStreams;
     private readonly ICallEventPublisher? _liveEvents;
     private readonly CallQuotaLedger? _quotas;
+    private readonly CallJourney? _journey;
 
     private static readonly JsonSerializerOptions PayloadOptions = new(JsonSerializerDefaults.Web);
 
@@ -61,7 +62,8 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
         TimeProvider timeProvider,
         ICallMediaStreamTerminator? mediaStreams = null,
         ICallEventPublisher? liveEvents = null,
-        CallQuotaLedger? quotas = null)
+        CallQuotaLedger? quotas = null,
+        CallJourney? journey = null)
     {
         _channels = channels ?? throw new ArgumentNullException(nameof(channels));
         _callLogStore = callLogStore ?? throw new ArgumentNullException(nameof(callLogStore));
@@ -70,6 +72,7 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
         _mediaStreams = mediaStreams;
         _liveEvents = liveEvents;
         _quotas = quotas;
+        _journey = journey;
     }
 
     /// <inheritdoc />
@@ -479,6 +482,13 @@ public sealed class CallControlService : ICallControlService, ICallAccess, IAsyn
 
         var endedAt = _timeProvider.GetUtcNow();
         tracked.Log.End(endedAt, outcome, disconnectCause);
+
+        // Taken, not copied: the call is over, and leaving its steps in the buffer would grow it by
+        // every call the process ever saw. This is the one path every ending takes.
+        if (_journey is not null)
+        {
+            tracked.Log.RecordJourney(_journey.Take(tracked.WorkspaceKey, tracked.Key.CallId));
+        }
 
         var ended = CallBusinessEvent.Ended(
             tracked.WorkspaceKey, tracked.Key.CallId, tracked.Log.Direction, tracked.Log.RemoteParty, endedAt);
