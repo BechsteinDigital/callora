@@ -114,12 +114,17 @@ describe('workspacesApi', () => {
       themePluginId: 'customer.theme',
       themeVersion: '1.0.0',
       isActive: true,
+      parentSurfaceKey: 'portal',
+      position: 3,
     })
     expect(fetchMock.mock.calls[0][0]).toBe('/api/workspaces/acme/surfaces/a%20b')
     expect(fetchMock.mock.calls[0][1].method).toBe('PUT')
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string)
     expect(body.accessMode).toBe('Authenticated')
     expect(body.themePluginId).toBe('customer.theme') // carried theme survives the round-trip
+    // Der Baum reist mit: Ohne diese beiden Felder legte die Verwaltung nur Wurzeln an.
+    expect(body.parentSurfaceKey).toBe('portal')
+    expect(body.position).toBe(3)
   })
 
   it('removes a surface via DELETE with an encoded key', async () => {

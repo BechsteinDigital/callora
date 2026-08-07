@@ -48,6 +48,8 @@ function surface(over: Partial<WorkspaceSurface>): WorkspaceSurface {
     isActive: true,
     createdAtUtc: '',
     updatedAtUtc: '',
+    parentSurfaceKey: null,
+    position: 0,
     ...over,
   }
 }
@@ -106,6 +108,81 @@ describe('WorkspaceSurfaces', () => {
     // A freshly created surface carries no template/theme.
     expect(body.themePluginId).toBeNull()
     expect(listSurfacesMock).toHaveBeenCalledTimes(2) // initial + reload
+  })
+
+  // ── Der Baum (ADR-019) ────────────────────────────────────────────────────
+
+  it('zeigt den vollen Pfad eines Kindes, nicht sein gespeichertes Segment', async () => {
+    // Ein Kind trägt `partner`, erreichbar ist es unter `/portal/partner`. Das Segment
+    // anzuzeigen hieße, eine URL zu behaupten, die es nicht gibt.
+    listSurfacesMock.mockResolvedValue([
+      surface({ surfaceKey: 'portal', publicPathPrefix: '/portal', publicHost: 'kunde.example' }),
+      surface({
+        id: '2',
+        surfaceKey: 'partner',
+        parentSurfaceKey: 'portal',
+        publicPathPrefix: 'partner',
+        publicHost: null,
+      }),
+    ])
+    const wrapper = mountSurfaces(true)
+    await flushPromises()
+
+    const locations = wrapper.findAll('.surfaces__location').map((el) => el.text())
+    expect(locations).toContain('kunde.example/portal/partner')
+  })
+
+  it('rückt Kinder ein, statt die Hierarchie nur in der Reihenfolge zu verstecken', async () => {
+    listSurfacesMock.mockResolvedValue([
+      surface({ id: '2', surfaceKey: 'partner', parentSurfaceKey: 'portal' }),
+      surface({ surfaceKey: 'portal' }),
+    ])
+    const wrapper = mountSurfaces(true)
+    await flushPromises()
+
+    const keys = wrapper.findAll('.surfaces__key')
+    expect(keys[0].text()).toContain('portal')
+    expect(keys[0].attributes('style')).toContain('--depth: 0')
+    expect(keys[1].text()).toContain('partner')
+    expect(keys[1].attributes('style')).toContain('--depth: 1')
+  })
+
+  it('legt eine Surface unter einer anderen an', async () => {
+    listSurfacesMock.mockResolvedValue([surface({ surfaceKey: 'portal' })])
+    const wrapper = mountSurfaces(true)
+    await flushPromises()
+
+    await wrapper.find('input[name="surfaceKey"]').setValue('partner')
+    await wrapper.find('input[name="surfaceDisplayName"]').setValue('Partner')
+    await wrapper.find('select[name="surfaceParent"]').setValue('portal')
+    await wrapper.find('form.surfaces__form').trigger('submit')
+    await flushPromises()
+
+    expect(upsertSurfaceMock.mock.calls[0][2].parentSurfaceKey).toBe('portal')
+  })
+
+  it('bietet einen Knoten und seine Nachfahren nicht als Übergeordnetes an', async () => {
+    // Der Server lehnt den Zyklus ohnehin ab; ihn gar nicht anzubieten ist der Unterschied
+    // zwischen einer Fehlermeldung und einer Auswahl, die nur Mögliches enthält.
+    listSurfacesMock.mockResolvedValue([
+      // `portal` zuerst: Wurzeln sortieren nach position, und der Test bearbeitet die erste.
+      surface({ surfaceKey: 'portal', position: 0 }),
+      surface({ id: '2', surfaceKey: 'partner', parentSurfaceKey: 'portal' }),
+      surface({ id: '3', surfaceKey: 'dialer', position: 1 }),
+    ])
+    const wrapper = mountSurfaces(true)
+    await flushPromises()
+
+    await wrapper.findAll('button.is-ghost').find((b) => b.text() === 'Bearbeiten')!.trigger('click')
+    await flushPromises()
+
+    const offered = wrapper
+      .find('select[name="surfaceParent"]')
+      .findAll('option')
+      .map((option) => option.attributes('value'))
+    expect(offered).not.toContain('portal')
+    expect(offered).not.toContain('partner')
+    expect(offered).toContain('dialer')
   })
 
   it('does not submit without a key, name and path prefix', async () => {

@@ -72,6 +72,14 @@ export interface WorkspaceSurface {
   isActive: boolean
   createdAtUtc: string
   updatedAtUtc: string
+  /**
+   * Der Elternknoten, oder null für eine Anwendungswurzel (ADR-019). Eine Wurzel trägt den
+   * Zugang — Host, Zugangsmodus, Design; ein Kind erbt ihn und überschreibt nur, was es
+   * eigenes braucht.
+   */
+  parentSurfaceKey: string | null
+  /** Reihenfolge unter Geschwistern. */
+  position: number
 }
 
 // The mutable slice sent on upsert (the surface key comes from the route). Mirrors
@@ -89,6 +97,8 @@ export interface WorkspaceSurfaceUpsert {
   themePluginId: string | null
   themeVersion: string | null
   isActive: boolean
+  parentSurfaceKey: string | null
+  position: number
 }
 
 // Product-level workspace assignment. An assignment is effective only when
