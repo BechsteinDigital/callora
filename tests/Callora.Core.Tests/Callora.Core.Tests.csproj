@@ -37,6 +37,7 @@
     <ProjectReference Include="..\..\src\Surface.Rendering\Callora.Surface.Rendering.csproj" />
     <ProjectReference Include="..\..\custom\static-plugins\Communication\src\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
     <ProjectReference Include="..\..\custom\static-plugins\Communication\Callora.Plugin.Communication.csproj" />
+    <ProjectReference Include="..\..\custom\static-plugins\Composer\Callora.Plugin.Composer.csproj" />
   </ItemGroup>
 
 </Project>
