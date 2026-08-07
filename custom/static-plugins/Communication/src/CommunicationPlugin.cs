@@ -12,6 +12,7 @@ using Callora.Plugin.Communication.Api.WebSocket;
 using Callora.Plugin.Communication.Application.Accounts;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Admin.Calls;
+using Callora.Plugin.Communication.Application.Admin.Numbers;
 using Callora.Plugin.Communication.Application.Admin.SipAccounts;
 using Callora.Plugin.Communication.Application.Admin.Streaming;
 using Callora.Plugin.Communication.Application.Admin.WebRtc;
@@ -304,6 +305,18 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                     new EfSipAccountStore(dbContextFactory), dataProtector, Id, _sipRuntimeReconciler)
                 : [];
 
+        // The number plan reads across three things an operator otherwise has to visit separately:
+        // which numbers the lines carry, how each line divides its capacity, and what has actually
+        // been arriving. It needs call control for the last part, so it is built after it.
+        IReadOnlyList<HostAdminApiRouteRegistration> numberRoutes =
+            dbContextFactory is not null && _callControlService is not null
+                ? NumberAdminRoutes.Build(
+                    new InboundNumberCatalog(new EfSipAccountStore(dbContextFactory)),
+                    new EfSipAccountStore(dbContextFactory),
+                    _callControlService,
+                    _sipRuntimeReconciler)
+                : [];
+
         // The status route answers a real dependency aggregate rather than a constant (#112).
         var readinessProbe = _readinessProbe = new CommunicationReadinessProbe(
             _channelRegistry,
@@ -330,7 +343,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
         if (dbContextFactory is null || mediaStreamSessionStore is null)
         {
             context.Export<IHostAdminApiExtensionContributor>(
-                new CommunicationAdminApiExtensionContributor([.. accountRoutes, .. callRoutes], readinessProbe));
+                new CommunicationAdminApiExtensionContributor([.. accountRoutes, .. numberRoutes, .. callRoutes], readinessProbe));
             return;
         }
 
@@ -422,7 +435,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
 
         // The full admin surface, now that the WebRTC routes are known.
         context.Export<IHostAdminApiExtensionContributor>(new CommunicationAdminApiExtensionContributor(
-            [.. accountRoutes, .. callRoutes, .. webRtcRoutes], readinessProbe));
+            [.. accountRoutes, .. numberRoutes, .. callRoutes, .. webRtcRoutes], readinessProbe));
 
         context.Export<IWorkspaceDataPurgeContributor>(new CommunicationDataPurgeContributor(
             new CommunicationWorkspaceDataPurger(dbContextFactory)));
