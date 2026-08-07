@@ -98,6 +98,18 @@ public sealed class CommunicationPluginWiringTests
     }
 
     [Fact]
+    public async Task StartAsync_ExportsTheInboundNumberCatalog()
+    {
+        var context = new CapturingHostPluginContext(hasDbFactory: true);
+
+        await new CommunicationPlugin().StartAsync(context);
+
+        // A consumer that owns particular numbers has to name them. Without this it can only offer a
+        // free-text field, and a number typed in the wrong form simply never rings.
+        Assert.Contains(typeof(IInboundNumberCatalog), context.Exports.Keys);
+    }
+
+    [Fact]
     public async Task StartAsync_ExportsDtmfCollector()
     {
         var context = new CapturingHostPluginContext(hasDbFactory: true);

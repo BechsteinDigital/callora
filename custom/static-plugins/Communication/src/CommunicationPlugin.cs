@@ -9,6 +9,7 @@ using Callora.Core.Domain.Plugins.Contracts;
 using Callora.Plugin.Communication.Abstractions;
 using Callora.Plugin.Communication.Abstractions.Conference;
 using Callora.Plugin.Communication.Api.WebSocket;
+using Callora.Plugin.Communication.Application.Accounts;
 using Callora.Plugin.Communication.Application.Admin;
 using Callora.Plugin.Communication.Application.Admin.Calls;
 using Callora.Plugin.Communication.Application.Admin.SipAccounts;
@@ -252,6 +253,12 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                 _incomingCallOwners,
                 ResolveLogger<IncomingCallObserver>(context.Services));
             _incomingCallObserver.Start();
+
+            // The other half of owning inbound calls: an owner has to name the numbers it answers, and
+            // this is where it can find out which numbers exist instead of asking an operator to type
+            // them from memory.
+            context.Export<IInboundNumberCatalog>(
+                new InboundNumberCatalog(new EfSipAccountStore(dbContextFactory)));
         }
 
         // Live-call audio surface and the SIP runtime reconciler are built here, before the admin
