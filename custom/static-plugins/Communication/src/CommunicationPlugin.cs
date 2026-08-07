@@ -71,6 +71,7 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
     private CallAudioPlaybackService? _callAudioPlayback;
     private IncomingCallOwnerRegistry? _incomingCallOwners;
     private CallQuotaLedger? _callQuotas;
+    private CallJourney? _callJourney;
 
     // Call-control primitive, exported for in-process consumers (and the REST adapter); set when the
     // plugin has a database (it records call history). Disposed on stop so no call handler dangles.
@@ -165,6 +166,12 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
             _callQuotas = new CallQuotaLedger();
             context.Export<ICallQuotaRegistry>(_callQuotas);
 
+            // The record of what happens to a call, written by everyone who touches it. Built before
+            // call control, which hands a call's steps to its history row when it ends, and exported
+            // because the interesting half of any story is what a consumer did — not what we logged.
+            _callJourney = new CallJourney();
+            context.Export<ICallJourney>(_callJourney);
+
             _callControlService = new CallControlService(
                 _channelRegistry,
                 callLogStore,
@@ -176,7 +183,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                     TimeProvider.System,
                     ResolveLogger<CallMediaStreamTerminator>(context.Services)),
                 _callEventBroadcaster,
-                _callQuotas);
+                _callQuotas,
+                _callJourney);
             context.Export<ICallControlService>(_callControlService);
 
             // The same instance under its observation face: one tracked-call state, so a consumer
@@ -251,7 +259,8 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                 _channelRegistry,
                 _callControlService,
                 _incomingCallOwners,
-                ResolveLogger<IncomingCallObserver>(context.Services));
+                ResolveLogger<IncomingCallObserver>(context.Services),
+                _callJourney);
             _incomingCallObserver.Start();
 
             // The other half of owning inbound calls: an owner has to name the numbers it answers, and

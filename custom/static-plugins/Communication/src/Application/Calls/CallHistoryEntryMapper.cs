@@ -24,6 +24,7 @@ internal static class CallHistoryEntryMapper
             log.EndedAt,
             log.DurationSeconds,
             log.Outcome.ToString(),
-            log.DisconnectCause);
+            log.DisconnectCause,
+            log.Journey);
     }
 }

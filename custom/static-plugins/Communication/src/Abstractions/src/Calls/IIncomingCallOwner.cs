@@ -20,6 +20,13 @@ namespace Callora.Plugin.Communication.Abstractions;
 public interface IIncomingCallOwner
 {
     /// <summary>
+    /// Who this owner is, for the record of what happened to a call. Defaults to
+    /// <see cref="CallOwnerIdentity.Anonymous"/> so an owner written before identities existed keeps
+    /// working — and is reported as unnamed rather than as something invented.
+    /// </summary>
+    CallOwnerIdentity Identity => CallOwnerIdentity.Anonymous;
+
+    /// <summary>
     /// Offers one inbound call. Return <see langword="true"/> to take responsibility for it,
     /// <see langword="false"/> to let it pass to the next owner.
     /// </summary>

@@ -23,11 +23,11 @@ internal sealed class IncomingCallOwnership
     }
 
     /// <summary>
-    /// Offers <paramref name="call"/> to each owner until one claims it. Returns whether anybody did —
-    /// the caller decides what an unclaimed call deserves, because only it knows whether rejecting is
-    /// better than letting it ring.
+    /// Offers <paramref name="call"/> to each owner until one claims it. Returns who took it, or
+    /// <see langword="null"/> when nobody did — the caller decides what an unclaimed call deserves,
+    /// because only it knows whether rejecting is better than letting it ring.
     /// </summary>
-    public async Task<bool> OfferAsync(string workspaceKey, ICall call, CancellationToken cancellationToken = default)
+    public async Task<CallOwnerIdentity?> OfferAsync(string workspaceKey, ICall call, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
         ArgumentNullException.ThrowIfNull(call);
@@ -38,7 +38,7 @@ internal sealed class IncomingCallOwnership
             {
                 if (await owner.TryClaimAsync(workspaceKey, call, cancellationToken).ConfigureAwait(false))
                 {
-                    return true;
+                    return owner.Identity;
                 }
             }
             catch (Exception ex)
@@ -51,6 +51,6 @@ internal sealed class IncomingCallOwnership
             }
         }
 
-        return false;
+        return null;
     }
 }

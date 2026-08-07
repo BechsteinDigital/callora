@@ -13,9 +13,13 @@ namespace Callora.Plugin.Communication.Application.Calls;
 /// </summary>
 internal sealed class IncomingCallObserver : IDisposable
 {
+    /// <summary>Source name every step recorded from here carries.</summary>
+    private const string CommunicationPluginId = "communication";
+
     private readonly ICommunicationChannelRegistry _registry;
     private readonly CallControlService _callControl;
     private readonly IncomingCallOwnerRegistry? _owners;
+    private readonly ICallJourney? _journey;
     private readonly ILogger _logger;
 
     // One IncomingCall subscription per registered channel, keyed by the channel instance so it can be
@@ -28,11 +32,13 @@ internal sealed class IncomingCallObserver : IDisposable
         ICommunicationChannelRegistry registry,
         CallControlService callControl,
         IncomingCallOwnerRegistry? owners = null,
-        ILogger? logger = null)
+        ILogger? logger = null,
+        ICallJourney? journey = null)
     {
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _callControl = callControl ?? throw new ArgumentNullException(nameof(callControl));
         _owners = owners;
+        _journey = journey;
         _logger = logger ?? NullLogger.Instance;
     }
 
@@ -87,6 +93,13 @@ internal sealed class IncomingCallObserver : IDisposable
     {
         await _callControl.ObserveIncomingAsync(workspaceKey, channel, call).ConfigureAwait(false);
 
+        // The first entry in the call's story, and the only one written whether or not anybody wants
+        // the call: which of our numbers it reached is exactly what a consumer decides on.
+        _journey?.Record(workspaceKey, call.CallId, new CallJourneyStep(
+            CommunicationPluginId,
+            "call.ringing",
+            $"Reached {call.InboundIdentity?.CalledNumber ?? "an unreported number"} on channel {channel.ChannelId}."));
+
         if (_owners is null || !_owners.HasOwners(workspaceKey))
         {
             return;
@@ -94,10 +107,20 @@ internal sealed class IncomingCallObserver : IDisposable
 
         try
         {
-            if (await _owners.OfferAsync(workspaceKey, call).ConfigureAwait(false))
+            var owner = await _owners.OfferAsync(workspaceKey, call).ConfigureAwait(false);
+            if (owner is not null)
             {
+                _journey?.Record(workspaceKey, call.CallId, new CallJourneyStep(
+                    CommunicationPluginId, "call.claimed", $"Taken by {owner.DisplayName}."));
                 return;
             }
+
+            // "Rejected" on its own reads like a fault. That nobody claimed it is the actual reason,
+            // and the one an operator can act on — usually by assigning the number.
+            _journey?.Record(workspaceKey, call.CallId, new CallJourneyStep(
+                CommunicationPluginId,
+                "call.unclaimed",
+                "No consumer of this workspace answers this number; the call was rejected."));
 
             await call.RejectAsync().ConfigureAwait(false);
         }
