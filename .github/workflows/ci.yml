@@ -80,18 +80,33 @@ jobs:
 
       # Ratchet-Gate (PLAT-220): Baseline am 2026-07-13 lag bei 28,3 % Line-
       # Coverage; das Gate hält 25 % und wird mit wachsender Abdeckung angehoben.
+      #
+      # Über ALLE Berichte gerechnet, nicht über den ersten. Der Lauf erzeugt zwei —
+      # Callora.Core.Tests (~84.000 Zeilen) und Callora.Analyzers.Tests (~280) — und
+      # `find | head -1` griff, je nach Dateisystem-Reihenfolge, den kleinen: 93,6 %
+      # gemeldet, 33,6 % tatsächlich. Ein Gate, das den Analyzer-Bericht misst, hätte
+      # auch eine auf null eingebrochene Kern-Abdeckung durchgewinkt.
       - name: Enforce coverage threshold
         run: |
-          REPORT=$(find ./test-results -name coverage.cobertura.xml | head -1)
-          if [ -z "$REPORT" ]; then
-            echo "No coverage report found." && exit 1
-          fi
-          python3 - "$REPORT" <<'EOF'
+          python3 - <<'EOF'
+          import glob
           import sys
           import xml.etree.ElementTree as ET
+
           threshold = 0.25
-          rate = float(ET.parse(sys.argv[1]).getroot().get("line-rate"))
-          print(f"line coverage: {rate:.1%} (threshold {threshold:.0%})")
+          reports = glob.glob("./test-results/**/coverage.cobertura.xml", recursive=True)
+          if not reports:
+              sys.exit("No coverage report found.")
+
+          covered = valid = 0
+          for report in reports:
+              root = ET.parse(report).getroot()
+              covered += int(root.get("lines-covered"))
+              valid += int(root.get("lines-valid"))
+              print(f"  {float(root.get('line-rate')):6.1%}  {root.get('lines-valid'):>7} lines  {report}")
+
+          rate = covered / valid if valid else 0.0
+          print(f"line coverage: {rate:.1%} over {valid} lines (threshold {threshold:.0%})")
           sys.exit(0 if rate >= threshold else 1)
           EOF
 
