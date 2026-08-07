@@ -110,6 +110,130 @@ export function setSectionLayout(
   return { sections }
 }
 
+/**
+ * Wohin ein Block gezogen wird: in welche Sektion, in welche Region, an welche Stelle.
+ *
+ * `index` zählt die Blöcke DIESER Region in Anzeigereihenfolge — 0 heißt ganz oben, `length`
+ * ganz unten. Nicht der Index im `blocks`-Array der Sektion: Der zählt regionenübergreifend
+ * und in Speicherreihenfolge, und beides ist nicht das, was jemand beim Ziehen sieht.
+ */
+export interface DropTarget {
+  sectionIndex: number
+  region: string
+  index: number
+}
+
+/**
+ * Setzt einen neuen Block an die Zielstelle.
+ *
+ * Die Positionen der Zielregion werden danach neu durchnummeriert. Das ändert mehr Zahlen als
+ * nötig und ist trotzdem richtig: `position` ist eine Reihenfolge, keine Identität, und ein
+ * Dokument mit Lücken oder doppelten Positionen — aus einem Rückrollen, einem Layout-Wechsel,
+ * einem fremden Editor — würde sonst bei jedem Einfügen ein Stück unberechenbarer.
+ */
+export function insertBlock(
+  document: LayoutDocument,
+  target: DropTarget,
+  blockId: string,
+): LayoutDocument {
+  return withRegion(document, target.sectionIndex, target.region, (inRegion) => {
+    const placed: LayoutBlock = { blockId, region: target.region, position: 0 }
+    return [...inRegion.slice(0, target.index), placed, ...inRegion.slice(target.index)]
+  })
+}
+
+/**
+ * Verschiebt einen Block an die Zielstelle — innerhalb seiner Region oder in eine andere.
+ *
+ * Der Block behält seine `config`. Er wird verschoben, nicht neu erzeugt: Alles, was jemand an
+ * ihm eingestellt hat, zieht mit, auch über die Regionsgrenze.
+ */
+export function moveBlock(
+  document: LayoutDocument,
+  from: BlockAddress,
+  target: DropTarget,
+): LayoutDocument {
+  const moving = blockAt(document, from)
+  if (!moving || from.sectionIndex !== target.sectionIndex) {
+    // Zwischen Sektionen zu ziehen ist noch nicht vorgesehen. Stillschweigend in die falsche
+    // Sektion zu schreiben wäre schlimmer als nichts zu tun.
+    return document
+  }
+
+  const sameRegion = moving.region === target.region
+
+  // Zuerst herausnehmen, dann einsetzen — sonst zählt die Zielstelle den Block noch mit, und
+  // "eins weiter unten" landet an derselben Stelle.
+  const removed = withRegion(document, from.sectionIndex, moving.region, (inRegion) =>
+    inRegion.filter((block) => block !== moving),
+  )
+
+  const insertAt = sameRegion && indexInRegion(document, from) < target.index
+    ? target.index - 1
+    : target.index
+
+  return withRegion(removed, target.sectionIndex, target.region, (inRegion) => {
+    const placed: LayoutBlock = { ...moving, region: target.region, position: 0 }
+    return [...inRegion.slice(0, insertAt), placed, ...inRegion.slice(insertAt)]
+  })
+}
+
+/** Nimmt einen Block aus dem Dokument. */
+export function removeBlock(document: LayoutDocument, address: BlockAddress): LayoutDocument {
+  const block = blockAt(document, address)
+  if (!block) {
+    return document
+  }
+
+  return withRegion(document, address.sectionIndex, block.region, (inRegion) =>
+    inRegion.filter((existing) => existing !== block),
+  )
+}
+
+/** Wo ein Block innerhalb seiner Region steht — die Zählung, die beim Ziehen sichtbar ist. */
+export function indexInRegion(document: LayoutDocument, address: BlockAddress): number {
+  const block = blockAt(document, address)
+  const section = document.sections[address.sectionIndex]
+  if (!block || !section) {
+    return -1
+  }
+
+  return sortedRegion(section, block.region).indexOf(block)
+}
+
+/**
+ * Wendet eine Änderung auf die Blöcke einer Region an und schreibt das Ergebnis mit
+ * fortlaufenden Positionen zurück. Die Blöcke der anderen Regionen bleiben unberührt.
+ */
+function withRegion(
+  document: LayoutDocument,
+  sectionIndex: number,
+  region: string,
+  change: (inRegion: LayoutBlock[]) => LayoutBlock[],
+): LayoutDocument {
+  const section = document.sections[sectionIndex]
+  if (!section) {
+    return document
+  }
+
+  const others = section.blocks.filter((block) => block.region !== region)
+  const changed = change(sortedRegion(section, region)).map((block, index) => ({
+    ...block,
+    region,
+    position: index,
+  }))
+
+  const sections = [...document.sections]
+  sections[sectionIndex] = { ...section, blocks: [...others, ...changed] }
+  return { sections }
+}
+
+function sortedRegion(section: LayoutSection, region: string): LayoutBlock[] {
+  return section.blocks
+    .filter((block) => block.region === region)
+    .sort((a, b) => a.position - b.position)
+}
+
 /** Der Block an dieser Stelle, oder undefined. */
 export function blockAt(
   document: LayoutDocument,
