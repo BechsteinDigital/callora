@@ -34,4 +34,10 @@ public sealed record WorkspaceSurfaceInput(
 
     /// <summary>Reihenfolge unter Geschwistern; gleiche Werte sortieren nach Schlüssel.</summary>
     public int Position { get; init; }
+
+    /// <summary>
+    /// Claims, die ein Besucher mitbringen muss (ADR-019 §4) — kommagetrennt, leer heißt keine
+    /// Anforderung.
+    /// </summary>
+    public string? RequiredClaims { get; init; }
 }
