@@ -44,6 +44,17 @@ interface CallHistoryEntry {
   journey: CallJourneyStep[]
 }
 
+/** Eine Nummer des Workspaces mit allem, was ein Betreiber dazu fragt. */
+interface NumberPlanEntry {
+  number: string
+  channelId: string
+  channelDisplayName: string
+  /** Wie viele Leitungen der Leitung diese Nummer halten darf; null heißt unbegrenzt. */
+  maxConcurrentCalls: number | null
+  recentCalls: number
+  lastCallAt: string | null
+}
+
 interface SipAccount {
   id: string
   displayName: string
@@ -100,9 +111,42 @@ function toggleJourney(call: CallHistoryEntry): void {
   openCall.value = openCall.value === call.callId ? null : call.callId
 }
 
+function startEditingQuota(entry: NumberPlanEntry): void {
+  editingNumber.value = entry.number
+  quotaDraft.value = entry.maxConcurrentCalls === null ? '' : String(entry.maxConcurrentCalls)
+}
+
+function saveQuota(entry: NumberPlanEntry): void {
+  const raw = quotaDraft.value.trim()
+  // Leeres Feld heißt „kein Limit" — dieselbe Regel wie im Backend: keine Konfiguration ist
+  // unbegrenzt und nicht null.
+  const limit = raw === '' ? null : Number(raw)
+  if (limit !== null && (!Number.isInteger(limit) || limit < 1)) {
+    error.value = 'Das Kontingent muss mindestens 1 sein — oder leer für unbegrenzt.'
+    return
+  }
+  void run(
+    request('POST', 'numbers/quota', {
+      channelId: entry.channelId,
+      number: entry.number,
+      maxConcurrentCalls: limit,
+    }).then(() => {
+      editingNumber.value = null
+    }),
+    limit === null
+      ? `Kontingent für ${entry.number} entfernt.`
+      : `${entry.number}: höchstens ${limit} gleichzeitige Anrufe.`,
+  )
+}
+
 const workspaceKey = ref(new URLSearchParams(window.location.search).get('workspaceKey') ?? '')
 const accounts = ref<SipAccount[]>([])
 const calls = ref<CallHistoryEntry[]>([])
+const numbers = ref<NumberPlanEntry[]>([])
+// Nur eine Zeile im Bearbeiten-Modus: Ein Kontingent wird selten und einzeln geändert, und ein
+// Formular pro Zeile wäre eine Tabelle voller Eingabefelder ohne Zustand.
+const editingNumber = ref<string | null>(null)
+const quotaDraft = ref<string>('')
 // One call open at a time: the interesting thing is one call's sequence, and several expanded at
 // once turns a list into a wall.
 const openCall = ref<string | null>(null)
@@ -157,6 +201,12 @@ async function reload(): Promise<void> {
   error.value = null
   try {
     accounts.value = ((await request('GET', 'sip-accounts')) as SipAccount[]) ?? []
+
+    try {
+      numbers.value = ((await request('GET', 'numbers')) as NumberPlanEntry[]) ?? []
+    } catch {
+      numbers.value = []
+    }
 
     // Loaded after the accounts and allowed to fail on its own: an operator whose history is
     // unavailable should still be able to fix the account that is probably the reason.
@@ -322,6 +372,62 @@ onMounted(() => {
             <td style="padding: 0.4rem; display: flex; gap: 0.4rem">
               <button :disabled="busy" @click="toggle(a)">{{ a.enabled ? 'Deaktivieren' : 'Aktivieren' }}</button>
               <button :disabled="busy" @click="remove(a)">Löschen</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 style="margin-top: 2rem">Rufnummern</h2>
+      <p style="font-size: 0.85rem; color: var(--cal-color-text-muted, #777); margin-top: 0">
+        Was dieser Workspace erreichen kann: welche Leitung eine Nummer liefert, wie viele ihrer
+        gleichzeitigen Anrufe die Nummer halten darf, und was zuletzt darauf ankam.
+      </p>
+
+      <p v-if="!numbers.length">
+        {{ loading ? 'Lädt…' : 'Keine Leitung meldet eigene Nummern. Ein IP-Trunk ohne DID-Liste nimmt jede Nummer und kann keine nennen.' }}
+      </p>
+      <table v-else style="width: 100%; border-collapse: collapse">
+        <thead>
+          <tr>
+            <th v-for="c in ['Nummer', 'Leitung', 'Gleichzeitig', 'Zuletzt', '']" :key="c" style="text-align: left; padding: 0.4rem; border-bottom: 1px solid var(--cal-color-surface, #ddd)">
+              {{ c }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="entry in numbers" :key="`${entry.channelId}:${entry.number}`">
+            <td style="padding: 0.4rem">{{ entry.number }}</td>
+            <td style="padding: 0.4rem">{{ entry.channelDisplayName }}</td>
+            <td style="padding: 0.4rem">
+              <template v-if="editingNumber === entry.number">
+                <input
+                  v-model="quotaDraft"
+                  type="number"
+                  min="1"
+                  placeholder="unbegrenzt"
+                  style="width: 7rem"
+                  @keyup.enter="saveQuota(entry)"
+                />
+              </template>
+              <template v-else>
+                {{ entry.maxConcurrentCalls === null ? 'unbegrenzt' : entry.maxConcurrentCalls }}
+              </template>
+            </td>
+            <td style="padding: 0.4rem">
+              <span v-if="entry.lastCallAt">
+                {{ formatMoment(entry.lastCallAt) }}
+                <span style="display: block; font-size: 0.75rem; color: var(--cal-color-text-muted, #777)">
+                  {{ entry.recentCalls }} von den letzten Anrufen
+                </span>
+              </span>
+              <span v-else style="color: var(--cal-color-text-muted, #777)">nichts angekommen</span>
+            </td>
+            <td style="padding: 0.4rem; display: flex; gap: 0.4rem">
+              <template v-if="editingNumber === entry.number">
+                <button :disabled="busy" @click="saveQuota(entry)">Speichern</button>
+                <button :disabled="busy" @click="editingNumber = null">Abbrechen</button>
+              </template>
+              <button v-else :disabled="busy" @click="startEditingQuota(entry)">Kontingent</button>
             </td>
           </tr>
         </tbody>
