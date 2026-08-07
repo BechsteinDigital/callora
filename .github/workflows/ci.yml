@@ -123,6 +123,12 @@ jobs:
             test: false
             # Consumes @callora/admin as a file: dependency — see the build step.
             sdkPath: src/Administration/Resources/app/administration
+          - name: Composer Admin
+            path: custom/static-plugins/Composer
+            gates: test + build
+            test: true
+            # Consumes @callora/admin as a file: dependency — see the build step.
+            sdkPath: src/Administration/Resources/app/administration
           - name: SurfaceDemo
             path: custom/plugins/SurfaceDemo
             gates: build
