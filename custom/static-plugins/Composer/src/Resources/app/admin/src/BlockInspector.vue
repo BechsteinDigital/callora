@@ -30,6 +30,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   change: [control: string, binding: Binding<unknown>]
   clear: [control: string]
+  remove: []
 }>()
 
 const fields = computed<ControlField[]>(() =>
@@ -186,5 +187,13 @@ function setContextKey(field: ControlField, key: string): void {
         Zurücksetzen
       </button>
     </div>
+
+    <!--
+      Auch ein verwaister Block lässt sich entfernen. Ihn nur löschen zu können, solange sein
+      Plugin da ist, hieße: Wer ein Plugin deinstalliert hat, wird seine Reste nicht mehr los.
+    -->
+    <button type="button" class="composer-inspector__remove" @click="emit('remove')">
+      Block entfernen
+    </button>
   </aside>
 </template>

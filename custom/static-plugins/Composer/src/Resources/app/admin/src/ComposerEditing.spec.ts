@@ -167,6 +167,32 @@ describe('Blöcke auswählen und einstellen', () => {
     })
   })
 
+  it('speichert nichts, wenn nur geöffnet wurde', async () => {
+    // Ohne diesen Vergleich zählte auch das Laden als Änderung, und der Editor schriebe direkt
+    // nach dem Öffnen dasselbe zurück — mit neuem Änderungsstempel. Zwei Leute, die eine Seite
+    // nur ANSEHEN, gäben sich damit gegenseitig einen Konflikt.
+    await openEditor()
+    await settleAutosave()
+
+    expect(saves()).toHaveLength(0)
+  })
+
+  it('verliert eine Änderung nicht, die während des Speicherns entsteht', async () => {
+    // Gespeichert gilt, WAS gesendet wurde. Würde stattdessen der aktuelle Stand als
+    // gespeichert vermerkt, fiele die Änderung dazwischen durch das Raster und der nächste
+    // Autosave bliebe aus.
+    const wrapper = await openEditor()
+    await wrapper.find('[data-cal-editor-block]').trigger('click')
+
+    await wrapper.find('#control-title').setValue('Erst')
+    await settleAutosave()
+    await wrapper.find('#control-title').setValue('Dann')
+    await settleAutosave()
+
+    expect(savedBody(saves().length - 1).document.sections[0].blocks[0].config.title.value)
+      .toBe('Dann')
+  })
+
   it('speichert beim zweiten Mal mit dem Stempel aus der ersten Antwort', async () => {
     // Der Fehler, den das verhindert: Nach dem ersten Schreiben ist der eigene Stempel
     // veraltet. Ohne den neuen aus der Antwort liefe der zweite Autosave in einen Konflikt
@@ -318,6 +344,110 @@ describe('Wenn das Theme ein Layout nicht mehr kennt', () => {
     } finally {
       DOCUMENT.sections[0].layout = 'single'
     }
+  })
+})
+
+describe('Blöcke ziehen und ablegen', () => {
+  /** Ein DataTransfer-Ersatz: happy-dom liefert bei synthetischen Events keinen. */
+  function transfer(payload?: unknown) {
+    const store = new Map<string, string>()
+    if (payload !== undefined) {
+      store.set('application/x-callora-block', JSON.stringify(payload))
+    }
+
+    return {
+      effectAllowed: '',
+      setData: (format: string, data: string) => store.set(format, data),
+      getData: (format: string) => store.get(format) ?? '',
+    }
+  }
+
+  it('bietet die registrierten Blöcke in der Palette an', async () => {
+    const wrapper = await openEditor()
+
+    expect(wrapper.find('.composer-palette').text()).toContain('Hero')
+    expect(wrapper.find('[data-block-id="demo.hero"]').exists()).toBe(true)
+  })
+
+  it('zeigt Ablegezonen erst, WÄHREND gezogen wird', async () => {
+    // Sie sind echte Elemente zwischen den Blöcken. Dauerhaft eingefügt bräche jede `+`- und
+    // `>`-Regel des Themes — im Ruhezustand muss der Baum der der Fläche sein.
+    const wrapper = await openEditor()
+
+    expect(wrapper.findAll('.cal-canvas__dropzone')).toHaveLength(0)
+
+    await wrapper.find('[data-block-id="demo.hero"]').trigger('dragstart', {
+      dataTransfer: transfer(),
+    })
+
+    expect(wrapper.findAll('.cal-canvas__dropzone').length).toBeGreaterThan(0)
+
+    await wrapper.find('.composer__workspace').trigger('dragend')
+
+    expect(wrapper.findAll('.cal-canvas__dropzone')).toHaveLength(0)
+  })
+
+  it('setzt einen Block aus der Palette an die abgelegte Stelle und speichert ihn', async () => {
+    const wrapper = await openEditor()
+    await wrapper.find('[data-block-id="demo.hero"]').trigger('dragstart', {
+      dataTransfer: transfer(),
+    })
+
+    // Die Zone hinter dem einen vorhandenen Block der Region `main`.
+    const zone = wrapper.find('[data-cal-drop-region="main"][data-cal-drop-index="1"]')
+    await zone.trigger('drop', { dataTransfer: transfer({ kind: 'new', blockId: 'demo.hero' }) })
+    await settleAutosave()
+
+    const blocks = savedBody(saves().length - 1).document.sections[0].blocks
+    expect(blocks).toHaveLength(2)
+    expect(blocks.map((b: { position: number }) => b.position).sort()).toEqual([0, 1])
+  })
+
+  it('bewirkt nichts, wenn die abgelegte Nutzlast nicht von hier stammt', async () => {
+    // Ein Drop kann aus einem anderen Fenster, einem Editor oder einem Dateimanager kommen.
+    const wrapper = await openEditor()
+    await wrapper.find('[data-block-id="demo.hero"]').trigger('dragstart', {
+      dataTransfer: transfer(),
+    })
+
+    await wrapper
+      .find('[data-cal-drop-region="main"]')
+      .trigger('drop', { dataTransfer: transfer() })
+    await settleAutosave()
+
+    expect(saves()).toHaveLength(0)
+  })
+
+  it('legt einen Block in eine leere Region der zweiten Spalte', async () => {
+    DOCUMENT.sections[0].layout = 'two-2-1'
+    try {
+      const wrapper = await openEditor()
+      await wrapper.find('[data-block-id="demo.hero"]').trigger('dragstart', {
+        dataTransfer: transfer(),
+      })
+
+      await wrapper
+        .find('[data-cal-drop-region="aside"]')
+        .trigger('drop', { dataTransfer: transfer({ kind: 'new', blockId: 'demo.hero' }) })
+      await settleAutosave()
+
+      const blocks = savedBody(saves().length - 1).document.sections[0].blocks
+      expect(blocks.some((b: { region: string }) => b.region === 'aside')).toBe(true)
+    } finally {
+      DOCUMENT.sections[0].layout = 'single'
+    }
+  })
+
+  it('entfernt den ausgewählten Block', async () => {
+    const wrapper = await openEditor()
+    await wrapper.find('[data-cal-editor-block]').trigger('click')
+
+    await wrapper.find('.composer-inspector__remove').trigger('click')
+    await settleAutosave()
+
+    expect(savedBody(saves().length - 1).document.sections[0].blocks).toEqual([])
+    // Das Panel zeigte sonst auf etwas, das es nicht mehr gibt.
+    expect(wrapper.find('.composer-inspector').exists()).toBe(false)
   })
 })
 
