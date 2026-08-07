@@ -142,9 +142,14 @@ cd docs-site && npm ci && npm run dev
 
 ## Mitmachen
 
-Fehlerberichte und Vorschläge sind willkommen. Bevor du Code beisteuerst, wirf einen Blick in
-`docs-site/maintainer/` — das Repo hat erzwungene Regeln (Analyzer, API-Baselines,
-Architektur-Tests), und es hilft zu wissen, welche.
+Fehlerberichte, Vorschläge und Pull Requests sind willkommen. Was du vorher wissen solltest,
+steht in **[CONTRIBUTING.md](CONTRIBUTING.md)** — vor allem, was das Repository beim Bauen
+erzwingt: API-Baselines, Governance-Analyzer und Architektur-Tests schlagen zu, bevor ein Review
+es täte.
+
+Beiträge laufen über den **Developer Certificate of Origin**: eine Zeile im Commit
+(`git commit -s`), kein Vertrag, keine Rechteabtretung. Warum das reicht und warum es kein CLA
+gibt, steht dort ebenfalls.
 
 ## Lizenz
 
@@ -155,7 +160,6 @@ Das gilt für alles in diesem Repository, einschließlich der Pakete `@callora/s
 auch proprietär** — Apache-2.0 verlangt davon nichts.
 
 Apache und nicht MIT wegen der ausdrücklichen **Patentklausel**: Bei Codecs, SIP und Echo
-Cancellation ist Patentrecht real, und MIT adressiert es nicht. Die Überlegungen dahinter stehen
-in [`ops/research/2026-08-07-lizenzmodell.md`](ops/research/2026-08-07-lizenzmodell.md).
+Cancellation ist Patentrecht real, und MIT adressiert es nicht.
 
 © 2026 Bechstein.Digital Ecommerce UG (haftungsbeschränkt)
