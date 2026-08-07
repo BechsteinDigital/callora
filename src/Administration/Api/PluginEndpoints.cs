@@ -304,12 +304,21 @@ public static class PluginEndpoints
         }).WithName("Plugins_UpdateFromLocal")
             .RequirePermission(BackendPermissionKeys.PluginCreate);
 
+        // Nullable statt pflichtig: Ohne Body macht ASP.NET aus der fehlenden Bindung eine
+        // BadHttpRequestException — der Aufrufer bekommt 500 mit Stapelverfolgung für einen
+        // Fehler, den er selbst gemacht hat. Ein 400, das sagt was fehlt, ist die Antwort.
         group.MapPost("/{pluginId}/activate", async (
             string pluginId,
-            PluginLifecycleRequest request,
+            PluginLifecycleRequest? request,
             IPluginLifecycleService lifecycleService,
             CancellationToken cancellationToken) =>
         {
+            if (request is null)
+            {
+                return ApiProblems.BadRequest(
+                    "A request body with 'requestedBy' is required — it is what the audit trail records.");
+            }
+
             var result = await lifecycleService.ActivateAsync(
                     new PluginLifecycleCommand(pluginId, request.RequestedBy, request.WorkspaceKey),
                     cancellationToken)
@@ -319,12 +328,21 @@ public static class PluginEndpoints
         }).WithName("Plugins_Activate")
             .RequirePermission(BackendPermissionKeys.PluginExecute);
 
+        // Nullable statt pflichtig: Ohne Body macht ASP.NET aus der fehlenden Bindung eine
+        // BadHttpRequestException — der Aufrufer bekommt 500 mit Stapelverfolgung für einen
+        // Fehler, den er selbst gemacht hat. Ein 400, das sagt was fehlt, ist die Antwort.
         group.MapPost("/{pluginId}/deactivate", async (
             string pluginId,
-            PluginLifecycleRequest request,
+            PluginLifecycleRequest? request,
             IPluginLifecycleService lifecycleService,
             CancellationToken cancellationToken) =>
         {
+            if (request is null)
+            {
+                return ApiProblems.BadRequest(
+                    "A request body with 'requestedBy' is required — it is what the audit trail records.");
+            }
+
             var result = await lifecycleService.DeactivateAsync(
                     new PluginLifecycleCommand(pluginId, request.RequestedBy, request.WorkspaceKey),
                     cancellationToken)

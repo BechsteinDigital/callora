@@ -128,4 +128,34 @@ describe('workspaceContext', () => {
     expect(listMock).toHaveBeenCalledTimes(2)
     expect(activeWorkspace.value).toBe('wsA')
   })
+
+  it('persists the fallback selection and reloads, so the plugin chain is fetched for it', async () => {
+    // Ohne das Speichern blieb ein frisch installiertes System dauerhaft ohne
+    // Plugin-Oberfläche: Der Bootstrap fragt die Kette mit dem GESPEICHERTEN Workspace an,
+    // die Rückfallauswahl stand aber nur im Arbeitsspeicher. Beim nächsten Start las der
+    // Bootstrap wieder nichts — und jede Plugin-Seite behauptete, das Plugin liefere keine
+    // Oberfläche.
+    const { ensure } = useWorkspaceContext()
+    let reloaded = 0
+
+    await ensure(() => {
+      reloaded += 1
+    })
+
+    expect(localStorage.getItem('callora.activeWorkspace')).toBe('wsA')
+    expect(reloaded).toBe(1)
+  })
+
+  it('does not reload when the stored selection already holds', async () => {
+    // Sonst liefe die Shell in eine Neulade-Schleife.
+    localStorage.setItem('callora.activeWorkspace', 'wsB')
+    const { ensure } = useWorkspaceContext()
+    let reloaded = 0
+
+    await ensure(() => {
+      reloaded += 1
+    })
+
+    expect(reloaded).toBe(0)
+  })
 })

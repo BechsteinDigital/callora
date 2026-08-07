@@ -215,13 +215,10 @@ public sealed class PluginUiAssetPublisher(
         }
     }
 
-    private string ResolveWebRootPath()
-    {
-        var webRoot = environment.WebRootPath;
-        return string.IsNullOrWhiteSpace(webRoot)
-            ? Path.Combine(AppContext.BaseDirectory, "wwwroot")
-            : webRoot;
-    }
+    // Denselben Weg wie die Auslieferung nehmen. Vorher stand der Rückfall hier lokal, und
+    // die Static-File-Pipeline kannte ihn nicht: geschrieben wurde nach
+    // AppContext.BaseDirectory/wwwroot, ausgeliefert nichts.
+    private string ResolveWebRootPath() => PluginAssetWebRoot.Resolve(environment);
 
     private Dictionary<string, string> DiscoverLocalPluginRoots(CancellationToken cancellationToken)
     {

@@ -3652,6 +3652,11 @@ Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.WorkspaceKey.get -
 Callora.Core.Application.Webhooks.WebhookSubscriptionSnapshot.WorkspaceKey.init -> void
 Callora.Core.Application.Webhooks.WebhookTargetException
 Callora.Core.Application.Webhooks.WebhookTelemetry
+Callora.Core.Application.Workspaces.Contracts.ISurfaceTreeEditor
+Callora.Core.Application.Workspaces.Contracts.ISurfaceTreeEditor.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.SurfaceDeleteResult>!
+Callora.Core.Application.Workspaces.Contracts.ISurfaceTreeEditor.GetAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
+Callora.Core.Application.Workspaces.Contracts.ISurfaceTreeEditor.ListAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot!>!>!
+Callora.Core.Application.Workspaces.Contracts.ISurfaceTreeEditor.UpsertAsync(string! workspaceKey, Callora.Core.Application.Workspaces.WorkspaceSurfaceInput! input, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Application.Workspaces.Contracts.IWorkspaceSurfaceProvisioner
 Callora.Core.Application.Workspaces.Contracts.IWorkspaceSurfaceProvisioner.EnsureAsync(string! workspaceKey, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition! definition, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation?>!
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
@@ -3944,6 +3949,12 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.UpdatedAtUtc.init -
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceKey.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceKey.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceSurfaceSnapshot(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor
+Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.SurfaceDeleteResult>!
+Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor.GetAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
+Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor.ListAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot!>!>!
+Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor.UpsertAsync(string! workspaceKey, Callora.Core.Application.Workspaces.WorkspaceSurfaceInput! input, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
+Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor.WorkspaceSurfaceTreeEditor(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory) -> void
 Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot
 Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot.<Clone>$() -> Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot!
 Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot.AssignedAtUtc.get -> System.DateTimeOffset?
@@ -4842,6 +4853,7 @@ Callora.Core.Infrastructure.Http.HostApiEventStream
 Callora.Core.Infrastructure.Http.HostApiEventStream.HostApiEventStream(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> void
 Callora.Core.Infrastructure.Http.HostApiRequest
 Callora.Core.Infrastructure.Http.HostApiRequest.HostApiRequest(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> void
+Callora.Core.Infrastructure.Http.PlatformOwnedPathSegments
 Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource
 Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource.PluginApiEndpointDataSource(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource!>! logger) -> void
 Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource.Refresh() -> void
@@ -5255,6 +5267,8 @@ Callora.Core.Infrastructure.Plugins.LocalPluginProjectBuilder.LocalPluginProject
 Callora.Core.Infrastructure.Plugins.ManifestSignaturePluginPackageVerifier
 Callora.Core.Infrastructure.Plugins.ManifestSignaturePluginPackageVerifier.ManifestSignaturePluginPackageVerifier(Callora.Core.Application.Plugins.IPluginSignatureTrustStore! trustStore, Callora.Core.Application.Policies.BackendHostOptions! options) -> void
 Callora.Core.Infrastructure.Plugins.ManifestSignaturePluginPackageVerifier.VerifyAsync(string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult!>
+Callora.Core.Infrastructure.Plugins.PluginAssetStaticFiles
+Callora.Core.Infrastructure.Plugins.PluginAssetWebRoot
 Callora.Core.Infrastructure.Plugins.PluginRegistryExtensionJsonDto
 Callora.Core.Infrastructure.Plugins.PluginRegistryExtensionJsonDto.ExtensionPointId.get -> string?
 Callora.Core.Infrastructure.Plugins.PluginRegistryExtensionJsonDto.ExtensionPointId.set -> void
@@ -6760,12 +6774,15 @@ static Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.oper
 static Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.operator ==(Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult? left, Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult? right) -> bool
 static Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult.operator !=(Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? left, Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? right) -> bool
 static Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult.operator ==(Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? left, Callora.Core.Infrastructure.Extensions.ThemeJsonSettingsReadResult? right) -> bool
+static Callora.Core.Infrastructure.Http.PlatformOwnedPathSegments.IsPlatformOwned(string? requestPath) -> bool
 static Callora.Core.Infrastructure.Http.ReservedHostRoutePrefixes.Collides(string? pathTemplate) -> bool
 static Callora.Core.Infrastructure.Persistence.BackendPersistenceServiceCollectionExtensions.AddBackendPersistence(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Policies.BackendHostOptions! options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.Persistence.DbContextMigrationExtensions.ApplyMigrationsAsync(this Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Callora.Core.Infrastructure.Persistence.PluginManifestSchemaReader.TryReadDatabaseSchema(string! assemblyPath) -> string?
 static Callora.Core.Infrastructure.Persistence.PluginSchemaName.Sanitize(string? schemaName) -> string?
 static Callora.Core.Infrastructure.Persistence.PluginSchemaName.TryResolve(string! pluginId) -> string?
+static Callora.Core.Infrastructure.Plugins.PluginAssetStaticFiles.Use(Microsoft.AspNetCore.Builder.IApplicationBuilder! app, Microsoft.AspNetCore.Hosting.IWebHostEnvironment! environment) -> void
+static Callora.Core.Infrastructure.Plugins.PluginAssetWebRoot.Resolve(Microsoft.AspNetCore.Hosting.IWebHostEnvironment! environment) -> string!
 static Callora.Core.Infrastructure.Plugins.PluginRegistryMatch.operator !=(Callora.Core.Infrastructure.Plugins.PluginRegistryMatch? left, Callora.Core.Infrastructure.Plugins.PluginRegistryMatch? right) -> bool
 static Callora.Core.Infrastructure.Plugins.PluginRegistryMatch.operator ==(Callora.Core.Infrastructure.Plugins.PluginRegistryMatch? left, Callora.Core.Infrastructure.Plugins.PluginRegistryMatch? right) -> bool
 static Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry.operator !=(Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry? left, Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry? right) -> bool
