@@ -23,4 +23,10 @@ public sealed record UpsertSurfaceApiRequest(
 
     /// <summary>Reihenfolge unter Geschwistern; die Reihenfolge der Navigation.</summary>
     public int Position { get; init; }
+
+    /// <summary>
+    /// Claims, die ein Besucher mitbringen muss (ADR-019 §4) — kommagetrennt, leer heißt keine
+    /// Anforderung. Kumulativ entlang der Kette: Was ein Elternteil verlangt, gilt auch hier.
+    /// </summary>
+    public string? RequiredClaims { get; init; }
 }

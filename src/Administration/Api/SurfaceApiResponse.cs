@@ -24,4 +24,11 @@ public sealed record SurfaceApiResponse(
 
     /// <summary>Reihenfolge unter Geschwistern.</summary>
     public int Position { get; init; }
+
+    /// <summary>
+    /// Die Claims, die DIESER Knoten verlangt — nicht die der Kette. Die Verwaltung muss zeigen,
+    /// was hier gesetzt ist; was zusätzlich von oben gilt, gehört daneben und nicht ins
+    /// Eingabefeld, sonst schriebe ein Speichern die Anforderung des Elternteils hierher fest.
+    /// </summary>
+    public string? RequiredClaims { get; init; }
 }

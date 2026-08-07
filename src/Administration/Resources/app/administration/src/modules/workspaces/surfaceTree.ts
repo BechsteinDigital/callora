@@ -110,3 +110,51 @@ export function eligibleParents(
 
   return surfaces.filter((surface) => !excluded.has(surface.surfaceKey))
 }
+
+/**
+ * Die Claims, die für diesen Knoten gelten, ohne die er selbst verlangt — also das, was von
+ * seinen Vorfahren dazukommt.
+ *
+ * Getrennt vom eigenen Wert, weil die Verwaltung beides zeigen muss und nur das eigene
+ * bearbeiten darf: Stünde die ganze Kette im Eingabefeld, schriebe ein Speichern die
+ * Anforderung des Elternteils hier fest — und ein späteres Lockern dort bliebe wirkungslos.
+ */
+export function inheritedClaims(
+  surfaces: readonly WorkspaceSurface[],
+  surfaceKey: string,
+): string[] {
+  const byKey = new Map(surfaces.map((surface) => [surface.surfaceKey, surface]))
+  const claims = new Set<string>()
+  const seen = new Set<string>([surfaceKey])
+
+  let parentKey = byKey.get(surfaceKey)?.parentSurfaceKey ?? null
+  while (parentKey && !seen.has(parentKey)) {
+    seen.add(parentKey)
+    const parent = byKey.get(parentKey)
+    if (!parent) {
+      break
+    }
+
+    for (const claim of parseClaims(parent.requiredClaims)) {
+      claims.add(claim)
+    }
+
+    parentKey = parent.parentSurfaceKey
+  }
+
+  return [...claims].sort()
+}
+
+/** Dieselbe Zerlegung wie serverseitig: kommagetrennt, ohne Leerraum, ohne Dubletten. */
+export function parseClaims(requiredClaims: string | null | undefined): string[] {
+  if (!requiredClaims) {
+    return []
+  }
+
+  return [...new Set(
+    requiredClaims
+      .split(',')
+      .map((claim) => claim.trim())
+      .filter((claim) => claim.length > 0),
+  )]
+}
