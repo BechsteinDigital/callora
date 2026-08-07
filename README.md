@@ -152,9 +152,13 @@ Architektur-Tests), und es hilft zu wissen, welche.
 > Vertragspakete `@callora/surface` und `@callora/admin` Apache-2.0 deklarieren — ein
 > Widerspruch, der aufzulösen ist, bevor jemand darauf baut.
 >
-> Die Analyse der Optionen samt Empfehlung steht in
-> [`ops/research/2026-08-07-lizenzmodell.md`](ops/research/2026-08-07-lizenzmodell.md). Der Kern:
-> Die Vertragspakete bleiben Apache-2.0, der Kern wird offen (LGPL oder AGPL mit
-> Plugin-Ausnahme), kommerzielle Plugins bleiben proprietär.
+> Empfohlen wird **Apache-2.0** für alles, was hier liegt: Callora selbst ist Infrastruktur, und
+> Infrastruktur lebt von Verbreitung. Die kommerziellen Plugins verlassen dieses Repository
+> ohnehin und bleiben proprietär — eine Copyleft-Lizenz am Kern schützte also nichts, was Wert
+> hat. Apache statt MIT wegen der Patentklausel: Bei Codecs, SIP und Echo Cancellation ist
+> Patentrecht real.
+>
+> Die vollständige Analyse steht in
+> [`ops/research/2026-08-07-lizenzmodell.md`](ops/research/2026-08-07-lizenzmodell.md).
 
 © 2026 Bechstein Digital
