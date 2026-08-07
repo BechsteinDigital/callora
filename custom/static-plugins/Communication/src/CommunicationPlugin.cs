@@ -158,8 +158,9 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
             // Media teardown is wired into call control from the start: a call that ends must close
             // its streams (#114), and that has to hold for the very first call the host places.
             mediaStreamSessionStore = new EfMediaStreamSessionStore(dbContextFactory);
-            // Line quotas (#159). Built before call control, which reserves through it, and exported so
-            // quotas can be configured at all — a ledger nobody can fill limits nothing.
+            // Line quotas (#159). Built before call control, which reserves through it, and before the
+            // runtime reconciler, which fills it from each account's configuration. Exported as well,
+            // so a plugin can divide lines it owns without going through the account.
             _callQuotas = new CallQuotaLedger();
             context.Export<ICallQuotaRegistry>(_callQuotas);
 
@@ -531,12 +532,16 @@ public sealed class CommunicationPlugin : IHostManagedPlugin, IDrainablePlugin
                 TimeProvider.System,
                 ResolveLogger<EfSipAccountStatusProjector>(context.Services));
 
+        // The ledger goes in here rather than being resolved later: this is the only place an account
+        // becomes a live channel, so it is the only place its line shares can reach the ledger. A
+        // share nobody applies limits nothing.
         return new SipAccountRuntimeReconciler(
             connector,
             _channelRegistry,
             _audioRegistrar!,
             ResolveLogger<SipAccountRuntimeReconciler>(context.Services),
-            statusProjector);
+            statusProjector,
+            _callQuotas);
     }
 
     // Startup uses the same reconciler as the admin mutations, so there is one provisioning

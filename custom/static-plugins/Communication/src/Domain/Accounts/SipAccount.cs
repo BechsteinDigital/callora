@@ -9,6 +9,8 @@ namespace Callora.Plugin.Communication.Domain.Accounts;
 /// </summary>
 public sealed class SipAccount
 {
+    private IReadOnlyList<CallQuota>? _callQuotas;
+
     /// <summary>Creates a configured account. Status starts <see cref="SipAccountStatus.Connecting"/>
     /// when enabled, otherwise <see cref="SipAccountStatus.Disabled"/>.</summary>
     public SipAccount(
@@ -17,7 +19,8 @@ public sealed class SipAccount
         string displayName,
         SipConnection connection,
         int maxConcurrentCalls,
-        bool enabled)
+        bool enabled,
+        IEnumerable<CallQuota>? callQuotas = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
@@ -30,6 +33,7 @@ public sealed class SipAccount
         DisplayName = displayName;
         Connection = connection;
         MaxConcurrentCalls = maxConcurrentCalls;
+        CallQuotas = CallQuota.Validate(callQuotas);
         Enabled = enabled;
         Status = enabled ? SipAccountStatus.Connecting : SipAccountStatus.Disabled;
     }
@@ -54,6 +58,22 @@ public sealed class SipAccount
 
     /// <summary>Maximum simultaneous calls across this account's lines.</summary>
     public int MaxConcurrentCalls { get; private set; }
+
+    /// <summary>
+    /// How the account's lines are divided between the things that use it. Empty means undivided:
+    /// splitting a trunk is deliberate, and an operator who configured nothing wanted no split — not a
+    /// silent limit of zero.
+    /// </summary>
+    /// <remarks>
+    /// Reads as empty even when nothing was materialized: a NULL column bypasses the value converter,
+    /// so EF hands the field null rather than the empty list the converter would have produced. Every
+    /// account that predates this column is in exactly that state.
+    /// </remarks>
+    public IReadOnlyList<CallQuota> CallQuotas
+    {
+        get => _callQuotas ?? [];
+        private set => _callQuotas = value;
+    }
 
     /// <summary>Whether the account is active.</summary>
     public bool Enabled { get; private set; }
@@ -131,7 +151,19 @@ public sealed class SipAccount
     /// enabled/status lifecycle are unaffected — enabling is done via <see cref="Enable"/>/<see cref="Disable"/>,
     /// and connectivity status is reported by the bridge. Re-provisioning after a change is a runtime concern.
     /// </summary>
-    public void Reconfigure(string displayName, SipConnection connection, int maxConcurrentCalls)
+    /// <param name="displayName">Operator-facing name.</param>
+    /// <param name="connection">The connection configuration.</param>
+    /// <param name="maxConcurrentCalls">The account's ceiling.</param>
+    /// <param name="callQuotas">
+    /// How the lines are divided. An empty set removes the division — there has to be a way back to an
+    /// undivided trunk, so this replaces rather than merges. A caller that means "leave it alone"
+    /// passes the account's current quotas.
+    /// </param>
+    public void Reconfigure(
+        string displayName,
+        SipConnection connection,
+        int maxConcurrentCalls,
+        IEnumerable<CallQuota>? callQuotas = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
         ArgumentNullException.ThrowIfNull(connection);
@@ -140,5 +172,6 @@ public sealed class SipAccount
         DisplayName = displayName;
         Connection = connection;
         MaxConcurrentCalls = maxConcurrentCalls;
+        CallQuotas = CallQuota.Validate(callQuotas);
     }
 }

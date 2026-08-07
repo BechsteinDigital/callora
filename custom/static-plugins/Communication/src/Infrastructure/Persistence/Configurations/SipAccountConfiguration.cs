@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Callora.Plugin.Communication.Domain.Accounts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -28,6 +29,22 @@ public sealed class SipAccountConfiguration : IEntityTypeConfiguration<SipAccoun
         list => list.Aggregate(0, (hash, item) => HashCode.Combine(hash, item.GetHashCode())),
         list => list.ToList());
 
+    private static readonly JsonSerializerOptions CallQuotasJson = new(JsonSerializerDefaults.Web);
+
+    /// <summary>
+    /// Persists the line shares as one JSON column. They are read and written as a whole and never
+    /// queried by origin, so a table of their own would buy nothing but a join.
+    /// </summary>
+    private static readonly ValueConverter<IReadOnlyList<CallQuota>, string?> CallQuotasConverter = new(
+        list => list.Count == 0 ? null : JsonSerializer.Serialize(list, CallQuotasJson),
+        stored => ReadQuotas(stored));
+
+    /// <summary>Same reason as the DID whitelist: without it EF never notices an edited collection.</summary>
+    private static readonly ValueComparer<IReadOnlyList<CallQuota>> CallQuotasComparer = new(
+        (left, right) => (left ?? new List<CallQuota>()).SequenceEqual(right ?? new List<CallQuota>()),
+        list => list.Aggregate(0, (hash, item) => HashCode.Combine(hash, item.GetHashCode())),
+        list => list.ToList());
+
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<SipAccount> builder)
     {
@@ -38,6 +55,12 @@ public sealed class SipAccountConfiguration : IEntityTypeConfiguration<SipAccoun
         builder.Property(x => x.WorkspaceKey).HasMaxLength(120).IsRequired();
         builder.Property(x => x.DisplayName).HasMaxLength(200).IsRequired();
         builder.Property(x => x.MaxConcurrentCalls).IsRequired();
+        var callQuotas = builder.Property(x => x.CallQuotas)
+            .HasColumnName("call_quotas")
+            .HasColumnType("text")
+            .HasConversion(CallQuotasConverter)
+            .IsRequired(false); // an undivided trunk stores NULL, not "[]"
+        callQuotas.Metadata.SetValueComparer(CallQuotasComparer);
         builder.Property(x => x.Enabled).IsRequired();
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
         // Matches SipStatusError.MaxLength: the domain truncates before this ever binds.
@@ -78,6 +101,11 @@ public sealed class SipAccountConfiguration : IEntityTypeConfiguration<SipAccoun
         // unique constraint that lets a line only reference an account in its own workspace. No
         // separate unique index is declared here; it would duplicate that alternate key.
     }
+
+    private static IReadOnlyList<CallQuota> ReadQuotas(string? stored) =>
+        string.IsNullOrEmpty(stored)
+            ? []
+            : JsonSerializer.Deserialize<List<CallQuota>>(stored, CallQuotasJson) ?? [];
 
     private static IReadOnlyList<string> Split(string? stored) =>
         string.IsNullOrEmpty(stored)

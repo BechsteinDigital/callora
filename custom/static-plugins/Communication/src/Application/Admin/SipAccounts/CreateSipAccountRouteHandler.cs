@@ -76,13 +76,19 @@ public sealed class CreateSipAccountRouteHandler(
             return Bad("maxConcurrentCalls must be at least 1.");
         }
 
+        if (!CallQuotaValidation.TryBuild(body.CallQuotas, out var callQuotas, out var quotaError))
+        {
+            return Bad(quotaError!);
+        }
+
         var account = new SipAccount(
             Guid.NewGuid().ToString("n"),
             workspaceKey,
             body.DisplayName!,
             connection!,
             maxConcurrentCalls,
-            body.Enabled ?? true);
+            body.Enabled ?? true,
+            callQuotas);
 
         await store.AddAsync(account, cancellationToken).ConfigureAwait(false);
 

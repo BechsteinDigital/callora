@@ -87,6 +87,53 @@ public sealed class CommunicationStorePersistenceTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task SipAccount_CallQuotas_RoundTrip_AndAreReplacedOnUpdate()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        var store = new EfSipAccountStore(_factory);
+        var account = new SipAccount(
+            "acc-quota", "ws-q", "Geteilter Trunk",
+            new SipConnection("sip.example.org", 5060, SipTransport.Udp, SipAccountMode.Register,
+                new DigestAuthentication("alice", null, "secret://acc/pw"), 3600),
+            maxConcurrentCalls: 12, enabled: true,
+            [new CallQuota("crm", 10), new CallQuota("dialer:campaign-x", 2)]);
+        await store.AddAsync(account);
+
+        var loaded = await store.GetAsync("ws-q", "acc-quota");
+        Assert.Equal(
+            [("crm", 10), ("dialer:campaign-x", 2)],
+            loaded!.CallQuotas.Select(q => (q.Origin, q.MaxConcurrentCalls)));
+
+        // Eine Änderung muss auch ankommen: Ohne expliziten Vergleicher hält EF die Sammlung für
+        // unveränderlich und schreibt sie nie zurück.
+        loaded.Reconfigure(loaded.DisplayName, loaded.Connection, 12, [new CallQuota("crm", 4)]);
+        await store.UpdateAsync(loaded);
+
+        var reloaded = await store.GetAsync("ws-q", "acc-quota");
+        Assert.Equal(4, Assert.Single(reloaded!.CallQuotas).MaxConcurrentCalls);
+    }
+
+    [SkippableFact]
+    public async Task SipAccount_WithoutCallQuotas_LoadsAsUndivided()
+    {
+        Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
+
+        // Eine NULL-Spalte umgeht den Wertkonverter: EF weist direkt null zu. Jedes bestehende Konto
+        // hat diese Spalte leer, also ist das der Normalfall und nicht der Randfall.
+        var store = new EfSipAccountStore(_factory);
+        await store.AddAsync(new SipAccount(
+            "acc-plain", "ws-q", "Ungeteilter Trunk",
+            new SipConnection("sip.example.org", 5060, SipTransport.Udp, SipAccountMode.Register,
+                new DigestAuthentication("alice", null, "secret://acc/pw"), 3600),
+            maxConcurrentCalls: 4, enabled: true));
+
+        var loaded = await store.GetAsync("ws-q", "acc-plain");
+
+        Assert.Empty(loaded!.CallQuotas);
+    }
+
+    [SkippableFact]
     public async Task SipAccount_IpAuthenticatedTrunk_RoundTrips_WithoutCredentials()
     {
         Skip.IfNot(_started, "Docker/Postgres nicht verfügbar.");
