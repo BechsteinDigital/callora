@@ -59,7 +59,12 @@ internal sealed class WorkspaceSurfaceProvisioner(
                 : definition.TemplateVersion.Trim(),
             existing?.ThemePluginId,
             existing?.ThemeVersion,
-            IsActive: true);
+            IsActive: true)
+        {
+            Routing = definition.Routing == PluginSurfaceRouting.Application
+                ? SurfaceRouting.Application
+                : SurfaceRouting.Tree,
+        };
         var surface = await surfaceStore
             .UpsertAsync(normalizedWorkspaceKey, input, cancellationToken)
             .ConfigureAwait(false);

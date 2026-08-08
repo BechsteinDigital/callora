@@ -3664,8 +3664,9 @@ Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode.Public = 0
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.AccessMode.get -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.DisplayName.get -> string!
-Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.PluginSurfaceDefinition(string! surfaceKey, string! displayName, string! surfaceType, string! publicPathSuffix, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode accessMode, string! templatePluginId, string? templateVersion = null) -> void
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.PluginSurfaceDefinition(string! surfaceKey, string! displayName, string! surfaceType, string! publicPathSuffix, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode accessMode, string! templatePluginId, string? templateVersion = null, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting routing = Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting.Tree) -> void
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.PublicPathSuffix.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.Routing.get -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.SurfaceKey.get -> string!
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.SurfaceType.get -> string!
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.TemplatePluginId.get -> string!
@@ -3676,6 +3677,9 @@ Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.PublicPath.g
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.PublicUrl.get -> string!
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.SurfaceKey.get -> string!
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation.WorkspaceKey.get -> string!
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting.Application = 1 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting.Tree = 0 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting
 Callora.Core.Application.Workspaces.EffectiveSurface
 Callora.Core.Application.Workspaces.EffectiveSurface.<Clone>$() -> Callora.Core.Application.Workspaces.EffectiveSurface!
 Callora.Core.Application.Workspaces.EffectiveSurface.AccessMode.get -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
