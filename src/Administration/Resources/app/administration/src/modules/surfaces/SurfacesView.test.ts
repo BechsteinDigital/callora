@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import SurfacesView from './SurfacesView.vue'
 import type { WorkspaceSurface } from '@/modules/workspaces/workspacesApi'
+import { registerSurfaceTab, resetSurfaceTabs } from '@/core/extensions/surfaceTabs'
 
 const { listSurfacesMock, upsertSurfaceMock, removeSurfaceMock, pushMock, routeParams } = vi.hoisted(
   () => {
@@ -75,9 +76,44 @@ beforeEach(() => {
     m.mockReset()
   }
   routeParams.value = {}
+  resetSurfaceTabs()
 })
 
 describe('SurfacesView', () => {
+  it('zeigt die Reiter der zugewiesenen App — und nur an ihrer Fläche', async () => {
+    // Der Grund für die Bindung an die App-Zuweisung: Über einen gewöhnlichen Slot erschiene
+    // „Räume" an JEDER Fläche, auch an einer reinen Inhaltsseite. Nach dem dritten Plugin wäre
+    // die Detailansicht unbenutzbar — genau deshalb gibt Shopware Apps nur definierte Slots.
+    registerSurfaceTab('rooms', 'Räume', { template: '<div class="rooms-panel" />' }, 0, 'videoconference')
+    listSurfacesMock.mockResolvedValue([
+      surface({ surfaceKey: 'meet', templatePluginId: 'videoconference' }),
+      surface({ surfaceKey: 'start', templatePluginId: null }),
+    ])
+
+    routeParams.value = { surfaceKey: 'meet' }
+    const withApp = mount(SurfacesView)
+    await flushPromises()
+    expect(withApp.text()).toContain('Räume')
+
+    routeParams.value = { surfaceKey: 'start' }
+    const withoutApp = mount(SurfacesView)
+    await flushPromises()
+    expect(withoutApp.text()).not.toContain('Räume')
+  })
+
+  it('ordnet einen Reiter der App zu, die ihn registriert hat', async () => {
+    // Die Zuordnung kommt vom Loader, nicht vom Plugin selbst — sonst könnte ein Plugin seinen
+    // Reiter an die Fläche eines anderen hängen.
+    registerSurfaceTab('rooms', 'Räume', { template: '<div />' }, 0, 'videoconference')
+    listSurfacesMock.mockResolvedValue([surface({ surfaceKey: 'shop', templatePluginId: 'anderes-plugin' })])
+    routeParams.value = { surfaceKey: 'shop' }
+
+    const wrapper = mount(SurfacesView)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Räume')
+  })
+
   it('leitet die Adressierung aus der App-Zuweisung ab, statt sie zweimal zu fragen', async () => {
     // Eine Fläche, die einer App gehört, deutet ihre Unterpfade selbst — ein Konferenzraum
     // entsteht zur Laufzeit und kann kein Knoten sein. Zwei Felder für eine Entscheidung hätten

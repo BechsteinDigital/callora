@@ -1,6 +1,7 @@
 import * as Vue from 'vue'
 import type { Component } from 'vue'
 import { getExtensions, registerExtension } from './registry'
+import { registerSurfaceTab } from './surfaceTabs'
 import { registerHook, type HookContext } from './hooks'
 import { registerService } from './services'
 
@@ -104,6 +105,11 @@ export interface PluginUiLoaderDeps {
  */
 export interface CalloraAdminGlobal {
   registerExtension(slot: string, component: Component, order?: number): void
+  /**
+   * Ein Reiter an der Fläche, der DIESE App zugewiesen ist. Kein Slot, weil er eine
+   * Beschriftung trägt und nur dort erscheint, wo seine App steht.
+   */
+  registerSurfaceTab(id: string, label: string, component: Component, order?: number): void
   registerHook<T>(name: string, handler: (ctx: HookContext<T>) => void | Promise<void>, order?: number): void
   registerService<T>(key: string, implementation: T, meta?: { priority?: number }): void
   /** Read side of the slot registry, so a plugin can render into a slot it does not own. */
@@ -186,6 +192,8 @@ export function installGlobalApi(): void {
   // plugin declaring (or spoofing) its own id.
   const api: CalloraAdminGlobal = {
     registerExtension: (slot, component, order) => registerExtension(slot, component, order, currentPluginId),
+    registerSurfaceTab: (id, label, component, order) =>
+      registerSurfaceTab(id, label, component, order, currentPluginId),
     registerHook: (name, handler, order) => registerHook(name, handler, order, currentPluginId),
     registerService: (key, implementation, meta) =>
       registerService(key, implementation, { pluginId: currentPluginId, priority: meta?.priority }),

@@ -100,6 +100,15 @@
         />
       </template>
 
+      <!--
+        Was die App an ihrer eigenen Fläche führt — Räume, Vorgänge, was auch immer sie
+        verwaltet. Dynamische Slot-Namen, weil erst zur Laufzeit feststeht, welche Reiter es
+        gibt: Sie hängen an der App-Zuweisung, nicht an einer Liste im Host.
+      -->
+      <template v-for="tab in appTabs" :key="tab.id" #[tab.id]>
+        <component :is="tab.component" :ctx="slotContext" />
+      </template>
+
       <template #access>
         <CalCard>
           <div class="detail__form">
@@ -146,6 +155,7 @@ import CalTabs from '@/core/ui/CalTabs.vue'
 import type { TabItem } from '@/core/ui/tabs'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { getExtensions } from '@/core/extensions/registry'
+import { surfaceTabsFor } from '@/core/extensions/surfaceTabs'
 import { confirm } from '@/core/feedback/confirm'
 import { toast } from '@/core/feedback/toasts'
 import { useService } from '@/core/extensions/services'
@@ -205,9 +215,17 @@ const carriedThemeVersion = ref<string | null>(null)
 const carriedPublicBaseUrl = ref<string | null>(null)
 const carriedPosition = ref(0)
 
+/**
+ * Die Reiter der zugewiesenen App. Aus dem GESPEICHERTEN Wert, nicht aus dem Formularfeld:
+ * Solange nicht gespeichert ist, gibt es die Zuweisung serverseitig nicht — ein Reiter, dessen
+ * Inhalt gleich eine API ohne passende Fläche befragte, zeigte nur einen Fehler.
+ */
+const appTabs = computed(() => surfaceTabsFor(props.surface?.templatePluginId ?? null))
+
 const tabs = computed<TabItem[]>(() => [
   { value: 'general', label: 'Allgemein' },
   { value: 'layout', label: 'Layout' },
+  ...appTabs.value.map((tab) => ({ value: tab.id, label: tab.label })),
   { value: 'access', label: 'Zugriff' },
 ])
 

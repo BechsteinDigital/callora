@@ -41,15 +41,34 @@ public static class CalloraSurfaceRenderingExtensions
         services.AddSingleton<SurfaceDataResolver>();
 
         services.AddSingleton<SurfaceContextBroadcaster>();
-        // GetService, not GetRequiredService: a host without the identity subsystem composes
-        // fine, and the revalidator then has nothing to watch rather than being absent.
+        // Der Revalidator lebt für den ganzen Prozess, der Authenticator pro Anfrage. Ihn hier
+        // aufzulösen und festzuhalten hieße, seinen DbContext über die Lebensdauer einer Anfrage
+        // hinaus zu halten — und ASP.NET lehnt es im Development sofort ab: „Cannot resolve
+        // scoped service … from root provider", als 500 auf einer beliebigen Anfrage, weit weg
+        // von dieser Zeile.
+        //
+        // Deshalb öffnet die Probe ihren Scope selbst, bei jedem Aufruf. Ob es das
+        // Identitäts-Subsystem überhaupt gibt, beantwortet IServiceProviderIsService — eine
+        // Frage an die REGISTRIERUNG, ohne den Dienst dabei zu bauen. Ein Host ohne dieses
+        // Subsystem bekommt weiterhin einen Revalidator, der nichts zu beobachten hat, statt gar
+        // keinen.
         services.AddSingleton(sp =>
         {
-            var authenticator = sp.GetService<SurfaceSessionAuthenticator>();
-            SurfaceSessionProbe? probe = authenticator is null
-                ? null
-                : (cookie, audience, ct) => authenticator.AuthenticateAsync(cookie, audience, ct);
-            return new SurfaceContextRevalidator(probe);
+            if (sp.GetService<IServiceProviderIsService>() is not { } registrations ||
+                !registrations.IsService(typeof(SurfaceSessionAuthenticator)))
+            {
+                return new SurfaceContextRevalidator(probe: null);
+            }
+
+            var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+            return new SurfaceContextRevalidator(async (cookie, audience, ct) =>
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                return await scope.ServiceProvider
+                    .GetRequiredService<SurfaceSessionAuthenticator>()
+                    .AuthenticateAsync(cookie, audience, ct)
+                    .ConfigureAwait(false);
+            });
         });
         services.AddSingleton<ISurfaceContextBroadcaster>(
             sp => sp.GetRequiredService<SurfaceContextBroadcaster>());
