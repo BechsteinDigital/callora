@@ -28,6 +28,43 @@
         </RouterLink>
       </div>
 
+      <!-- Die Flächen stehen als eigener Bereich, nicht als Menüpunkt: Eine Fläche ist ein
+           ORT, an dem gearbeitet wird — die Entsprechung zu Shopwares Verkaufskanälen. Wer
+           eine Seite bearbeiten will, sucht die Fläche, nicht den Menüpunkt „Flächen". -->
+      <div v-if="surfaceRoots.length" class="sidebar__group">
+        <div class="sidebar__group-head">
+          <p v-if="!collapsed" class="sidebar__group-label">Flächen</p>
+          <div v-else class="sidebar__group-rule" aria-hidden="true" />
+          <RouterLink
+            v-if="!collapsed"
+            class="sidebar__group-action"
+            to="/surfaces"
+            title="Flächen verwalten"
+            @click="closeMobile"
+          >
+            <CalIcon :icon="Settings2" size="sm" />
+          </RouterLink>
+        </div>
+        <RouterLink
+          v-for="surface in surfaceRoots"
+          :key="surface.surfaceKey"
+          class="sidebar__link"
+          :class="{ 'is-active': route.path === `/surfaces/${surface.surfaceKey}` }"
+          :to="`/surfaces/${encodeURIComponent(surface.surfaceKey)}`"
+          :title="collapsed ? surface.displayName : undefined"
+          @click="closeMobile"
+        >
+          <CalIcon
+            class="sidebar__link-icon"
+            :icon="surface.routing === 'Application' ? AppWindow : Store"
+            size="sm"
+          />
+          <span v-if="!collapsed" class="sidebar__link-label">
+            {{ surface.displayName || surface.surfaceKey }}
+          </span>
+        </RouterLink>
+      </div>
+
       <div v-if="pluginNav.length" class="sidebar__group">
         <p v-if="!collapsed" class="sidebar__group-label">Erweiterungen</p>
         <div v-else class="sidebar__group-rule" aria-hidden="true" />
@@ -62,13 +99,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-vue-next'
+import { AppWindow, PanelLeftClose, PanelLeftOpen, Settings2, Store, X } from 'lucide-vue-next'
 import CalIcon from '@/core/ui/CalIcon.vue'
 import { useAuthStore } from '@/core/auth/authStore'
 import { visibleNavGroups } from './navigation'
 import { isNavItemActive } from './navActive'
 import { useSidebar } from './sidebarState'
 import { usePluginNavigation } from '@/core/extensions/pluginNavigation'
+import { useSurfaceNavigation } from '@/core/workspace/surfaceNavigation'
 import { resolvePluginIcon } from '@/core/extensions/pluginIcons'
 
 const route = useRoute()
@@ -80,6 +118,10 @@ const groups = computed(() => visibleNavGroups(ctx.value))
 const { items: pluginNav } = usePluginNavigation()
 
 const { collapsed, mobileOpen, toggleCollapsed, closeMobile } = useSidebar()
+
+// Die Wurzelflächen des aktiven Workspaces. Geteilt mit der Flächenansicht, damit eine neu
+// angelegte Seite nicht an einer Stelle auftaucht und an der anderen fehlt.
+const { roots: surfaceRoots } = useSurfaceNavigation()
 </script>
 
 <style scoped lang="scss">
@@ -174,6 +216,23 @@ const { collapsed, mobileOpen, toggleCollapsed, closeMobile } = useSidebar()
   text-transform: uppercase;
   letter-spacing: var(--cal-tracking-wide);
   color: var(--cal-text-muted);
+}
+
+.sidebar__group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar__group-action {
+  display: flex;
+  padding: var(--cal-space-1) var(--cal-space-2);
+  color: var(--cal-text-muted);
+}
+
+.sidebar__group-action:hover {
+  color: var(--cal-text);
+  text-decoration: none;
 }
 
 /* Collapsed, a group heading would not fit — a hairline keeps the rhythm. */

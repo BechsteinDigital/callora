@@ -86,8 +86,19 @@
       <template #plugins>
         <WorkspacePlugins :workspace-key="loaded.workspaceKey" :can-manage="canManagePlugins" />
       </template>
+      <!-- Die Flächen haben eine eigene Ansicht mit Baum und Editor. Sie hier ein zweites Mal
+           anzubieten hieße, zwei Oberflächen für dieselbe Sache zu pflegen — und die
+           schlechtere zu bewerben, weil sie gerade offen ist. -->
       <template #surfaces>
-        <WorkspaceSurfaces :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
+        <CalEmptyState
+          :icon="Layers"
+          title="Flächen haben eine eigene Ansicht"
+          description="Dort stehen der Seitenbaum, das Detailformular und der Layout-Editor nebeneinander."
+        >
+          <template #action>
+            <CalButton to="/surfaces">Flächen öffnen</CalButton>
+          </template>
+        </CalEmptyState>
       </template>
     </CalTabs>
   </CalPage>
@@ -102,13 +113,13 @@ import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import WorkspaceMembers from './WorkspaceMembers.vue'
 import WorkspacePlugins from './WorkspacePlugins.vue'
-import WorkspaceSurfaces from './WorkspaceSurfaces.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
 import CalAlert from '@/core/ui/CalAlert.vue'
 import CalBadge from '@/core/ui/CalBadge.vue'
 import CalButton from '@/core/ui/CalButton.vue'
+import CalEmptyState from '@/core/ui/CalEmptyState.vue'
 import CalCard from '@/core/ui/CalCard.vue'
 import CalDescriptionList from '@/core/ui/CalDescriptionList.vue'
 import CalField from '@/core/ui/CalField.vue'
