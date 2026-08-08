@@ -46,12 +46,14 @@ public static class RbacEndpoints
                 .Concat(pluginPermissions)
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(value => value, StringComparer.Ordinal)
+                // Dieselbe Zerlegung wie die Gültigkeitsprüfung: Aktion ist das LETZTE Segment.
+                // Am ersten Punkt zu teilen machte aus `communication.accounts.read` die Funktion
+                // „communication" mit der Aktion „accounts.read" — und aus zwei getrennten
+                // Berechtigungen in der Oberfläche eine Gruppe, die keine ist.
                 .Select(value =>
                 {
-                    var parts = value.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
-                    var function = parts.Length > 0 ? parts[0] : value;
-                    var action = parts.Length > 1 ? parts[1] : string.Empty;
-                    return new RbacPermissionApiResponse(value, function, action);
+                    BackendPermissionKey.TryParse(value, out var key);
+                    return new RbacPermissionApiResponse(value, key.Function, key.Action);
                 })
                 .ToArray();
 

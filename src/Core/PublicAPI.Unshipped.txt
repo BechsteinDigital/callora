@@ -2775,6 +2775,15 @@ Callora.Core.Application.Security.BackendClaimTypes
 Callora.Core.Application.Security.BackendLockoutPolicy
 Callora.Core.Application.Security.BackendPasswordPolicy
 Callora.Core.Application.Security.BackendPermissionActions
+Callora.Core.Application.Security.BackendPermissionKey
+Callora.Core.Application.Security.BackendPermissionKey.Action.get -> string!
+Callora.Core.Application.Security.BackendPermissionKey.Action.init -> void
+Callora.Core.Application.Security.BackendPermissionKey.BackendPermissionKey() -> void
+Callora.Core.Application.Security.BackendPermissionKey.BackendPermissionKey(string! Function, string! Action) -> void
+Callora.Core.Application.Security.BackendPermissionKey.Deconstruct(out string! Function, out string! Action) -> void
+Callora.Core.Application.Security.BackendPermissionKey.Equals(Callora.Core.Application.Security.BackendPermissionKey other) -> bool
+Callora.Core.Application.Security.BackendPermissionKey.Function.get -> string!
+Callora.Core.Application.Security.BackendPermissionKey.Function.init -> void
 Callora.Core.Application.Security.BackendPermissionKeyValidator
 Callora.Core.Application.Security.BackendPermissionKeys
 Callora.Core.Application.Security.BackendRbacException
@@ -6051,6 +6060,7 @@ override Callora.Core.Application.Security.AdminContextView.ToString() -> string
 override Callora.Core.Application.Security.AdminLoginGrant.Equals(object? obj) -> bool
 override Callora.Core.Application.Security.AdminLoginGrant.GetHashCode() -> int
 override Callora.Core.Application.Security.AdminLoginGrant.ToString() -> string!
+override Callora.Core.Application.Security.BackendPermissionKey.GetHashCode() -> int
 override Callora.Core.Application.Security.UserDataExport.Equals(object? obj) -> bool
 override Callora.Core.Application.Security.UserDataExport.GetHashCode() -> int
 override Callora.Core.Application.Security.UserDataExport.ToString() -> string!
@@ -6591,6 +6601,9 @@ static Callora.Core.Application.Security.AdminLoginGrant.operator ==(Callora.Cor
 static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!
 static Callora.Core.Application.Security.BackendPasswordPolicy.IsAcceptable(string? password) -> bool
 static Callora.Core.Application.Security.BackendPasswordPolicy.Validate(string? password) -> string?
+static Callora.Core.Application.Security.BackendPermissionKey.TryParse(string? permissionKey, out Callora.Core.Application.Security.BackendPermissionKey key) -> bool
+static Callora.Core.Application.Security.BackendPermissionKey.operator !=(Callora.Core.Application.Security.BackendPermissionKey left, Callora.Core.Application.Security.BackendPermissionKey right) -> bool
+static Callora.Core.Application.Security.BackendPermissionKey.operator ==(Callora.Core.Application.Security.BackendPermissionKey left, Callora.Core.Application.Security.BackendPermissionKey right) -> bool
 static Callora.Core.Application.Security.BackendPermissionKeyValidator.IsValid(string! permissionKey) -> bool
 static Callora.Core.Application.Security.BackendRbacException.PermissionInvalid(string! permission, string! role) -> Callora.Core.Application.Security.BackendRbacException!
 static Callora.Core.Application.Security.BackendRbacException.RoleFixed(string! roleName) -> Callora.Core.Application.Security.BackendRbacException!
@@ -6845,3 +6858,5 @@ virtual Callora.Core.Application.Surfaces.SurfaceCaller.PrintMembers(System.Text
 ~override Callora.Core.Application.Plugins.PluginActivationDecision.ToString() -> string
 ~override Callora.Core.Application.Plugins.PluginAvailabilityInputs.Equals(object obj) -> bool
 ~override Callora.Core.Application.Plugins.PluginAvailabilityInputs.ToString() -> string
+~override Callora.Core.Application.Security.BackendPermissionKey.Equals(object obj) -> bool
+~override Callora.Core.Application.Security.BackendPermissionKey.ToString() -> string
