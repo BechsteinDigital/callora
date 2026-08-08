@@ -49,6 +49,11 @@ public sealed record EffectiveSurface(
     public required string? RequiredClaims { get; init; }
 
     /// <summary>
+    /// Was jeder Besucher hier mitbringt — die Vereinigung der ganzen Kette.
+    /// </summary>
+    public required string? GrantedClaims { get; init; }
+
+    /// <summary>
     /// Baut die effektive Sicht aus der Kette (Knoten zuerst, Wurzel zuletzt).
     /// <para>
     /// Der Access Mode ist die eine Ausnahme von „erster gesetzter Wert gewinnt": Er ist nicht
@@ -100,6 +105,14 @@ public sealed record EffectiveSurface(
                 ',',
                 ancestry
                     .SelectMany(node => SurfaceVisibility.Parse(node.RequiredClaims))
+                    .Distinct(StringComparer.Ordinal)),
+            // Dieselbe Kumulation wie bei der Anforderung: Was ein Elternteil gewährt, gilt auch
+            // für jede Unterseite. Alles andere zwänge einen Betreiber, dieselbe Gewährung an
+            // jedem Knoten zu wiederholen — und jede vergessene wäre eine Seite, die leer bleibt.
+            GrantedClaims = string.Join(
+                ',',
+                ancestry
+                    .SelectMany(node => SurfaceVisibility.Parse(node.GrantedClaims))
                     .Distinct(StringComparer.Ordinal)),
         };
     }

@@ -363,6 +363,7 @@ const carriedTemplatePluginId = ref<string | null>(null)
 const carriedTemplateVersion = ref<string | null>(null)
 const carriedThemePluginId = ref<string | null>(null)
 const carriedThemeVersion = ref<string | null>(null)
+const carriedGrantedClaims = ref<string | null>(null)
 
 // Resolve the workspaces service through the override registry: a plugin may replace it.
 const api = useService('workspacesApi', workspacesApi)
@@ -402,6 +403,7 @@ function resetForm(): void {
   formActive.value = true
   formParentKey.value = ''
   formPosition.value = '0'
+  carriedGrantedClaims.value = null
   formRequiredClaims.value = ''
   carriedTemplatePluginId.value = null
   carriedTemplateVersion.value = null
@@ -496,6 +498,10 @@ async function save(): Promise<void> {
       parentSurfaceKey: draft.parentSurfaceKey,
       position: draft.position,
       requiredClaims: draft.requiredClaims,
+      // Diese Ansicht kennt das Feld nicht — sie reicht durch, was gespeichert ist. Ohne das
+      // löschte ein Speichern hier still die gewährten Claims, und die Fläche wäre für jeden
+      // Gast leer, ohne dass jemand sie angefasst hätte.
+      grantedClaims: carriedGrantedClaims.value,
     })
     await runHook('workspaces.surface.after-save', { workspaceKey: props.workspaceKey, surfaceKey: key })
     toast.success(draft.isEdit ? `Surface „${key}“ gespeichert.` : `Surface „${key}“ angelegt.`)

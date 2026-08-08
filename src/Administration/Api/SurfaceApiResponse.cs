@@ -32,4 +32,7 @@ public sealed record SurfaceApiResponse(
     /// Eingabefeld, sonst schriebe ein Speichern die Anforderung des Elternteils hierher fest.
     /// </summary>
     public string? RequiredClaims { get; init; }
+
+    /// <summary>Claims, die jeder Besucher dieser Fläche mitbringt.</summary>
+    public string? GrantedClaims { get; init; }
 }

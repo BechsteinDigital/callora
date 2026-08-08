@@ -103,6 +103,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
         surface.IsActive = input.IsActive;
         surface.Position = input.Position;
         surface.RequiredClaims = input.RequiredClaims;
+        surface.GrantedClaims = input.GrantedClaims;
         surface.UpdatedAtUtc = nowUtc;
 
         // Der Elternteil zuletzt, weil er als Einziger scheitern kann. Ein abgelehnter
@@ -274,6 +275,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             ParentSurfaceKey = x.Parent!.SurfaceKey,
             Position = x.Position,
             RequiredClaims = x.RequiredClaims,
+            GrantedClaims = x.GrantedClaims,
             IdentityPluginId = x.IdentityPluginId,
             IdentityVersion = x.IdentityVersion,
             IdentityAssignedBy = x.IdentityAssignedBy,
@@ -312,6 +314,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             ParentSurfaceKey = parentSurfaceKey,
             Position = x.Position,
             RequiredClaims = x.RequiredClaims,
+            GrantedClaims = x.GrantedClaims,
             IdentityPluginId = x.IdentityPluginId,
             IdentityVersion = x.IdentityVersion,
             IdentityAssignedBy = x.IdentityAssignedBy,

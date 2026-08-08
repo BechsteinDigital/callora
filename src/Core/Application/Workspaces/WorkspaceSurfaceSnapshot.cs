@@ -38,6 +38,9 @@ public sealed record WorkspaceSurfaceSnapshot(
     /// </summary>
     public string? RequiredClaims { get; init; }
 
+    /// <summary>Claims, die jeder Besucher dieser Fläche mitbringt.</summary>
+    public string? GrantedClaims { get; init; }
+
     /// <summary>
     /// Tenant that owns the surface's workspace. Additive to the read model so the
     /// public render path can build a per-surface context; defaults to empty for

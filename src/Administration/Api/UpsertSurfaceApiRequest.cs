@@ -36,4 +36,10 @@ public sealed record UpsertSurfaceApiRequest(
     /// Anforderung. Kumulativ entlang der Kette: Was ein Elternteil verlangt, gilt auch hier.
     /// </summary>
     public string? RequiredClaims { get; init; }
+
+    /// <summary>
+    /// Claims, die JEDER Besucher dieser Fläche mitbringt — kommagetrennt. Die Gegenrichtung zur
+    /// Anforderung: Ohne sie hat ein nicht angemeldeter Besucher gar keine.
+    /// </summary>
+    public string? GrantedClaims { get; init; }
 }

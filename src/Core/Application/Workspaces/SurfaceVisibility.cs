@@ -76,4 +76,25 @@ public static class SurfaceVisibility
         caller is AuthenticatedSurfaceCaller authenticated
             ? authenticated.Identity.Claims.Keys.ToHashSet(StringComparer.Ordinal)
             : new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Was dieser Besucher auf dieser Fläche mitbringt: seine eigenen Claims und die, die die
+    /// Fläche jedem gewährt.
+    /// </summary>
+    /// <remarks>
+    /// Ohne den zweiten Teil hatte ein nicht angemeldeter Besucher IMMER eine leere Menge. Jede
+    /// Ansicht mit einer Anforderung war damit auf einer Fläche ohne Identitätsanbieter
+    /// unerreichbar — auch für einen Gast mit gültiger Einladung, und ohne dass irgendwo stand,
+    /// warum.
+    /// </remarks>
+    public static IReadOnlySet<string> ClaimsOn(SurfaceCaller caller, string? grantedClaims)
+    {
+        var claims = ClaimsOf(caller).ToHashSet(StringComparer.Ordinal);
+        foreach (var granted in Parse(grantedClaims))
+        {
+            claims.Add(granted);
+        }
+
+        return claims;
+    }
 }

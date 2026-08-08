@@ -29,6 +29,7 @@ function surface(
     parentSurfaceKey,
     position,
     requiredClaims: null,
+    grantedClaims: null,
   }
 }
 

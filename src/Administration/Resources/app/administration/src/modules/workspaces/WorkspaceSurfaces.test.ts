@@ -54,6 +54,7 @@ function surface(over: Partial<WorkspaceSurface>): WorkspaceSurface {
     parentSurfaceKey: null,
     position: 0,
     requiredClaims: null,
+    grantedClaims: null,
     ...over,
   }
 }

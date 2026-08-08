@@ -97,6 +97,7 @@ public static class SurfaceEndpoints
                 ParentSurfaceKey = request.ParentSurfaceKey,
                 Position = request.Position,
                 RequiredClaims = request.RequiredClaims,
+                GrantedClaims = request.GrantedClaims,
                 Routing = routing,
             };
 
@@ -198,5 +199,6 @@ public static class SurfaceEndpoints
         ParentSurfaceKey = surface.ParentSurfaceKey,
         Position = surface.Position,
         RequiredClaims = surface.RequiredClaims,
+        GrantedClaims = surface.GrantedClaims,
     };
 }

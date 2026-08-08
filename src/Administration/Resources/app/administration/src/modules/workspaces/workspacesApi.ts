@@ -91,6 +91,7 @@ export interface WorkspaceSurface {
    * Anforderung. Das ist, was DIESER Knoten verlangt; was von oben dazukommt, ist kumulativ.
    */
   requiredClaims: string | null
+  grantedClaims: string | null
 }
 
 // The mutable slice sent on upsert (the surface key comes from the route). Mirrors
@@ -112,6 +113,9 @@ export interface WorkspaceSurfaceUpsert {
   parentSurfaceKey: string | null
   position: number
   requiredClaims: string | null
+  // Was JEDER Besucher hier mitbringt — auch ohne Anmeldung. Die Gegenrichtung zur Anforderung
+  // (ADR-023): Ohne diese Angabe hat ein Gast gar keine Claims.
+  grantedClaims: string | null
 }
 
 // Product-level workspace assignment. An assignment is effective only when

@@ -1654,6 +1654,11 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(300)")
                         .HasColumnName("display_name");
 
+                    b.Property<string>("GrantedClaims")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("granted_claims");
+
                     b.Property<DateTimeOffset?>("IdentityAssignedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("identity_assigned_at_utc");

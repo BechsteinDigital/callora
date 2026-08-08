@@ -475,6 +475,8 @@ Callora.Administration.Api.SurfaceApiResponse.Deconstruct(out System.Guid Id, ou
 Callora.Administration.Api.SurfaceApiResponse.DisplayName.get -> string!
 Callora.Administration.Api.SurfaceApiResponse.DisplayName.init -> void
 Callora.Administration.Api.SurfaceApiResponse.Equals(Callora.Administration.Api.SurfaceApiResponse? other) -> bool
+Callora.Administration.Api.SurfaceApiResponse.GrantedClaims.get -> string?
+Callora.Administration.Api.SurfaceApiResponse.GrantedClaims.init -> void
 Callora.Administration.Api.SurfaceApiResponse.Id.get -> System.Guid
 Callora.Administration.Api.SurfaceApiResponse.Id.init -> void
 Callora.Administration.Api.SurfaceApiResponse.IsActive.get -> bool
@@ -767,6 +769,8 @@ Callora.Administration.Api.UpsertSurfaceApiRequest.Deconstruct(out string! Displ
 Callora.Administration.Api.UpsertSurfaceApiRequest.DisplayName.get -> string!
 Callora.Administration.Api.UpsertSurfaceApiRequest.DisplayName.init -> void
 Callora.Administration.Api.UpsertSurfaceApiRequest.Equals(Callora.Administration.Api.UpsertSurfaceApiRequest? other) -> bool
+Callora.Administration.Api.UpsertSurfaceApiRequest.GrantedClaims.get -> string?
+Callora.Administration.Api.UpsertSurfaceApiRequest.GrantedClaims.init -> void
 Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.get -> bool
 Callora.Administration.Api.UpsertSurfaceApiRequest.IsActive.init -> void
 Callora.Administration.Api.UpsertSurfaceApiRequest.Locale.get -> string?

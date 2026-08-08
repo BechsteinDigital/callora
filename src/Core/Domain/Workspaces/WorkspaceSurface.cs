@@ -48,6 +48,23 @@ public sealed class WorkspaceSurface
     /// </summary>
     public string? RequiredClaims { get; set; }
 
+    /// <summary>
+    /// Claims, die JEDER Besucher dieser Fläche mitbringt — kommagetrennt, leer heißt keine.
+    /// </summary>
+    /// <remarks>
+    /// Die Gegenrichtung zu <see cref="RequiredClaims"/>. Ohne sie hatte ein nicht angemeldeter
+    /// Besucher IMMER eine leere Claim-Menge: Jede Ansicht und jeder Block mit einer Anforderung
+    /// war auf einer Fläche ohne Identitätsanbieter unerreichbar — auch für einen Gast mit
+    /// gültiger Einladung.
+    ///
+    /// <para>
+    /// Kumulativ entlang der Kette, wie die Anforderung: Was ein Elternteil gewährt, gilt auch
+    /// hier. Das ist eine Rechteerweiterung, und sie gehört dem Betreiber — dieselbe
+    /// Entscheidung wie „ich stelle ein Telefon in die Lobby".
+    /// </para>
+    /// </remarks>
+    public string? GrantedClaims { get; set; }
+
     /// <summary>Technical key, unique per workspace.</summary>
     public string SurfaceKey { get; set; } = string.Empty;
 

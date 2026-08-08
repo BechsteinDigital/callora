@@ -45,4 +45,10 @@ public sealed record WorkspaceSurfaceInput(
     /// Anforderung.
     /// </summary>
     public string? RequiredClaims { get; init; }
+
+    /// <summary>
+    /// Claims, die JEDER Besucher hier mitbringt. Die Gegenrichtung zur Anforderung: Ohne sie
+    /// hat ein nicht angemeldeter Besucher gar keine.
+    /// </summary>
+    public string? GrantedClaims { get; init; }
 }

@@ -206,6 +206,7 @@ const formHost = ref('')
 const formLocale = ref('')
 const formActive = ref(true)
 const formRequiredClaims = ref('')
+const formGrantedClaims = ref('')
 
 // Template und Theme reisen unverändert mit: Das Speichern ist ein vollständiges Ersetzen,
 // und was das Formular nicht mitschickt, löscht der Server.
@@ -290,6 +291,7 @@ function fill(): void {
     formLocale.value = ''
     formActive.value = true
     formRequiredClaims.value = ''
+    formGrantedClaims.value = ''
     carriedTemplateVersion.value = null
     carriedThemePluginId.value = null
     carriedThemeVersion.value = null
@@ -308,6 +310,7 @@ function fill(): void {
   formLocale.value = surface.locale ?? ''
   formActive.value = surface.isActive
   formRequiredClaims.value = parseClaims(surface.requiredClaims).join(', ')
+  formGrantedClaims.value = parseClaims(surface.grantedClaims).join(', ')
   carriedTemplateVersion.value = surface.templateVersion
   carriedThemePluginId.value = surface.themePluginId
   carriedThemeVersion.value = surface.themeVersion
@@ -341,6 +344,7 @@ async function save(): Promise<void> {
       parentSurfaceKey: formParentKey.value || null,
       position: carriedPosition.value,
       requiredClaims: parseClaims(formRequiredClaims.value).join(',') || null,
+      grantedClaims: parseClaims(formGrantedClaims.value).join(',') || null,
     })
     toast.success(`Fläche „${key}" gespeichert.`)
     emit('saved', key)

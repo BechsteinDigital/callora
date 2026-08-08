@@ -3504,7 +3504,7 @@ Callora.Core.Application.Surfaces.SurfaceSessionService.EndSessionAsync(Callora.
 Callora.Core.Application.Surfaces.SurfaceSessionService.EstablishAsync(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot! surface, string! audience, string? cookieValue, Callora.Core.Application.Surfaces.SurfaceIdentityResolution! resolution, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.SurfaceSessionEstablishment!>!
 Callora.Core.Application.Surfaces.SurfaceSessionService.SurfaceSessionService(Callora.Core.Application.Surfaces.ISurfaceSessionStore! sessions, Callora.Core.Application.Surfaces.ISurfaceSessionCookieCodec! codec, Callora.Core.Application.Events.Contracts.IBusinessEventBus! eventBus, Callora.Core.Application.Surfaces.SurfaceIdentityOptions! options, System.TimeProvider! timeProvider, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Surfaces.SurfaceSessionService!>! logger) -> void
 Callora.Core.Application.Surfaces.SurfaceSlotResolver
-Callora.Core.Application.Surfaces.SurfaceSlotResolver.ResolveAsync(string! workspaceKey, string! surfaceKey, Callora.Core.Application.Surfaces.SurfaceCaller! caller, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.SurfaceComposition!>!
+Callora.Core.Application.Surfaces.SurfaceSlotResolver.ResolveAsync(string! workspaceKey, string! surfaceKey, Callora.Core.Application.Surfaces.SurfaceCaller! caller, string? grantedClaims = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.SurfaceComposition!>!
 Callora.Core.Application.Surfaces.SurfaceSlotResolver.SurfaceSlotResolver(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator! availabilityEvaluator) -> void
 Callora.Core.Application.Surfaces.SurfaceSlotView
 Callora.Core.Application.Surfaces.SurfaceSlotView.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceSlotView!
@@ -3696,6 +3696,8 @@ Callora.Core.Application.Workspaces.EffectiveSurface.AccessMode.init -> void
 Callora.Core.Application.Workspaces.EffectiveSurface.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out string? IdentityPluginId, out string? IdentityVersion, out System.DateTimeOffset? IdentityAssignedAtUtc) -> void
 Callora.Core.Application.Workspaces.EffectiveSurface.EffectiveSurface(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, string? IdentityPluginId, string? IdentityVersion, System.DateTimeOffset? IdentityAssignedAtUtc) -> void
 Callora.Core.Application.Workspaces.EffectiveSurface.Equals(Callora.Core.Application.Workspaces.EffectiveSurface? other) -> bool
+Callora.Core.Application.Workspaces.EffectiveSurface.GrantedClaims.get -> string?
+Callora.Core.Application.Workspaces.EffectiveSurface.GrantedClaims.init -> void
 Callora.Core.Application.Workspaces.EffectiveSurface.Id.get -> System.Guid
 Callora.Core.Application.Workspaces.EffectiveSurface.Id.init -> void
 Callora.Core.Application.Workspaces.EffectiveSurface.IdentityAssignedAtUtc.get -> System.DateTimeOffset?
@@ -3878,6 +3880,8 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Deconstruct(out string
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.DisplayName.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.DisplayName.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Equals(Callora.Core.Application.Workspaces.WorkspaceSurfaceInput? other) -> bool
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.GrantedClaims.get -> string?
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.GrantedClaims.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.IsActive.get -> bool
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.IsActive.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Locale.get -> string?
@@ -3919,6 +3923,8 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Deconstruct(out Sys
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.DisplayName.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.DisplayName.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Equals(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot? other) -> bool
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.GrantedClaims.get -> string?
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.GrantedClaims.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Id.get -> System.Guid
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Id.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.IdentityAssignedAtUtc.get -> System.DateTimeOffset?
@@ -4713,6 +4719,8 @@ Callora.Core.Domain.Workspaces.WorkspaceSurface.CreatedAtUtc.get -> System.DateT
 Callora.Core.Domain.Workspaces.WorkspaceSurface.CreatedAtUtc.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.DisplayName.get -> string!
 Callora.Core.Domain.Workspaces.WorkspaceSurface.DisplayName.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.GrantedClaims.get -> string?
+Callora.Core.Domain.Workspaces.WorkspaceSurface.GrantedClaims.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.Id.get -> System.Guid
 Callora.Core.Domain.Workspaces.WorkspaceSurface.Id.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.IdentityAssignedAtUtc.get -> System.DateTimeOffset?
@@ -6749,6 +6757,7 @@ static Callora.Core.Application.Workspaces.SurfaceTree.Inherited<T, TValue>(Syst
 static Callora.Core.Application.Workspaces.SurfaceTree.InheritedFrom<T, TValue>(System.Collections.Generic.IReadOnlyList<T!>! ancestry, System.Func<T!, TValue?>! select) -> T?
 static Callora.Core.Application.Workspaces.SurfaceTree.WouldCreateCycle(System.Guid nodeId, System.Guid? newParentId, System.Collections.Generic.IReadOnlyDictionary<System.Guid, System.Guid?>! parentById) -> bool
 static Callora.Core.Application.Workspaces.SurfaceVisibility.ClaimsOf(Callora.Core.Application.Surfaces.SurfaceCaller! caller) -> System.Collections.Generic.IReadOnlySet<string!>!
+static Callora.Core.Application.Workspaces.SurfaceVisibility.ClaimsOn(Callora.Core.Application.Surfaces.SurfaceCaller! caller, string? grantedClaims) -> System.Collections.Generic.IReadOnlySet<string!>!
 static Callora.Core.Application.Workspaces.SurfaceVisibility.IsVisibleTo(System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Workspaces.WorkspaceSurface!>! ancestry, Callora.Core.Application.Surfaces.SurfaceCaller! caller) -> bool
 static Callora.Core.Application.Workspaces.SurfaceVisibility.Parse(string? requiredClaims) -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Workspaces.SurfaceVisibility.Satisfies(string? requiredClaims, System.Collections.Generic.IReadOnlySet<string!>! callerClaims) -> bool

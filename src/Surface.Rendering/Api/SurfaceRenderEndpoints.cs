@@ -145,7 +145,8 @@ public static class SurfaceRenderEndpoints
             // bei einer Gliederung oft die Information, die niemanden angeht.
             if (!SurfaceVisibility.Satisfies(
                     surface.RequiredClaims,
-                    SurfaceVisibility.ClaimsOf(establishment.Caller)))
+                    // Die Fläche gewährt mit: Ein Gast hat sonst nie einen Claim.
+                    SurfaceVisibility.ClaimsOn(establishment.Caller, surface.GrantedClaims)))
             {
                 return Results.NotFound();
             }
@@ -156,7 +157,11 @@ public static class SurfaceRenderEndpoints
             {
                 compositionSlots = await slotResolver
                     .ResolveAsync(
-                        surface.WorkspaceKey, surface.SurfaceKey, establishment.Caller, cancellationToken)
+                        surface.WorkspaceKey,
+                        surface.SurfaceKey,
+                        establishment.Caller,
+                        surface.GrantedClaims,
+                        cancellationToken)
                     .ConfigureAwait(false);
             }
         }

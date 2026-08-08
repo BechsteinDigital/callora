@@ -1,6 +1,8 @@
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 
+using Callora.Core.Application.Workspaces;
+
 namespace Callora.Core.Application.Surfaces;
 
 /// <summary>
@@ -28,13 +30,16 @@ public sealed class SurfaceSlotResolver(
         string workspaceKey,
         string surfaceKey,
         SurfaceCaller caller,
+        // Was diese Fläche jedem Besucher gewährt (ADR-023). Durchgereicht statt hier geholt:
+        // Der Aufrufer hat die effektive Sicht der Fläche bereits in der Hand.
+        string? grantedClaims = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(surfaceKey);
         ArgumentNullException.ThrowIfNull(caller);
 
-        var claims = ClaimsOf(caller);
+        var claims = SurfaceVisibility.ClaimsOn(caller, grantedClaims);
         var bySlot = new Dictionary<string, List<SurfaceSlotView>>(StringComparer.Ordinal);
         var navigation = new List<SurfaceNavigationEntry>();
         var availability = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
@@ -174,8 +179,4 @@ public sealed class SurfaceSlotResolver(
         return availability.IsAvailable;
     }
 
-    private static IReadOnlySet<string> ClaimsOf(SurfaceCaller caller) =>
-        caller is AuthenticatedSurfaceCaller authenticated
-            ? authenticated.Identity.Claims.Keys.ToHashSet(StringComparer.Ordinal)
-            : new HashSet<string>(StringComparer.Ordinal);
 }
