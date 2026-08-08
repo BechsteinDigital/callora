@@ -26,6 +26,9 @@ vi.mock('@/modules/workspaces/workspacesApi', () => ({
     listSurfaces: listSurfacesMock,
     upsertSurface: upsertSurfaceMock,
     removeSurface: removeSurfaceMock,
+    listPlugins: vi.fn().mockResolvedValue([
+      { pluginId: 'videoconference', displayName: 'Video Conference', isActive: true, isAssigned: true },
+    ]),
   },
 }))
 vi.mock('@/core/auth/authStore', () => ({
@@ -75,6 +78,76 @@ beforeEach(() => {
 })
 
 describe('SurfacesView', () => {
+  it('leitet die Adressierung aus der App-Zuweisung ab, statt sie zweimal zu fragen', async () => {
+    // Eine Fläche, die einer App gehört, deutet ihre Unterpfade selbst — ein Konferenzraum
+    // entsteht zur Laufzeit und kann kein Knoten sein. Zwei Felder für eine Entscheidung hätten
+    // sich widersprechen können, und der Widerspruch wäre erst als 404 auf einer echten Adresse
+    // aufgefallen.
+    listSurfacesMock.mockResolvedValue([
+      surface({ surfaceKey: 'meet', templatePluginId: 'videoconference', routing: 'Application' }),
+    ])
+    routeParams.value = { surfaceKey: 'meet' }
+
+    const wrapper = mount(SurfacesView)
+    await flushPromises()
+
+    const app = wrapper.find('select[name="templatePluginId"]').element as HTMLSelectElement
+    expect(app.value).toBe('videoconference')
+
+    const routing = wrapper.find('input[name="routing"]').element as HTMLInputElement
+    expect(routing.value).toBe('Anwendung')
+    expect(routing.disabled).toBe(true)
+  })
+
+  it('speichert die Adressierung, die aus der App folgt — nicht die zuvor gespeicherte', async () => {
+    // Der Fall, der beide Felder auseinanderhält: Die Fläche liegt als `Tree` in der Datenbank,
+    // trägt aber eine App. Zeigte oder speicherte das Formular den gelesenen Wert, bliebe sie
+    // ein Baum — und jeder Raum darunter antwortete mit 404, obwohl eine App zugewiesen ist.
+    listSurfacesMock.mockResolvedValue([
+      surface({ surfaceKey: 'meet', templatePluginId: 'videoconference', routing: 'Tree' }),
+    ])
+    upsertSurfaceMock.mockResolvedValue({})
+    routeParams.value = { surfaceKey: 'meet' }
+
+    const wrapper = mount(SurfacesView)
+    await flushPromises()
+
+    expect((wrapper.find('input[name="routing"]').element as HTMLInputElement).value).toBe('Anwendung')
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Speichern')!.trigger('click')
+    await flushPromises()
+
+    expect(upsertSurfaceMock).toHaveBeenCalledWith(
+      'acme',
+      'meet',
+      expect.objectContaining({ routing: 'Application', templatePluginId: 'videoconference' }),
+    )
+  })
+
+  it('macht eine Fläche ohne App zur Inhaltsfläche im Baum', async () => {
+    // Gegenprobe zum Test darüber: Dieselbe Ableitung, andere Richtung. Die Fläche liegt als
+    // `Application` in der Datenbank, hat aber keine App mehr — dann ist der Baum die Wahrheit.
+    listSurfacesMock.mockResolvedValue([
+      surface({ surfaceKey: 'start', templatePluginId: null, routing: 'Application' }),
+    ])
+    upsertSurfaceMock.mockResolvedValue({})
+    routeParams.value = { surfaceKey: 'start' }
+
+    const wrapper = mount(SurfacesView)
+    await flushPromises()
+
+    expect((wrapper.find('input[name="routing"]').element as HTMLInputElement).value).toBe('Seitenbaum')
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Speichern')!.trigger('click')
+    await flushPromises()
+
+    expect(upsertSurfaceMock).toHaveBeenCalledWith(
+      'acme',
+      'start',
+      expect.objectContaining({ routing: 'Tree', templatePluginId: null }),
+    )
+  })
+
   it('zeigt den Baum eingerückt statt als flache Liste', async () => {
     // Die Einrückung IST die Struktur. Ohne sie wäre nicht erkennbar, dass „Kunden" unter
     // „Portal" liegt — und genau das ist die Frage, wegen der jemand diese Ansicht öffnet.

@@ -52,16 +52,25 @@
             </CalField>
             <CalField
               v-slot="{ id }"
-              label="Adressierung"
-              :description="formRouting === 'Application'
-                ? 'Die Anwendung deutet ihre Unterpfade selbst — für Adressen, die zur Laufzeit entstehen.'
-                : 'Der Seitenbaum ist die Wahrheit: Was kein Knoten ist, antwortet mit 404.'"
+              label="App"
+              hint="optional"
+              description="Wer diese Fläche bedient. Ohne App ist sie eine Inhaltsfläche und wird über den Layout-Reiter gestaltet."
             >
-              <CalSelect :id="id" v-model="formRouting" name="routing">
-                <option v-for="mode in routings" :key="mode" :value="mode">
-                  {{ routingLabels[mode] ?? mode }}
+              <CalSelect :id="id" v-model="formApp" name="templatePluginId">
+                <option value="">— Inhaltsfläche —</option>
+                <option v-for="plugin in appCandidates" :key="plugin.pluginId" :value="plugin.pluginId">
+                  {{ plugin.displayName }}
                 </option>
               </CalSelect>
+            </CalField>
+            <CalField v-slot="{ id }" label="Adressierung">
+              <!--
+                Abgeleitet, nicht gewählt: Eine Fläche, die einer App gehört, deutet ihre
+                Unterpfade selbst — ein Konferenzraum entsteht zur Laufzeit und kann kein Knoten
+                sein. Zwei Felder für eine Entscheidung hätten sich widersprechen können, und der
+                Widerspruch wäre erst als 404 auf einer echten Adresse aufgefallen (ADR-022).
+              -->
+              <CalInput :id="id" :model-value="routingLabels[formRouting] ?? formRouting" name="routing" disabled />
             </CalField>
             <CalField v-slot="{ id }" label="Eigener Host" hint="optional">
               <CalInput :id="id" v-model="formHost" name="publicHost" />
@@ -122,7 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { LayoutTemplate, Trash2 } from 'lucide-vue-next'
 import CalAlert from '@/core/ui/CalAlert.vue'
 import CalBadge from '@/core/ui/CalBadge.vue'
@@ -143,7 +152,6 @@ import { useService } from '@/core/extensions/services'
 import {
   workspacesApi,
   SURFACE_ACCESS_MODES,
-  SURFACE_ROUTINGS,
   SURFACE_ROUTING_LABELS,
   type WorkspaceSurface,
 } from '@/modules/workspaces/workspacesApi'
@@ -165,7 +173,6 @@ const emit = defineEmits<{
 
 const api = useService('workspacesApi', workspacesApi)
 const accessModes = SURFACE_ACCESS_MODES
-const routings = SURFACE_ROUTINGS
 const routingLabels = SURFACE_ROUTING_LABELS
 
 const isNew = computed(() => props.surface === null)
@@ -177,7 +184,13 @@ const formKey = ref('')
 const formDisplayName = ref('')
 const formPathPrefix = ref('')
 const formParentKey = ref('')
-const formRouting = ref<string>('Tree')
+const formApp = ref<string>('')
+const appCandidates = ref<{ pluginId: string; displayName: string }[]>([])
+/**
+ * Folgt der App-Zuweisung. Eine Fläche mit App wird von ihr bedient; was unter ihr liegt,
+ * bestimmt sie. Ohne App ist der Baum die Wahrheit.
+ */
+const formRouting = computed(() => (formApp.value ? 'Application' : 'Tree'))
 const formAccessMode = ref<string>('Mixed')
 const formHost = ref('')
 const formLocale = ref('')
@@ -186,7 +199,6 @@ const formRequiredClaims = ref('')
 
 // Template und Theme reisen unverändert mit: Das Speichern ist ein vollständiges Ersetzen,
 // und was das Formular nicht mitschickt, löscht der Server.
-const carriedTemplatePluginId = ref<string | null>(null)
 const carriedTemplateVersion = ref<string | null>(null)
 const carriedThemePluginId = ref<string | null>(null)
 const carriedThemeVersion = ref<string | null>(null)
@@ -254,13 +266,12 @@ function fill(): void {
     formDisplayName.value = ''
     formPathPrefix.value = ''
     formParentKey.value = props.parentKey ?? ''
-    formRouting.value = 'Tree'
+    formApp.value = ''
     formAccessMode.value = 'Mixed'
     formHost.value = ''
     formLocale.value = ''
     formActive.value = true
     formRequiredClaims.value = ''
-    carriedTemplatePluginId.value = null
     carriedTemplateVersion.value = null
     carriedThemePluginId.value = null
     carriedThemeVersion.value = null
@@ -273,13 +284,12 @@ function fill(): void {
   formDisplayName.value = surface.displayName
   formPathPrefix.value = surface.publicPathPrefix
   formParentKey.value = surface.parentSurfaceKey ?? ''
-  formRouting.value = surface.routing
+  formApp.value = surface.templatePluginId ?? ''
   formAccessMode.value = surface.accessMode
   formHost.value = surface.publicHost ?? ''
   formLocale.value = surface.locale ?? ''
   formActive.value = surface.isActive
   formRequiredClaims.value = parseClaims(surface.requiredClaims).join(', ')
-  carriedTemplatePluginId.value = surface.templatePluginId
   carriedTemplateVersion.value = surface.templateVersion
   carriedThemePluginId.value = surface.themePluginId
   carriedThemeVersion.value = surface.themeVersion
@@ -305,7 +315,7 @@ async function save(): Promise<void> {
       accessMode: formAccessMode.value,
       routing: formRouting.value,
       locale: formLocale.value.trim() || null,
-      templatePluginId: carriedTemplatePluginId.value,
+      templatePluginId: formApp.value || null,
       templateVersion: carriedTemplateVersion.value,
       themePluginId: carriedThemePluginId.value,
       themeVersion: carriedThemeVersion.value,
@@ -347,6 +357,28 @@ async function remove(): Promise<void> {
     error.value = (e as Error).message
   }
 }
+
+/**
+ * Die Apps zur Auswahl: die diesem Workspace zugewiesenen und dort aktiven Plugins.
+ *
+ * Ein Plugin ohne eigenes Flächen-Entry bleibt wirkungslos — der Renderpfad fällt dann auf die
+ * eingebaute Shell zurück. Das ist der harmlose Fehlerfall; die Alternative wäre ein weiteres
+ * Manifest-Feld, das jeder Plugin-Autor zu setzen hätte, bevor seine App überhaupt wählbar wäre.
+ */
+async function loadAppCandidates(): Promise<void> {
+  try {
+    const assignments = await api.listPlugins(props.workspaceKey)
+    appCandidates.value = assignments
+      .filter((assignment) => assignment.isActive && assignment.isAssigned)
+      .map((assignment) => ({ pluginId: assignment.pluginId, displayName: assignment.displayName }))
+  } catch {
+    // Kein roter Kasten für eine Auswahl: Wer nichts zuweisen kann, sieht eine leere Liste und
+    // eine Fläche, die weiterhin speicherbar ist.
+    appCandidates.value = []
+  }
+}
+
+onMounted(loadAppCandidates)
 
 watch(() => [props.surface, props.parentKey], fill, { immediate: true })
 </script>
