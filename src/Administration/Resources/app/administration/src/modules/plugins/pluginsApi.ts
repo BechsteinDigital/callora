@@ -7,7 +7,12 @@ export interface PluginInstallation {
   displayName: string
   assemblyPath: string
   entryTypeName: string | null
+  // Der GEWÜNSCHTE Zustand, wie er in der Datenbank steht.
   state: number
+  // Ob das Plugin zur Laufzeit tatsächlich aktiv ist. Zwei Angaben, weil es zwei Wahrheiten
+  // gibt: Ein Plugin, dessen Aktivierung beim Start scheitert, bleibt `Active` — die Liste
+  // zeigte es dann als „Aktiv", während es nichts tat.
+  isRunning: boolean
   installedAtUtc: string
   updatedAtUtc: string
 }

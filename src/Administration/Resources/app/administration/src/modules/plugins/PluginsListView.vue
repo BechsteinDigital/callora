@@ -39,8 +39,15 @@
         empty-description="Erweiterungen bringen zusätzliche Funktionen — etwa Telefonie oder Videokonferenz."
       >
         <template #cell-state="{ row }">
-          <CalBadge :tone="isPluginActive(row.state) ? 'success' : 'neutral'" dot>
-            {{ isPluginActive(row.state) ? 'Aktiv' : 'Inaktiv' }}
+          <!--
+            Drei Zustände, nicht zwei: Aktiv UND läuft · aktiv, läuft aber NICHT · inaktiv. Der
+            mittlere ist der, den niemand sah — ein Plugin, dessen Aktivierung beim Start
+            scheiterte, stand als „Aktiv" in der Liste, und der Grund nur in einer Logzeile.
+          -->
+          <CalBadge :tone="toneOf(row)" dot :title="row.state === 1 && !row.isRunning
+            ? 'Als aktiv eingetragen, läuft aber nicht — siehe Startprotokoll.'
+            : undefined">
+            {{ labelOf(row) }}
           </CalBadge>
         </template>
 
@@ -114,6 +121,21 @@
 import { computed, onMounted, ref } from 'vue'
 import { Download, Package, Puzzle } from 'lucide-vue-next'
 import { pluginsApi, isPluginActive, type PluginInstallation, type PluginLifecycleResult } from './pluginsApi'
+
+/** Aktiv heißt nicht laufend: Der gewünschte Zustand und der tatsächliche können auseinandergehen. */
+function toneOf(row: PluginInstallation): 'success' | 'warning' | 'neutral' {
+  if (!isPluginActive(row.state)) {
+    return 'neutral'
+  }
+  return row.isRunning ? 'success' : 'warning'
+}
+
+function labelOf(row: PluginInstallation): string {
+  if (!isPluginActive(row.state)) {
+    return 'Inaktiv'
+  }
+  return row.isRunning ? 'Aktiv' : 'Aktiv, läuft nicht'
+}
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
