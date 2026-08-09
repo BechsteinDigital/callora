@@ -4,21 +4,23 @@ import LoginView from './LoginView.vue'
 
 // useAuthStore returns a fresh object per call, so mock the module to expose a
 // stable login spy; useRouter is stubbed to observe navigation.
-const { loginMock, pushMock } = vi.hoisted(() => ({ loginMock: vi.fn(), pushMock: vi.fn() }))
+const { loginMock, reloadMock } = vi.hoisted(() => ({ loginMock: vi.fn(), reloadMock: vi.fn() }))
 vi.mock('@/core/auth/authStore', () => ({
   useAuthStore: () => ({ login: loginMock, context: { value: null } }),
 }))
-vi.mock('vue-router', () => ({ useRouter: () => ({ push: pushMock }) }))
 
 beforeEach(() => {
   loginMock.mockReset()
-  pushMock.mockReset()
+  reloadMock.mockReset()
 })
 
 describe('LoginView', () => {
-  it('calls login with the entered credentials and navigates on success', async () => {
+  it('meldet an und lädt die Shell neu, statt nur zu navigieren', async () => {
+    // Die Plugin-Bundles werden beim Bootstrap geladen, und der lief hier ohne Sitzung — es gibt
+    // also noch keine. Eine reine Navigation zeigte eine Oberfläche ohne jede Plugin-Seite, und
+    // niemand erführe, warum.
     loginMock.mockResolvedValue(true)
-    const wrapper = mount(LoginView)
+    const wrapper = mount(LoginView, { props: { reload: reloadMock } })
 
     await wrapper.find('input[name="login"]').setValue('root')
     await wrapper.find('input[name="password"]').setValue('pass')
@@ -26,7 +28,7 @@ describe('LoginView', () => {
     await Promise.resolve()
 
     expect(loginMock).toHaveBeenCalledWith('root', 'pass', null)
-    expect(pushMock).toHaveBeenCalledWith('/')
+    expect(reloadMock).toHaveBeenCalled()
   })
 
   it('shows an error and stays on the page when login fails', async () => {
@@ -40,7 +42,7 @@ describe('LoginView', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('fehlgeschlagen')
-    expect(pushMock).not.toHaveBeenCalled()
+    expect(reloadMock).not.toHaveBeenCalled()
   })
 
   it('passes the entered workspace key through to login', async () => {

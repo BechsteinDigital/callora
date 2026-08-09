@@ -37,7 +37,6 @@ it is shown as a relative fragment.
 
 | Option | Type | Default | Purpose |
 | --- | --- | --- | --- |
-| `EnableTenantManagementApi` | `bool` | `false` | Enables the tenant management API surface. |
 | `DefaultTenantKey` | `string` | `default` | Key of the implicit default tenant. |
 | `DefaultTenantDisplayName` | `string` | `Default Tenant` | Display name of the default tenant. |
 | `AuditFilePath` | `string` | `plugins/audit-log.jsonl` | JSONL audit-log file for lifecycle/security events. |

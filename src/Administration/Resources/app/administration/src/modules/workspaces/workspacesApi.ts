@@ -9,8 +9,10 @@ export interface Workspace {
   workspaceType: string
   isActive: boolean
   tenantIsActive: boolean
-  // No route here: an address belongs to a surface (ADR-014 §5). The theme is the
-  // default its surfaces inherit.
+  // Eine Basis-URL kann den WORKSPACE bezeichnen — dann steht sie hier. Ein PFAD gehört
+  // dagegen immer einer Oberfläche (ADR-021). Das Theme ist der Standard, den die
+  // Oberflächen erben.
+  publicHost: string | null
   themePluginId: string | null
   themeVersion: string | null
   themeAssignedBy: string | null
@@ -28,6 +30,9 @@ export interface WorkspaceUpsert {
   // Convenience for the common one-surface case: configures the route of the
   // workspace's "default" surface. Further routes are managed per surface.
   defaultSurfaceBaseUrl: string | null
+  // Der Host dieses Workspaces — `kunde.de`. Leer lassen, wenn er über einen Pfad
+  // erreicht wird: dann beginnt jede Oberflächen-URL mit dem Workspace-Schlüssel.
+  publicHost: string | null
 }
 
 // Mirrors WorkspaceMemberApiResponse. The role is a workspace-scoped role name
@@ -64,6 +69,7 @@ export interface WorkspaceSurface {
   publicHost: string | null
   publicPathPrefix: string
   accessMode: string
+  routing: string
   locale: string | null
   templatePluginId: string | null
   templateVersion: string | null
@@ -85,6 +91,7 @@ export interface WorkspaceSurface {
    * Anforderung. Das ist, was DIESER Knoten verlangt; was von oben dazukommt, ist kumulativ.
    */
   requiredClaims: string | null
+  grantedClaims: string | null
 }
 
 // The mutable slice sent on upsert (the surface key comes from the route). Mirrors
@@ -96,6 +103,7 @@ export interface WorkspaceSurfaceUpsert {
   publicHost: string | null
   publicPathPrefix: string
   accessMode: string
+  routing: string
   locale: string | null
   templatePluginId: string | null
   templateVersion: string | null
@@ -105,6 +113,9 @@ export interface WorkspaceSurfaceUpsert {
   parentSurfaceKey: string | null
   position: number
   requiredClaims: string | null
+  // Was JEDER Besucher hier mitbringt — auch ohne Anmeldung. Die Gegenrichtung zur Anforderung
+  // (ADR-023): Ohne diese Angabe hat ein Gast gar keine Claims.
+  grantedClaims: string | null
 }
 
 // Product-level workspace assignment. An assignment is effective only when
@@ -120,6 +131,17 @@ export interface WorkspacePluginAssignment {
 
 // The backend SurfaceAccessMode enum (ADR-014 §5.2).
 export const SURFACE_ACCESS_MODES = ['Public', 'Authenticated', 'Mixed'] as const
+
+// Das backendseitige SurfaceRouting (ADR-022): wer über die Adressen unterhalb der Fläche
+// entscheidet. `Tree` heißt, der Seitenbaum ist die Wahrheit — was kein Knoten ist, gibt es
+// nicht. `Application` heißt, die Anwendung deutet ihre Unterpfade selbst, weil sie zur
+// Laufzeit entstehen (ein Konferenzraum kann nicht als Seite angelegt worden sein).
+export const SURFACE_ROUTINGS = ['Tree', 'Application'] as const
+
+export const SURFACE_ROUTING_LABELS: Record<string, string> = {
+  Tree: 'Seitenbaum',
+  Application: 'Anwendung',
+}
 
 const basePath = '/api/workspaces'
 

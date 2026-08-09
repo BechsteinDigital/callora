@@ -1,6 +1,8 @@
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 
+using Callora.Core.Application.Workspaces;
+
 namespace Callora.Core.Application.Surfaces;
 
 /// <summary>
@@ -28,16 +30,34 @@ public sealed class SurfaceSlotResolver(
         string workspaceKey,
         string surfaceKey,
         SurfaceCaller caller,
+        // Was diese Fläche jedem Besucher gewährt (ADR-023). Durchgereicht statt hier geholt:
+        // Der Aufrufer hat die effektive Sicht der Fläche bereits in der Hand.
+        string? grantedClaims = null,
+        // Wer auf dieser Fläche überhaupt beitragen darf — die UI-Kette. Null heißt: alle, wie
+        // bisher; ein Host ohne Kettenauflösung soll nicht plötzlich leer rendern.
+        IReadOnlyCollection<string>? chain = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(surfaceKey);
         ArgumentNullException.ThrowIfNull(caller);
 
-        var claims = ClaimsOf(caller);
+        var claims = SurfaceVisibility.ClaimsOn(caller, grantedClaims);
         var bySlot = new Dictionary<string, List<SurfaceSlotView>>(StringComparer.Ordinal);
         var navigation = new List<SurfaceNavigationEntry>();
         var availability = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        // Zwei Stellen entschieden, wer beiträgt: die Kette (was geladen wird) und diese
+        // Schleife (was gerendert wird). Ein Plugin, das keine Flächen nennt, erschien deshalb
+        // ÜBERALL — die Videokonferenz mit ihrer Navigation auf jeder Inhaltsfläche, auch auf
+        // einer ohne einen einzigen Block. Jetzt entscheidet die Kette, und diese Schleife folgt.
+        // null heißt „keine Angabe" — ein Host ohne Kettenauflösung soll nicht plötzlich leer
+        // rendern. Eine LEERE Kette heißt „ausdrücklich niemand", und das ist der häufigste
+        // Fall: eine Inhaltsfläche ohne einen einzigen Block. Beides gleichzusetzen hieß, dass
+        // genau dort wieder jedes Plugin durchkam — der Fehler, den die Kürzung beheben sollte.
+        var allowed = chain is null
+            ? null
+            : new HashSet<string>(chain, StringComparer.OrdinalIgnoreCase);
 
         foreach (var export in pluginCatalog.GetOwnedExports(typeof(IHostSurfaceViewContributor)))
         {
@@ -49,6 +69,11 @@ public sealed class SurfaceSlotResolver(
             var pluginId = string.IsNullOrWhiteSpace(contributor.PluginId)
                 ? export.PluginId
                 : contributor.PluginId;
+
+            if (allowed is not null && !allowed.Contains(pluginId))
+            {
+                continue;
+            }
             if (!await IsAvailableAsync(availability, pluginId, workspaceKey, cancellationToken)
                     .ConfigureAwait(false))
             {
@@ -174,8 +199,4 @@ public sealed class SurfaceSlotResolver(
         return availability.IsAvailable;
     }
 
-    private static IReadOnlySet<string> ClaimsOf(SurfaceCaller caller) =>
-        caller is AuthenticatedSurfaceCaller authenticated
-            ? authenticated.Identity.Claims.Keys.ToHashSet(StringComparer.Ordinal)
-            : new HashSet<string>(StringComparer.Ordinal);
 }

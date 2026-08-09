@@ -44,8 +44,19 @@
   {% include "@callora/utilities/tokens.njk" %}
   {% endblock %}
 
+  {#
+    ZWEI Stylesheets, nicht eines. base.css ist die Grundlage (Reset, Kopf, Typografie);
+    surface.css trägt das Sektionsraster — `.cal-section[data-cal-layout]`, `.cal-region` —,
+    also genau das, was der Kompositions-Renderer ausgibt.
+
+    Es MUSS hier stehen: Vite baut die Datei aus dem Flächen-Bundle, injiziert sie im
+    IIFE-Modus aber nicht selbst. Ohne diese Zeile lieferte der Server korrekte Sektionen
+    aus, auf deren Klassen nichts hört — gestapelte, ungestylte Divs, während derselbe
+    Inhalt im Composer-Canvas richtig aussah, weil der Editor tokens.scss direkt einbettet.
+  #}
   {% block base_head_stylesheets %}
   <link rel="stylesheet" href="/surface-base/base.css" />
+  <link rel="stylesheet" href="/surface-app/surface.css" />
   {% endblock %}
 
   {#

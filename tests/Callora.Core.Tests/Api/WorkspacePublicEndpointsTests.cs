@@ -311,8 +311,11 @@ public sealed class WorkspacePublicEndpointsTests
         var content = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        // Nur die App der Fläche. `dialer` und `voip` sind im Workspace aktiv, aber diese Fläche
+        // gehört der Videokonferenz — und eine Anwendung, in die sich jede andere hineinrendert,
+        // ist keine (ADR-022).
         Assert.Contains(
-            "\"chain\":[\"videoconference\",\"dialer\",\"voip\"]",
+            "\"chain\":[\"videoconference\"]",
             content,
             StringComparison.Ordinal);
     }

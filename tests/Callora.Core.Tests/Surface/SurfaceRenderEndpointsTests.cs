@@ -35,11 +35,8 @@ public sealed class SurfaceRenderEndpointsTests
         Assert.Contains("data-workspace=\"acme\"", html, StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("/")]
-    [InlineData("/meet")]
-    public async Task ColocatedSurfaceRoute_WithWorkspaceEndpointsMapped_RendersWithoutRedirect(
-        string requestPath)
+    [Fact]
+    public async Task ColocatedSurfaceRoute_WithWorkspaceEndpointsMapped_RendersWithoutRedirect()
     {
         await using var app = await CreateAppAsync(
             store: null,
@@ -48,13 +45,75 @@ public sealed class SurfaceRenderEndpointsTests
         var client = app.GetTestClient();
         client.BaseAddress = new Uri("http://acme.example.de/");
 
-        var response = await client.GetAsync(requestPath);
+        var response = await client.GetAsync("/");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType!.ToString());
         Assert.Null(response.Headers.Location);
         var html = await response.Content.ReadAsStringAsync();
         Assert.Contains("data-workspace=\"acme\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnApplicationSurface_ServesItsOwnSubPaths()
+    {
+        // Der Fall, für den die Achse existiert: Eine Raumverwaltung liefert `/raeume/abc123`
+        // aus, obwohl es keinen Knoten dafür gibt — der Raum entsteht zur Laufzeit und kann gar
+        // nicht als Seite angelegt worden sein.
+        //
+        // Der Renderweg bleibt derselbe: dieselbe Shell, dasselbe Theme. Genau daran hängt
+        // White-Label; eine Anwendung, die ihre eigene Optik mitbrächte, fiele auf.
+        var store = await SeededStoreAsync();
+        store.SetSurface("acme", SurfaceAccessMode.Public, routing: SurfaceRouting.Application);
+
+        await using var app = await CreateAppAsync(store, configure: null);
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/raeume/abc123");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("data-workspace=\"acme\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ATreeSurface_RefusesAPathThatIsNotANode()
+    {
+        // Dieselbe Anfrage an dieselbe Fläche — nur die Adressierung unterscheidet sich. Ohne
+        // diese Gegenprobe belegte der Test oben nur, dass irgendetwas 200 antwortet.
+        var store = await SeededStoreAsync();
+        store.SetSurface("acme", SurfaceAccessMode.Public, routing: SurfaceRouting.Tree);
+
+        await using var app = await CreateAppAsync(store, configure: null);
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/raeume/abc123");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ColocatedSurfaceRoute_ForAPathNobodyServes_Is404AndStillNoRedirect()
+    {
+        // Zwei Aussagen in einer: Der Pfad gehört keinem Knoten, also 404 — und trotzdem
+        // gewinnt die Surface-Route gegen den Workspace-Catch-All, der hierauf mit einer
+        // Umleitung zur Admin-Shell geantwortet hätte.
+        //
+        // Vor der Restpfad-Prüfung kam hier 200 mit der Wurzelseite: Die Auflösung nimmt das
+        // längste passende Präfix, und `/meet` fiel hinter `/` unter den Tisch.
+        await using var app = await CreateAppAsync(
+            store: null,
+            configure: null,
+            mapWorkspaceEndpoints: true);
+        var client = app.GetTestClient();
+        client.BaseAddress = new Uri("http://acme.example.de/");
+
+        var response = await client.GetAsync("/meet");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Null(response.Headers.Location);
     }
 
     [Fact]

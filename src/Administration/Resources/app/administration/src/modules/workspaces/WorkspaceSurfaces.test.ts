@@ -13,6 +13,8 @@ const { listSurfacesMock, upsertSurfaceMock, removeSurfaceMock } = vi.hoisted(()
 
 vi.mock('./workspacesApi', () => ({
   SURFACE_ACCESS_MODES: ['Public', 'Authenticated', 'Mixed'] as const,
+  SURFACE_ROUTINGS: ['Tree', 'Application'] as const,
+  SURFACE_ROUTING_LABELS: { Tree: 'Seitenbaum', Application: 'Anwendung' },
   workspacesApi: {
     listSurfaces: listSurfacesMock,
     upsertSurface: upsertSurfaceMock,
@@ -40,6 +42,7 @@ function surface(over: Partial<WorkspaceSurface>): WorkspaceSurface {
     publicHost: 'acme.example.de',
     publicPathPrefix: '/',
     accessMode: 'Mixed',
+    routing: 'Tree',
     locale: null,
     templatePluginId: null,
     templateVersion: null,
@@ -51,6 +54,7 @@ function surface(over: Partial<WorkspaceSurface>): WorkspaceSurface {
     parentSurfaceKey: null,
     position: 0,
     requiredClaims: null,
+    grantedClaims: null,
     ...over,
   }
 }

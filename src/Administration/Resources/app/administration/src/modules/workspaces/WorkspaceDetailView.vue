@@ -48,6 +48,15 @@
             />
           </CalField>
 
+          <CalField
+            v-slot="{ id }"
+            label="Eigener Host"
+            hint="optional"
+            description="z. B. kunde.de — ohne ihn beginnt jede öffentliche URL dieses Workspaces mit seinem Schlüssel."
+          >
+            <CalInput :id="id" v-model="publicHost" name="publicHost" :icon="Globe" />
+          </CalField>
+
           <CalField label="Zustand">
             <CalSwitch v-model="isActive" name="isActive">Aktiv</CalSwitch>
           </CalField>
@@ -77,8 +86,19 @@
       <template #plugins>
         <WorkspacePlugins :workspace-key="loaded.workspaceKey" :can-manage="canManagePlugins" />
       </template>
+      <!-- Die Flächen haben eine eigene Ansicht mit Baum und Editor. Sie hier ein zweites Mal
+           anzubieten hieße, zwei Oberflächen für dieselbe Sache zu pflegen — und die
+           schlechtere zu bewerben, weil sie gerade offen ist. -->
       <template #surfaces>
-        <WorkspaceSurfaces :workspace-key="loaded.workspaceKey" :can-manage="canManage" />
+        <CalEmptyState
+          :icon="Layers"
+          title="Flächen haben eine eigene Ansicht"
+          description="Dort stehen der Seitenbaum, das Detailformular und der Layout-Editor nebeneinander."
+        >
+          <template #action>
+            <CalButton to="/surfaces">Flächen öffnen</CalButton>
+          </template>
+        </CalEmptyState>
       </template>
     </CalTabs>
   </CalPage>
@@ -93,13 +113,13 @@ import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'
 import WorkspaceMembers from './WorkspaceMembers.vue'
 import WorkspacePlugins from './WorkspacePlugins.vue'
-import WorkspaceSurfaces from './WorkspaceSurfaces.vue'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
 import { runHook } from '@/core/extensions/hooks'
 import CalAlert from '@/core/ui/CalAlert.vue'
 import CalBadge from '@/core/ui/CalBadge.vue'
 import CalButton from '@/core/ui/CalButton.vue'
+import CalEmptyState from '@/core/ui/CalEmptyState.vue'
 import CalCard from '@/core/ui/CalCard.vue'
 import CalDescriptionList from '@/core/ui/CalDescriptionList.vue'
 import CalField from '@/core/ui/CalField.vue'
@@ -121,6 +141,7 @@ const workspaceKey = ref('')
 const displayName = ref('')
 const workspaceType = ref('')
 const defaultSurfaceBaseUrl = ref('')
+const publicHost = ref('')
 const isActive = ref(true)
 const loaded = ref<Workspace | null>(null)
 const error = ref<string | null>(null)
@@ -166,7 +187,9 @@ async function load(): Promise<void> {
     workspaceKey.value = workspace.workspaceKey
     displayName.value = workspace.displayName
     workspaceType.value = workspace.workspaceType
-    
+    // Muss geladen werden: Das Speichern ist ein vollständiges Ersetzen, ein leeres Feld
+    // löscht den Host — und mit ihm die Adresse, unter der der Workspace erreichbar war.
+    publicHost.value = workspace.publicHost ?? ''
     isActive.value = workspace.isActive
   } catch (e) {
     error.value = (e as Error).message
@@ -182,6 +205,7 @@ interface WorkspaceSaveDraft {
   workspaceType: string
   isActive: boolean
   defaultSurfaceBaseUrl: string | null
+  publicHost: string | null
 }
 
 async function save(): Promise<void> {
@@ -199,6 +223,7 @@ async function save(): Promise<void> {
     workspaceType: workspaceType.value,
     isActive: isActive.value,
     defaultSurfaceBaseUrl: defaultSurfaceBaseUrl.value || null,
+    publicHost: publicHost.value.trim() || null,
   }
   const before = await runHook('workspaces.before-save', draft)
   if (before.canceled) {
@@ -214,6 +239,7 @@ async function save(): Promise<void> {
       workspaceType: draft.workspaceType,
       isActive: draft.isActive,
       defaultSurfaceBaseUrl: draft.defaultSurfaceBaseUrl,
+      publicHost: draft.publicHost,
     })
     await runHook('workspaces.after-save', { workspaceKey: key })
     toast.success(isEdit.value ? `Workspace „${key}“ gespeichert.` : `Workspace „${key}“ angelegt.`)

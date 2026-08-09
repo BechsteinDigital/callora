@@ -67,9 +67,8 @@ A tenant has a `tenantKey`, a `displayName`, and an active flag. Suspending a
 tenant is the soft-off switch; workspaces carry a `tenantIsActive` flag that
 reflects it.
 
-> **Status:** The tenants screen is present but gated by a feature flag
-> (`EnableTenantManagementApi`); if tenant management is disabled in your
-> distribution the screen and its endpoints are not exposed.
+> Every endpoint requires `tenant.read` or `tenant.write`. An operator without
+> them gets 403 — the screen is reachable, the actions are not.
 
 ## Users and members
 

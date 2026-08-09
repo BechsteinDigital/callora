@@ -17,6 +17,7 @@ function surface(
     publicHost: null,
     publicPathPrefix: '/',
     accessMode: 'Mixed',
+    routing: 'Tree',
     locale: null,
     templatePluginId: null,
     templateVersion: null,
@@ -28,6 +29,7 @@ function surface(
     parentSurfaceKey,
     position,
     requiredClaims: null,
+    grantedClaims: null,
   }
 }
 

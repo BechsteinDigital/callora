@@ -77,6 +77,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         string workspaceType,
         bool isActive,
         string? defaultSurfaceBaseUrl = null,
+        string? publicHost = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tenantKey);
@@ -88,6 +89,9 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         var normalizedWorkspaceKey = workspaceKey.Trim();
         var normalizedDisplayName = displayName.Trim();
         var normalizedWorkspaceType = workspaceType.Trim();
+        var normalizedPublicHost = string.IsNullOrWhiteSpace(publicHost)
+            ? null
+            : publicHost.Trim().ToLowerInvariant();
         if (!WorkspacePublicUrlNormalizer.TryNormalize(defaultSurfaceBaseUrl, out var publicUrl, out _))
         {
             return new WorkspaceUpsertResult(WorkspaceUpsertStatus.InvalidPublicUrl);
@@ -116,6 +120,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
                 DisplayName = normalizedDisplayName,
                 WorkspaceType = normalizedWorkspaceType,
                 IsActive = isActive,
+                PublicHost = normalizedPublicHost,
                 CreatedAtUtc = nowUtc,
                 UpdatedAtUtc = nowUtc
             };
@@ -127,12 +132,13 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             workspace.DisplayName = normalizedDisplayName;
             workspace.WorkspaceType = normalizedWorkspaceType;
             workspace.IsActive = isActive;
+            workspace.PublicHost = normalizedPublicHost;
             workspace.UpdatedAtUtc = nowUtc;
         }
 
         // Every workspace has a "default" surface — it is the one way into the data
         // until an operator adds more. The route given here configures THAT surface;
-        // the workspace itself carries no address (ADR-014 §5).
+        // der Workspace trägt höchstens einen Host, nie einen Pfad (ADR-021).
         var defaultSurface = await dbContext.WorkspaceSurfaces
             .SingleOrDefaultAsync(
                 x => x.WorkspaceId == workspace.Id && x.SurfaceKey == "default",
@@ -523,6 +529,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             workspace.WorkspaceType,
             workspace.IsActive,
             tenant.IsActive,
+            workspace.PublicHost,
             workspace.ThemePluginId,
             workspace.ThemeVersion,
             workspace.ThemeAssignedBy,
@@ -543,6 +550,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             surface.PublicHost,
             surface.PublicPathPrefix,
             surface.AccessMode,
+            surface.Routing,
             surface.Locale,
             surface.TemplatePluginId,
             surface.TemplateVersion,
@@ -580,6 +588,9 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             effective.PublicHost,
             effective.PublicPathPrefix,
             effective.AccessMode,
+            // NICHT effective: Routing wird nicht vererbt. Jeder Knoten beantwortet für sich,
+            // ob er seine Unterpfade selbst deutet.
+            surface.Routing,
             effective.Locale,
             effective.TemplatePluginId,
             effective.TemplateVersion,
@@ -594,6 +605,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             // bleibt beim Knoten leer: Wer eine Zuweisung verantwortet, steht an der Wurzel und
             // wäre hier eine Behauptung über diesen Knoten, die niemand gemacht hat.
             RequiredClaims = effective.RequiredClaims,
+            GrantedClaims = effective.GrantedClaims,
             IdentityPluginId = effective.IdentityPluginId,
             IdentityVersion = effective.IdentityVersion,
             IdentityAssignedAtUtc = effective.IdentityAssignedAtUtc,
@@ -609,6 +621,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             x.WorkspaceType,
             x.IsActive,
             x.Tenant.IsActive,
+            x.PublicHost,
             x.ThemePluginId,
             x.ThemeVersion,
             x.ThemeAssignedBy,

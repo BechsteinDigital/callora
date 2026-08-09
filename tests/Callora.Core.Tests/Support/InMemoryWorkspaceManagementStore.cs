@@ -73,6 +73,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         string workspaceType,
         bool isActive,
         string? defaultSurfaceBaseUrl = null,
+        string? publicHost = null,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -102,6 +103,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             workspaceType.Trim(),
             isActive,
             tenantIsActive,
+            string.IsNullOrWhiteSpace(publicHost) ? null : publicHost.Trim().ToLowerInvariant(),
             existed ? existing!.ThemePluginId : null,
             existed ? existing!.ThemeVersion : null,
             existed ? existing!.ThemeAssignedBy : null,
@@ -163,6 +165,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             route.PublicHost,
             route.PublicPathPrefix,
             overlay?.AccessMode ?? SurfaceAccessMode.Public,
+            overlay?.Routing ?? SurfaceRouting.Tree,
             overlay?.Locale,
             null,
             null,
@@ -436,12 +439,13 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         string surfaceKey = "default",
         string? locale = null,
         string? identityPluginId = null,
-        DateTimeOffset? identityAssignedAtUtc = null)
+        DateTimeOffset? identityAssignedAtUtc = null,
+        SurfaceRouting routing = SurfaceRouting.Tree)
     {
         if (!string.IsNullOrWhiteSpace(workspaceKey))
         {
             _surfaceOverlays[workspaceKey.Trim()] = new SurfaceOverlay(
-                accessMode, surfaceKey, locale, identityPluginId, identityAssignedAtUtc);
+                accessMode, surfaceKey, locale, identityPluginId, identityAssignedAtUtc, routing);
         }
     }
 
@@ -450,5 +454,6 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         string SurfaceKey,
         string? Locale,
         string? IdentityPluginId = null,
-        DateTimeOffset? IdentityAssignedAtUtc = null);
+        DateTimeOffset? IdentityAssignedAtUtc = null,
+        SurfaceRouting Routing = SurfaceRouting.Tree);
 }

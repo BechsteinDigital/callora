@@ -83,4 +83,11 @@
     <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Wie in Callora.Core: Ein internes Detail darf geprüft werden, ohne dafür öffentlich
+         zu werden. Die Alternative wäre, es der Vertragsfläche hinzuzufügen — für einen
+         Pfadvergleich, den niemand außerhalb braucht. -->
+    <InternalsVisibleTo Include="Callora.Core.Tests" />
+  </ItemGroup>
+
 </Project>

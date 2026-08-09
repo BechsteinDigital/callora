@@ -13,6 +13,7 @@ public sealed record WorkspaceSurfaceSnapshot(
     string? PublicHost,
     string PublicPathPrefix,
     SurfaceAccessMode AccessMode,
+    SurfaceRouting Routing,
     string? Locale,
     string? TemplatePluginId,
     string? TemplateVersion,
@@ -36,6 +37,9 @@ public sealed record WorkspaceSurfaceSnapshot(
     /// Anforderung. Kumulativ entlang der Kette.
     /// </summary>
     public string? RequiredClaims { get; init; }
+
+    /// <summary>Claims, die jeder Besucher dieser Fläche mitbringt.</summary>
+    public string? GrantedClaims { get; init; }
 
     /// <summary>
     /// Tenant that owns the surface's workspace. Additive to the read model so the

@@ -33,6 +33,7 @@ export interface ServiceMeta {
  */
 export interface CalloraAdminApi {
   registerExtension(slot: string, component: Component, order?: number): void
+  registerSurfaceTab(id: string, label: string, component: Component, order?: number): void
   registerHook<T>(name: string, handler: HookHandler<T>, order?: number): void
   registerService<T>(key: string, implementation: T, meta?: ServiceMeta): void
   /** Read side of the slot registry, so a component can render into a slot it does not own. */
@@ -58,6 +59,30 @@ export function registerExtension(slot: AdminSlot, component: Component, order?:
     return
   }
   api.registerExtension(slot, component, order)
+}
+
+/**
+ * Steuert einen Reiter an der Fläche bei, der DIESER App zugewiesen ist.
+ *
+ * Nicht `registerExtension` mit einem Slot-Namen: Ein Reiter trägt eine Beschriftung, und er
+ * gehört genau einer App. Über einen Slot erschiene er an jeder Fläche — nach dem dritten
+ * Plugin wäre die Detailansicht unbenutzbar.
+ *
+ * Die Komponente bekommt denselben Kontext wie jeder Flächen-Slot: `workspaceKey`,
+ * `surfaceKey`, `routing`.
+ */
+export function registerSurfaceTab(
+  id: string,
+  label: string,
+  component: Component,
+  order?: number,
+): void {
+  const api = resolveAdminApi()
+  if (!api) {
+    missing(`surface tab "${id}"`)
+    return
+  }
+  api.registerSurfaceTab(id, label, component, order)
 }
 
 /**

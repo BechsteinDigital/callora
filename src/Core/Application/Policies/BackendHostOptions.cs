@@ -2,8 +2,6 @@ namespace Callora.Core.Application.Policies;
 
 public sealed class BackendHostOptions
 {
-    public bool EnableTenantManagementApi { get; set; }
-
     public string DefaultTenantKey { get; set; } = "default";
 
     public string DefaultTenantDisplayName { get; set; } = "Default Tenant";

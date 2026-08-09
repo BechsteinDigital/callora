@@ -3,6 +3,7 @@ import {
   Building2,
   Image,
   KeyRound,
+  Layers,
   LayoutDashboard,
   Palette,
   Puzzle,
@@ -45,6 +46,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Workspaces', to: '/workspaces', icon: Boxes, permission: 'workspace.read', group: 'management' },
   { label: 'Mandanten', to: '/tenants', icon: Building2, permission: 'tenant.read', group: 'management' },
 
+  { label: 'Flächen', to: '/surfaces', icon: Layers, permission: 'workspace.read', group: 'content' },
   { label: 'Medien', to: '/media', icon: Image, permission: 'media.read', group: 'content' },
   { label: 'Themes', to: '/themes', icon: Palette, permission: 'extension.read', group: 'content' },
   { label: 'Flows', to: '/flows', icon: Workflow, permission: 'flow.read', group: 'content' },

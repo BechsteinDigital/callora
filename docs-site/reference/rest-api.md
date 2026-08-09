@@ -20,8 +20,6 @@ catalogues the real HTTP endpoints, grouped by area.
   prefixes as reserved (not routed to a workspace): `api`, `swagger`,
   `workspace`, `health`, `plugin-assets`, `manifests`, `_nuxt`. Requests under
   `/admin` are redirected to the admin shell.
-- **Tenant API is optional.** The `/api/tenants` group is only mapped when
-  `EnableTenantManagementApi` is enabled in host options.
 
 > The permission constants shown below are the string keys from
 > `BackendPermissionKeys`. "Authenticated" means the group requires a valid
@@ -107,7 +105,7 @@ Group `/api/users`.
 
 ### Tenants
 
-Group `/api/tenants` (only when `EnableTenantManagementApi`).
+Group `/api/tenants`.
 
 | Method | Path | Purpose | Auth |
 | --- | --- | --- | --- |

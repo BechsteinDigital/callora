@@ -17,6 +17,10 @@ public sealed class WorkspaceEntityTypeConfiguration : IEntityTypeConfiguration<
         builder.Property(x => x.DisplayName).HasMaxLength(300).IsRequired();
         builder.Property(x => x.WorkspaceType).HasMaxLength(100).IsRequired();
         builder.Property(x => x.IsActive).IsRequired();
+        // Eine Basis-URL kann einen Workspace bezeichnen. Indiziert wie bei der Fläche: Die
+        // Routenauflösung fragt bei jeder Anfrage danach.
+        builder.Property(x => x.PublicHost).HasColumnName("public_host").HasMaxLength(500);
+        builder.HasIndex(x => x.PublicHost);
         builder.Property(x => x.ThemePluginId).HasColumnName("theme_plugin_id").HasMaxLength(200);
         builder.Property(x => x.ThemeVersion).HasColumnName("theme_version").HasMaxLength(80);
         builder.Property(x => x.ThemeAssignedBy).HasColumnName("theme_assigned_by").HasMaxLength(200);

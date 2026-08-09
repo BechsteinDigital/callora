@@ -36,8 +36,19 @@ public sealed record WorkspaceSurfaceInput(
     public int Position { get; init; }
 
     /// <summary>
+    /// Wer über die Adressen unterhalb dieser Fläche entscheidet. Standard: der Baum.
+    /// </summary>
+    public SurfaceRouting Routing { get; init; } = SurfaceRouting.Tree;
+
+    /// <summary>
     /// Claims, die ein Besucher mitbringen muss (ADR-019 §4) — kommagetrennt, leer heißt keine
     /// Anforderung.
     /// </summary>
     public string? RequiredClaims { get; init; }
+
+    /// <summary>
+    /// Claims, die JEDER Besucher hier mitbringt. Die Gegenrichtung zur Anforderung: Ohne sie
+    /// hat ein nicht angemeldeter Besucher gar keine.
+    /// </summary>
+    public string? GrantedClaims { get; init; }
 }

@@ -67,7 +67,12 @@ public sealed class WorkspaceSurfaceProvisionerTests
         Assert.Equal("customer-theme", surface.ThemePluginId);
         Assert.Equal("2.0.0", surface.ThemeVersion);
         Assert.Equal("videoconference", surface.TemplatePluginId);
-        Assert.Equal("/acme/meet", surface.PublicPathPrefix);
+        // Das eigene SEGMENT, nicht der fertige Pfad (ADR-021). Den vollen Pfad hier zu
+        // speichern verschluckte die Kette darüber: Die Fläche lag direkt unter der Wurzel statt
+        // unter dem Standard-Eingang, und das Workspace-Segment fehlte in jedem Link, den das
+        // Plugin ausgab.
+        Assert.Equal("meet", surface.PublicPathPrefix);
+        Assert.Equal("default", surface.ParentSurfaceKey);
     }
 
     [Fact]

@@ -16,6 +16,7 @@ public sealed class WorkspaceBusinessEventTests
             WorkspaceType: "standard",
             IsActive: true,
             TenantIsActive: true,
+            PublicHost: null,
             ThemePluginId: null,
             ThemeVersion: null,
             ThemeAssignedBy: null,

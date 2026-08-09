@@ -48,6 +48,23 @@ public sealed class WorkspaceSurface
     /// </summary>
     public string? RequiredClaims { get; set; }
 
+    /// <summary>
+    /// Claims, die JEDER Besucher dieser Fläche mitbringt — kommagetrennt, leer heißt keine.
+    /// </summary>
+    /// <remarks>
+    /// Die Gegenrichtung zu <see cref="RequiredClaims"/>. Ohne sie hatte ein nicht angemeldeter
+    /// Besucher IMMER eine leere Claim-Menge: Jede Ansicht und jeder Block mit einer Anforderung
+    /// war auf einer Fläche ohne Identitätsanbieter unerreichbar — auch für einen Gast mit
+    /// gültiger Einladung.
+    ///
+    /// <para>
+    /// Kumulativ entlang der Kette, wie die Anforderung: Was ein Elternteil gewährt, gilt auch
+    /// hier. Das ist eine Rechteerweiterung, und sie gehört dem Betreiber — dieselbe
+    /// Entscheidung wie „ich stelle ein Telefon in die Lobby".
+    /// </para>
+    /// </remarks>
+    public string? GrantedClaims { get; set; }
+
     /// <summary>Technical key, unique per workspace.</summary>
     public string SurfaceKey { get; set; } = string.Empty;
 
@@ -63,6 +80,16 @@ public sealed class WorkspaceSurface
     public string PublicPathPrefix { get; set; } = "/";
 
     public SurfaceAccessMode AccessMode { get; set; } = SurfaceAccessMode.Mixed;
+
+    /// <summary>
+    /// Wer über die Adressen unterhalb dieser Fläche entscheidet.
+    /// </summary>
+    /// <remarks>
+    /// Standard ist <see cref="SurfaceRouting.Tree"/>: Wer nichts sagt, bekommt 404 statt einer
+    /// fremden Seite. Ein stiller Default in die andere Richtung liefert unter jedem Tippfehler
+    /// 200 mit dem Inhalt der Wurzel — der Fehler, der diese Achse nötig gemacht hat.
+    /// </remarks>
+    public SurfaceRouting Routing { get; set; } = SurfaceRouting.Tree;
 
     public string? Locale { get; set; }
 

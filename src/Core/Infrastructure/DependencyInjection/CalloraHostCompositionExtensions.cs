@@ -245,7 +245,20 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<Callora.Core.Application.Plugins.PluginAvailabilityEvaluator>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator>(
             static sp => sp.GetRequiredService<Callora.Core.Application.Plugins.PluginAvailabilityEvaluator>());
-        builder.Services.AddScoped<WorkspaceUiChainResolver>();
+        // Ausdrücklich zusammengesetzt statt vom Container geraten: Die Layout-Quelle kommt aus
+        // dem PLUGIN-KATALOG, nicht aus diesem Container. Ohne diese Zeile wählte die
+        // Konstruktorauflösung stillschweigend die Überladung ohne sie — und eine Inhaltsfläche
+        // lud weiter die Bundles jedes aktiven Plugins, obwohl ihr Layout keinen davon nennt.
+        builder.Services.AddScoped(sp => new WorkspaceUiChainResolver(
+            sp.GetRequiredService<IWorkspaceTemplateResolutionService>(),
+            sp.GetRequiredService<IWorkspacePluginActivationReader>(),
+            sp.GetRequiredService<IPluginAvailabilityEvaluator>(),
+            sp.GetService<Callora.Core.Application.Workspaces.IWorkspaceSurfaceStore>(),
+            sp.GetService<ICalloraPluginCatalog>()
+                ?.GetExports(typeof(Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource))
+                .OfType<Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource>()
+                .FirstOrDefault()
+                ?? sp.GetService<Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource>()));
         builder.Services.AddScoped<WorkspacePublicThemeResolver>();
         builder.Services.AddScoped<SurfaceThemeService>();
         builder.Services.AddScoped<Callora.Core.Application.Configuration.ISystemConfigStore, EfSystemConfigStore>();

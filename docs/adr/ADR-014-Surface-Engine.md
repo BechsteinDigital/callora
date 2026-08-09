@@ -332,6 +332,13 @@ Eine Surface ist kein Benutzertyp.
 
 ## 5.2 Verantwortung
 
+> **Teilweise abgelöst durch ADR-021.** „Domain oder Basisroute" gehört weiterhin einer
+> Surface — aber nicht mehr ausschließlich: Ein **Workspace kann einen Host tragen**, und
+> ohne Host beginnt der öffentliche Pfad mit dem **Workspace-Schlüssel**. Ohne dieses
+> Segment beanspruchten zwei frisch angelegte Workspaces dieselbe Origin, und der zweite
+> war unerreichbar. Ein **Pfad** bleibt Sache der Surfaces.
+
+
 Eine Surface definiert mindestens:
 
 * Workspace-Zugehörigkeit,

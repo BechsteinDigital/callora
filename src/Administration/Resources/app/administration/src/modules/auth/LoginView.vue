@@ -50,7 +50,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { Boxes, KeyRound, User } from 'lucide-vue-next'
 import { useAuthStore } from '@/core/auth/authStore'
 import CalAlert from '@/core/ui/CalAlert.vue'
@@ -63,7 +62,9 @@ const password = ref('')
 const workspaceKey = ref('')
 const error = ref(false)
 const submitting = ref(false)
-const router = useRouter()
+
+// Injizierbar, damit ein Test das Neuladen beobachten kann, ohne die Testumgebung zu verlassen.
+const { reload = () => window.location.assign('/admin/') } = defineProps<{ reload?: () => void }>()
 
 async function onSubmit() {
   error.value = false
@@ -71,7 +72,12 @@ async function onSubmit() {
   try {
     const ok = await useAuthStore().login(loginName.value, password.value, workspaceKey.value || null)
     if (ok) {
-      router.push('/')
+      // Neu laden statt zu navigieren: Die Plugin-Bundles werden beim Bootstrap geladen, und
+      // der lief hier ohne Sitzung — es gibt also noch keine. Sie nachzuladen ginge, ihr
+      // Ergebnis aber nicht mehr rückgängig zu machen, wenn jemand danach den Workspace
+      // wechselt; ein geladenes Skript lässt sich nicht entladen. Dieselbe Begründung wie bei
+      // setActive: Ein Neuladen ist die einzige Antwort, die nicht halb richtig ist.
+      reload()
     } else {
       error.value = true
     }

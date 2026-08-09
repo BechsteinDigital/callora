@@ -219,6 +219,7 @@ public sealed class SurfaceSessionAuthenticatorTests
                 null,
                 "/",
                 SurfaceAccessMode.Mixed,
+                SurfaceRouting.Tree,
                 "de",
                 null,
                 null,

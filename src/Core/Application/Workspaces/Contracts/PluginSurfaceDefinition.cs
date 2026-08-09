@@ -14,7 +14,8 @@ public sealed class PluginSurfaceDefinition
         string publicPathSuffix,
         PluginSurfaceAccessMode accessMode,
         string templatePluginId,
-        string? templateVersion = null)
+        string? templateVersion = null,
+        PluginSurfaceRouting routing = PluginSurfaceRouting.Tree)
     {
         SurfaceKey = surfaceKey;
         DisplayName = displayName;
@@ -23,6 +24,7 @@ public sealed class PluginSurfaceDefinition
         AccessMode = accessMode;
         TemplatePluginId = templatePluginId;
         TemplateVersion = templateVersion;
+        Routing = routing;
     }
 
     /// <summary>Stable key unique within the workspace.</summary>
@@ -45,4 +47,14 @@ public sealed class PluginSurfaceDefinition
 
     /// <summary>Optional template version recorded with the surface.</summary>
     public string? TemplateVersion { get; }
+
+    /// <summary>
+    /// Wer über die Adressen unterhalb dieser Fläche entscheidet (ADR-022).
+    /// </summary>
+    /// <remarks>
+    /// Standard ist der Baum. Eine Anwendung, deren Adressen zur Laufzeit entstehen — ein
+    /// Konferenzraum, ein Vorgang, ein Ticket —, muss es SAGEN: Ohne die Angabe antwortet jeder
+    /// dieser Pfade mit 404, weil es keinen Knoten dafür gibt und keinen geben kann.
+    /// </remarks>
+    public PluginSurfaceRouting Routing { get; }
 }

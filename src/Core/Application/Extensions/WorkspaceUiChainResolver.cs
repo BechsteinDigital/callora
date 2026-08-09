@@ -1,5 +1,6 @@
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Surfaces.Layout;
 using Callora.Core.Application.Workspaces;
 
 namespace Callora.Core.Application.Extensions;
@@ -16,6 +17,7 @@ public sealed class WorkspaceUiChainResolver
     private readonly IWorkspacePluginActivationReader _activationReader;
     private readonly IPluginAvailabilityEvaluator _availabilityEvaluator;
     private readonly IWorkspaceSurfaceStore? _surfaceStore;
+    private readonly ISurfaceLayoutSource? _layouts;
 
     public WorkspaceUiChainResolver(
         IWorkspaceTemplateResolutionService templateResolution,
@@ -30,11 +32,26 @@ public sealed class WorkspaceUiChainResolver
         IWorkspacePluginActivationReader activationReader,
         IPluginAvailabilityEvaluator availabilityEvaluator,
         IWorkspaceSurfaceStore? surfaceStore)
+        : this(templateResolution, activationReader, availabilityEvaluator, surfaceStore, layouts: null)
+    {
+    }
+
+    /// <param name="layouts">
+    /// Die veröffentlichten Layouts, oder null. Ohne sie bleibt es für eine Fläche ohne App bei
+    /// allen aktiven Plugins — ein Host ohne Composer soll nicht plötzlich leer rendern.
+    /// </param>
+    public WorkspaceUiChainResolver(
+        IWorkspaceTemplateResolutionService templateResolution,
+        IWorkspacePluginActivationReader activationReader,
+        IPluginAvailabilityEvaluator availabilityEvaluator,
+        IWorkspaceSurfaceStore? surfaceStore,
+        ISurfaceLayoutSource? layouts)
     {
         _templateResolution = templateResolution;
         _activationReader = activationReader;
         _availabilityEvaluator = availabilityEvaluator;
         _surfaceStore = surfaceStore;
+        _layouts = layouts;
     }
 
     public async Task<IReadOnlyList<string>> ResolveAsync(
@@ -59,6 +76,7 @@ public sealed class WorkspaceUiChainResolver
 
         var chain = new List<string>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ownedByAnApp = false;
 
         if (_surfaceStore is not null && !string.IsNullOrWhiteSpace(surfaceKey))
         {
@@ -69,6 +87,7 @@ public sealed class WorkspaceUiChainResolver
                 seen.Add(surface.TemplatePluginId))
             {
                 chain.Add(surface.TemplatePluginId);
+                ownedByAnApp = true;
             }
         }
 
@@ -78,6 +97,21 @@ public sealed class WorkspaceUiChainResolver
             {
                 chain.Add(template.PluginId);
             }
+        }
+
+        // Gehört die Fläche einer App, ist die Kette DAMIT zu Ende.
+        //
+        // Sonst steuerte jedes im Workspace aktive Plugin seine Oberfläche zu jeder Fläche bei:
+        // Ein Konferenzraum zeigte die Telefon-Blöcke des Communication-Plugins, eine leere
+        // Inhaltsfläche zeigte alles, was installiert ist. Die Zuweisung ist die Entscheidung des
+        // Betreibers, welche Anwendung hier läuft — und eine Anwendung, in die sich jede andere
+        // hineinrendert, ist keine.
+        //
+        // Das Theme steht schon in der Kette (es kam vor dieser Schleife) und bleibt: Es
+        // gestaltet, es rendert nicht.
+        if (ownedByAnApp)
+        {
+            return chain;
         }
 
         foreach (var pluginId in activePluginIds)
@@ -98,6 +132,34 @@ public sealed class WorkspaceUiChainResolver
             {
                 chain.Add(pluginId);
             }
+        }
+
+        // Eine INHALTSFLÄCHE zeigt, was ihr Layout verlangt — und sonst nichts.
+        //
+        // Hier und nicht im Renderpfad: Der Client holt die Kette über einen eigenen Endpunkt und
+        // lädt danach seine Bundles. Läge die Kürzung nur im Renderpfad, käme das Server-Markup
+        // sauber und der Browser mountete trotzdem jeden Block, den irgendein aktives Plugin
+        // mitbringt — genau der Zustand, der wie ein Rendering-Fehler aussieht und keiner ist.
+        if (!ownedByAnApp && _layouts is not null && !string.IsNullOrWhiteSpace(surfaceKey))
+        {
+            var document = await _layouts
+                .GetPublishedAsync(normalizedKey, surfaceKey.Trim(), cancellationToken)
+                .ConfigureAwait(false);
+
+            var needed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var blockId in document?.Sections.SelectMany(section => section.Blocks) ?? [])
+            {
+                var separator = blockId.BlockId.IndexOf('.', StringComparison.Ordinal);
+                needed.Add(separator > 0 ? blockId.BlockId[..separator] : blockId.BlockId);
+            }
+
+            // Das Theme steht schon in der Kette und bleibt: Es gestaltet, es rendert nicht.
+            foreach (var template in effectiveTemplates)
+            {
+                needed.Add(template.PluginId);
+            }
+
+            return chain.Where(needed.Contains).ToList();
         }
 
         return chain;

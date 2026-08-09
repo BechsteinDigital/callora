@@ -94,6 +94,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
         surface.PublicHost = input.PublicHost;
         surface.PublicPathPrefix = string.IsNullOrWhiteSpace(input.PublicPathPrefix) ? "/" : input.PublicPathPrefix.Trim();
         surface.AccessMode = input.AccessMode;
+        surface.Routing = input.Routing;
         surface.Locale = input.Locale;
         surface.TemplatePluginId = input.TemplatePluginId;
         surface.TemplateVersion = input.TemplateVersion;
@@ -102,6 +103,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
         surface.IsActive = input.IsActive;
         surface.Position = input.Position;
         surface.RequiredClaims = input.RequiredClaims;
+        surface.GrantedClaims = input.GrantedClaims;
         surface.UpdatedAtUtc = nowUtc;
 
         // Der Elternteil zuletzt, weil er als Einziger scheitern kann. Ein abgelehnter
@@ -260,6 +262,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             x.PublicHost,
             x.PublicPathPrefix,
             x.AccessMode,
+            x.Routing,
             x.Locale,
             x.TemplatePluginId,
             x.TemplateVersion,
@@ -272,6 +275,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             ParentSurfaceKey = x.Parent!.SurfaceKey,
             Position = x.Position,
             RequiredClaims = x.RequiredClaims,
+            GrantedClaims = x.GrantedClaims,
             IdentityPluginId = x.IdentityPluginId,
             IdentityVersion = x.IdentityVersion,
             IdentityAssignedBy = x.IdentityAssignedBy,
@@ -297,6 +301,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             x.PublicHost,
             x.PublicPathPrefix,
             x.AccessMode,
+            x.Routing,
             x.Locale,
             x.TemplatePluginId,
             x.TemplateVersion,
@@ -309,6 +314,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             ParentSurfaceKey = parentSurfaceKey,
             Position = x.Position,
             RequiredClaims = x.RequiredClaims,
+            GrantedClaims = x.GrantedClaims,
             IdentityPluginId = x.IdentityPluginId,
             IdentityVersion = x.IdentityVersion,
             IdentityAssignedBy = x.IdentityAssignedBy,

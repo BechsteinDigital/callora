@@ -62,6 +62,24 @@
     <Exec Command="npm run build" WorkingDirectory="$(AdminFrontendDir)" />
   </Target>
 
+  <!-- Vite gibt seinen Dateien einen Inhalts-Hash im Namen, und MSBuild expandiert
+       `wwwroot/**` beim AUSWERTEN des Projekts — also bevor das Target oben läuft. Nach einer
+       Frontend-Änderung zeigen die gesammelten Items deshalb auf Dateinamen, die es nicht mehr
+       gibt, und der Build bricht mit „No file exists for the asset at …/AppShell-<hash>.js" ab.
+
+       Der Ausweg ist, die Items nach dem Bauen neu einzulesen. Bewusst ohne Inkrementalität:
+       Das Target ist ein reiner ItemGroup-Abgleich, und ausgerechnet der Fall, in dem
+       BuildAdminFrontend übersprungen wird, ist der, in dem eine fremde Änderung an wwwroot
+       schon passiert sein kann. -->
+  <Target Name="RefreshAdminFrontendAssets"
+          DependsOnTargets="BuildAdminFrontend"
+          BeforeTargets="ResolveStaticWebAssetsInputs">
+    <ItemGroup>
+      <Content Remove="wwwroot/admin/**" />
+      <Content Include="wwwroot/admin/**" />
+    </ItemGroup>
+  </Target>
+
   <!-- Baustein 1: die Frontend-QUELLE (TS/Vite/npm, inkl. node_modules) gehört
        NICHT ins NuGet-Paket — nur die gebaute SPA unter wwwroot/admin reist als
        Static Web Asset mit. Ohne dies zieht das Web-SDK Resources/app/administration

@@ -134,6 +134,19 @@
             <option v-for="mode in accessModes" :key="mode" :value="mode">{{ mode }}</option>
           </CalSelect>
         </CalField>
+        <CalField
+          v-slot="{ id }"
+          label="Adressierung"
+          :description="formRouting === 'Application'
+            ? 'Die Anwendung deutet ihre Unterpfade selbst — für Adressen, die zur Laufzeit entstehen (z. B. ein Konferenzraum).'
+            : 'Der Seitenbaum ist die Wahrheit: Was kein Knoten ist, antwortet mit 404.'"
+        >
+          <CalSelect :id="id" v-model="formRouting" name="surfaceRouting">
+            <option v-for="mode in routings" :key="mode" :value="mode">
+              {{ routingLabels[mode] ?? mode }}
+            </option>
+          </CalSelect>
+        </CalField>
         <CalField v-slot="{ id }" label="Öffentlicher Host" hint="optional">
           <CalInput :id="id" v-model="formHost" name="surfaceHost" />
         </CalField>
@@ -195,7 +208,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Layers, Palette } from 'lucide-vue-next'
-import { workspacesApi, SURFACE_ACCESS_MODES, type WorkspaceSurface } from './workspacesApi'
+import {
+  workspacesApi,
+  SURFACE_ACCESS_MODES,
+  SURFACE_ROUTINGS,
+  SURFACE_ROUTING_LABELS,
+  type WorkspaceSurface,
+} from './workspacesApi'
 import { eligibleParents, flattenSurfaceTree, inheritedClaims, parseClaims } from './surfaceTree'
 import ExtensionSlot from '@/core/extensions/ExtensionSlot.vue'
 import { useService } from '@/core/extensions/services'
@@ -216,6 +235,8 @@ import { toast } from '@/core/feedback/toasts'
 const props = defineProps<{ workspaceKey: string; canManage: boolean }>()
 
 const accessModes = SURFACE_ACCESS_MODES
+const routings = SURFACE_ROUTINGS
+const routingLabels = SURFACE_ROUTING_LABELS
 
 const surfaces = ref<WorkspaceSurface[]>([])
 const loading = ref(true)
@@ -324,6 +345,8 @@ const formKey = ref('')
 const formDisplayName = ref('')
 const formType = ref('spa')
 const formAccessMode = ref<string>('Authenticated')
+// Standard ist der Baum: Wer nichts sagt, bekommt 404 statt einer fremden Seite.
+const formRouting = ref<string>('Tree')
 const formHost = ref('')
 const formPathPrefix = ref('/')
 const formBaseUrl = ref('')
@@ -340,6 +363,7 @@ const carriedTemplatePluginId = ref<string | null>(null)
 const carriedTemplateVersion = ref<string | null>(null)
 const carriedThemePluginId = ref<string | null>(null)
 const carriedThemeVersion = ref<string | null>(null)
+const carriedGrantedClaims = ref<string | null>(null)
 
 // Resolve the workspaces service through the override registry: a plugin may replace it.
 const api = useService('workspacesApi', workspacesApi)
@@ -371,6 +395,7 @@ function resetForm(): void {
   formDisplayName.value = ''
   formType.value = 'spa'
   formAccessMode.value = 'Authenticated'
+  formRouting.value = 'Tree'
   formHost.value = ''
   formPathPrefix.value = '/'
   formBaseUrl.value = ''
@@ -378,6 +403,7 @@ function resetForm(): void {
   formActive.value = true
   formParentKey.value = ''
   formPosition.value = '0'
+  carriedGrantedClaims.value = null
   formRequiredClaims.value = ''
   carriedTemplatePluginId.value = null
   carriedTemplateVersion.value = null
@@ -391,6 +417,7 @@ function startEdit(surface: WorkspaceSurface): void {
   formDisplayName.value = surface.displayName
   formType.value = surface.surfaceType
   formAccessMode.value = surface.accessMode
+  formRouting.value = surface.routing
   formHost.value = surface.publicHost ?? ''
   formPathPrefix.value = surface.publicPathPrefix
   formBaseUrl.value = surface.publicBaseUrl ?? ''
@@ -413,6 +440,7 @@ interface SurfaceSaveDraft {
   displayName: string
   surfaceType: string
   accessMode: string
+  routing: string
   publicHost: string | null
   publicPathPrefix: string
   publicBaseUrl: string | null
@@ -435,6 +463,7 @@ async function save(): Promise<void> {
     displayName: formDisplayName.value.trim(),
     surfaceType: formType.value.trim(),
     accessMode: formAccessMode.value,
+    routing: formRouting.value,
     publicHost: formHost.value.trim() || null,
     publicPathPrefix: formPathPrefix.value.trim(),
     publicBaseUrl: formBaseUrl.value.trim() || null,
@@ -459,6 +488,7 @@ async function save(): Promise<void> {
       publicHost: draft.publicHost,
       publicPathPrefix: draft.publicPathPrefix,
       accessMode: draft.accessMode,
+      routing: draft.routing,
       locale: draft.locale,
       templatePluginId: carriedTemplatePluginId.value,
       templateVersion: carriedTemplateVersion.value,
@@ -468,6 +498,10 @@ async function save(): Promise<void> {
       parentSurfaceKey: draft.parentSurfaceKey,
       position: draft.position,
       requiredClaims: draft.requiredClaims,
+      // Diese Ansicht kennt das Feld nicht — sie reicht durch, was gespeichert ist. Ohne das
+      // löschte ein Speichern hier still die gewährten Claims, und die Fläche wäre für jeden
+      // Gast leer, ohne dass jemand sie angefasst hätte.
+      grantedClaims: carriedGrantedClaims.value,
     })
     await runHook('workspaces.surface.after-save', { workspaceKey: props.workspaceKey, surfaceKey: key })
     toast.success(draft.isEdit ? `Surface „${key}“ gespeichert.` : `Surface „${key}“ angelegt.`)

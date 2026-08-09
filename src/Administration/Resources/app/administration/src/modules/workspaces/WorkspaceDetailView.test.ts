@@ -16,7 +16,6 @@ vi.mock('./workspacesApi', () => ({ workspacesApi: { get: getMock, upsert: upser
 // The members and surfaces sub-resources have their own tests; stub them here so
 // the detail-view tests stay focused on the workspace fields.
 vi.mock('./WorkspaceMembers.vue', () => ({ default: { name: 'WorkspaceMembers', template: '<div />' } }))
-vi.mock('./WorkspaceSurfaces.vue', () => ({ default: { name: 'WorkspaceSurfaces', template: '<div />' } }))
 vi.mock('./WorkspacePlugins.vue', () => ({ default: { name: 'WorkspacePlugins', template: '<div />' } }))
 vi.mock('@/core/auth/authStore', () => ({ useAuthStore: () => ({ context: { value: null } }) }))
 vi.mock('vue-router', () => ({
@@ -32,6 +31,7 @@ const existing: Workspace = {
   workspaceType: 'standard',
   isActive: true,
   tenantIsActive: true,
+  publicHost: null,
   themePluginId: null,
   themeVersion: null,
   themeAssignedBy: null,
@@ -66,8 +66,25 @@ describe('WorkspaceDetailView', () => {
       workspaceType: 'standard',
       isActive: true,
       defaultSurfaceBaseUrl: null,
+      publicHost: null,
     })
     expect(pushMock).toHaveBeenCalledWith('/workspaces')
+  })
+
+  it('keeps the host on save instead of clearing it', async () => {
+    // Das Speichern ist ein vollständiges Ersetzen: Was das Formular nicht mitschickt,
+    // löscht der Server. Würde `load` den Host nicht ins Feld legen, nähme ein Speichern
+    // ohne jede Änderung dem Workspace seine Adresse — und niemand sähe, warum.
+    routeParams.value = { workspaceKey: 'acme' }
+    getMock.mockResolvedValue({ ...existing, publicHost: 'kunde.de' })
+    upsertMock.mockResolvedValue(existing)
+
+    const wrapper = mount(WorkspaceDetailView)
+    await flushPromises()
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(upsertMock).toHaveBeenCalledWith('acme', expect.objectContaining({ publicHost: 'kunde.de' }))
   })
 
   it('prefills on edit and keeps the key read-only', async () => {
@@ -94,6 +111,7 @@ describe('WorkspaceDetailView', () => {
       workspaceType: 'standard',
       isActive: true,
       defaultSurfaceBaseUrl: null,
+      publicHost: null,
     })
   })
 

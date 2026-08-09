@@ -10,6 +10,7 @@ public sealed record SurfaceApiResponse(
     string? PublicHost,
     string PublicPathPrefix,
     string AccessMode,
+    string Routing,
     string? Locale,
     string? TemplatePluginId,
     string? TemplateVersion,
@@ -31,4 +32,7 @@ public sealed record SurfaceApiResponse(
     /// Eingabefeld, sonst schriebe ein Speichern die Anforderung des Elternteils hierher fest.
     /// </summary>
     public string? RequiredClaims { get; init; }
+
+    /// <summary>Claims, die jeder Besucher dieser Fläche mitbringt.</summary>
+    public string? GrantedClaims { get; init; }
 }

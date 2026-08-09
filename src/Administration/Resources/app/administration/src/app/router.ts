@@ -38,6 +38,18 @@ export const router = createRouter({
           meta: { title: 'Benutzer bearbeiten', parent: USERS },
         },
         { path: 'roles', component: () => import('@/modules/roles/RolesListView.vue'), meta: { title: 'Rollen' } },
+        // Baum links, Detail rechts — der Knoten steht in der URL, damit ein Neuladen (und
+        // ein geteilter Link) dieselbe Seite zeigt.
+        {
+          path: 'surfaces',
+          component: () => import('@/modules/surfaces/SurfacesView.vue'),
+          meta: { title: 'Flächen' },
+        },
+        {
+          path: 'surfaces/:surfaceKey',
+          component: () => import('@/modules/surfaces/SurfacesView.vue'),
+          meta: { title: 'Flächen' },
+        },
         {
           path: 'roles/new',
           component: () => import('@/modules/roles/RoleDetailView.vue'),

@@ -8,6 +8,7 @@ import { router } from '@/app/router'
 import { initTheme } from '@/core/design/theme'
 import { loadPluginExtensions } from '@/core/extensions/loader'
 import { readStoredWorkspace } from '@/core/workspace/workspaceContext'
+import { useAuthStore } from '@/core/auth/authStore'
 
 // Load plugin admin UI (slots/hooks/service overrides register against the global
 // API) before mounting, so a plugin's contributions are present on first render.
@@ -17,13 +18,29 @@ async function bootstrap(): Promise<void> {
   // signal. The inline script in index.html already set the attribute to avoid a
   // flash; this takes over the reactive side.
   initTheme()
-  try {
-    // A workspace-bound session needs no key — the server resolves the bound one and
-    // ignores anything we send. A platform operator carries none in their token, so the
-    // persisted selection is passed; without it the server has no workspace to chain for.
-    await loadPluginExtensions({ workspaceKey: readStoredWorkspace() ?? undefined })
-  } catch {
-    // Plugin loading must never prevent the shell itself from mounting.
+
+  // Erst die Sitzung, dann die Plugins.
+  //
+  // Die Kette ist eine authentifizierte Fläche: Ohne Sitzung antwortet sie mit 401, und der
+  // Bootstrap holte sie bisher bedingungslos — also auch auf der Anmeldeseite. In der Konsole
+  // stand dann ein Fehler, den niemand beheben kann, weil er nichts bedeutet. Wer echte Fehler
+  // sucht, gewöhnt sich solche ab, und das ist der eigentliche Schaden.
+  //
+  // Der Kontext wird hier ohnehin gebraucht: Der Router-Guard holt ihn sonst als Erstes, und das
+  // Ergebnis liegt im selben Store — die Anfrage ist keine zusätzliche, nur eine frühere.
+  const signedIn = await useAuthStore()
+    .loadContext()
+    .catch(() => false)
+
+  if (signedIn) {
+    try {
+      // A workspace-bound session needs no key — the server resolves the bound one and
+      // ignores anything we send. A platform operator carries none in their token, so the
+      // persisted selection is passed; without it the server has no workspace to chain for.
+      await loadPluginExtensions({ workspaceKey: readStoredWorkspace() ?? undefined })
+    } catch {
+      // Plugin loading must never prevent the shell itself from mounting.
+    }
   }
   createApp(App).use(router).mount('#app')
 }

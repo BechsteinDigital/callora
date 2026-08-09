@@ -91,7 +91,9 @@ public sealed class EffectiveSurfaceTests
         var middle = Node("partner", "partner");
         var leaf = Node("downloads", "downloads");
 
-        Assert.Equal("/portal/partner/downloads", EffectiveSurface.From([leaf, middle, root]).PublicPathPrefix);
+        // "acme" ist der Workspace: Ohne Host beginnt jeder Pfad mit ihm, sonst beanspruchten
+        // zwei Workspaces dieselbe Origin. Siehe PublicRouteCarriesTheWorkspaceTests.
+        Assert.Equal("/acme/portal/partner/downloads", EffectiveSurface.From([leaf, middle, root]).PublicPathPrefix);
     }
 
     [Fact]

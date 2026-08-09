@@ -72,6 +72,21 @@
     },
     {
       "kind": "slot",
+      "name": "surfaces.detail.fields",
+      "file": "modules/surfaces/SurfaceDetail.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "surfaces.detail.layout",
+      "file": "modules/surfaces/SurfaceDetail.vue"
+    },
+    {
+      "kind": "slot",
+      "name": "surfaces.detail.access",
+      "file": "modules/surfaces/SurfaceDetail.vue"
+    },
+    {
+      "kind": "slot",
       "name": "tenants.list.toolbar",
       "file": "modules/tenants/TenantsListView.vue"
     },
@@ -104,11 +119,6 @@
       "kind": "slot",
       "name": "users.list.row-actions",
       "file": "modules/users/UsersListView.vue"
-    },
-    {
-      "kind": "slot",
-      "name": "webhooks.list.toolbar",
-      "file": "modules/webhooks/WebhooksListView.vue"
     },
     {
       "kind": "slot",
