@@ -342,8 +342,14 @@ public static class WorkspacePublicEndpoints
                         workspace = resolvedWorkspace;
                     }
 
+                    // Ein Rückweg, der selbst auf einen Login zeigt, ist immer ein Schleifenanfang:
+                    // Wer ihm folgt, landet wieder hier, und die returnUrl wächst bei jeder Runde
+                    // um eine weitere Kodierungsebene, bis der Server mit 414 abbricht. Nach dem
+                    // Anmelden gehört der Besucher an die Wurzel, nicht auf die Anmeldeseite.
+                    var safeReturnUrl = IsLoginPath(returnUrl) ? "/" : returnUrl;
+
                     var query = ToSingleValueQueryDictionary(httpContext.Request.Query);
-                    query["returnUrl"] = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl;
+                    query["returnUrl"] = string.IsNullOrWhiteSpace(safeReturnUrl) ? "/" : safeReturnUrl;
                     var loginSurface = await ResolveSurfaceFromRequestAsync(
                             httpHost: ResolveForwardedHost(httpContext),
                             NormalizePath(returnUrl),
@@ -351,6 +357,17 @@ public static class WorkspacePublicEndpoints
                             workspaceStore,
                             cancellationToken)
                         .ConfigureAwait(false);
+                    // Eine Fläche mit Operator-Anmeldung hat keinen eigenen Login (ADR-023): Wer
+                    // hier hin soll, meldet sich in der Administration an. Ohne diesen Zweig
+                    // entstand die teuerste Art von Schleife — /test/blub schickte auf /login,
+                    // /login baute daraus /test/blub/login, und DAS war wieder ein unbekannter
+                    // Unterpfad derselben geschützten Fläche. Bei jeder Runde wurde die returnUrl
+                    // erneut kodiert, bis der Server mit 414 abbrach.
+                    if (loginSurface?.Authentication == SurfaceAuthentication.Administration)
+                    {
+                        return Results.Redirect(BuildAdminShellRedirectUrl(hostOptions, query));
+                    }
+
                     var workspaceLoginPath = BuildWorkspaceLoginPath(loginSurface?.PublicPathPrefix ?? "/");
 
                     var redirectUrl = BuildRedirectUrl(
@@ -698,6 +715,27 @@ public static class WorkspacePublicEndpoints
         }
 
         return normalizedBase + normalizedRequestPath;
+    }
+
+    /// <summary>
+    /// Ob dieser Pfad selbst eine Anmeldeseite ist — an der Wurzel oder unter einer Fläche.
+    /// </summary>
+    /// <remarks>
+    /// Die eine Stelle, die das entscheidet. Ohne sie hing der Schleifenschutz an einem exakten
+    /// Pfadvergleich (<c>WouldSelfRedirect</c>), und der greift nicht, sobald der Login unter
+    /// einem anderen Prefix steht als der, der gerade bedient wird — genau der Fall, der zu 414
+    /// führte.
+    /// </remarks>
+    private static bool IsLoginPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        var normalized = NormalizePath(path.Split('?', '#')[0]);
+        return normalized.Equals("/login", StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("/login", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildWorkspaceLoginPath(string? workspacePublicPathPrefix)

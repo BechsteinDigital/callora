@@ -209,6 +209,24 @@ public sealed class WorkspacePublicEndpointsTests
     }
 
     [Fact]
+    public async Task AReturnUrlThatPointsAtALoginIsDroppedInsteadOfNested()
+    {
+        // Die Härtung dahinter: Jede returnUrl, die selbst auf einen Login zeigt, ist ein
+        // Schleifenanfang. Bei jeder Runde kam eine Kodierungsebene dazu, bis der Server mit 414
+        // abbrach. Nach dem Anmelden gehört der Besucher an die Wurzel, nicht auf die Anmeldeseite.
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/login?returnUrl=%2Fdialer%2Flogin%3FreturnUrl%3D%252Fdialer");
+        request.Headers.Host = "localhost";
+
+        var response = await client.SendAsync(request);
+
+        var query = ParseQueryString(response.Headers.Location!.Query);
+        Assert.Equal("/", query["returnUrl"]);
+    }
+
+    [Fact]
     public async Task AdminRoute_RedirectsToConfiguredAdminShell()
     {
         await using var app = await CreateAppAsync();
@@ -423,7 +441,8 @@ public sealed class WorkspacePublicEndpointsTests
         string workspaceKey,
         string surfaceKey,
         SurfaceAuthentication authentication,
-        string? templatePluginId = null)
+        string? templatePluginId = null,
+        string publicPathPrefix = "/")
     {
         var surfaceStore = app.Services.GetRequiredService<IWorkspaceSurfaceStore>();
         _ = await surfaceStore.UpsertAsync(
@@ -434,7 +453,7 @@ public sealed class WorkspacePublicEndpointsTests
                 SurfaceType: "web",
                 PublicBaseUrl: null,
                 PublicHost: null,
-                PublicPathPrefix: "/",
+                PublicPathPrefix: publicPathPrefix,
                 Authentication: authentication,
                 Locale: null,
                 TemplatePluginId: templatePluginId,
