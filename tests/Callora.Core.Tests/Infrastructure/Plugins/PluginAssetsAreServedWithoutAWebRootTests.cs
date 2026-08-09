@@ -70,4 +70,53 @@ public sealed class PluginAssetsAreServedWithoutAWebRootTests
             Directory.Delete(contentRoot, recursive: true);
         }
     }
+
+    /// <summary>
+    /// Eine Datei mit unbekannter Endung wird ebenfalls ausgeliefert.
+    /// </summary>
+    /// <remarks>
+    /// Ohne dies liefert die Auslieferung nur bekannte Endungen aus, und alles andere fällt durch
+    /// zur nächsten Middleware — die die Adresse für eine Fläche hält und mit <b>401</b> antwortet.
+    /// Ein Plugin bekäme also für eine Datei, die es selbst veröffentlicht hat, „nicht angemeldet"
+    /// zurück. Erstes Opfer war ein <c>.tflite</c>-Segmentierungsmodell: Der
+    /// Hintergrund-Weichzeichner meldete sich still als nicht verfügbar, ohne 404, ohne Logzeile
+    /// und ohne jeden Hinweis darauf, dass es an der Dateiendung lag.
+    /// </remarks>
+    [Fact]
+    public async Task AFileWithAnUnknownExtensionIsServedToo()
+    {
+        var contentRoot = Directory.CreateTempSubdirectory("callora-unknown-type-").FullName;
+        try
+        {
+            var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+            {
+                ContentRootPath = contentRoot
+            });
+            builder.WebHost.UseTestServer();
+            await using var app = builder.Build();
+
+            var published = Path.Combine(
+                PluginAssetWebRoot.Resolve(app.Environment),
+                "plugin-assets", "demo", "app", "surface", "vendor");
+            Directory.CreateDirectory(published);
+            await File.WriteAllTextAsync(Path.Combine(published, "model.tflite"), "weights");
+
+            PluginAssetStaticFiles.Use(app, app.Environment);
+            await app.StartAsync();
+
+            var response = await app.GetTestClient()
+                .GetAsync("/plugin-assets/demo/app/surface/vendor/model.tflite");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            // Heruntergeladen, nicht ausgeführt: Damit ist die unbekannte Endung keine
+            // Ausführungsfrage mehr.
+            Assert.Equal("application/octet-stream", response.Content.Headers.ContentType?.MediaType);
+
+            await app.StopAsync();
+        }
+        finally
+        {
+            Directory.Delete(contentRoot, recursive: true);
+        }
+    }
 }
