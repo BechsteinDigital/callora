@@ -3005,13 +3005,13 @@ Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.BlockId.get -> strin
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.BlockId.init -> void
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Config.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!>!
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Config.init -> void
-Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Deconstruct(out string! BlockId, out string! Region, out int Position, out System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!>! Config) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Deconstruct(out string! BlockId, out string! Region, out int Position, out System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!>? Config) -> void
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Equals(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock? other) -> bool
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Position.get -> int
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Position.init -> void
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Region.get -> string!
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.Region.init -> void
-Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.SurfaceLayoutBlock(string! BlockId, string! Region, int Position, System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!>! Config) -> void
+Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock.SurfaceLayoutBlock(string! BlockId, string! Region, int Position, System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Surfaces.Layout.SurfaceBlockBinding!>? Config = null) -> void
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.<Clone>$() -> Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument!
 Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument.Deconstruct(out string! Key, out int VersionNumber, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutSection!>! Sections) -> void
