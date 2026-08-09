@@ -171,6 +171,15 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         CancellationToken cancellationToken = default)
     {
         var rows = await _installationRepository.ListAsync(cancellationToken).ConfigureAwait(false);
+
+        // Was gilt, neben dem, was gelten soll. Ein Plugin, dessen Aktivierung beim Start
+        // scheitert, bleibt in der Datenbank `Active` — die Übersicht zeigte es dann als „Aktiv",
+        // während es nichts tat, und der Fehlschlag stand nur in einer Logzeile beim Start.
+        var running = _lifecycle.Plugins
+            .Where(plugin => plugin.State == HostPluginState.Active)
+            .Select(plugin => plugin.PluginId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         return rows.Select(x => new PluginInstallationSnapshot(
                 x.PluginId,
                 x.DisplayName,
@@ -178,7 +187,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
                 x.EntryTypeName,
                 (int)x.State,
                 x.InstalledAtUtc,
-                x.UpdatedAtUtc))
+                x.UpdatedAtUtc,
+                running.Contains(x.PluginId)))
             .ToArray();
     }
 

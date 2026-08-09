@@ -10,6 +10,16 @@
   style element. It CAN still be nonsense CSS; a bad value breaks its own rule and no
   more, which is why declarations are one per line.
 #}
+{#
+  Kein Theme, kein Block. Ohne zugewiesenes Theme steht hier sonst ein leeres `:root {}` — ein
+  Element, das aussieht, als käme das Theme gleich, und nie eines trägt. Wer nach der Ursache
+  einer Gestaltung sucht, findet es und hält es für die Stelle; die Werte kommen dann aber
+  vollständig aus den Fallbacks in base.css und surface.css.
+
+  Sichtbar leer ist schlimmer als nicht vorhanden: Das Fehlen des Blocks IST die Auskunft, dass
+  keiner Fläche ein Theme zugewiesen ist.
+#}
+{%- if tokens and tokens | length > 0 %}
 <style>
 :root {
 {%- for key, value in tokens %}
@@ -17,3 +27,4 @@
 {%- endfor %}
 }
 </style>
+{%- endif %}

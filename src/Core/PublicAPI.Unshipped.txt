@@ -1141,7 +1141,7 @@ Callora.Core.Application.Lifecycle.PluginInstallationSnapshot
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.<Clone>$() -> Callora.Core.Application.Lifecycle.PluginInstallationSnapshot!
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.AssemblyPath.get -> string!
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.AssemblyPath.init -> void
-Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.Deconstruct(out string! PluginId, out string! DisplayName, out string! AssemblyPath, out string? EntryTypeName, out int State, out System.DateTimeOffset InstalledAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.Deconstruct(out string! PluginId, out string! DisplayName, out string! AssemblyPath, out string? EntryTypeName, out int State, out System.DateTimeOffset InstalledAtUtc, out System.DateTimeOffset UpdatedAtUtc, out bool IsRunning) -> void
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.DisplayName.get -> string!
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.DisplayName.init -> void
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.EntryTypeName.get -> string?
@@ -1149,9 +1149,11 @@ Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.EntryTypeName.init
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.Equals(Callora.Core.Application.Lifecycle.PluginInstallationSnapshot? other) -> bool
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.InstalledAtUtc.get -> System.DateTimeOffset
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.InstalledAtUtc.init -> void
+Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.IsRunning.get -> bool
+Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.IsRunning.init -> void
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.PluginId.get -> string!
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.PluginId.init -> void
-Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.PluginInstallationSnapshot(string! PluginId, string! DisplayName, string! AssemblyPath, string? EntryTypeName, int State, System.DateTimeOffset InstalledAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.PluginInstallationSnapshot(string! PluginId, string! DisplayName, string! AssemblyPath, string? EntryTypeName, int State, System.DateTimeOffset InstalledAtUtc, System.DateTimeOffset UpdatedAtUtc, bool IsRunning = false) -> void
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.State.get -> int
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.State.init -> void
 Callora.Core.Application.Lifecycle.PluginInstallationSnapshot.UpdatedAtUtc.get -> System.DateTimeOffset

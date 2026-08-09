@@ -57,8 +57,8 @@ function ctx(permissions: string[]): AdminContext {
 }
 
 const sample: PluginInstallation[] = [
-  { pluginId: 'acme', displayName: 'Acme', assemblyPath: '', entryTypeName: null, state: 1, installedAtUtc: '', updatedAtUtc: '' },
-  { pluginId: 'beta', displayName: 'Beta', assemblyPath: '', entryTypeName: null, state: 2, installedAtUtc: '', updatedAtUtc: '' },
+  { pluginId: 'acme', displayName: 'Acme', assemblyPath: '', entryTypeName: null, state: 1, isRunning: true, installedAtUtc: '', updatedAtUtc: '' },
+  { pluginId: 'beta', displayName: 'Beta', assemblyPath: '', entryTypeName: null, state: 2, isRunning: true, installedAtUtc: '', updatedAtUtc: '' },
 ]
 
 function buttonByText(wrapper: VueWrapper, text: string) {
@@ -83,6 +83,21 @@ beforeEach(() => {
 })
 
 describe('PluginsListView', () => {
+  it('unterscheidet „aktiv" von „läuft"', async () => {
+    // Der Fall, den niemand sah: Ein Plugin, dessen Aktivierung beim Start scheiterte, bleibt in
+    // der Datenbank aktiv. Die Liste zeigte es als „Aktiv", während es nichts tat, und der Grund
+    // stand nur in einer Logzeile beim Start.
+    listMock.mockResolvedValue([
+      { pluginId: 'laeuft', displayName: 'Läuft', assemblyPath: '', entryTypeName: null, state: 1, isRunning: true, installedAtUtc: '', updatedAtUtc: '' },
+      { pluginId: 'dunkel', displayName: 'Dunkel', assemblyPath: '', entryTypeName: null, state: 1, isRunning: false, installedAtUtc: '', updatedAtUtc: '' },
+    ])
+
+    const wrapper = mount(PluginsListView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Aktiv, läuft nicht')
+  })
+
   it('renders each plugin with the right status and lifecycle action', async () => {
     contextRef.value = ctx(['plugin.execute'])
     const wrapper = mount(PluginsListView)
