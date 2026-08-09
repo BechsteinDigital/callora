@@ -117,6 +117,41 @@ public static class SurfaceRenderEndpoints
 
         var locale = string.IsNullOrWhiteSpace(surface.Locale) ? "de" : surface.Locale;
 
+        // Theme und Komposition ZUERST, vor allem, was den Aufrufer betrifft.
+        //
+        // Sie hängen nicht an ihm — wohl aber hängt an ihnen, WER auf dieser Fläche überhaupt
+        // beitragen darf: Eine Inhaltsfläche zeigt, was ihr Layout verlangt, und das steht erst
+        // fest, wenn die Komposition geladen ist. Standen sie weiter unten, kannte die
+        // Slot-Auflösung das Layout noch nicht und ließ jedes aktive Plugin durch.
+        // The effective, secret-filtered theme values (defaults + workspace
+        // overrides) become allowlisted tokens so a plugin's SSR template can bind
+        // {{ tokens.<key> }} onto its --cal-* properties (ADR-015 §8).
+        IReadOnlyDictionary<string, string>? effectiveTheme = null;
+        // Auch die Sektionslayouts des Themes: Der Kompositions-Renderer muss erkennen, dass ein
+        // im Dokument gespeichertes Layout nach einem Theme-Wechsel niemanden mehr hat, der es
+        // stylen kann (§7.8).
+        WorkspacePublicTheme? resolvedTheme = null;
+        if (themeResolver is not null)
+        {
+            // Resolved for THIS surface: its own theme and values win over the
+            // workspace's. Previously only the workspace values were read, so a
+            // surface with its own theme rendered that theme's identity with the
+            // workspace theme's values.
+            resolvedTheme = await themeResolver
+                .ResolveForSurfaceAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
+                .ConfigureAwait(false);
+            effectiveTheme = resolvedTheme?.ValuesByKey;
+        }
+
+        var layouts = httpContext.RequestServices.GetService<ISurfaceLayoutSource>();
+        var composed = layouts is null
+            ? default
+            : await RenderCompositionAsync(layouts, surface, resolvedTheme, cancellationToken)
+                .ConfigureAwait(false);
+        var composition = composed.Html;
+        var usedBlockIds = composed.BlockIds ?? [];
+
+
         SurfaceCallerView? caller = null;
         // Die Template-Sicht oben lässt die Identität bewusst weg; ein Contributor braucht sie,
         // um seine Antwort zu formen — nicht, um über Zugriff zu entscheiden.
@@ -156,9 +191,12 @@ public static class SurfaceRenderEndpoints
             // Videokonferenz stand im Menü einer Inhaltsseite, die sie nie erwähnt.
             var contributors = chainResolver is null
                 ? null
-                : await chainResolver
-                    .ResolveAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
-                    .ConfigureAwait(false);
+                : SurfaceContributors.OnThisSurface(
+                    await chainResolver
+                        .ResolveAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
+                        .ConfigureAwait(false),
+                    surface,
+                    usedBlockIds);
 
             // Resolved per request because it depends on the caller: claim-gated views
             // are filtered here, not hidden in the browser.
@@ -194,26 +232,6 @@ public static class SurfaceRenderEndpoints
                 // bestehender Host unberührt bleibt.
                 return SurfaceAccessGate.LoginRedirect(surface, httpContext);
             }
-        }
-
-        // The effective, secret-filtered theme values (defaults + workspace
-        // overrides) become allowlisted tokens so a plugin's SSR template can bind
-        // {{ tokens.<key> }} onto its --cal-* properties (ADR-015 §8).
-        IReadOnlyDictionary<string, string>? effectiveTheme = null;
-        // Auch die Sektionslayouts des Themes: Der Kompositions-Renderer muss erkennen, dass ein
-        // im Dokument gespeichertes Layout nach einem Theme-Wechsel niemanden mehr hat, der es
-        // stylen kann (§7.8).
-        WorkspacePublicTheme? resolvedTheme = null;
-        if (themeResolver is not null)
-        {
-            // Resolved for THIS surface: its own theme and values win over the
-            // workspace's. Previously only the workspace values were read, so a
-            // surface with its own theme rendered that theme's identity with the
-            // workspace theme's values.
-            resolvedTheme = await themeResolver
-                .ResolveForSurfaceAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
-                .ConfigureAwait(false);
-            effectiveTheme = resolvedTheme?.ValuesByKey;
         }
 
         // Everything a contributor needs to tell one page from another. The prefix comes off
@@ -267,12 +285,6 @@ public static class SurfaceRenderEndpoints
         // GetPublishedAsync, and only that. There is no ?preview=true and no header that would
         // reach a draft from here — on a Public surface such a hole would sit behind no
         // authentication at all (design §7.3).
-        var layouts = httpContext.RequestServices.GetService<ISurfaceLayoutSource>();
-        var composition = layouts is null
-            ? null
-            : (await RenderCompositionAsync(layouts, surface, resolvedTheme, cancellationToken)
-                .ConfigureAwait(false)).Html;
-
 
         var context = new SurfaceRenderContext(
             TenantKey: surface.TenantKey,
