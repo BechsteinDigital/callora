@@ -59,6 +59,7 @@ public sealed class WorkspaceUiChainResolver
 
         var chain = new List<string>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ownedByAnApp = false;
 
         if (_surfaceStore is not null && !string.IsNullOrWhiteSpace(surfaceKey))
         {
@@ -69,6 +70,7 @@ public sealed class WorkspaceUiChainResolver
                 seen.Add(surface.TemplatePluginId))
             {
                 chain.Add(surface.TemplatePluginId);
+                ownedByAnApp = true;
             }
         }
 
@@ -78,6 +80,21 @@ public sealed class WorkspaceUiChainResolver
             {
                 chain.Add(template.PluginId);
             }
+        }
+
+        // Gehört die Fläche einer App, ist die Kette DAMIT zu Ende.
+        //
+        // Sonst steuerte jedes im Workspace aktive Plugin seine Oberfläche zu jeder Fläche bei:
+        // Ein Konferenzraum zeigte die Telefon-Blöcke des Communication-Plugins, eine leere
+        // Inhaltsfläche zeigte alles, was installiert ist. Die Zuweisung ist die Entscheidung des
+        // Betreibers, welche Anwendung hier läuft — und eine Anwendung, in die sich jede andere
+        // hineinrendert, ist keine.
+        //
+        // Das Theme steht schon in der Kette (es kam vor dieser Schleife) und bleibt: Es
+        // gestaltet, es rendert nicht.
+        if (ownedByAnApp)
+        {
+            return chain;
         }
 
         foreach (var pluginId in activePluginIds)

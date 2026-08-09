@@ -96,7 +96,10 @@ public sealed class WorkspaceUiChainResolverTests
 
         var chain = await resolver.ResolveAsync("workspace-a", "videoconference");
 
-        Assert.Equal(["videoconference", "template-alpha", "dialer"], chain);
+        // Die App und ihr Theme — sonst nichts. `dialer` ist im Workspace aktiv, hat auf einer
+        // Fläche, die der Videokonferenz gehört, aber nichts zu rendern: Eine Anwendung, in die
+        // sich jede andere hineinrendert, ist keine (ADR-022).
+        Assert.Equal(["videoconference", "template-alpha"], chain);
     }
 
     [Fact]
