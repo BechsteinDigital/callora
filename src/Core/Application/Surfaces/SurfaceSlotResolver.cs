@@ -33,6 +33,9 @@ public sealed class SurfaceSlotResolver(
         // Was diese Fläche jedem Besucher gewährt (ADR-023). Durchgereicht statt hier geholt:
         // Der Aufrufer hat die effektive Sicht der Fläche bereits in der Hand.
         string? grantedClaims = null,
+        // Wer auf dieser Fläche überhaupt beitragen darf — die UI-Kette. Null heißt: alle, wie
+        // bisher; ein Host ohne Kettenauflösung soll nicht plötzlich leer rendern.
+        IReadOnlyCollection<string>? chain = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
@@ -44,6 +47,14 @@ public sealed class SurfaceSlotResolver(
         var navigation = new List<SurfaceNavigationEntry>();
         var availability = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
+        // Zwei Stellen entschieden, wer beiträgt: die Kette (was geladen wird) und diese
+        // Schleife (was gerendert wird). Ein Plugin, das keine Flächen nennt, erschien deshalb
+        // ÜBERALL — die Videokonferenz mit ihrer Navigation auf jeder Inhaltsfläche, auch auf
+        // einer ohne einen einzigen Block. Jetzt entscheidet die Kette, und diese Schleife folgt.
+        var allowed = chain is { Count: > 0 }
+            ? new HashSet<string>(chain, StringComparer.OrdinalIgnoreCase)
+            : null;
+
         foreach (var export in pluginCatalog.GetOwnedExports(typeof(IHostSurfaceViewContributor)))
         {
             if (export.Service is not IHostSurfaceViewContributor contributor)
@@ -54,6 +65,11 @@ public sealed class SurfaceSlotResolver(
             var pluginId = string.IsNullOrWhiteSpace(contributor.PluginId)
                 ? export.PluginId
                 : contributor.PluginId;
+
+            if (allowed is not null && !allowed.Contains(pluginId))
+            {
+                continue;
+            }
             if (!await IsAvailableAsync(availability, pluginId, workspaceKey, cancellationToken)
                     .ConfigureAwait(false))
             {

@@ -151,6 +151,15 @@ public static class SurfaceRenderEndpoints
                 return Results.NotFound();
             }
 
+            // Wer auf dieser Fläche beitragen darf: die UI-Kette. Ohne diese Grenze steuerte
+            // jedes im Workspace aktive Plugin seine Navigation zu JEDER Fläche bei — die
+            // Videokonferenz stand im Menü einer Inhaltsseite, die sie nie erwähnt.
+            var contributors = chainResolver is null
+                ? null
+                : await chainResolver
+                    .ResolveAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
+                    .ConfigureAwait(false);
+
             // Resolved per request because it depends on the caller: claim-gated views
             // are filtered here, not hidden in the browser.
             if (slotResolver is not null)
@@ -161,6 +170,9 @@ public static class SurfaceRenderEndpoints
                         surface.SurfaceKey,
                         establishment.Caller,
                         surface.GrantedClaims,
+                        // Dieselbe Kette, die die Bundles bestimmt: Was nicht geladen wird, darf
+                        // auch nicht rendern. Zwei Listen wären zwei Antworten auf dieselbe Frage.
+                        contributors,
                         cancellationToken)
                     .ConfigureAwait(false);
             }
@@ -258,8 +270,9 @@ public static class SurfaceRenderEndpoints
         var layouts = httpContext.RequestServices.GetService<ISurfaceLayoutSource>();
         var composition = layouts is null
             ? null
-            : await RenderCompositionAsync(layouts, surface, resolvedTheme, cancellationToken)
-                .ConfigureAwait(false);
+            : (await RenderCompositionAsync(layouts, surface, resolvedTheme, cancellationToken)
+                .ConfigureAwait(false)).Html;
+
 
         var context = new SurfaceRenderContext(
             TenantKey: surface.TenantKey,
@@ -329,7 +342,7 @@ public static class SurfaceRenderEndpoints
             var rest => "/" + rest,
         };
 
-    private static async Task<string?> RenderCompositionAsync(
+    private static async Task<(string? Html, IReadOnlyCollection<string> BlockIds)> RenderCompositionAsync(
         ISurfaceLayoutSource layouts,
         WorkspaceSurfaceSnapshot surface,
         WorkspacePublicTheme? theme,
@@ -340,7 +353,7 @@ public static class SurfaceRenderEndpoints
             .ConfigureAwait(false);
         if (document is null)
         {
-            return null;
+            return (null, []);
         }
 
         // Was gilt: die Layouts des Themes, oder — ohne zugewiesenes Theme — die des
@@ -353,7 +366,9 @@ public static class SurfaceRenderEndpoints
             (theme?.SectionLayouts ?? SurfaceBaseSectionLayouts.All).Select(layout => layout.LayoutKey),
             StringComparer.Ordinal);
 
-        return new SurfaceCompositionRenderer(layoutIsKnown: knownLayouts.Contains).Render(document);
+        return (
+            new SurfaceCompositionRenderer(layoutIsKnown: knownLayouts.Contains).Render(document),
+            document.Sections.SelectMany(section => section.Blocks).Select(block => block.BlockId).ToArray());
     }
 
     /// <summary>
