@@ -51,9 +51,13 @@ public sealed class SurfaceSlotResolver(
         // Schleife (was gerendert wird). Ein Plugin, das keine Flächen nennt, erschien deshalb
         // ÜBERALL — die Videokonferenz mit ihrer Navigation auf jeder Inhaltsfläche, auch auf
         // einer ohne einen einzigen Block. Jetzt entscheidet die Kette, und diese Schleife folgt.
-        var allowed = chain is { Count: > 0 }
-            ? new HashSet<string>(chain, StringComparer.OrdinalIgnoreCase)
-            : null;
+        // null heißt „keine Angabe" — ein Host ohne Kettenauflösung soll nicht plötzlich leer
+        // rendern. Eine LEERE Kette heißt „ausdrücklich niemand", und das ist der häufigste
+        // Fall: eine Inhaltsfläche ohne einen einzigen Block. Beides gleichzusetzen hieß, dass
+        // genau dort wieder jedes Plugin durchkam — der Fehler, den die Kürzung beheben sollte.
+        var allowed = chain is null
+            ? null
+            : new HashSet<string>(chain, StringComparer.OrdinalIgnoreCase);
 
         foreach (var export in pluginCatalog.GetOwnedExports(typeof(IHostSurfaceViewContributor)))
         {
