@@ -1,4 +1,5 @@
 using Callora.Core.Application.Extensions;
+using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Surfaces;
 using Callora.Core.Application.Surfaces.Data;
 using Callora.Core.Application.Surfaces.Layout;
@@ -143,7 +144,22 @@ public static class SurfaceRenderEndpoints
             effectiveTheme = resolvedTheme?.ValuesByKey;
         }
 
-        var layouts = httpContext.RequestServices.GetService<ISurfaceLayoutSource>();
+        // Aus dem PLUGIN-KATALOG, nicht aus dem Host-Container.
+        //
+        // Der Composer exportiert die Layout-Quelle über `context.Export<>()` — sie landet damit
+        // im Katalog, nicht in den RequestServices. `GetService` fand sie deshalb nie: Eine
+        // veröffentlichte Seite lag in der Datenbank, und der Renderpfad lieferte trotzdem die
+        // leere SPA-Shell. Kein Fehler, kein Log — nur eine Seite, auf der nichts von dem steht,
+        // was jemand gebaut hat.
+        //
+        // Der Slot-Resolver daneben fragte längst den Katalog. Zwei Wege für dieselbe Art
+        // Dienst, und nur einer davon funktionierte.
+        var layouts = httpContext.RequestServices
+            .GetService<ICalloraPluginCatalog>()
+            ?.GetExports(typeof(ISurfaceLayoutSource))
+            .OfType<ISurfaceLayoutSource>()
+            .FirstOrDefault()
+            ?? httpContext.RequestServices.GetService<ISurfaceLayoutSource>();
         var composed = layouts is null
             ? default
             : await RenderCompositionAsync(layouts, surface, resolvedTheme, cancellationToken)
