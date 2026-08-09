@@ -12,15 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Callora.Core.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HostPersistenceDbContext))]
-    [Migration("20260805161120_AddSurfaceHandoffTickets")]
-    partial class AddSurfaceHandoffTickets
+    [Migration("20260809141927_RenameAccessModeToAuthentication")]
+    partial class RenameAccessModeToAuthentication
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -347,6 +347,72 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("plugin_entitlements", (string)null);
+                });
+
+            modelBuilder.Entity("Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<bool>("InheritsBase")
+                        .HasColumnType("boolean")
+                        .HasColumnName("inherits_base");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("LayoutKey")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)")
+                        .HasColumnName("layout_key");
+
+                    b.Property<string>("PluginId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("plugin_id");
+
+                    b.Property<string>("RegionsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("regions_json");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LayoutKey", "PluginId", "Version")
+                        .IsUnique();
+
+                    b.HasIndex("PluginId", "Version", "IsActive");
+
+                    b.ToTable("workspace_section_layout_definitions", (string)null);
                 });
 
             modelBuilder.Entity("Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition", b =>
@@ -945,6 +1011,59 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("plugin_migrations", (string)null);
                 });
 
+            modelBuilder.Entity("Callora.Core.Domain.Plugins.SessionResumeTicketRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<DateTimeOffset>("IssuedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("issued_at_utc");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("payload");
+
+                    b.Property<string>("PluginId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("plugin_id");
+
+                    b.Property<string>("SessionKind")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("session_kind");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<string>("WorkspaceKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("workspace_key");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("session_resume_tickets", (string)null);
+                });
+
             modelBuilder.Entity("Callora.Core.Domain.Plugins.WorkspacePluginActivation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1434,6 +1553,11 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("PublicHost")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("public_host");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
@@ -1470,6 +1594,8 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PublicHost");
 
                     b.HasIndex("TenantId");
 
@@ -1519,7 +1645,7 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
-                        .HasColumnName("access_mode");
+                        .HasColumnName("authentication");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -1530,6 +1656,11 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)")
                         .HasColumnName("display_name");
+
+                    b.Property<string>("GrantedClaims")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("granted_claims");
 
                     b.Property<DateTimeOffset?>("IdentityAssignedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -1559,6 +1690,14 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("locale");
 
+                    b.Property<Guid?>("ParentSurfaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_surface_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
                     b.Property<string>("PublicBaseUrl")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)")
@@ -1574,6 +1713,17 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("public_path_prefix");
+
+                    b.Property<string>("RequiredClaims")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("required_claims");
+
+                    b.Property<string>("Routing")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("routing");
 
                     b.Property<string>("SurfaceKey")
                         .IsRequired()
@@ -1627,6 +1777,8 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PublicHost");
+
+                    b.HasIndex("ParentSurfaceId", "Position");
 
                     b.HasIndex("WorkspaceId", "SurfaceKey")
                         .IsUnique();
@@ -1715,11 +1867,18 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Callora.Core.Domain.Workspaces.WorkspaceSurface", b =>
                 {
+                    b.HasOne("Callora.Core.Domain.Workspaces.WorkspaceSurface", "Parent")
+                        .WithMany()
+                        .HasForeignKey("ParentSurfaceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Callora.Core.Domain.Workspaces.Workspace", "Workspace")
                         .WithMany("Surfaces")
                         .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Parent");
 
                     b.Navigation("Workspace");
                 });

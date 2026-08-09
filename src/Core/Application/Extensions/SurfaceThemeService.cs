@@ -223,7 +223,7 @@ public sealed class SurfaceThemeService(
                     surface.PublicBaseUrl,
                     surface.PublicHost,
                     surface.PublicPathPrefix,
-                    surface.AccessMode,
+                    surface.Authentication,
                     surface.Locale,
                     surface.TemplatePluginId,
                     surface.TemplateVersion,

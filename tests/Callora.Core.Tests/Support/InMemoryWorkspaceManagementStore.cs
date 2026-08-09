@@ -152,7 +152,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         var route = match.Value.Route;
 
         // This fake models one surface per workspace. A per-surface overlay lets a
-        // test pin AccessMode/SurfaceKey/Locale; without one the surface is public.
+        // test pin Authentication/SurfaceKey/Locale; without one the surface is public.
         _surfaceOverlays.TryGetValue(workspace.WorkspaceKey, out var overlay);
 
         var snapshot = new WorkspaceSurfaceSnapshot(
@@ -164,7 +164,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
             route.PublicBaseUrl,
             route.PublicHost,
             route.PublicPathPrefix,
-            overlay?.AccessMode ?? SurfaceAccessMode.Public,
+            overlay?.Authentication ?? SurfaceAuthentication.Public,
             overlay?.Routing ?? SurfaceRouting.Tree,
             overlay?.Locale,
             null,
@@ -435,7 +435,7 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
     /// </summary>
     public void SetSurface(
         string workspaceKey,
-        SurfaceAccessMode accessMode,
+        SurfaceAuthentication authentication,
         string surfaceKey = "default",
         string? locale = null,
         string? identityPluginId = null,
@@ -445,12 +445,12 @@ internal sealed class InMemoryWorkspaceManagementStore : IWorkspaceManagementSto
         if (!string.IsNullOrWhiteSpace(workspaceKey))
         {
             _surfaceOverlays[workspaceKey.Trim()] = new SurfaceOverlay(
-                accessMode, surfaceKey, locale, identityPluginId, identityAssignedAtUtc, routing);
+                authentication, surfaceKey, locale, identityPluginId, identityAssignedAtUtc, routing);
         }
     }
 
     private sealed record SurfaceOverlay(
-        SurfaceAccessMode AccessMode,
+        SurfaceAuthentication Authentication,
         string SurfaceKey,
         string? Locale,
         string? IdentityPluginId = null,

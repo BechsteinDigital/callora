@@ -228,7 +228,7 @@ public sealed class SurfaceHandoffEndpointsTests
     private static WorkspaceSurfaceSnapshot SurfaceSnapshot(string surfaceKey, string host) =>
         new(
             Guid.NewGuid(), WorkspaceKey, surfaceKey, surfaceKey, "spa",
-            null, host, "/", SurfaceAccessMode.Authenticated, SurfaceRouting.Tree, "de",
+            null, host, "/", SurfaceAuthentication.SurfaceIdentity, SurfaceRouting.Tree, "de",
             null, null, null, null, true, Now, Now)
         {
             TenantKey = TenantKey,

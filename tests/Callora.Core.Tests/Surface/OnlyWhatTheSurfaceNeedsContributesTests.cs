@@ -80,7 +80,7 @@ public sealed class OnlyWhatTheSurfaceNeedsContributesTests
             null,
             null,
             "/",
-            SurfaceAccessMode.Public,
+            SurfaceAuthentication.Public,
             SurfaceRouting.Tree,
             "de",
             app,

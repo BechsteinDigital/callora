@@ -33,7 +33,7 @@ public sealed class SurfaceIdentityRenderEndpointTests
     [Fact]
     public async Task APublicSurface_RendersAGuestCallerAndSetsTheContextCookie()
     {
-        await using var app = await CreateAppAsync(SurfaceAccessMode.Public);
+        await using var app = await CreateAppAsync(SurfaceAuthentication.Public);
         var client = app.GetTestClient();
         client.BaseAddress = new Uri("http://acme.example.de/");
 
@@ -48,7 +48,7 @@ public sealed class SurfaceIdentityRenderEndpointTests
     [Fact]
     public async Task AReturningVisitor_KeepsItsGuestSubject()
     {
-        await using var app = await CreateAppAsync(SurfaceAccessMode.Public);
+        await using var app = await CreateAppAsync(SurfaceAuthentication.Public);
         var client = app.GetTestClient();
         client.BaseAddress = new Uri("http://acme.example.de/");
 
@@ -64,9 +64,9 @@ public sealed class SurfaceIdentityRenderEndpointTests
     }
 
     [Fact]
-    public async Task AnAuthenticatedSurfaceWithoutAProvider_StillRedirectsToTheHostLogin()
+    public async Task AnAdministrationSurface_RedirectsToTheHostLogin()
     {
-        await using var app = await CreateAppAsync(SurfaceAccessMode.Authenticated);
+        await using var app = await CreateAppAsync(SurfaceAuthentication.Administration);
         var client = app.GetTestClient();
         client.BaseAddress = new Uri("http://acme.example.de/");
 
@@ -77,10 +77,10 @@ public sealed class SurfaceIdentityRenderEndpointTests
     }
 
     [Fact]
-    public async Task AnAuthenticatedSurfaceWithoutAProvider_AcceptsTheBackendPrincipal()
+    public async Task AnAdministrationSurface_AcceptsTheBackendPrincipal()
     {
         await using var app = await CreateAppAsync(
-            SurfaceAccessMode.Authenticated,
+            SurfaceAuthentication.Administration,
             hostIdentity: HostSurfaceIdentityResult.Identified(
                 SurfaceIdentityIssuers.Host, "operator-7", "backend-session", Now.AddMinutes(-1), Now.AddHours(1),
                 "Ops"));
@@ -99,7 +99,7 @@ public sealed class SurfaceIdentityRenderEndpointTests
     public async Task AnAssignedProvider_PutsItsIdentityAndClaimsIntoTheDocument()
     {
         await using var app = await CreateAppAsync(
-            SurfaceAccessMode.Authenticated,
+            SurfaceAuthentication.SurfaceIdentity,
             identityPluginId: PluginId,
             provider: StubSurfaceIdentityProvider.Returning(PluginId, HostSurfaceIdentityResult.Identified(
                 "crm.example", "lead-42", "password", Now.AddMinutes(-1), Now.AddHours(1), "Erika Muster",
@@ -120,7 +120,7 @@ public sealed class SurfaceIdentityRenderEndpointTests
     public async Task AnAssignedProviderThatRecognisesNobody_RefusesAnAuthenticatedSurface()
     {
         await using var app = await CreateAppAsync(
-            SurfaceAccessMode.Authenticated,
+            SurfaceAuthentication.SurfaceIdentity,
             identityPluginId: PluginId,
             provider: StubSurfaceIdentityProvider.Returning(PluginId, HostSurfaceIdentityResult.Anonymous));
         var client = app.GetTestClient();
@@ -137,7 +137,7 @@ public sealed class SurfaceIdentityRenderEndpointTests
     public async Task AnUnavailableProvider_ClosesAnAuthenticatedSurfaceInsteadOfDegrading()
     {
         await using var app = await CreateAppAsync(
-            SurfaceAccessMode.Authenticated,
+            SurfaceAuthentication.SurfaceIdentity,
             identityPluginId: PluginId,
             provider: StubSurfaceIdentityProvider.Returning(PluginId, HostSurfaceIdentityResult.Identified(
                 "crm.example", "lead-42", "password", Now.AddMinutes(-1), Now.AddHours(1))),
@@ -155,10 +155,10 @@ public sealed class SurfaceIdentityRenderEndpointTests
     }
 
     [Fact]
-    public async Task AMixedSurfaceWithABrokenProvider_StillServesAnonymously()
+    public async Task APublicSurfaceWithABrokenProvider_StillServesAnonymously()
     {
         await using var app = await CreateAppAsync(
-            SurfaceAccessMode.Mixed,
+            SurfaceAuthentication.Public,
             identityPluginId: PluginId,
             provider: StubSurfaceIdentityProvider.Throwing(PluginId));
         var client = app.GetTestClient();
@@ -189,7 +189,7 @@ public sealed class SurfaceIdentityRenderEndpointTests
     }
 
     private static async Task<WebApplication> CreateAppAsync(
-        SurfaceAccessMode accessMode,
+        SurfaceAuthentication authentication,
         string? identityPluginId = null,
         StubSurfaceIdentityProvider? provider = null,
         string[]? unavailablePluginIds = null,
@@ -201,7 +201,7 @@ public sealed class SurfaceIdentityRenderEndpointTests
             "tenant-a", "acme", "Acme", "spa", isActive: true, defaultSurfaceBaseUrl: "https://acme.example.de");
         store.SetSurface(
             "acme",
-            accessMode,
+            authentication,
             identityPluginId: identityPluginId,
             identityAssignedAtUtc: identityPluginId is null ? null : Now.AddDays(-1));
 

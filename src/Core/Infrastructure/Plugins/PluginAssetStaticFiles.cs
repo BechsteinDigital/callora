@@ -43,7 +43,21 @@ public static class PluginAssetStaticFiles
         {
             RequestPath = "/plugin-assets",
             FileProvider = new PhysicalFileProvider(root),
-            OnPrepareResponse = PluginAssetCaching.Apply
+            OnPrepareResponse = PluginAssetCaching.Apply,
+
+            // Ohne dies liefert die Auslieferung NUR bekannte Endungen aus. Alles andere fällt
+            // durch — und landet bei der nächsten Middleware, die die Adresse für eine Fläche hält
+            // und mit 401 antwortet. Ein Plugin, das ein Modell, eine Schriftart oder eine
+            // Datentabelle mitliefert, bekommt also für eine Datei, die es selbst veröffentlicht
+            // hat, „nicht angemeldet" zurück. Erstes Opfer: ein `.tflite`-Segmentierungsmodell,
+            // dessen Ausbleiben der Hintergrund-Weichzeichner als „nicht verfügbar" meldete — ohne
+            // 404, ohne Logzeile, ohne irgendeinen Hinweis auf die Endung.
+            //
+            // `application/octet-stream` und nicht etwa geraten: Ein unbekannter Typ wird vom
+            // Browser heruntergeladen statt ausgeführt, womit die Endung keine Ausführungsfrage
+            // mehr ist. Die Dateien stammen ohnehin aus einem signierten Bundle.
+            ServeUnknownFileTypes = true,
+            DefaultContentType = "application/octet-stream",
         });
     }
 }

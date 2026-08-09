@@ -184,7 +184,7 @@ public sealed class SurfaceIdentityAssignmentServiceTests
             Workspaces.AddTenant("tenant-a");
             _ = await Workspaces.UpsertAsync("tenant-a", WorkspaceKey, "Acme", "spa", isActive: true);
             _ = await Surfaces.UpsertAsync(WorkspaceKey, new WorkspaceSurfaceInput(
-                SurfaceKey, "Portal", "spa", null, null, "/", SurfaceAccessMode.Mixed,
+                SurfaceKey, "Portal", "spa", null, null, "/", SurfaceAuthentication.Public,
                 null, null, null, null, null, true));
         }
 

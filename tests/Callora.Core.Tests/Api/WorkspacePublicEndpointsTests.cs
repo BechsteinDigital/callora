@@ -209,6 +209,24 @@ public sealed class WorkspacePublicEndpointsTests
     }
 
     [Fact]
+    public async Task AReturnUrlThatPointsAtALoginIsDroppedInsteadOfNested()
+    {
+        // Die Härtung dahinter: Jede returnUrl, die selbst auf einen Login zeigt, ist ein
+        // Schleifenanfang. Bei jeder Runde kam eine Kodierungsebene dazu, bis der Server mit 414
+        // abbrach. Nach dem Anmelden gehört der Besucher an die Wurzel, nicht auf die Anmeldeseite.
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/login?returnUrl=%2Fdialer%2Flogin%3FreturnUrl%3D%252Fdialer");
+        request.Headers.Host = "localhost";
+
+        var response = await client.SendAsync(request);
+
+        var query = ParseQueryString(response.Headers.Location!.Query);
+        Assert.Equal("/", query["returnUrl"]);
+    }
+
+    [Fact]
     public async Task AdminRoute_RedirectsToConfiguredAdminShell()
     {
         await using var app = await CreateAppAsync();
@@ -302,7 +320,7 @@ public sealed class WorkspacePublicEndpointsTests
             app,
             "workspace-public",
             "videoconference",
-            SurfaceAccessMode.Mixed,
+            SurfaceAuthentication.Public,
             templatePluginId: "videoconference");
 
         var client = app.GetTestClient();
@@ -341,8 +359,8 @@ public sealed class WorkspacePublicEndpointsTests
         await using var app = await CreateAppAsync();
         var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
         // The access mode lives on the surface now, not on the workspace.
-        store.SetSurface("workspace-public", SurfaceAccessMode.Authenticated);
-        await SeedSurfaceAsync(app, "workspace-public", "site", SurfaceAccessMode.Public);
+        store.SetSurface("workspace-public", SurfaceAuthentication.SurfaceIdentity);
+        await SeedSurfaceAsync(app, "workspace-public", "site", SurfaceAuthentication.Public);
 
         var client = app.GetTestClient();
         var response = await client.GetAsync(
@@ -360,8 +378,8 @@ public sealed class WorkspacePublicEndpointsTests
         await using var app = await CreateAppAsync();
         var store = (InMemoryWorkspaceManagementStore)app.Services.GetRequiredService<IWorkspaceManagementStore>();
         // The access mode lives on the surface now, not on the workspace.
-        store.SetSurface("workspace-public", SurfaceAccessMode.Authenticated);
-        await SeedSurfaceAsync(app, "workspace-public", "shop", SurfaceAccessMode.Mixed);
+        store.SetSurface("workspace-public", SurfaceAuthentication.SurfaceIdentity);
+        await SeedSurfaceAsync(app, "workspace-public", "shop", SurfaceAuthentication.Public);
 
         var client = app.GetTestClient();
         var response = await client.GetAsync(
@@ -378,7 +396,7 @@ public sealed class WorkspacePublicEndpointsTests
         // The workspace is Public but the named surface is Authenticated: the per-surface
         // gate must 404 the anonymous caller (no inventory leak).
         await using var app = await CreateAppAsync();
-        await SeedSurfaceAsync(app, "workspace-public", "desk", SurfaceAccessMode.Authenticated);
+        await SeedSurfaceAsync(app, "workspace-public", "desk", SurfaceAuthentication.SurfaceIdentity);
 
         var client = app.GetTestClient();
         var response = await client.GetAsync(
@@ -391,7 +409,7 @@ public sealed class WorkspacePublicEndpointsTests
     public async Task UiChain_AuthenticatedSurface_AuthenticatedCaller_ReturnsChain()
     {
         await using var app = await CreateAppAsync(authenticate: true);
-        await SeedSurfaceAsync(app, "workspace-public", "desk", SurfaceAccessMode.Authenticated);
+        await SeedSurfaceAsync(app, "workspace-public", "desk", SurfaceAuthentication.SurfaceIdentity);
 
         var client = app.GetTestClient();
         var response = await client.GetAsync(
@@ -409,7 +427,7 @@ public sealed class WorkspacePublicEndpointsTests
         // such a caller came through — the default surface. Its Authenticated mode
         // 404s the anonymous caller.
         await using var app = await CreateAppAsync();
-        await SeedSurfaceAsync(app, "workspace-public", "default", SurfaceAccessMode.Authenticated);
+        await SeedSurfaceAsync(app, "workspace-public", "default", SurfaceAuthentication.SurfaceIdentity);
 
         var client = app.GetTestClient();
         var response = await client.GetAsync(
@@ -422,8 +440,9 @@ public sealed class WorkspacePublicEndpointsTests
         WebApplication app,
         string workspaceKey,
         string surfaceKey,
-        SurfaceAccessMode accessMode,
-        string? templatePluginId = null)
+        SurfaceAuthentication authentication,
+        string? templatePluginId = null,
+        string publicPathPrefix = "/")
     {
         var surfaceStore = app.Services.GetRequiredService<IWorkspaceSurfaceStore>();
         _ = await surfaceStore.UpsertAsync(
@@ -434,8 +453,8 @@ public sealed class WorkspacePublicEndpointsTests
                 SurfaceType: "web",
                 PublicBaseUrl: null,
                 PublicHost: null,
-                PublicPathPrefix: "/",
-                AccessMode: accessMode,
+                PublicPathPrefix: publicPathPrefix,
+                Authentication: authentication,
                 Locale: null,
                 TemplatePluginId: templatePluginId,
                 TemplateVersion: null,
@@ -471,7 +490,7 @@ public sealed class WorkspacePublicEndpointsTests
                 PublicBaseUrl: "localhost/dialer",
                 PublicHost: "localhost",
                 PublicPathPrefix: "/dialer",
-                AccessMode: SurfaceAccessMode.Mixed,
+                Authentication: SurfaceAuthentication.Public,
                 Locale: null,
                 TemplatePluginId: null,
                 TemplateVersion: null,

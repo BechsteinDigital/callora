@@ -24,7 +24,7 @@ public sealed class SurfaceNavigationBuilderTests
             null,
             null,
             segment,
-            SurfaceAccessMode.Mixed,
+            SurfaceAuthentication.Public,
             SurfaceRouting.Tree,
             null,
             null,

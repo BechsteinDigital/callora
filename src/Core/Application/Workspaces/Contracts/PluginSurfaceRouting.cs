@@ -4,8 +4,8 @@ namespace Callora.Core.Application.Workspaces.Contracts;
 /// Wer über die Adressen unterhalb einer plugin-eigenen Fläche entscheidet (ADR-022).
 /// </summary>
 /// <remarks>
-/// Eigener Aufzählungstyp neben <c>SurfaceRouting</c>, wie <see cref="PluginSurfaceAccessMode"/>
-/// neben <c>SurfaceAccessMode</c>: Ein Plugin bindet die Vertragsschicht, nicht die Domäne. Beide
+/// Eigener Aufzählungstyp neben <c>SurfaceRouting</c>, wie <see cref="PluginSurfaceAuthentication"/>
+/// neben <c>SurfaceAuthentication</c>: Ein Plugin bindet die Vertragsschicht, nicht die Domäne. Beide
 /// gleichzusetzen hieße, jede Umbenennung im Kern zur Änderung an jedem Plugin zu machen.
 /// </remarks>
 public enum PluginSurfaceRouting

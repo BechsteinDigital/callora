@@ -29,7 +29,7 @@ public sealed class SurfaceDataResolverTests
     {
         var resolver = Resolver(new Stub("catalog", values: new() { ["product"] = "Schuh" }));
 
-        var result = await resolver.ResolveAsync(Request(), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(), SurfaceAuthentication.Public);
 
         Assert.Equal("Schuh", result.Values["catalog"]["product"]);
     }
@@ -43,7 +43,7 @@ public sealed class SurfaceDataResolverTests
             new Stub("catalog", values: new() { ["product"] = "erster" }),
             new Stub("catalog", values: new() { ["product"] = "zweiter" }));
 
-        var result = await resolver.ResolveAsync(Request(), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(), SurfaceAuthentication.Public);
 
         Assert.Equal("erster", result.Values["catalog"]["product"]);
     }
@@ -59,7 +59,7 @@ public sealed class SurfaceDataResolverTests
             "cart", SurfaceDataVisibility.CallerSpecific, values: new() { ["items"] = 3 });
         var resolver = Resolver(contributor);
 
-        var result = await resolver.ResolveAsync(Request(Caller()), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(Caller()), SurfaceAuthentication.Public);
 
         Assert.Empty(result.Values);
         Assert.False(contributor.WasCalled);
@@ -71,7 +71,7 @@ public sealed class SurfaceDataResolverTests
         var resolver = Resolver(new Stub(
             "cart", SurfaceDataVisibility.CallerSpecific, values: new() { ["items"] = 3 }));
 
-        var result = await resolver.ResolveAsync(Request(Caller()), SurfaceAccessMode.Authenticated);
+        var result = await resolver.ResolveAsync(Request(Caller()), SurfaceAuthentication.SurfaceIdentity);
 
         Assert.Equal(3, result.Values["cart"]["items"]);
     }
@@ -82,7 +82,7 @@ public sealed class SurfaceDataResolverTests
         var contributor = new Stub("cart", SurfaceDataVisibility.CallerSpecific);
         var resolver = Resolver(contributor);
 
-        await resolver.ResolveAsync(Request(caller: null), SurfaceAccessMode.Mixed);
+        await resolver.ResolveAsync(Request(caller: null), SurfaceAuthentication.Public);
 
         Assert.False(contributor.WasCalled);
     }
@@ -96,7 +96,7 @@ public sealed class SurfaceDataResolverTests
         var resolver = Resolver(new Stub(
             "cart", SurfaceDataVisibility.CallerSpecific, values: new() { ["items"] = 3 }));
 
-        var result = await resolver.ResolveAsync(Request(Caller()), SurfaceAccessMode.Authenticated);
+        var result = await resolver.ResolveAsync(Request(Caller()), SurfaceAuthentication.SurfaceIdentity);
 
         Assert.False(result.Cacheable);
     }
@@ -106,7 +106,7 @@ public sealed class SurfaceDataResolverTests
     {
         var resolver = Resolver(new Stub("catalog", values: new() { ["product"] = "Schuh" }));
 
-        var result = await resolver.ResolveAsync(Request(), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(), SurfaceAuthentication.Public);
 
         Assert.True(result.Cacheable);
     }
@@ -120,7 +120,7 @@ public sealed class SurfaceDataResolverTests
     {
         var resolver = Resolver(new Stub("catalog", required: true, result: SurfaceDataResult.Missing));
 
-        var result = await resolver.ResolveAsync(Request(), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(), SurfaceAuthentication.Public);
 
         Assert.Equal("catalog", result.MissingRequiredNamespace);
         Assert.Null(result.FailedRequiredNamespace);
@@ -133,7 +133,7 @@ public sealed class SurfaceDataResolverTests
         // 404 dafür hieße, der Kunde denkt, es sei weg.
         var resolver = Resolver(new Stub("catalog", required: true, throws: true));
 
-        var result = await resolver.ResolveAsync(Request(), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(), SurfaceAuthentication.Public);
 
         Assert.Equal("catalog", result.FailedRequiredNamespace);
         Assert.Null(result.MissingRequiredNamespace);
@@ -144,7 +144,7 @@ public sealed class SurfaceDataResolverTests
     {
         var resolver = Resolver(new Stub("empfehlungen", result: SurfaceDataResult.Missing));
 
-        var result = await resolver.ResolveAsync(Request(), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(), SurfaceAuthentication.Public);
 
         Assert.Empty(result.Values);
         Assert.Null(result.MissingRequiredNamespace);
@@ -160,7 +160,7 @@ public sealed class SurfaceDataResolverTests
             new Stub("kaputt", throws: true),
             new Stub("catalog", values: new() { ["product"] = "Schuh" }));
 
-        var result = await resolver.ResolveAsync(Request(), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(), SurfaceAuthentication.Public);
 
         Assert.Equal("Schuh", result.Values["catalog"]["product"]);
         Assert.Contains("kaputt", result.Skipped);
@@ -173,7 +173,7 @@ public sealed class SurfaceDataResolverTests
             new Stub("langsam", delay: SurfaceDataResolver.ContributorBudget * 4),
             new Stub("catalog", values: new() { ["product"] = "Schuh" }));
 
-        var result = await resolver.ResolveAsync(Request(), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(), SurfaceAuthentication.Public);
 
         Assert.Contains("langsam", result.Skipped);
         Assert.Equal("Schuh", result.Values["catalog"]["product"]);
@@ -209,7 +209,7 @@ public sealed class SurfaceDataResolverTests
             new Stub("b", contribute: WaitForTheOthers),
             new Stub("c", contribute: WaitForTheOthers));
 
-        var result = await resolver.ResolveAsync(Request(), SurfaceAccessMode.Public);
+        var result = await resolver.ResolveAsync(Request(), SurfaceAuthentication.Public);
 
         Assert.Equal(3, result.Values.Count);
         Assert.Empty(result.Skipped);

@@ -43,7 +43,7 @@ public interface IWorkspaceManagementStore
     /// <summary>
     /// Resolves the request host and path to the concrete <see cref="WorkspaceSurfaceSnapshot"/>
     /// that best matches (ADR-014 §5), rather than only its owning workspace. Callers that
-    /// gate or render per surface need the surface's own <c>AccessMode</c>, <c>SurfaceKey</c>,
+    /// gate or render per surface need the surface's own <c>Authentication</c>, <c>SurfaceKey</c>,
     /// <c>Locale</c> and theme — the workspace-level <see cref="ResolveByPublicRouteAsync"/>
     /// discards these. Returns <see langword="null"/> when no active surface (on an active
     /// workspace and tenant) matches.

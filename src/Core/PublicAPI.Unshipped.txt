@@ -2778,6 +2778,7 @@ Callora.Core.Application.Security.BackendClaimTypes
 Callora.Core.Application.Security.BackendLockoutPolicy
 Callora.Core.Application.Security.BackendPasswordPolicy
 Callora.Core.Application.Security.BackendPermissionActions
+Callora.Core.Application.Security.BackendPermissionInventory
 Callora.Core.Application.Security.BackendPermissionKey
 Callora.Core.Application.Security.BackendPermissionKey.Action.get -> string!
 Callora.Core.Application.Security.BackendPermissionKey.Action.init -> void
@@ -2946,7 +2947,7 @@ Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.SurfaceKey.init -> voi
 Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.WorkspaceKey.get -> string!
 Callora.Core.Application.Surfaces.Data.SurfaceDataRequest.WorkspaceKey.init -> void
 Callora.Core.Application.Surfaces.Data.SurfaceDataResolver
-Callora.Core.Application.Surfaces.Data.SurfaceDataResolver.ResolveAsync(Callora.Core.Application.Surfaces.Data.SurfaceDataRequest! request, Callora.Core.Domain.Workspaces.SurfaceAccessMode accessMode, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Data.SurfaceDataComposition!>!
+Callora.Core.Application.Surfaces.Data.SurfaceDataResolver.ResolveAsync(Callora.Core.Application.Surfaces.Data.SurfaceDataRequest! request, Callora.Core.Domain.Workspaces.SurfaceAuthentication authentication, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Data.SurfaceDataComposition!>!
 Callora.Core.Application.Surfaces.Data.SurfaceDataResolver.SurfaceDataResolver(System.Collections.Generic.IEnumerable<Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor!>! contributors, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Surfaces.Data.SurfaceDataResolver!>! logger) -> void
 Callora.Core.Application.Surfaces.Data.SurfaceDataResult
 Callora.Core.Application.Surfaces.Data.SurfaceDataResult.<Clone>$() -> Callora.Core.Application.Surfaces.Data.SurfaceDataResult!
@@ -2974,7 +2975,7 @@ Callora.Core.Application.Surfaces.ISurfaceHandoffTicketStore.ConsumeAsync(string
 Callora.Core.Application.Surfaces.ISurfaceHandoffTicketStore.CreateAsync(Callora.Core.Application.Surfaces.SurfaceHandoffTicket! ticket, string! tokenHash, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Surfaces.ISurfaceHandoffTicketStore.PurgeExpiredAsync(System.DateTimeOffset nowUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
 Callora.Core.Application.Surfaces.ISurfaceHostIdentitySource
-Callora.Core.Application.Surfaces.ISurfaceHostIdentitySource.AuthenticateAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult!>
+Callora.Core.Application.Surfaces.ISurfaceHostIdentitySource.AuthenticateAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest! request, Callora.Core.Domain.Workspaces.SurfaceAuthentication authentication, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult!>
 Callora.Core.Application.Surfaces.ISurfaceSessionCookieCodec
 Callora.Core.Application.Surfaces.ISurfaceSessionCookieCodec.Protect(Callora.Core.Application.Surfaces.SurfaceSessionEnvelope! envelope) -> string!
 Callora.Core.Application.Surfaces.ISurfaceSessionCookieCodec.Unprotect(string? value) -> Callora.Core.Application.Surfaces.SurfaceSessionEnvelope?
@@ -3669,14 +3670,14 @@ Callora.Core.Application.Workspaces.Contracts.ISurfaceTreeEditor.ListAsync(strin
 Callora.Core.Application.Workspaces.Contracts.ISurfaceTreeEditor.UpsertAsync(string! workspaceKey, Callora.Core.Application.Workspaces.WorkspaceSurfaceInput! input, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Application.Workspaces.Contracts.IWorkspaceSurfaceProvisioner
 Callora.Core.Application.Workspaces.Contracts.IWorkspaceSurfaceProvisioner.EnsureAsync(string! workspaceKey, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition! definition, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.Contracts.PluginSurfaceLocation?>!
-Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
-Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode.Authenticated = 1 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
-Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode.Mixed = 2 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
-Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode.Public = 0 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAuthentication
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAuthentication.Administration = 2 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAuthentication
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAuthentication.Public = 0 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAuthentication
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAuthentication.SurfaceIdentity = 1 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAuthentication
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition
-Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.AccessMode.get -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.Authentication.get -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAuthentication
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.DisplayName.get -> string!
-Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.PluginSurfaceDefinition(string! surfaceKey, string! displayName, string! surfaceType, string! publicPathSuffix, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAccessMode accessMode, string! templatePluginId, string? templateVersion = null, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting routing = Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting.Tree) -> void
+Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.PluginSurfaceDefinition(string! surfaceKey, string! displayName, string! surfaceType, string! publicPathSuffix, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceAuthentication authentication, string! templatePluginId, string? templateVersion = null, Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting routing = Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting.Tree) -> void
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.PublicPathSuffix.get -> string!
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.Routing.get -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceDefinition.SurfaceKey.get -> string!
@@ -3694,10 +3695,10 @@ Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting.Application =
 Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting.Tree = 0 -> Callora.Core.Application.Workspaces.Contracts.PluginSurfaceRouting
 Callora.Core.Application.Workspaces.EffectiveSurface
 Callora.Core.Application.Workspaces.EffectiveSurface.<Clone>$() -> Callora.Core.Application.Workspaces.EffectiveSurface!
-Callora.Core.Application.Workspaces.EffectiveSurface.AccessMode.get -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
-Callora.Core.Application.Workspaces.EffectiveSurface.AccessMode.init -> void
-Callora.Core.Application.Workspaces.EffectiveSurface.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out string? IdentityPluginId, out string? IdentityVersion, out System.DateTimeOffset? IdentityAssignedAtUtc) -> void
-Callora.Core.Application.Workspaces.EffectiveSurface.EffectiveSurface(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, string? IdentityPluginId, string? IdentityVersion, System.DateTimeOffset? IdentityAssignedAtUtc) -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.Authentication.get -> Callora.Core.Domain.Workspaces.SurfaceAuthentication
+Callora.Core.Application.Workspaces.EffectiveSurface.Authentication.init -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAuthentication Authentication, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out string? IdentityPluginId, out string? IdentityVersion, out System.DateTimeOffset? IdentityAssignedAtUtc) -> void
+Callora.Core.Application.Workspaces.EffectiveSurface.EffectiveSurface(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAuthentication Authentication, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, string? IdentityPluginId, string? IdentityVersion, System.DateTimeOffset? IdentityAssignedAtUtc) -> void
 Callora.Core.Application.Workspaces.EffectiveSurface.Equals(Callora.Core.Application.Workspaces.EffectiveSurface? other) -> bool
 Callora.Core.Application.Workspaces.EffectiveSurface.GrantedClaims.get -> string?
 Callora.Core.Application.Workspaces.EffectiveSurface.GrantedClaims.init -> void
@@ -3877,9 +3878,9 @@ Callora.Core.Application.Workspaces.WorkspaceSnapshot.WorkspaceType.get -> strin
 Callora.Core.Application.Workspaces.WorkspaceSnapshot.WorkspaceType.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.<Clone>$() -> Callora.Core.Application.Workspaces.WorkspaceSurfaceInput!
-Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.AccessMode.get -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
-Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.AccessMode.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Deconstruct(out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive) -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Authentication.get -> Callora.Core.Domain.Workspaces.SurfaceAuthentication
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Authentication.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Deconstruct(out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAuthentication Authentication, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive) -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.DisplayName.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.DisplayName.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.Equals(Callora.Core.Application.Workspaces.WorkspaceSurfaceInput? other) -> bool
@@ -3915,14 +3916,14 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.ThemePluginId.get -> s
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.ThemePluginId.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.ThemeVersion.get -> string?
 Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.ThemeVersion.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.WorkspaceSurfaceInput(string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive) -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceInput.WorkspaceSurfaceInput(string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAuthentication Authentication, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive) -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.<Clone>$() -> Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot!
-Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.AccessMode.get -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
-Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.AccessMode.init -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Authentication.get -> Callora.Core.Domain.Workspaces.SurfaceAuthentication
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Authentication.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.CreatedAtUtc.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, out Callora.Core.Domain.Workspaces.SurfaceRouting Routing, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! SurfaceKey, out string! DisplayName, out string! SurfaceType, out string? PublicBaseUrl, out string? PublicHost, out string! PublicPathPrefix, out Callora.Core.Domain.Workspaces.SurfaceAuthentication Authentication, out Callora.Core.Domain.Workspaces.SurfaceRouting Routing, out string? Locale, out string? TemplatePluginId, out string? TemplateVersion, out string? ThemePluginId, out string? ThemeVersion, out bool IsActive, out System.DateTimeOffset CreatedAtUtc, out System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.DisplayName.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.DisplayName.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.Equals(Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot? other) -> bool
@@ -3974,7 +3975,7 @@ Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.UpdatedAtUtc.get ->
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.UpdatedAtUtc.init -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceKey.get -> string!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceKey.init -> void
-Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceSurfaceSnapshot(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAccessMode AccessMode, Callora.Core.Domain.Workspaces.SurfaceRouting Routing, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
+Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot.WorkspaceSurfaceSnapshot(System.Guid Id, string! WorkspaceKey, string! SurfaceKey, string! DisplayName, string! SurfaceType, string? PublicBaseUrl, string? PublicHost, string! PublicPathPrefix, Callora.Core.Domain.Workspaces.SurfaceAuthentication Authentication, Callora.Core.Domain.Workspaces.SurfaceRouting Routing, string? Locale, string? TemplatePluginId, string? TemplateVersion, string? ThemePluginId, string? ThemeVersion, bool IsActive, System.DateTimeOffset CreatedAtUtc, System.DateTimeOffset UpdatedAtUtc) -> void
 Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor
 Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.SurfaceDeleteResult>!
 Callora.Core.Application.Workspaces.WorkspaceSurfaceTreeEditor.GetAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
@@ -4658,10 +4659,11 @@ Callora.Core.Domain.Webhooks.WebhookSubscription.UpdatedAtUtc.set -> void
 Callora.Core.Domain.Webhooks.WebhookSubscription.WebhookSubscription() -> void
 Callora.Core.Domain.Webhooks.WebhookSubscription.WorkspaceKey.get -> string?
 Callora.Core.Domain.Webhooks.WebhookSubscription.WorkspaceKey.set -> void
-Callora.Core.Domain.Workspaces.SurfaceAccessMode
-Callora.Core.Domain.Workspaces.SurfaceAccessMode.Authenticated = 1 -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
-Callora.Core.Domain.Workspaces.SurfaceAccessMode.Mixed = 2 -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
-Callora.Core.Domain.Workspaces.SurfaceAccessMode.Public = 0 -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
+Callora.Core.Domain.Workspaces.SurfaceAuthentication
+Callora.Core.Domain.Workspaces.SurfaceAuthentication.Administration = 2 -> Callora.Core.Domain.Workspaces.SurfaceAuthentication
+Callora.Core.Domain.Workspaces.SurfaceAuthentication.Public = 0 -> Callora.Core.Domain.Workspaces.SurfaceAuthentication
+Callora.Core.Domain.Workspaces.SurfaceAuthentication.SurfaceIdentity = 1 -> Callora.Core.Domain.Workspaces.SurfaceAuthentication
+Callora.Core.Domain.Workspaces.SurfaceAuthenticationExtensions
 Callora.Core.Domain.Workspaces.SurfaceRouting
 Callora.Core.Domain.Workspaces.SurfaceRouting.Application = 1 -> Callora.Core.Domain.Workspaces.SurfaceRouting
 Callora.Core.Domain.Workspaces.SurfaceRouting.Tree = 0 -> Callora.Core.Domain.Workspaces.SurfaceRouting
@@ -4716,8 +4718,8 @@ Callora.Core.Domain.Workspaces.WorkspaceMembership.WorkspaceId.get -> System.Gui
 Callora.Core.Domain.Workspaces.WorkspaceMembership.WorkspaceId.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceMembership.WorkspaceMembership() -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface
-Callora.Core.Domain.Workspaces.WorkspaceSurface.AccessMode.get -> Callora.Core.Domain.Workspaces.SurfaceAccessMode
-Callora.Core.Domain.Workspaces.WorkspaceSurface.AccessMode.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceSurface.Authentication.get -> Callora.Core.Domain.Workspaces.SurfaceAuthentication
+Callora.Core.Domain.Workspaces.WorkspaceSurface.Authentication.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Core.Domain.Workspaces.WorkspaceSurface.CreatedAtUtc.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.DisplayName.get -> string!
@@ -5499,8 +5501,8 @@ Callora.Core.Infrastructure.Startup.PluginUiAssetPublishHostedService.StopAsync(
 Callora.Core.Infrastructure.Startup.RecurringJobSchedulerHostedService
 Callora.Core.Infrastructure.Startup.RecurringJobSchedulerHostedService.RecurringJobSchedulerHostedService(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Callora.Core.Application.Jobs.RecurringJobEnqueuer! enqueuer, Callora.Core.Application.Jobs.BackgroundJobOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Startup.RecurringJobSchedulerHostedService!>! logger) -> void
 Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource
-Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource.AuthenticateAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult!>
-Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource.BackendPrincipalSurfaceIdentitySource(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor, System.TimeProvider! timeProvider) -> void
+Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource.AuthenticateAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest! request, Callora.Core.Domain.Workspaces.SurfaceAuthentication authentication, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult!>
+Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource.BackendPrincipalSurfaceIdentitySource(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor, System.TimeProvider! timeProvider, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Callora.Core.Application.Surfaces.SurfaceIdentityOptions! options) -> void
 Callora.Core.Infrastructure.Surfaces.HttpContextSurfaceCredentialReader
 Callora.Core.Infrastructure.Surfaces.HttpContextSurfaceCredentialReader.HttpContextSurfaceCredentialReader(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor) -> void
 Callora.Core.Infrastructure.Surfaces.HttpContextSurfaceCredentialReader.Read(Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredentialKind kind, string! name) -> string?
@@ -6612,6 +6614,8 @@ static Callora.Core.Application.Security.AdminLoginGrant.operator ==(Callora.Cor
 static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!
 static Callora.Core.Application.Security.BackendPasswordPolicy.IsAcceptable(string? password) -> bool
 static Callora.Core.Application.Security.BackendPasswordPolicy.Validate(string? password) -> string?
+static Callora.Core.Application.Security.BackendPermissionInventory.All(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog) -> System.Collections.Generic.IReadOnlyList<string!>!
+static Callora.Core.Application.Security.BackendPermissionInventory.Core() -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Security.BackendPermissionKey.TryParse(string? permissionKey, out Callora.Core.Application.Security.BackendPermissionKey key) -> bool
 static Callora.Core.Application.Security.BackendPermissionKey.operator !=(Callora.Core.Application.Security.BackendPermissionKey left, Callora.Core.Application.Security.BackendPermissionKey right) -> bool
 static Callora.Core.Application.Security.BackendPermissionKey.operator ==(Callora.Core.Application.Security.BackendPermissionKey left, Callora.Core.Application.Security.BackendPermissionKey right) -> bool
@@ -6798,6 +6802,7 @@ static Callora.Core.Domain.Plugins.CapabilityListCodec.Split(string? encoded) ->
 static Callora.Core.Domain.Plugins.PluginDataDocument.Create(string! pluginId, string! workspaceKey, string! collection, string! entryKey, string! jsonDocument, System.DateTimeOffset nowUtc) -> Callora.Core.Domain.Plugins.PluginDataDocument!
 static Callora.Core.Domain.Plugins.PluginInstallation.CreateInstalled(string! pluginId, string! displayName, string! assemblyPath, string? entryTypeName, System.DateTimeOffset nowUtc) -> Callora.Core.Domain.Plugins.PluginInstallation!
 static Callora.Core.Domain.Plugins.PluginInstallationException.AlreadyUninstalled(string! pluginId) -> Callora.Core.Domain.Plugins.PluginInstallationException!
+static Callora.Core.Domain.Workspaces.SurfaceAuthenticationExtensions.RequiresSignIn(this Callora.Core.Domain.Workspaces.SurfaceAuthentication authentication) -> bool
 static Callora.Core.Infrastructure.Configuration.RegistryConfigSchemaSyncService.ParseConfigFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Configuration.SystemConfigDefinitionInput!>!
 static Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService.ParseCustomFields(string! pluginId, string! version, string! registryJson) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.CustomFields.CustomFieldDefinitionSnapshot!>!
 static Callora.Core.Infrastructure.DependencyInjection.CalloraHostCompositionExtensions.AddCalloraHost(this Microsoft.AspNetCore.Builder.WebApplicationBuilder! builder) -> Microsoft.AspNetCore.Builder.WebApplicationBuilder!

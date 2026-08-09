@@ -113,8 +113,10 @@
         <CalCard>
           <div class="detail__form">
             <CalField v-slot="{ id }" label="Zugang">
-              <CalSelect :id="id" v-model="formAccessMode" name="accessMode">
-                <option v-for="mode in accessModes" :key="mode" :value="mode">{{ mode }}</option>
+              <CalSelect :id="id" v-model="formAuthentication" name="authentication">
+                <option v-for="mode in authentications" :key="mode" :value="mode">
+                  {{ authenticationLabels[mode] ?? mode }}
+                </option>
               </CalSelect>
             </CalField>
             <CalField
@@ -161,7 +163,8 @@ import { toast } from '@/core/feedback/toasts'
 import { useService } from '@/core/extensions/services'
 import {
   workspacesApi,
-  SURFACE_ACCESS_MODES,
+  SURFACE_AUTHENTICATIONS,
+  SURFACE_AUTHENTICATION_LABELS,
   SURFACE_ROUTING_LABELS,
   type WorkspaceSurface,
 } from '@/modules/workspaces/workspacesApi'
@@ -182,7 +185,8 @@ const emit = defineEmits<{
 }>()
 
 const api = useService('workspacesApi', workspacesApi)
-const accessModes = SURFACE_ACCESS_MODES
+const authentications = SURFACE_AUTHENTICATIONS
+const authenticationLabels = SURFACE_AUTHENTICATION_LABELS
 const routingLabels = SURFACE_ROUTING_LABELS
 
 const isNew = computed(() => props.surface === null)
@@ -201,7 +205,7 @@ const appCandidates = ref<{ pluginId: string; displayName: string }[]>([])
  * bestimmt sie. Ohne App ist der Baum die Wahrheit.
  */
 const formRouting = computed(() => (formApp.value ? 'Application' : 'Tree'))
-const formAccessMode = ref<string>('Mixed')
+const formAuthentication = ref<string>('Public')
 const formHost = ref('')
 const formLocale = ref('')
 const formActive = ref(true)
@@ -286,7 +290,7 @@ function fill(): void {
     formPathPrefix.value = ''
     formParentKey.value = props.parentKey ?? ''
     formApp.value = ''
-    formAccessMode.value = 'Mixed'
+    formAuthentication.value = 'Public'
     formHost.value = ''
     formLocale.value = ''
     formActive.value = true
@@ -305,7 +309,7 @@ function fill(): void {
   formPathPrefix.value = surface.publicPathPrefix
   formParentKey.value = surface.parentSurfaceKey ?? ''
   formApp.value = surface.templatePluginId ?? ''
-  formAccessMode.value = surface.accessMode
+  formAuthentication.value = surface.authentication
   formHost.value = surface.publicHost ?? ''
   formLocale.value = surface.locale ?? ''
   formActive.value = surface.isActive
@@ -333,7 +337,7 @@ async function save(): Promise<void> {
       publicBaseUrl: carriedPublicBaseUrl.value,
       publicHost: formHost.value.trim() || null,
       publicPathPrefix: formPathPrefix.value.trim(),
-      accessMode: formAccessMode.value,
+      authentication: formAuthentication.value,
       routing: formRouting.value,
       locale: formLocale.value.trim() || null,
       templatePluginId: formApp.value || null,

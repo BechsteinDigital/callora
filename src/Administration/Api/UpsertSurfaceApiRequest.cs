@@ -7,7 +7,7 @@ public sealed record UpsertSurfaceApiRequest(
     string? PublicBaseUrl,
     string? PublicHost,
     string PublicPathPrefix,
-    string AccessMode,
+    string Authentication,
     string? Locale,
     string? TemplatePluginId,
     string? TemplateVersion,

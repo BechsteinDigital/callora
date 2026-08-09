@@ -59,7 +59,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
             PublicBaseUrl: "portal.example.de",
             PublicHost: "portal.example.de",
             PublicPathPrefix: "/",
-            AccessMode: SurfaceAccessMode.Authenticated,
+            Authentication: SurfaceAuthentication.SurfaceIdentity,
             Locale: "de",
             TemplatePluginId: null,
             TemplateVersion: null,
@@ -69,7 +69,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
 
         Assert.NotNull(created);
         Assert.Equal("portal", created!.SurfaceKey);
-        Assert.Equal(SurfaceAccessMode.Authenticated, created.AccessMode);
+        Assert.Equal(SurfaceAuthentication.SurfaceIdentity, created.Authentication);
         Assert.Equal("customer.theme", created.ThemePluginId);
 
         var fetched = await store.GetAsync("workspace-a", "portal");
@@ -78,7 +78,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
 
         // Upsert again updates in place (same key), does not create a second row.
         var updated = await store.UpsertAsync("workspace-a", new WorkspaceSurfaceInput(
-            "portal", "Renamed", "spa", null, null, "/", SurfaceAccessMode.Public,
+            "portal", "Renamed", "spa", null, null, "/", SurfaceAuthentication.Public,
             null, null, null, null, null, true));
         Assert.Equal("Renamed", updated!.DisplayName);
         Assert.Single(await store.ListAsync("workspace-a"));
@@ -99,7 +99,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
 
         var store = new EfWorkspaceSurfaceStore(context);
         await store.UpsertAsync("workspace-identity", new WorkspaceSurfaceInput(
-            "portal", "Portal", "spa", null, null, "/", SurfaceAccessMode.Authenticated,
+            "portal", "Portal", "spa", null, null, "/", SurfaceAuthentication.SurfaceIdentity,
             null, null, null, null, null, true));
 
         var assigned = await store.AssignIdentityProviderAsync(
@@ -113,7 +113,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
         // A surface edit carries no identity fields, so it must not clear who vouches
         // for the surface's visitors as a side effect.
         var renamed = await store.UpsertAsync("workspace-identity", new WorkspaceSurfaceInput(
-            "portal", "Renamed", "spa", null, null, "/", SurfaceAccessMode.Authenticated,
+            "portal", "Renamed", "spa", null, null, "/", SurfaceAuthentication.SurfaceIdentity,
             null, null, null, null, null, true));
 
         Assert.Equal("Renamed", renamed!.DisplayName);
@@ -136,7 +136,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
 
         var store = new EfWorkspaceSurfaceStore(context);
         await store.UpsertAsync("workspace-clear", new WorkspaceSurfaceInput(
-            "portal", "Portal", "spa", null, null, "/", SurfaceAccessMode.Mixed,
+            "portal", "Portal", "spa", null, null, "/", SurfaceAuthentication.Public,
             null, null, null, null, null, true));
         await store.AssignIdentityProviderAsync(
             "workspace-clear", "portal", "crm", "1.0.0", "operator@example.de");
@@ -177,7 +177,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
         var store = new EfWorkspaceSurfaceStore(context);
 
         var result = await store.UpsertAsync("no-such-workspace", new WorkspaceSurfaceInput(
-            "x", "X", "spa", null, null, "/", SurfaceAccessMode.Public, null, null, null, null, null, true));
+            "x", "X", "spa", null, null, "/", SurfaceAuthentication.Public, null, null, null, null, null, true));
 
         Assert.Null(result);
     }

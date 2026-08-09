@@ -155,7 +155,7 @@ public sealed class SurfaceThemeEndpointsTests
                 PublicBaseUrl: null,
                 PublicHost: null,
                 PublicPathPrefix: "/shop",
-                AccessMode: SurfaceAccessMode.Public,
+                Authentication: SurfaceAuthentication.Public,
                 Locale: "de",
                 TemplatePluginId: null,
                 TemplateVersion: null,

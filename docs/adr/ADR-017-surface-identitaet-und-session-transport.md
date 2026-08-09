@@ -183,6 +183,11 @@ Diese drei Fälle sind Vertrag, nicht Implementierungsdetail.
 
 ### 6.1 Keine Zuweisung vorhanden
 
+> **Abgelöst durch [ADR-023](ADR-023-welche-anmeldung-auf-einer-flaeche-gilt.md):** Die Achse
+> `Public`/`Authenticated`/`Mixed` beantwortet seither *welche Anmeldung gilt* —
+> `Public` · `SurfaceIdentity` · `Administration`. Was unten dazu steht, beschreibt den
+> Stand davor.
+
 Das Verhalten hängt am `SurfaceAccessMode`:
 
 | Access Mode | Verhalten ohne Anbieter |

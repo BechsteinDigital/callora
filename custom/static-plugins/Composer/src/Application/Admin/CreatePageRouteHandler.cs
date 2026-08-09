@@ -103,7 +103,7 @@ public sealed class CreatePageRouteHandler(
                     string.IsNullOrWhiteSpace(create.PathSegment) ? surfaceKey : create.PathSegment.Trim(),
                     // Der Zugangsmodus wird geerbt, indem er dem des Elternteils entspricht: Er
                     // ist nicht nullbar, es gibt also kein „nicht gesetzt" (ADR-019 §3.1).
-                    parent.AccessMode,
+                    parent.Authentication,
                     Locale: null,
                     TemplatePluginId: null,
                     TemplateVersion: null,

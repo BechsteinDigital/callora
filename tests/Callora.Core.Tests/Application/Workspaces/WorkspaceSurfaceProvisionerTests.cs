@@ -21,7 +21,7 @@ public sealed class WorkspaceSurfaceProvisionerTests
         Assert.Equal("https://meet.example.test/meet", location.PublicUrl);
         var surface = await surfaceStore.GetAsync("acme", "videoconference");
         Assert.NotNull(surface);
-        Assert.Equal(SurfaceAccessMode.Mixed, surface!.AccessMode);
+        Assert.Equal(SurfaceAuthentication.Public, surface!.Authentication);
         Assert.Equal("videoconference", surface.TemplatePluginId);
     }
 
@@ -51,7 +51,7 @@ public sealed class WorkspaceSurfaceProvisionerTests
                 null,
                 "example.test",
                 "/old",
-                SurfaceAccessMode.Public,
+                SurfaceAuthentication.Public,
                 "en",
                 "old-template",
                 "1.0.0",
@@ -94,7 +94,7 @@ public sealed class WorkspaceSurfaceProvisionerTests
             "Video Conference",
             "videoconference",
             "/meet",
-            PluginSurfaceAccessMode.Mixed,
+            PluginSurfaceAuthentication.Public,
             "videoconference",
             "0.1.0");
 
@@ -126,7 +126,7 @@ public sealed class WorkspaceSurfaceProvisionerTests
                 publicBaseUrl,
                 uri.Host,
                 uri.AbsolutePath.TrimEnd('/') is { Length: > 0 } path ? path : "/",
-                SurfaceAccessMode.Mixed,
+                SurfaceAuthentication.Public,
                 null,
                 null,
                 null,

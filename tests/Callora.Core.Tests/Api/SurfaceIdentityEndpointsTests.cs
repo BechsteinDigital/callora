@@ -115,7 +115,7 @@ public sealed class SurfaceIdentityEndpointsTests
 
         var surfaces = new InMemoryWorkspaceSurfaceStore();
         _ = await surfaces.UpsertAsync(Workspace, new WorkspaceSurfaceInput(
-            Surface, "Portal", "spa", null, null, "/", SurfaceAccessMode.Mixed,
+            Surface, "Portal", "spa", null, null, "/", SurfaceAuthentication.Public,
             "de", null, null, null, null, true));
 
         var installations = new InMemoryPluginInstallationRepository();

@@ -15,7 +15,7 @@ public sealed record WorkspaceSurfaceInput(
     string? PublicBaseUrl,
     string? PublicHost,
     string PublicPathPrefix,
-    SurfaceAccessMode AccessMode,
+    SurfaceAuthentication Authentication,
     string? Locale,
     string? TemplatePluginId,
     string? TemplateVersion,

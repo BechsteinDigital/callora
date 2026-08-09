@@ -79,7 +79,7 @@ public sealed class WorkspaceSurface
 
     public string PublicPathPrefix { get; set; } = "/";
 
-    public SurfaceAccessMode AccessMode { get; set; } = SurfaceAccessMode.Mixed;
+    public SurfaceAuthentication Authentication { get; set; } = SurfaceAuthentication.Public;
 
     /// <summary>
     /// Wer über die Adressen unterhalb dieser Fläche entscheidet.

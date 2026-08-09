@@ -33,7 +33,7 @@ public sealed class ScopedWorkspaceSurfaceProvisionerTests
                 "https://example.test/acme",
                 "example.test",
                 "/acme",
-                SurfaceAccessMode.Mixed,
+                SurfaceAuthentication.Public,
                 null,
                 null,
                 null,
@@ -53,7 +53,7 @@ public sealed class ScopedWorkspaceSurfaceProvisionerTests
                 "Video Conference",
                 "videoconference",
                 "/meet",
-                PluginSurfaceAccessMode.Mixed,
+                PluginSurfaceAuthentication.Public,
                 "videoconference",
                 "0.1.0"));
 

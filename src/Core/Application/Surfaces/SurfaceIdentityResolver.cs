@@ -94,7 +94,7 @@ public sealed class SurfaceIdentityResolver
         CancellationToken cancellationToken)
     {
         var candidate = await _hostIdentitySource
-            .AuthenticateAsync(BuildRequest(surface, request, []), cancellationToken)
+            .AuthenticateAsync(BuildRequest(surface, request, []), surface.Authentication, cancellationToken)
             .ConfigureAwait(false);
         if (!candidate.IsIdentified)
         {

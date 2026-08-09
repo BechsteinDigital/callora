@@ -63,8 +63,8 @@
           </template>
         </template>
 
-        <template #cell-accessMode="{ row }">
-          <CalBadge :tone="row.accessMode === 'Public' ? 'warning' : 'neutral'">{{ row.accessMode }}</CalBadge>
+        <template #cell-authentication="{ row }">
+          <CalBadge :tone="row.authentication === 'Public' ? 'warning' : 'neutral'">{{ row.authentication }}</CalBadge>
         </template>
 
         <template #cell-isActive="{ row }">
@@ -130,8 +130,10 @@
           </CalSelect>
         </CalField>
         <CalField v-slot="{ id }" label="Zugang">
-          <CalSelect :id="id" v-model="formAccessMode" name="surfaceAccessMode">
-            <option v-for="mode in accessModes" :key="mode" :value="mode">{{ mode }}</option>
+          <CalSelect :id="id" v-model="formAuthentication" name="surfaceAccessMode">
+            <option v-for="mode in authentications" :key="mode" :value="mode">
+                  {{ authenticationLabels[mode] ?? mode }}
+                </option>
           </CalSelect>
         </CalField>
         <CalField
@@ -210,7 +212,8 @@ import { computed, onMounted, ref } from 'vue'
 import { Layers, Palette } from 'lucide-vue-next'
 import {
   workspacesApi,
-  SURFACE_ACCESS_MODES,
+  SURFACE_AUTHENTICATIONS,
+  SURFACE_AUTHENTICATION_LABELS,
   SURFACE_ROUTINGS,
   SURFACE_ROUTING_LABELS,
   type WorkspaceSurface,
@@ -234,7 +237,8 @@ import { toast } from '@/core/feedback/toasts'
 
 const props = defineProps<{ workspaceKey: string; canManage: boolean }>()
 
-const accessModes = SURFACE_ACCESS_MODES
+const authentications = SURFACE_AUTHENTICATIONS
+const authenticationLabels = SURFACE_AUTHENTICATION_LABELS
 const routings = SURFACE_ROUTINGS
 const routingLabels = SURFACE_ROUTING_LABELS
 
@@ -331,7 +335,7 @@ const columns: readonly DataTableColumn[] = [
   { key: 'surfaceKey', label: 'Schlüssel', mono: true },
   { key: 'displayName', label: 'Name' },
   { key: 'surfaceType', label: 'Typ', width: '100px' },
-  { key: 'accessMode', label: 'Zugang', width: '140px' },
+  { key: 'authentication', label: 'Zugang', width: '140px' },
   { key: 'location', label: 'Host / Pfad' },
   { key: 'theme', label: 'Design', width: '170px' },
   { key: 'visibility', label: 'Sichtbar für', width: '160px' },
@@ -344,7 +348,7 @@ const editingKey = ref<string | null>(null)
 const formKey = ref('')
 const formDisplayName = ref('')
 const formType = ref('spa')
-const formAccessMode = ref<string>('Authenticated')
+const formAuthentication = ref<string>('SurfaceIdentity')
 // Standard ist der Baum: Wer nichts sagt, bekommt 404 statt einer fremden Seite.
 const formRouting = ref<string>('Tree')
 const formHost = ref('')
@@ -394,7 +398,7 @@ function resetForm(): void {
   formKey.value = ''
   formDisplayName.value = ''
   formType.value = 'spa'
-  formAccessMode.value = 'Authenticated'
+  formAuthentication.value = 'SurfaceIdentity'
   formRouting.value = 'Tree'
   formHost.value = ''
   formPathPrefix.value = '/'
@@ -416,7 +420,7 @@ function startEdit(surface: WorkspaceSurface): void {
   formKey.value = surface.surfaceKey
   formDisplayName.value = surface.displayName
   formType.value = surface.surfaceType
-  formAccessMode.value = surface.accessMode
+  formAuthentication.value = surface.authentication
   formRouting.value = surface.routing
   formHost.value = surface.publicHost ?? ''
   formPathPrefix.value = surface.publicPathPrefix
@@ -439,7 +443,7 @@ interface SurfaceSaveDraft {
   readonly isEdit: boolean
   displayName: string
   surfaceType: string
-  accessMode: string
+  authentication: string
   routing: string
   publicHost: string | null
   publicPathPrefix: string
@@ -462,7 +466,7 @@ async function save(): Promise<void> {
     isEdit: editingKey.value !== null,
     displayName: formDisplayName.value.trim(),
     surfaceType: formType.value.trim(),
-    accessMode: formAccessMode.value,
+    authentication: formAuthentication.value,
     routing: formRouting.value,
     publicHost: formHost.value.trim() || null,
     publicPathPrefix: formPathPrefix.value.trim(),
@@ -487,7 +491,7 @@ async function save(): Promise<void> {
       publicBaseUrl: draft.publicBaseUrl,
       publicHost: draft.publicHost,
       publicPathPrefix: draft.publicPathPrefix,
-      accessMode: draft.accessMode,
+      authentication: draft.authentication,
       routing: draft.routing,
       locale: draft.locale,
       templatePluginId: carriedTemplatePluginId.value,

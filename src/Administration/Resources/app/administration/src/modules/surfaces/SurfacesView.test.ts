@@ -20,7 +20,8 @@ const { listSurfacesMock, upsertSurfaceMock, removeSurfaceMock, pushMock, routeP
 )
 
 vi.mock('@/modules/workspaces/workspacesApi', () => ({
-  SURFACE_ACCESS_MODES: ['Public', 'Authenticated', 'Mixed'] as const,
+  SURFACE_AUTHENTICATIONS: ['Public', 'SurfaceIdentity', 'Administration'] as const,
+  SURFACE_AUTHENTICATION_LABELS: { Public: 'Öffentlich', SurfaceIdentity: 'Flächen-Anmeldung', Administration: 'Administration' },
   SURFACE_ROUTINGS: ['Tree', 'Application'] as const,
   SURFACE_ROUTING_LABELS: { Tree: 'Seitenbaum', Application: 'Anwendung' },
   workspacesApi: {
@@ -54,7 +55,7 @@ function surface(over: Partial<WorkspaceSurface>): WorkspaceSurface {
     publicBaseUrl: null,
     publicHost: null,
     publicPathPrefix: '/',
-    accessMode: 'Mixed',
+    authentication: 'Public',
     routing: 'Tree',
     locale: null,
     templatePluginId: null,

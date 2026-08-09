@@ -153,7 +153,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
                 SurfaceKey = "default",
                 DisplayName = normalizedDisplayName,
                 SurfaceType = "spa",
-                AccessMode = SurfaceAccessMode.Mixed,
+                Authentication = SurfaceAuthentication.Public,
                 CreatedAtUtc = nowUtc,
             };
             dbContext.WorkspaceSurfaces.Add(defaultSurface);
@@ -549,7 +549,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             surface.PublicBaseUrl,
             surface.PublicHost,
             surface.PublicPathPrefix,
-            surface.AccessMode,
+            surface.Authentication,
             surface.Routing,
             surface.Locale,
             surface.TemplatePluginId,
@@ -587,7 +587,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             surface.PublicBaseUrl,
             effective.PublicHost,
             effective.PublicPathPrefix,
-            effective.AccessMode,
+            effective.Authentication,
             // NICHT effective: Routing wird nicht vererbt. Jeder Knoten beantwortet für sich,
             // ob er seine Unterpfade selbst deutet.
             surface.Routing,

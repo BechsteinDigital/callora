@@ -72,7 +72,7 @@ public sealed class MovePageRouteHandler(IWorkspaceSurfaceStore surfaces) : IHos
                     page.PublicBaseUrl,
                     page.PublicHost,
                     page.PublicPathPrefix,
-                    page.AccessMode,
+                    page.Authentication,
                     page.Locale,
                     page.TemplatePluginId,
                     page.TemplateVersion,
