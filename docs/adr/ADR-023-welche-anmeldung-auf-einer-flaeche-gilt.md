@@ -80,6 +80,20 @@ dem sich etwas ableiten ließe, und „jeder Claim" hier zu erfinden hieße, das
 Wildcard-Semantik lernen müsste — die zweite Stelle, die dieselbe Frage beantwortet. Ein
 SuperAdmin hält damit die Rechte seiner Rollen; wer per API-Schlüssel kommt, hält keine.
 
+**Nur Plugin-Berechtigungen können Flächen-Claims werden.** Ein Claim-Schlüssel braucht einen
+Namensraum (`crm.roles`), eine Kern-Berechtigung hat keinen: `tenant.read` ergibt die Funktion
+`tenant`, einsegmentig und damit unzulässig. Alle Kern-Berechtigungen sind so gebaut. Was gebraucht
+wird, ist ohnehin die andere Seite — `communication.calls.read` ergibt `communication.calls`.
+Solche Schlüssel werden **übersprungen**, nicht durchgereicht: Die Normalisierung verwirft sonst
+die ganze Identität und die Fläche antwortet mit 503. Eine abgeleitete Bequemlichkeit darf keine
+Anmeldung kippen.
+
+**Ein SuperAdmin hält das ganze Inventar.** Er trägt keine Berechtigungs-Claims — im Backend
+umgeht er jede Prüfung über seine Rolle. Ohne eigenen Zweig brächte ausgerechnet der Betreiber
+auf seiner Fläche nichts mit, während ein Mitarbeiter mit weniger Rechten dort mehr könnte. Das
+Inventar ist dasselbe, das die Rollenverwaltung anbietet (`BackendPermissionInventory`) — eine
+zweite Aufzählung wäre die Stelle, an der eine Plugin-Berechtigung irgendwann fehlt.
+
 **Zwei Claim-Namen sind reserviert.** Die Workspace-Bindung (`host.workspace-key`) wird nie aus
 einer Berechtigung abgeleitet, auch dann nicht, wenn sie fehlt. Ein Schutz nach dem Muster „nur
 wenn noch nicht gesetzt" hätte genügt, um ein Überschreiben zu verhindern — aber nicht, um ein
