@@ -154,15 +154,37 @@ public static class SurfaceRenderEndpoints
         //
         // Der Slot-Resolver daneben fragte längst den Katalog. Zwei Wege für dieselbe Art
         // Dienst, und nur einer davon funktionierte.
-        var layouts = httpContext.RequestServices
-            .GetService<ICalloraPluginCatalog>()
-            ?.GetExports(typeof(ISurfaceLayoutSource))
-            .OfType<ISurfaceLayoutSource>()
-            .FirstOrDefault()
+        var catalog = httpContext.RequestServices.GetService<ICalloraPluginCatalog>();
+        var exports = catalog?.GetExports(typeof(ISurfaceLayoutSource)) ?? [];
+        var layouts = exports.OfType<ISurfaceLayoutSource>().FirstOrDefault()
             ?? httpContext.RequestServices.GetService<ISurfaceLayoutSource>();
+
+        // MESSUNG statt Vermutung: Eine veröffentlichte Seite kam nicht an, und drei Hypothesen
+        // dazu waren falsch. Diese Zeile sagt, ob die Ablage leer ist oder der Typ nicht passt —
+        // zwei Fälle, die sich ohne sie nicht unterscheiden lassen.
+        if (layouts is null)
+        {
+            loggerFactory
+                .CreateLogger("Callora.Surface.Rendering.SurfaceRender")
+                .LogWarning(
+                    "Keine Layout-Quelle für {Workspace}/{Surface}: Katalog {CatalogState}, "
+                    + "{ExportCount} Exporte für {Contract} (aus {ContractAssembly}). Gefunden: {Found}.",
+                    surface.WorkspaceKey,
+                    surface.SurfaceKey,
+                    catalog is null ? "fehlt" : catalog.GetType().Name,
+                    exports.Count,
+                    typeof(ISurfaceLayoutSource).FullName,
+                    typeof(ISurfaceLayoutSource).Assembly.FullName,
+                    string.Join(", ", exports.Select(export => export.GetType().FullName)));
+        }
         var composed = layouts is null
             ? default
-            : await RenderCompositionAsync(layouts, surface, resolvedTheme, cancellationToken)
+            : await RenderCompositionAsync(
+                    layouts,
+                    surface,
+                    resolvedTheme,
+                    loggerFactory.CreateLogger("Callora.Surface.Rendering.SurfaceRender"),
+                    cancellationToken)
                 .ConfigureAwait(false);
         var composition = composed.Html;
         var usedBlockIds = composed.BlockIds ?? [];
@@ -374,6 +396,7 @@ public static class SurfaceRenderEndpoints
         ISurfaceLayoutSource layouts,
         WorkspaceSurfaceSnapshot surface,
         WorkspacePublicTheme? theme,
+        ILogger? logger,
         CancellationToken cancellationToken)
     {
         var document = await layouts
@@ -381,8 +404,22 @@ public static class SurfaceRenderEndpoints
             .ConfigureAwait(false);
         if (document is null)
         {
+            // Zweiter Messpunkt: Die Quelle ist da (sonst hätte der erste angeschlagen), das
+            // Dokument aber nicht. Damit steht fest, dass es an der ABFRAGE liegt und nicht an
+            // der Diensterkennung — zwei Fälle, die sich sonst nicht unterscheiden lassen.
+            logger?.LogWarning(
+                "Keine veröffentlichte Komposition für {Workspace}/{Surface} aus {Source}.",
+                surface.WorkspaceKey,
+                surface.SurfaceKey,
+                layouts.GetType().FullName);
             return (null, []);
         }
+
+        logger?.LogInformation(
+            "Komposition für {Workspace}/{Surface}: {SectionCount} Sektionen.",
+            surface.WorkspaceKey,
+            surface.SurfaceKey,
+            document.Sections.Count);
 
         // Was gilt: die Layouts des Themes, oder — ohne zugewiesenes Theme — die des
         // Basis-Themes. Die Liste ist nie leer, denn ein Theme ohne eigene Layouts erbt die
