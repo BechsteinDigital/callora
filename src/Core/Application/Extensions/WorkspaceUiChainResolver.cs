@@ -99,34 +99,6 @@ public sealed class WorkspaceUiChainResolver
             }
         }
 
-        // Eine INHALTSFLÄCHE zeigt, was ihr Layout verlangt — und sonst nichts.
-        //
-        // Hier und nicht im Renderpfad: Der Client holt die Kette über einen eigenen Endpunkt und
-        // lädt danach seine Bundles. Läge die Kürzung nur im Renderpfad, käme das Server-Markup
-        // sauber und der Browser mountete trotzdem jeden Block, den irgendein aktives Plugin
-        // mitbringt — genau der Zustand, der wie ein Rendering-Fehler aussieht und keiner ist.
-        if (!ownedByAnApp && _layouts is not null && !string.IsNullOrWhiteSpace(surfaceKey))
-        {
-            var document = await _layouts
-                .GetPublishedAsync(normalizedKey, surfaceKey.Trim(), cancellationToken)
-                .ConfigureAwait(false);
-
-            var needed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var blockId in document?.Sections.SelectMany(section => section.Blocks) ?? [])
-            {
-                var separator = blockId.BlockId.IndexOf('.', StringComparison.Ordinal);
-                needed.Add(separator > 0 ? blockId.BlockId[..separator] : blockId.BlockId);
-            }
-
-            // Das Theme steht schon in der Kette und bleibt: Es gestaltet, es rendert nicht.
-            foreach (var template in effectiveTemplates)
-            {
-                needed.Add(template.PluginId);
-            }
-
-            return chain.Where(needed.Contains).ToList();
-        }
-
         // Gehört die Fläche einer App, ist die Kette DAMIT zu Ende.
         //
         // Sonst steuerte jedes im Workspace aktive Plugin seine Oberfläche zu jeder Fläche bei:
@@ -160,6 +132,34 @@ public sealed class WorkspaceUiChainResolver
             {
                 chain.Add(pluginId);
             }
+        }
+
+        // Eine INHALTSFLÄCHE zeigt, was ihr Layout verlangt — und sonst nichts.
+        //
+        // Hier und nicht im Renderpfad: Der Client holt die Kette über einen eigenen Endpunkt und
+        // lädt danach seine Bundles. Läge die Kürzung nur im Renderpfad, käme das Server-Markup
+        // sauber und der Browser mountete trotzdem jeden Block, den irgendein aktives Plugin
+        // mitbringt — genau der Zustand, der wie ein Rendering-Fehler aussieht und keiner ist.
+        if (!ownedByAnApp && _layouts is not null && !string.IsNullOrWhiteSpace(surfaceKey))
+        {
+            var document = await _layouts
+                .GetPublishedAsync(normalizedKey, surfaceKey.Trim(), cancellationToken)
+                .ConfigureAwait(false);
+
+            var needed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var blockId in document?.Sections.SelectMany(section => section.Blocks) ?? [])
+            {
+                var separator = blockId.BlockId.IndexOf('.', StringComparison.Ordinal);
+                needed.Add(separator > 0 ? blockId.BlockId[..separator] : blockId.BlockId);
+            }
+
+            // Das Theme steht schon in der Kette und bleibt: Es gestaltet, es rendert nicht.
+            foreach (var template in effectiveTemplates)
+            {
+                needed.Add(template.PluginId);
+            }
+
+            return chain.Where(needed.Contains).ToList();
         }
 
         return chain;
