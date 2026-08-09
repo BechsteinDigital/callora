@@ -68,7 +68,7 @@ export interface WorkspaceSurface {
   publicBaseUrl: string | null
   publicHost: string | null
   publicPathPrefix: string
-  accessMode: string
+  authentication: string
   routing: string
   locale: string | null
   templatePluginId: string | null
@@ -102,7 +102,7 @@ export interface WorkspaceSurfaceUpsert {
   publicBaseUrl: string | null
   publicHost: string | null
   publicPathPrefix: string
-  accessMode: string
+  authentication: string
   routing: string
   locale: string | null
   templatePluginId: string | null
@@ -129,8 +129,19 @@ export interface WorkspacePluginAssignment {
   isAssigned: boolean
 }
 
-// The backend SurfaceAccessMode enum (ADR-014 §5.2).
-export const SURFACE_ACCESS_MODES = ['Public', 'Authenticated', 'Mixed'] as const
+// Das backendseitige SurfaceAuthentication (ADR-023): WELCHE ANMELDUNG auf diesem Knoten gilt.
+// Vorher beantwortete die Achse „muss man angemeldet sein?" — mit `Mixed` als drittem Wert für
+// „irgendwo darunter liegt Geschütztes". Das beschrieb einen Teilbaum, und seit ADR-019
+// beschreibt der Teilbaum sich selbst.
+export const SURFACE_AUTHENTICATIONS = ['Public', 'SurfaceIdentity', 'Administration'] as const
+
+// Was im Formular danebensteht. Die Enum-Namen allein sagen einem Betreiber nicht, wohin ein
+// nicht angemeldeter Besucher geschickt wird — und genau das ist die Entscheidung.
+export const SURFACE_AUTHENTICATION_LABELS: Record<string, string> = {
+  Public: 'Öffentlich — keine Anmeldung',
+  SurfaceIdentity: 'Flächen-Anmeldung — über das zugewiesene Identitäts-Plugin',
+  Administration: 'Administration — Operator-Anmeldung, Rechte gelten als Claims',
+}
 
 // Das backendseitige SurfaceRouting (ADR-022): wer über die Adressen unterhalb der Fläche
 // entscheidet. `Tree` heißt, der Seitenbaum ist die Wahrheit — was kein Knoten ist, gibt es

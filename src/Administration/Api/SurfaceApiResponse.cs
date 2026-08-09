@@ -9,7 +9,7 @@ public sealed record SurfaceApiResponse(
     string? PublicBaseUrl,
     string? PublicHost,
     string PublicPathPrefix,
-    string AccessMode,
+    string Authentication,
     string Routing,
     string? Locale,
     string? TemplatePluginId,

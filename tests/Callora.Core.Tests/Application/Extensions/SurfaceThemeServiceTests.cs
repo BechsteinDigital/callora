@@ -211,7 +211,7 @@ public sealed class SurfaceThemeServiceTests
                 PublicBaseUrl: null,
                 PublicHost: "shop.example.test",
                 PublicPathPrefix: "/shop",
-                AccessMode: SurfaceAccessMode.Public,
+                Authentication: SurfaceAuthentication.Public,
                 Locale: "de",
                 TemplatePluginId: "template-x",
                 TemplateVersion: "2.0.0",

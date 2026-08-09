@@ -1640,7 +1640,7 @@ namespace Callora.Core.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AccessMode")
+                    b.Property<string>("Authentication")
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")

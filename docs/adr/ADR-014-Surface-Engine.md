@@ -411,6 +411,11 @@ Die Surfaces können auf gemeinsame Workspace-Daten zugreifen, besitzen aber unt
 
 ## 6.1 Access Modes
 
+> **Abgelöst durch [ADR-023](ADR-023-welche-anmeldung-auf-einer-flaeche-gilt.md):** Die Achse
+> `Public`/`Authenticated`/`Mixed` beantwortet seither *welche Anmeldung gilt* —
+> `Public` · `SurfaceIdentity` · `Administration`. Was unten dazu steht, beschreibt den
+> Stand davor.
+
 Jede Surface besitzt eine explizite Zugriffspolitik.
 
 Mindestens folgende Modi werden unterstützt:

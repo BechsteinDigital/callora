@@ -16,7 +16,7 @@ function surface(
     publicBaseUrl: null,
     publicHost: null,
     publicPathPrefix: '/',
-    accessMode: 'Mixed',
+    authentication: 'Public',
     routing: 'Tree',
     locale: null,
     templatePluginId: null,

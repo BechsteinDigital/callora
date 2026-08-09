@@ -80,7 +80,7 @@ public sealed class WorkspaceUiChainResolverTests
                 PublicBaseUrl: null,
                 PublicHost: null,
                 PublicPathPrefix: "/meet",
-                AccessMode: SurfaceAccessMode.Mixed,
+                Authentication: SurfaceAuthentication.Public,
                 Locale: "de",
                 TemplatePluginId: "videoconference",
                 TemplateVersion: "1.0.0",

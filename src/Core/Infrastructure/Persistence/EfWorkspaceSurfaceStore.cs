@@ -93,7 +93,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
         surface.PublicBaseUrl = input.PublicBaseUrl;
         surface.PublicHost = input.PublicHost;
         surface.PublicPathPrefix = string.IsNullOrWhiteSpace(input.PublicPathPrefix) ? "/" : input.PublicPathPrefix.Trim();
-        surface.AccessMode = input.AccessMode;
+        surface.Authentication = input.Authentication;
         surface.Routing = input.Routing;
         surface.Locale = input.Locale;
         surface.TemplatePluginId = input.TemplatePluginId;
@@ -261,7 +261,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             x.PublicBaseUrl,
             x.PublicHost,
             x.PublicPathPrefix,
-            x.AccessMode,
+            x.Authentication,
             x.Routing,
             x.Locale,
             x.TemplatePluginId,
@@ -300,7 +300,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
             x.PublicBaseUrl,
             x.PublicHost,
             x.PublicPathPrefix,
-            x.AccessMode,
+            x.Authentication,
             x.Routing,
             x.Locale,
             x.TemplatePluginId,

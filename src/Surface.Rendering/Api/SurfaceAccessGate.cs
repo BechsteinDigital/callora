@@ -27,9 +27,7 @@ public static class SurfaceAccessGate
         ArgumentNullException.ThrowIfNull(establishment);
         ArgumentNullException.ThrowIfNull(httpContext);
 
-        // Public and Mixed serve anonymously; Mixed's per-route protection belongs to
-        // whoever owns those routes, not to the shell.
-        if (surface.AccessMode != SurfaceAccessMode.Authenticated)
+        if (!surface.Authentication.RequiresSignIn())
         {
             return null;
         }
@@ -48,11 +46,10 @@ public static class SurfaceAccessGate
             return null;
         }
 
-        // No identity, and the surface demands one. Without an assigned provider the
-        // host's own login is the right destination and the behaviour is unchanged.
-        // With one, the host has no login to offer: the plugin owns that flow, and a
-        // surface that needs to render it declares itself Mixed.
-        return string.IsNullOrWhiteSpace(surface.IdentityPluginId)
+        // Nobody signed in, and the surface demands it. Which login applies is the surface's
+        // declared choice — before ADR-023 this branched on whether an identity plugin happened
+        // to be assigned, which meant the operator never chose it and could not see it.
+        return surface.Authentication == SurfaceAuthentication.Administration
             ? LoginRedirect(surface, httpContext)
             : Results.Unauthorized();
     }

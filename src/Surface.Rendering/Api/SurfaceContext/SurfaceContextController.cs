@@ -80,7 +80,7 @@ public sealed class SurfaceContextController : ControllerBase
         // An authenticated surface without an established caller gets no socket. Same rule as the
         // render path: a bridge that upgraded where a page would have redirected to login would be
         // a way around the gate.
-        if (surface.AccessMode == SurfaceAccessMode.Authenticated &&
+        if (surface.Authentication.RequiresSignIn() &&
             caller is not AuthenticatedSurfaceCaller)
         {
             return Unauthorized();

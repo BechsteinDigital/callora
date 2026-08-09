@@ -136,7 +136,7 @@ public static class WorkspacePublicEndpoints
                         surface = surface is null ? null : new
                         {
                             key = surface.SurfaceKey,
-                            accessMode = surface.AccessMode.ToString()
+                            authentication = surface.Authentication.ToString()
                         },
                         route = new
                         {
@@ -191,8 +191,7 @@ public static class WorkspacePublicEndpoints
 
                     // Fail closed: a workspace whose entrance cannot be determined does not
                     // expose its plugin inventory.
-                    var requiresAuth = gateSurface is null ||
-                        gateSurface.AccessMode == SurfaceAccessMode.Authenticated;
+                    var requiresAuth = gateSurface is null || gateSurface.Authentication.RequiresSignIn();
 
                     // An Authenticated surface (or workspace) does not expose its plugin
                     // inventory to an anonymous caller: it 404s exactly like a non-existent one,
@@ -814,7 +813,7 @@ public static class WorkspacePublicEndpoints
             surface = surface is null ? null : new
             {
                 key = surface.SurfaceKey,
-                accessMode = surface.AccessMode.ToString()
+                authentication = surface.Authentication.ToString()
             },
             route = new
             {

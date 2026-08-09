@@ -64,7 +64,7 @@ public sealed class SurfaceRenderEndpointsTests
         // Der Renderweg bleibt derselbe: dieselbe Shell, dasselbe Theme. Genau daran hängt
         // White-Label; eine Anwendung, die ihre eigene Optik mitbrächte, fiele auf.
         var store = await SeededStoreAsync();
-        store.SetSurface("acme", SurfaceAccessMode.Public, routing: SurfaceRouting.Application);
+        store.SetSurface("acme", SurfaceAuthentication.Public, routing: SurfaceRouting.Application);
 
         await using var app = await CreateAppAsync(store, configure: null);
         var client = app.GetTestClient();
@@ -83,7 +83,7 @@ public sealed class SurfaceRenderEndpointsTests
         // Dieselbe Anfrage an dieselbe Fläche — nur die Adressierung unterscheidet sich. Ohne
         // diese Gegenprobe belegte der Test oben nur, dass irgendetwas 200 antwortet.
         var store = await SeededStoreAsync();
-        store.SetSurface("acme", SurfaceAccessMode.Public, routing: SurfaceRouting.Tree);
+        store.SetSurface("acme", SurfaceAuthentication.Public, routing: SurfaceRouting.Tree);
 
         await using var app = await CreateAppAsync(store, configure: null);
         var client = app.GetTestClient();
@@ -201,7 +201,7 @@ public sealed class SurfaceRenderEndpointsTests
     public async Task Render_PublicSurface_AnonymousCaller_Renders()
     {
         var store = await SeededStoreAsync();
-        store.SetSurface("acme", SurfaceAccessMode.Public);
+        store.SetSurface("acme", SurfaceAuthentication.Public);
 
         await using var app = await CreateAppAsync(store, configure: null);
         var client = app.GetTestClient();
@@ -218,7 +218,7 @@ public sealed class SurfaceRenderEndpointsTests
     public async Task Render_AuthenticatedSurface_AnonymousCaller_RedirectsToLogin()
     {
         var store = await SeededStoreAsync();
-        store.SetSurface("acme", SurfaceAccessMode.Authenticated);
+        store.SetSurface("acme", SurfaceAuthentication.SurfaceIdentity);
 
         await using var app = await CreateAppAsync(store, configure: null);
         var client = app.GetTestClient();
@@ -236,7 +236,7 @@ public sealed class SurfaceRenderEndpointsTests
     public async Task Render_MixedSurface_AnonymousCaller_RendersShell()
     {
         var store = await SeededStoreAsync();
-        store.SetSurface("acme", SurfaceAccessMode.Mixed);
+        store.SetSurface("acme", SurfaceAuthentication.Public);
 
         await using var app = await CreateAppAsync(store, configure: null);
         var client = app.GetTestClient();
@@ -253,7 +253,7 @@ public sealed class SurfaceRenderEndpointsTests
     public async Task Render_AuthenticatedSurface_AuthenticatedCaller_Renders()
     {
         var store = await SeededStoreAsync();
-        store.SetSurface("acme", SurfaceAccessMode.Authenticated);
+        store.SetSurface("acme", SurfaceAuthentication.SurfaceIdentity);
 
         await using var app = await CreateAppAsync(store, configure: null, authenticate: true);
         var client = app.GetTestClient();
@@ -270,7 +270,7 @@ public sealed class SurfaceRenderEndpointsTests
     public async Task Render_FlowsPerSurfaceKeyAndLocale_IntoContext()
     {
         var store = await SeededStoreAsync();
-        store.SetSurface("acme", SurfaceAccessMode.Public, surfaceKey: "partner", locale: "en");
+        store.SetSurface("acme", SurfaceAuthentication.Public, surfaceKey: "partner", locale: "en");
 
         var capturingRenderer = new CapturingSurfaceRenderer();
         await using var app = await CreateAppAsync(
@@ -293,7 +293,7 @@ public sealed class SurfaceRenderEndpointsTests
     public async Task Render_SurfaceWithoutLocale_DefaultsLocaleToDe()
     {
         var store = await SeededStoreAsync();
-        store.SetSurface("acme", SurfaceAccessMode.Public, surfaceKey: "default", locale: null);
+        store.SetSurface("acme", SurfaceAuthentication.Public, surfaceKey: "default", locale: null);
 
         var capturingRenderer = new CapturingSurfaceRenderer();
         await using var app = await CreateAppAsync(

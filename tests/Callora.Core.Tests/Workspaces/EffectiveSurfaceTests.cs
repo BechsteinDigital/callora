@@ -17,7 +17,7 @@ public sealed class EffectiveSurfaceTests
         string key,
         string? pathSegment = null,
         string? host = null,
-        SurfaceAccessMode accessMode = SurfaceAccessMode.Mixed,
+        SurfaceAuthentication authentication = SurfaceAuthentication.Public,
         string? themePluginId = null,
         string? themeVersion = null,
         string? identityPluginId = null,
@@ -28,7 +28,7 @@ public sealed class EffectiveSurfaceTests
             SurfaceKey = key,
             PublicPathPrefix = pathSegment ?? "/",
             PublicHost = host,
-            AccessMode = accessMode,
+            Authentication = authentication,
             ThemePluginId = themePluginId,
             ThemeVersion = themeVersion,
             IdentityPluginId = identityPluginId,
@@ -110,23 +110,23 @@ public sealed class EffectiveSurfaceTests
     // ── Zugriff und Identität (§4) ──────────────────────────────────────────
 
     [Fact]
-    public void TheAccessModeIsTheNodesOwnInBothDirections()
+    public void TheAuthenticationIsTheNodesOwnInBothDirections()
     {
         // Ein öffentliches Impressum unter einem angemeldeten Portal ist genauso legitim wie ein
         // geschützter Partnerbereich unter einer offenen Website. Eine Regel „nur verschärfen"
         // erzwänge den ersten Fall an eine eigene Wurzel — mit anderem Theme und anderer
         // Navigation.
-        var strictRoot = Node("portal", "/portal", accessMode: SurfaceAccessMode.Authenticated);
-        var openChild = Node("impressum", "impressum", accessMode: SurfaceAccessMode.Public);
+        var strictRoot = Node("portal", "/portal", authentication: SurfaceAuthentication.SurfaceIdentity);
+        var openChild = Node("impressum", "impressum", authentication: SurfaceAuthentication.Public);
 
-        Assert.Equal(SurfaceAccessMode.Public, EffectiveSurface.From([openChild, strictRoot]).AccessMode);
+        Assert.Equal(SurfaceAuthentication.Public, EffectiveSurface.From([openChild, strictRoot]).Authentication);
 
-        var openRoot = Node("web", "/", accessMode: SurfaceAccessMode.Public);
-        var strictChild = Node("partner", "partner", accessMode: SurfaceAccessMode.Authenticated);
+        var openRoot = Node("web", "/", authentication: SurfaceAuthentication.Public);
+        var strictChild = Node("partner", "partner", authentication: SurfaceAuthentication.SurfaceIdentity);
 
         Assert.Equal(
-            SurfaceAccessMode.Authenticated,
-            EffectiveSurface.From([strictChild, openRoot]).AccessMode);
+            SurfaceAuthentication.SurfaceIdentity,
+            EffectiveSurface.From([strictChild, openRoot]).Authentication);
     }
 
     [Fact]

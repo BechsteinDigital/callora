@@ -13,13 +13,13 @@ namespace Callora.Core.Tests.Api;
 
 public sealed class SurfaceEndpointsTests
 {
-    private static UpsertSurfaceApiRequest Surface(string accessMode = "Authenticated") => new(
+    private static UpsertSurfaceApiRequest Surface(string authentication = "SurfaceIdentity") => new(
         DisplayName: "Customer Portal",
         SurfaceType: "spa",
         PublicBaseUrl: null,
         PublicHost: "portal.example.de",
         PublicPathPrefix: "/",
-        AccessMode: accessMode,
+        Authentication: authentication,
         Locale: "de",
         TemplatePluginId: null,
         TemplateVersion: null,
@@ -106,7 +106,7 @@ public sealed class SurfaceEndpointsTests
         Assert.Equal(HttpStatusCode.OK, upsert.StatusCode);
         var created = await upsert.Content.ReadFromJsonAsync<SurfaceApiResponse>();
         Assert.Equal("portal", created!.SurfaceKey);
-        Assert.Equal("Authenticated", created.AccessMode);
+        Assert.Equal("SurfaceIdentity", created.Authentication);
 
         var listClient = app.GetTestClient();
         listClient.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.read");
@@ -121,14 +121,14 @@ public sealed class SurfaceEndpointsTests
     }
 
     [Fact]
-    public async Task Upsert_InvalidAccessMode_ReturnsBadRequest()
+    public async Task Upsert_InvalidAuthentication_ReturnsBadRequest()
     {
         await using var app = await CreateAppAsync();
         var client = app.GetTestClient();
         client.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
 
         var response = await client.PutAsJsonAsync(
-            "/api/workspaces/workspace-a/surfaces/x", Surface(accessMode: "Nonsense"));
+            "/api/workspaces/workspace-a/surfaces/x", Surface(authentication: "Nonsense"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

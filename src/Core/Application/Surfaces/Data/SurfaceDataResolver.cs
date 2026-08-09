@@ -43,12 +43,12 @@ public sealed class SurfaceDataResolver
     /// <summary>Collects everything this surface, path and caller are entitled to.</summary>
     public async Task<SurfaceDataComposition> ResolveAsync(
         SurfaceDataRequest request,
-        SurfaceAccessMode accessMode,
+        SurfaceAuthentication authentication,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var eligible = _contributors.Where(c => IsEligible(c, accessMode, request.Caller)).ToArray();
+        var eligible = _contributors.Where(c => IsEligible(c, authentication, request.Caller)).ToArray();
         if (eligible.Length == 0)
         {
             return SurfaceDataComposition.Empty;
@@ -126,10 +126,10 @@ public sealed class SurfaceDataResolver
     /// </summary>
     private static bool IsEligible(
         IHostSurfaceDataContributor contributor,
-        SurfaceAccessMode accessMode,
+        SurfaceAuthentication authentication,
         SurfaceCaller? caller) =>
         contributor.Visibility == SurfaceDataVisibility.CallerIndependent ||
-        (accessMode != SurfaceAccessMode.Public && caller is not null);
+        (authentication != SurfaceAuthentication.Public && caller is not null);
 
     private async Task<ContributorResult> InvokeAsync(
         IHostSurfaceDataContributor contributor,

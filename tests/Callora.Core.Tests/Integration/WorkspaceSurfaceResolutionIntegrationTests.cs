@@ -84,7 +84,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
             PublicBaseUrl: "partner.example.de",
             PublicHost: "partner.example.de",
             PublicPathPrefix: "/",
-            AccessMode: SurfaceAccessMode.Authenticated,
+            Authentication: SurfaceAuthentication.SurfaceIdentity,
             Locale: null,
             TemplatePluginId: null,
             TemplateVersion: null,
@@ -100,7 +100,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     }
 
     [SkippableFact]
-    public async Task ResolveSurface_ReturnsMatchedSurface_WithAccessModeKeyLocaleAndTenant()
+    public async Task ResolveSurface_ReturnsMatchedSurface_WithAuthenticationKeyLocaleAndTenant()
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
@@ -117,7 +117,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
             PublicBaseUrl: "partner.example.de",
             PublicHost: "partner.example.de",
             PublicPathPrefix: "/",
-            AccessMode: SurfaceAccessMode.Authenticated,
+            Authentication: SurfaceAuthentication.SurfaceIdentity,
             Locale: "en",
             TemplatePluginId: null,
             TemplateVersion: null,
@@ -130,7 +130,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         Assert.NotNull(resolved);
         Assert.Equal("partner", resolved!.SurfaceKey);
         Assert.Equal("portal", resolved.SurfaceType);
-        Assert.Equal(SurfaceAccessMode.Authenticated, resolved.AccessMode);
+        Assert.Equal(SurfaceAuthentication.SurfaceIdentity, resolved.Authentication);
         Assert.Equal("en", resolved.Locale);
         Assert.Equal("workspace-a", resolved.WorkspaceKey);
         Assert.Equal("tenant-a", resolved.TenantKey);
@@ -161,7 +161,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
             PublicBaseUrl: "retired.example.de",
             PublicHost: "retired.example.de",
             PublicPathPrefix: "/",
-            AccessMode: SurfaceAccessMode.Public,
+            Authentication: SurfaceAuthentication.Public,
             Locale: null,
             TemplatePluginId: null,
             TemplateVersion: null,

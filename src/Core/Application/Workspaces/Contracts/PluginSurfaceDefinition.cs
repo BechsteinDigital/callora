@@ -12,7 +12,7 @@ public sealed class PluginSurfaceDefinition
         string displayName,
         string surfaceType,
         string publicPathSuffix,
-        PluginSurfaceAccessMode accessMode,
+        PluginSurfaceAuthentication authentication,
         string templatePluginId,
         string? templateVersion = null,
         PluginSurfaceRouting routing = PluginSurfaceRouting.Tree)
@@ -21,7 +21,7 @@ public sealed class PluginSurfaceDefinition
         DisplayName = displayName;
         SurfaceType = surfaceType;
         PublicPathSuffix = publicPathSuffix;
-        AccessMode = accessMode;
+        Authentication = authentication;
         TemplatePluginId = templatePluginId;
         TemplateVersion = templateVersion;
         Routing = routing;
@@ -40,7 +40,7 @@ public sealed class PluginSurfaceDefinition
     public string PublicPathSuffix { get; }
 
     /// <summary>Access policy enforced by the host renderer.</summary>
-    public PluginSurfaceAccessMode AccessMode { get; }
+    public PluginSurfaceAuthentication Authentication { get; }
 
     /// <summary>Plugin whose template and workspace bundle own the surface.</summary>
     public string TemplatePluginId { get; }

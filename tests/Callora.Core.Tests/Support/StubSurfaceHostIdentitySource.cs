@@ -1,5 +1,6 @@
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Surfaces;
+using Callora.Core.Domain.Workspaces;
 
 namespace Callora.Core.Tests.Support;
 
@@ -12,11 +13,16 @@ public sealed class StubSurfaceHostIdentitySource(HostSurfaceIdentityResult resu
     /// <summary>Whether the source was consulted at all.</summary>
     public bool WasCalled { get; private set; }
 
+    /// <summary>The authentication the source was consulted with, for assertions on ADR-023.</summary>
+    public SurfaceAuthentication? SeenAuthentication { get; private set; }
+
     public ValueTask<HostSurfaceIdentityResult> AuthenticateAsync(
         HostSurfaceIdentityRequest request,
+        SurfaceAuthentication authentication,
         CancellationToken cancellationToken = default)
     {
         WasCalled = true;
+        SeenAuthentication = authentication;
         return ValueTask.FromResult(result);
     }
 

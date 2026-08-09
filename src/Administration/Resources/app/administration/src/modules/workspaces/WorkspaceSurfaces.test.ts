@@ -12,7 +12,8 @@ const { listSurfacesMock, upsertSurfaceMock, removeSurfaceMock } = vi.hoisted(()
 }))
 
 vi.mock('./workspacesApi', () => ({
-  SURFACE_ACCESS_MODES: ['Public', 'Authenticated', 'Mixed'] as const,
+  SURFACE_AUTHENTICATIONS: ['Public', 'SurfaceIdentity', 'Administration'] as const,
+  SURFACE_AUTHENTICATION_LABELS: { Public: 'Öffentlich', SurfaceIdentity: 'Flächen-Anmeldung', Administration: 'Administration' },
   SURFACE_ROUTINGS: ['Tree', 'Application'] as const,
   SURFACE_ROUTING_LABELS: { Tree: 'Seitenbaum', Application: 'Anwendung' },
   workspacesApi: {
@@ -41,7 +42,7 @@ function surface(over: Partial<WorkspaceSurface>): WorkspaceSurface {
     publicBaseUrl: null,
     publicHost: 'acme.example.de',
     publicPathPrefix: '/',
-    accessMode: 'Mixed',
+    authentication: 'Public',
     routing: 'Tree',
     locale: null,
     templatePluginId: null,
@@ -78,7 +79,7 @@ describe('WorkspaceSurfaces', () => {
 
     expect(listSurfacesMock).toHaveBeenCalledWith('acme')
     expect(wrapper.text()).toContain('default')
-    expect(wrapper.text()).toContain('Mixed')
+    expect(wrapper.text()).toContain('Public')
     expect(wrapper.text()).toContain('acme.example.de')
     expect(wrapper.text()).toContain('Aktiv')
   })
@@ -107,7 +108,7 @@ describe('WorkspaceSurfaces', () => {
     expect(ws).toBe('acme')
     expect(key).toBe('portal')
     expect(body.displayName).toBe('Portal')
-    expect(body.accessMode).toBe('Public')
+    expect(body.authentication).toBe('Public')
     expect(body.publicHost).toBe('portal.example.de')
     expect(body.surfaceType).toBe('spa') // default
     // A freshly created surface carries no template/theme.

@@ -60,7 +60,7 @@ internal sealed class WorkspaceSurfaceProvisioner(
             PublicBaseUrl: null,
             PublicHost: null,
             SegmentOf(definition.PublicPathSuffix),
-            ToDomainAccessMode(definition.AccessMode),
+            ToDomainAuthentication(definition.Authentication),
             existing?.Locale,
             definition.TemplatePluginId.Trim(),
             string.IsNullOrWhiteSpace(definition.TemplateVersion)
@@ -213,12 +213,12 @@ internal sealed class WorkspaceSurfaceProvisioner(
         return normalized;
     }
 
-    private static SurfaceAccessMode ToDomainAccessMode(PluginSurfaceAccessMode accessMode) =>
-        accessMode switch
+    private static SurfaceAuthentication ToDomainAuthentication(PluginSurfaceAuthentication authentication) =>
+        authentication switch
         {
-            PluginSurfaceAccessMode.Public => SurfaceAccessMode.Public,
-            PluginSurfaceAccessMode.Authenticated => SurfaceAccessMode.Authenticated,
-            PluginSurfaceAccessMode.Mixed => SurfaceAccessMode.Mixed,
-            _ => throw new ArgumentOutOfRangeException(nameof(accessMode)),
+            PluginSurfaceAuthentication.Public => SurfaceAuthentication.Public,
+            PluginSurfaceAuthentication.SurfaceIdentity => SurfaceAuthentication.SurfaceIdentity,
+            PluginSurfaceAuthentication.Administration => SurfaceAuthentication.Administration,
+            _ => throw new ArgumentOutOfRangeException(nameof(authentication)),
         };
 }

@@ -263,7 +263,7 @@ public static class SurfaceRenderEndpoints
                 return Results.NotFound();
             }
 
-            if (surface.AccessMode == SurfaceAccessMode.Authenticated &&
+            if (surface.Authentication.RequiresSignIn() &&
                 httpContext.User.Identity?.IsAuthenticated != true)
             {
                 // Ansonsten bleibt das Verhalten vor ADR-017 exakt wie es war, damit ein
@@ -284,7 +284,7 @@ public static class SurfaceRenderEndpoints
                 .ResolveAsync(
                     new SurfaceDataRequest(
                         surface.WorkspaceKey, surface.SurfaceKey, surfacePath, locale, establishedCaller),
-                    surface.AccessMode,
+                    surface.Authentication,
                     cancellationToken)
                 .ConfigureAwait(false);
 

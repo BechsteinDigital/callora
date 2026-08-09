@@ -61,7 +61,7 @@ public sealed class InMemoryWorkspaceSurfaceStore : IWorkspaceSurfaceStore
             input.PublicBaseUrl,
             input.PublicHost,
             input.PublicPathPrefix,
-            input.AccessMode,
+            input.Authentication,
             input.Routing,
             input.Locale,
             input.TemplatePluginId,

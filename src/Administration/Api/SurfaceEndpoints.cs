@@ -68,9 +68,9 @@ public static class SurfaceEndpoints
                 return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
             }
 
-            if (!Enum.TryParse<SurfaceAccessMode>(request.AccessMode, ignoreCase: true, out var accessMode))
+            if (!Enum.TryParse<SurfaceAuthentication>(request.Authentication, ignoreCase: true, out var authentication))
             {
-                return ApiProblems.BadRequest($"Unknown access mode '{request.AccessMode}'. Supported: Public, Authenticated, Mixed.");
+                return ApiProblems.BadRequest($"Unknown authentication '{request.Authentication}'. Supported: Public, SurfaceIdentity, Administration.");
             }
 
             if (!TryParseRouting(request.Routing, out var routing))
@@ -86,7 +86,7 @@ public static class SurfaceEndpoints
                 request.PublicBaseUrl,
                 request.PublicHost,
                 request.PublicPathPrefix,
-                accessMode,
+                authentication,
                 request.Locale,
                 request.TemplatePluginId,
                 request.TemplateVersion,
@@ -185,7 +185,7 @@ public static class SurfaceEndpoints
         surface.PublicBaseUrl,
         surface.PublicHost,
         surface.PublicPathPrefix,
-        surface.AccessMode.ToString(),
+        surface.Authentication.ToString(),
         surface.Routing.ToString(),
         surface.Locale,
         surface.TemplatePluginId,
