@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Security;
 using Callora.Core.Application.Surfaces;
@@ -21,7 +22,9 @@ namespace Callora.Core.Infrastructure.Surfaces;
 /// </summary>
 public sealed class BackendPrincipalSurfaceIdentitySource(
     IHttpContextAccessor httpContextAccessor,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    ICalloraPluginCatalog pluginCatalog,
+    SurfaceIdentityOptions options)
     : ISurfaceHostIdentitySource
 {
     /// <summary>Claim carrying the workspace a host-derived caller belongs to.</summary>
@@ -55,7 +58,7 @@ public sealed class BackendPrincipalSurfaceIdentitySource(
 
         if (authentication == SurfaceAuthentication.Administration)
         {
-            AddOperatorPermissions(principal, claims);
+            AddOperatorPermissions(principal, claims, pluginCatalog, options.MaxClaimKeyLength);
         }
 
         return ValueTask.FromResult(HostSurfaceIdentityResult.Identified(
@@ -85,12 +88,32 @@ public sealed class BackendPrincipalSurfaceIdentitySource(
     /// </remarks>
     private static void AddOperatorPermissions(
         ClaimsPrincipal principal,
-        Dictionary<string, IReadOnlyList<string>> claims)
+        Dictionary<string, IReadOnlyList<string>> claims,
+        ICalloraPluginCatalog pluginCatalog,
+        int maxClaimKeyLength)
     {
+        // Ein SuperAdmin trägt KEINE Berechtigungs-Claims — er umgeht im Backend jede Prüfung
+        // über seine Rolle (`EndpointAuthorizationExtensions.HasPermission`). Ohne diesen Zweig
+        // brächte ausgerechnet der Betreiber der Anlage auf seiner eigenen Fläche nichts mit,
+        // während ein Mitarbeiter mit weniger Rechten dort mehr könnte als er.
+        var source = principal.IsInRole(BackendRoles.SuperAdmin)
+            ? BackendPermissionInventory.All(pluginCatalog).Select(value => new Claim(BackendClaimTypes.Permission, value))
+            : principal.FindAll(BackendClaimTypes.Permission);
+
         var actionsByFunction = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-        foreach (var permission in principal.FindAll(BackendClaimTypes.Permission))
+        foreach (var permission in source)
         {
             if (!BackendPermissionKey.TryParse(permission.Value, out var key))
+            {
+                continue;
+            }
+
+            // Ein Flächen-Claim braucht einen Namensraum (`crm.roles`), eine Kern-Berechtigung
+            // nicht: `config.read` ergibt die Funktion `config` — einsegmentig und damit als
+            // Claim-Schlüssel unzulässig. Übersprungen statt durchgereicht, weil die
+            // Normalisierung sonst die GANZE Identität verwirft und die Fläche mit 503 antwortet:
+            // Ein Schlüssel, den die Fläche gar nicht führen kann, darf keine Anmeldung kippen.
+            if (!SurfaceIdentityTokenSyntax.IsNamespacedKey(key.Function, maxClaimKeyLength))
             {
                 continue;
             }

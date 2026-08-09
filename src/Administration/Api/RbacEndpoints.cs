@@ -28,24 +28,7 @@ public static class RbacEndpoints
 
         group.MapGet("/permissions", ([FromServices] ICalloraPluginCatalog pluginCatalog) =>
         {
-            var staticPermissions = typeof(BackendPermissionKeys)
-                .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
-                .Where(field => field.FieldType == typeof(string))
-                .Select(field => field.GetValue(null) as string)
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Select(value => value!)
-                .ToArray();
-
-            var pluginPermissions = pluginCatalog
-                .GetExports<IHostAdminApiExtensionContributor>()
-                .SelectMany(contributor => contributor.PermissionKeys)
-                .Where(BackendPermissionKeyValidator.IsValid)
-                .ToArray();
-
-            var permissions = staticPermissions
-                .Concat(pluginPermissions)
-                .Distinct(StringComparer.Ordinal)
-                .OrderBy(value => value, StringComparer.Ordinal)
+            var permissions = BackendPermissionInventory.All(pluginCatalog)
                 // Dieselbe Zerlegung wie die Gültigkeitsprüfung: Aktion ist das LETZTE Segment.
                 // Am ersten Punkt zu teilen machte aus `communication.accounts.read` die Funktion
                 // „communication" mit der Aktion „accounts.read" — und aus zwei getrennten
