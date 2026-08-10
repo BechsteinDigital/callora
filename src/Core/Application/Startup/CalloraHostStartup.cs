@@ -1,3 +1,4 @@
+using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Options;
 using Callora.Core.Application.Plugins;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,17 +45,53 @@ public sealed class CalloraHostStartup
             !string.IsNullOrWhiteSpace(_options.PluginDirectory) &&
             Directory.Exists(_options.PluginDirectory))
         {
-            foreach (var pluginAssembly in Directory.EnumerateFiles(_options.PluginDirectory, "*.dll", SearchOption.TopDirectoryOnly))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                await _pluginRuntime.InstallAsync(pluginAssembly, cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
+            await InstallFromDirectoryAsync(services, cancellationToken).ConfigureAwait(false);
         }
 
         if (_options.AutoActivateInstalledPlugins)
         {
             var registryReader = services.GetService<IPluginPackageRegistryReader>();
             await ActivateInDependencyOrderAsync(registryReader, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Installiert die Assemblies aus dem Plugin-Verzeichnis — über dieselben Tore wie jede
+    /// andere Installation.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Hier stand ein direkter Aufruf von <c>ICalloraPluginRuntime.InstallAsync</c>. Der lud die
+    /// Assembly und war fertig: keine Signaturprüfung, kein Registry-Abgleich, kein
+    /// Audit-Eintrag. Wer eine DLL in das Verzeichnis legen konnte, brachte sie am gesamten
+    /// Vertrauensmodell vorbei in den Prozess — und zwar auf dem Normalweg, denn dieser Dienst
+    /// läuft VOR der geprüften Discovery und findet das Verzeichnis als Erster vor.
+    /// </para>
+    /// <para>
+    /// Ohne <see cref="IPluginLifecycleService"/> wird nichts installiert. Ein Rückfall auf die
+    /// rohe Runtime wäre die Lücke von vorhin unter anderem Namen: eine Komposition, der die
+    /// Tore fehlen, darf kein Schlupfloch sein, sondern installiert eben nicht.
+    /// </para>
+    /// </remarks>
+    private async Task InstallFromDirectoryAsync(IServiceProvider services, CancellationToken cancellationToken)
+    {
+        // Eigener Scope: Der Lifecycle-Service ist scoped (er schreibt in die Datenbank), der
+        // Startup-Pfad läuft außerhalb jedes Requests.
+        using var scope = services.CreateScope();
+        if (scope.ServiceProvider.GetService<IPluginLifecycleService>() is not { } lifecycle)
+        {
+            return;
+        }
+
+        foreach (var pluginAssembly in Directory.EnumerateFiles(
+                     _options.PluginDirectory, "*.dll", SearchOption.TopDirectoryOnly))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await lifecycle
+                .InstallAsync(
+                    new InstallPluginCommand(pluginAssembly, EntryTypeName: null, RequestedBy: "system:startup-autoload"),
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 
