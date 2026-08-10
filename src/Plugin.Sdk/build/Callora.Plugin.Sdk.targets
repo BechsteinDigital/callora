@@ -1,0 +1,60 @@
+<Project>
+
+  <!-- Die Build-Regel, für die dieses Paket existiert.
+       Wird von NuGet beim Konsumenten automatisch importiert (build/$(PackageId).targets).
+
+       Zur Laufzeit gibt PluginAssemblyLoadContext.Load für jede Assembly, die "Callora"
+       heißt oder mit "Callora." beginnt, null zurück — sie kommt dann aus dem
+       Default-Kontext des Hosts, damit Host und Plugin dieselben Vertragstypen benutzen.
+       Läge im Plugin-Ausgabeordner daneben eine eigene Kopie, gäbe es denselben Typ
+       zweimal, und der Fehler fiele erst beim Laden auf, mit einer Meldung, die nach
+       einem Fehler des Hosts aussieht.
+
+       Deshalb spiegelt die Bedingung unten die Laufzeitregel ZEICHENGENAU
+       (src/Core/Application/Plugins/PluginAssemblyLoadContext.cs). Wer eine der beiden
+       Seiten ändert, ändert beide — driften sie auseinander, kopiert der Build wieder
+       etwas mit, das der Ladekontext ohnehin am Host auflöst.
+
+       CalloraVoipSdk fällt bewusst NICHT darunter: kein Punkt hinter "Callora", also
+       plugin-lokal — beim Bauen wie zur Laufzeit. -->
+
+  <PropertyGroup>
+    <!-- Ausnahmen, die ein Plugin selbst setzen kann — Semikolon-Liste von
+         Assemblynamen ohne Endung:
+           <CalloraKeepInOutput>Callora.Something</CalloraKeepInOutput>
+         Gedacht für den Fall, dass ein Plugin eine eigene Vertrags-Assembly wirklich
+         mitliefern muss, weil kein Host sie stellt.
+
+         Als Property und per String-Vergleich, nicht als Item mit
+         AnyHaveMetadataValue: eine Item-Funktion über eine LEERE Liste macht die
+         Condition unauswertbar, und die Liste ist im Normalfall leer. -->
+    <CalloraKeepInOutputPattern>;$(CalloraKeepInOutput);</CalloraKeepInOutputPattern>
+  </PropertyGroup>
+
+  <!-- Nach ResolveReferences, weil erst dort BEIDE Quellen aufgelöst sind: die
+       Assembly-Referenzen (RAR) und die Paket-Assets. Vorher wäre die Liste
+       unvollständig und die Regel würde je nach Referenzart greifen oder nicht. -->
+  <Target Name="CalloraSdkExcludePlatformAssembliesFromBuildOutput"
+          AfterTargets="ResolveReferences"
+          Condition="'$(CalloraExcludePlatformAssembliesFromOutput)' == 'true'">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths
+          Remove="@(ReferenceCopyLocalPaths)"
+          Condition="('%(Filename)' == 'Callora' Or $([System.String]::Copy('%(Filename)').StartsWith('Callora.'))) And !$([System.String]::Copy('$(CalloraKeepInOutputPattern)').Contains(';%(Filename);'))" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Publish hat eine eigene Liste. Ohne dieses zweite Target bliebe der Ordner beim
+       Bauen sauber und wäre nach `dotnet publish` wieder voll — und publish ist genau
+       der Weg, auf dem ein Plugin ausgeliefert wird. -->
+  <Target Name="CalloraSdkExcludePlatformAssembliesFromPublish"
+          AfterTargets="ComputeResolvedFilesToPublishList"
+          Condition="'$(CalloraExcludePlatformAssembliesFromOutput)' == 'true'">
+    <ItemGroup>
+      <ResolvedFileToPublish
+          Remove="@(ResolvedFileToPublish)"
+          Condition="('%(Filename)' == 'Callora' Or $([System.String]::Copy('%(Filename)').StartsWith('Callora.'))) And !$([System.String]::Copy('$(CalloraKeepInOutputPattern)').Contains(';%(Filename);'))" />
+    </ItemGroup>
+  </Target>
+
+</Project>
