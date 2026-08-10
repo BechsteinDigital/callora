@@ -49,6 +49,16 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      # Die Landkarte ist der Einstieg für jeden, der das Repository nicht kennt —
+      # und für jeden Agenten. Eine veraltete Karte ist schlimmer als keine: Sie
+      # klingt plausibel und wird geglaubt. Das Skript scheitert außerdem von
+      # selbst, wenn es auf ein Verzeichnis zeigt, das es nicht mehr gibt (genau
+      # das war bei der Vorgängerfassung über Monate der Fall).
+      - name: Landkarte aktuell?
+        run: |
+          bash scripts/build-repo-map.sh
+          git diff --exit-code docs/REPO_MAP.md
+
       - name: Restore
         run: dotnet restore Callora.Host.sln
 
@@ -132,21 +142,10 @@ jobs:
             path: src/Surface.Rendering/Resources/app/surface
             gates: test + build
             test: true
-          - name: Communication Admin
-            path: custom/static-plugins/Communication
-            gates: build
-            test: false
-            # Consumes @callora/admin as a file: dependency — see the build step.
-            sdkPaths: src/Administration/Resources/app/administration
-          - name: Composer Admin
-            path: custom/static-plugins/Composer
-            gates: test + build
-            test: true
-            # The editor consumes BOTH: the admin shell it lives in, and the surface
-            # runtime whose block bundles its canvas loads.
-            sdkPaths: >-
-              src/Administration/Resources/app/administration
-              src/Surface.Rendering/Resources/app/surface
+          # Communication und Composer bauen in ihren eigenen Repositories (ADR-020).
+          # Was hier bleiben MUSS, ist der Beweis, dass die SDK-Pakete, gegen die sie
+          # bauen, gebaut werden können — das leistet der admin-frontend-Job mit
+          # `npm run build:lib` plus dem Paketvertrag-Schritt.
           - name: Docs Site
             path: docs-site
             gates: lint + build
