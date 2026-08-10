@@ -13,4 +13,11 @@ public enum PluginAvailabilityFactor
     TenantActive,
     WorkspaceActive,
     RequiredCapabilitiesAvailable,
+
+    /// <summary>
+    /// Das Plugin hat sein Fehlerbudget nicht überschritten (<see cref="PluginFaultRegistry"/>).
+    /// Trennt die wiederholt fehlschlagende Arbeit vom Lebenszyklus: Ein Plugin kann aktiv und
+    /// <see cref="RuntimeHealthy"/> sein und trotzdem bei jeder Anfrage werfen.
+    /// </summary>
+    WithinFaultBudget,
 }

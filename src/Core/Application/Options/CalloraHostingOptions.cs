@@ -36,6 +36,26 @@ public sealed class CalloraHostingOptions
     public TimeSpan RuntimeCapabilityGracePeriod { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
+    /// Zahl zugerechneter Fehler innerhalb von <see cref="PluginFaultWindow"/>, ab der ein Plugin
+    /// als nicht mehr verfügbar gilt (<see cref="Plugins.PluginFaultRegistry"/>). 0 schaltet das
+    /// Budget ab: Fehler werden dann nur gezählt, nie geahndet.
+    /// </summary>
+    /// <remarks>
+    /// Der Vorgabewert ist bewusst nicht scharf. Ein Plugin, das gelegentlich wirft — eine
+    /// Gegenstelle antwortet nicht, ein Aufrufer schickt Unsinn —, soll nicht ausfallen; erst ein
+    /// Plugin, das reihenweise wirft, kostet die anderen im selben Prozess etwas. Wer schneller
+    /// abriegeln will, setzt den Wert herunter, statt das Fenster zu verkürzen: Ein kurzes Fenster
+    /// macht das Budget vergesslich, eine niedrige Schwelle macht es empfindlich.
+    /// </remarks>
+    public int PluginFaultThreshold { get; set; } = 10;
+
+    /// <summary>
+    /// Gleitendes Fenster, über das <see cref="PluginFaultThreshold"/> zählt. Läuft es ohne neue
+    /// Fehler leer, ist das Plugin ohne Eingriff wieder verfügbar.
+    /// </summary>
+    public TimeSpan PluginFaultWindow { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
     /// How long the host waits for a plugin implementing
     /// <see cref="Domain.Plugins.Contracts.IDrainablePlugin"/> to run its outstanding work dry before
     /// stopping it anyway (ADR-018 §2.1). <see cref="TimeSpan.Zero"/> skips draining entirely.

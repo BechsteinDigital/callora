@@ -19,7 +19,11 @@ public sealed class PluginAvailabilityEvaluator(
     IPluginEntitlementStore entitlementStore,
     IWorkspacePluginActivationReader activationReader,
     IWorkspaceManagementStore workspaceStore,
-    PluginCapabilityGuard capabilityGuard) : IPluginAvailabilityEvaluator
+    PluginCapabilityGuard capabilityGuard,
+    // Optional: Ein Host ohne Fehlerbudget wertet den Faktor als erfüllt. Das hält minimale
+    // Kompositionen lauffähig und macht das Budget zu einer Ergänzung, nicht zu einer
+    // Voraussetzung der Verfügbarkeitsableitung.
+    PluginFaultRegistry? faultRegistry = null) : IPluginAvailabilityEvaluator
 {
     public async Task<PluginAvailability> EvaluateAsync(
         string pluginId,
@@ -63,6 +67,7 @@ public sealed class PluginAvailabilityEvaluator(
             WorkspaceEnabled: workspaceEnabled,
             TenantActive: tenantActive,
             WorkspaceActive: workspaceActive,
-            RequiredCapabilitiesAvailable: capability.IsAllowed));
+            RequiredCapabilitiesAvailable: capability.IsAllowed,
+            WithinFaultBudget: faultRegistry?.IsWithinBudget(pluginId) ?? true));
     }
 }

@@ -56,6 +56,8 @@ public sealed class DocumentedConfigurationKeysTests
         ("ops/runbooks/host-backend-operations.md", "CalloraHosting:PluginDrainTimeout", "00:00:30"),
         ("ops/runbooks/host-backend-operations.md", "Retention:CompletedJobRetention", "14.00:00:00"),
         ("ops/runbooks/host-backend-operations.md", "Retention:NotificationRetention", "90.00:00:00"),
+        ("docs-site/reference/configuration.md", "CalloraHosting:PluginFaultThreshold", "10"),
+        ("docs-site/reference/configuration.md", "CalloraHosting:PluginFaultWindow", "00:05:00"),
     ];
 
     private static readonly string[] DocumentRoots = ["docs-site", "docs", "ops"];
