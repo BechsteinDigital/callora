@@ -36,14 +36,4 @@
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- The domain-neutral Core carries NO plugin reference. The distribution
-         brings the Communication foundation CONTRACT (not its implementation) into
-         the host default load context, so plugin ALCs — which defer all Callora.*
-         to the default context — share one ICommunicationChannelRegistry type
-         identity (REV2 §10.1A). callora-production carries the equivalent reference
-         for production distributions. -->
-    <ProjectReference Include="..\..\..\custom\static-plugins\Communication\src\Abstractions\Callora.Plugin.Communication.Abstractions.csproj" />
-  </ItemGroup>
-
 </Project>

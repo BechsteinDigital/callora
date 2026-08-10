@@ -87,8 +87,9 @@ Host business events currently include:
 | `workspace.member-assigned` / `workspace.member-removed` | Membership changes |
 | `media.uploaded` / `media.deleted` | A media asset is added or removed |
 
-Plugins publish their own events too — for example the Communication plugin's
-`call.*` events (see [Communication](communication.md)).
+Plugins publish their own events too — a telephony plugin contributes its `call.*`
+events, for example. Which ones exist depends on what is installed; the catalogue
+under `GET /api/events/catalog` always shows the live set.
 
 ## Monitoring and SLOs
 

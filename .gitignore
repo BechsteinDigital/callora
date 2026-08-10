@@ -110,6 +110,18 @@ docfx/api/.manifest
 # Verbindliche Entwicklungsregeln — Standard für Host und Plugins.
 !ENGINEERING_RULES.md
 !CODE_STRUCTURE_RULES.md
+# Einstieg für Agenten und für den ersten Tag.
+!CLAUDE.md
+# Die Landkarte (erzeugt von scripts/build-repo-map.sh, per CI aktuell gehalten).
+!docs/REPO_MAP.md
+# Beitragsleitfaden — vom README verlinkt.
+!CONTRIBUTING.md
+# Achtung, diese Liste ist eine Falle: `*.md` oben ignoriert JEDE Markdown-Datei, und
+# eine neue Datei fällt still durch, wenn hier keine Ausnahme steht. `git add` meldet
+# das nicht, der Commit sieht sauber aus, und die Datei existiert nur lokal. Genau so
+# fehlte CONTRIBUTING.md monatelang, obwohl das README prominent darauf verlinkt.
+# Wer eine Markdown-Datei außerhalb von docs-site/, ops/ oder docs/adr/ anlegt, trägt
+# sie hier ein — oder prüft mit `git check-ignore -v <datei>`, warum sie fehlt.
 
 .worktrees/
 dashboard-vue/

@@ -1,8 +1,0 @@
-# Admin-UI-Frontend: Toolchain und Build-Artefakt sind nicht versioniert.
-# Die Quelle (app/admin/src, package.json, vite.config.ts) ist es; das gebaute
-# Bundle (public/admin) erzeugt build.sh vor dem Packen/Signieren.
-app/admin/node_modules/
-# Build config moved to the plugin root; its node_modules is covered by the repo-level rule.
-public/admin/
-# Dasselbe für das Surface-Bundle: Quelle unter app/surface/src, Artefakt aus build.sh.
-public/surface/

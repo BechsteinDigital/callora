@@ -5,22 +5,22 @@ using Xunit;
 namespace Callora.Core.Tests.Architecture;
 
 /// <summary>
-/// Kein Projekt der Plattform darf auf eine Plugin-<em>Implementierung</em> zeigen. Auf einen
-/// Plugin-<em>Vertrag</em> darf es.
+/// Kein Projekt der Plattform darf auf irgendetwas unter <c>custom/</c> zeigen — auch nicht
+/// auf einen Plugin-Vertrag.
 /// </summary>
 /// <remarks>
-/// Diese Regel entscheidet, ob das öffentliche Repository nach dem Repo-Schnitt noch baut.
-/// Die Plugins ziehen in eigene, private Repositories; ihre Verträge werden als öffentliche
-/// Pakete ausgeliefert. Zeigt bis dahin irgendein Projekt unter <c>src/</c> auf eine
-/// Implementierung, hängt die öffentliche Plattform an einem privaten Repository — und das
-/// merkt man erst, wenn der Klon eines Außenstehenden nicht restauriert.
+/// Diese Regel entscheidet, ob das öffentliche Repository noch baut. Zeigt ein Projekt unter
+/// <c>src/</c> auf ein Plugin, hängt die öffentliche Plattform an einem privaten Repository —
+/// und das merkt man erst, wenn der Klon eines Außenstehenden nicht restauriert.
 ///
 /// <para>
-/// Die bestehenden Kanten sind Verträge und bleiben erlaubt: Die Distribution muss
-/// <c>Callora.Plugin.Communication.Abstractions</c> in den Default-Ladekontext bringen, damit
-/// Host und Plugin dieselbe <c>ICommunicationChannelRegistry</c>-Typidentität teilen
-/// (REV2 §10.1A) — und der CLI-Inspektionskontext gibt bei unbekannten Assemblies
-/// <c>null</c> zurück, fällt also ebenfalls auf den Default-Kontext zurück.
+/// Die Regel war einmal weicher: Implementierungen verboten, <c>*.Abstractions</c> erlaubt.
+/// Das war richtig, solange die Plugins hier lagen und die Distribution ihren Vertrag in den
+/// Default-Ladekontext bringen musste (REV2 §10.1A). Seit die Plugins in eigenen Repositories
+/// leben (ADR-020), gibt es unter <c>custom/</c> nichts mehr zu referenzieren, und die
+/// Ausnahme wäre nur noch ein offenes Tor: Sie erlaubte eine Kante, die niemand mehr braucht.
+/// WELCHE Vertragspakete vorgeladen werden, entscheidet ohnehin die Distribution
+/// (<c>callora-production</c>), nicht das Framework.
 /// </para>
 ///
 /// <para>
@@ -35,7 +35,7 @@ public sealed class PlatformDependsOnPluginContractsOnlyTests
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     [Fact]
-    public void NoPlatformProjectReferencesAPluginImplementation()
+    public void NoPlatformProjectReferencesAnythingUnderCustom()
     {
         var root = ScaffoldedPluginFixture.ResolveRepositoryRoot();
         var offenders = new List<string>();
@@ -51,21 +51,16 @@ public sealed class PlatformDependsOnPluginContractsOnlyTests
                     continue;
                 }
 
-                // Ein Vertragsprojekt heißt so. Alles andere unter custom/ ist Implementierung.
-                if (Path.GetFileNameWithoutExtension(referenced)
-                    .EndsWith(".Abstractions", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
                 offenders.Add($"{Path.GetRelativePath(root, projectFile)} → {referenced}");
             }
         }
 
         Assert.True(
             offenders.Count == 0,
-            "Plattform-Projekte dürfen nur Plugin-VERTRÄGE referenzieren, keine Implementierungen. "
-            + "Nach dem Repo-Schnitt hinge das öffentliche Repository sonst an einem privaten:"
+            "Plattform-Projekte dürfen nichts unter custom/ referenzieren — auch keine Verträge. "
+            + "Das öffentliche Repository hinge sonst an einem privaten. Wird ein Vertragspaket "
+            + "gebraucht, kommt es als NuGet-Referenz, und die Entscheidung darüber gehört in die "
+            + "Distribution (callora-production):"
             + Environment.NewLine + string.Join(Environment.NewLine, offenders));
     }
 }

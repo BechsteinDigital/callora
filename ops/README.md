@@ -4,11 +4,15 @@ Betriebs- und Testkonfiguration, die dieses Repository zum Bauen und Betreiben b
 
 | Pfad | Was |
 |---|---|
-| `spikes/asterisk-b4deep3/` | Asterisk-Konfiguration für die Interop-CI; `communication-interop.yml` mountet `pjsip.conf` und `extensions.conf` in den Container |
-| `local-frontdoor/` | Caddyfiles für die lokale Frontdoor; `docker-compose.frontdoor.yml` mountet `Caddyfile.dev` |
-| `shell-runtime/` | Caddy-Konfiguration für das statische Ausliefern der Shells |
+| `local-frontdoor/` | Caddyfile für die lokale Frontdoor; `docker-compose.frontdoor.yml` mountet es |
 | `runbooks/` | Betriebsanleitungen für den Host |
 | `compliance/` | Begründete Ausnahmen zu `npm audit` |
+
+Der Asterisk-Spike und die Shell-Runtime-Konfiguration sind entfallen: Der Spike gehörte
+zur Communication-Interop-CI, die mit dem Plugin in dessen Repository gezogen ist
+(ADR-020), und statisch ausgelieferte Shells gibt es nicht mehr — die Admin-Oberfläche
+liegt colocated im Administration-Modul, die öffentliche Fläche rendert
+`Callora.Surface.Rendering`.
 
 ## Was hier nicht mehr liegt
 

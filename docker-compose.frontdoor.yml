@@ -10,9 +10,5 @@ services:
       - "${DEV_FRONTDOOR_PORT:-8080}:80"
     environment:
       BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-callora-backend:5000}
-      ADMIN_UI_UPSTREAM: ${ADMIN_UI_UPSTREAM:-host.docker.internal:3200}
-      WORKSPACE_UI_UPSTREAM: ${WORKSPACE_UI_UPSTREAM:-host.docker.internal:3300}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
-      - ./ops/local-frontdoor/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - ./ops/local-frontdoor/Caddyfile:/etc/caddy/Caddyfile:ro
