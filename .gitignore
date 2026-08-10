@@ -80,8 +80,13 @@ Thumbs.db
 # Cursor / local AI tooling
 # ------------------------------
 .cursor/
-.claude/skills/
-.claude/settings.local.json
+# Das ganze Verzeichnis, nicht mehr einzelne Dateien darin: Was hier liegt, konfiguriert
+# das Werkzeug einer einzelnen Person — aktivierte Plugins, freigeschaltete MCP-Server,
+# lokale Skills. Für jemanden ohne dieselben Plugins ist es bedeutungslos, und die
+# Einzelregeln von früher hätten jede neue Datei durchgelassen, ohne dass es auffällt.
+# Soll eine Einstellung für alle gelten, gehört sie in die Projektregeln oder in
+# CLAUDE.md — beides ist versioniert und liest sich auch ohne Claude Code.
+.claude/
 .codex
 
 # ------------------------------
