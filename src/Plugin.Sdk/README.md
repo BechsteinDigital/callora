@@ -9,7 +9,7 @@ Alles, was ein Callora-Plugin zum Bauen braucht — in einer Referenz.
 Das bringt mit:
 
 - **`Callora.Core`** — die Vertragsfläche, gegen die du kompilierst
-- **`Callora.Analyzers`** — CAL0001–0003, damit ein Grenzübertritt den Build bricht statt
+- **`Callora.Analyzers`** — CAL0001–0004, damit ein Grenzübertritt den Build bricht statt
   ein Review
 - **Build-Regeln**, die Plattform-Assemblies aus deinem Ausgabeordner heraushalten
 
