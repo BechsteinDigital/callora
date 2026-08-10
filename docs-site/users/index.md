@@ -28,9 +28,6 @@ in the admin shell served at `/admin`.
 - **[Workspaces & Surfaces](workspaces-surfaces.md)** — the three orthogonal
   axes (tenant / workspace / surface), creating workspaces, defining surfaces
   and their access modes, and per-workspace themes and branding.
-- **[Communication (VoIP)](communication.md)** — the flagship Communication
-  plugin: what it does, where it appears for end users, and how it is enabled
-  per workspace.
 - **[Flows](flows.md)** — low-code automation: Rules and Flows, the call-routing
   use case, and where they are managed.
 - **[Operations](operations.md)** — day-2 concerns: background jobs, webhooks,

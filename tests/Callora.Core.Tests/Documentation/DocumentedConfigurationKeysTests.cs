@@ -63,15 +63,17 @@ public sealed class DocumentedConfigurationKeysTests
     /// <summary>
     /// Schlüssel, die einem PLUGIN gehören und nur zufällig wie eine Host-Sektion heißen.
     /// Ein Plugin bringt seinen eigenen Konfigurationsraum mit; dass dessen Abschnitt
-    /// ebenfalls <c>Retention</c> heißt, macht ihn nicht zu <c>RetentionOptions</c>.
-    /// Der Host kann diese Schlüssel nicht prüfen — ihr Feld liegt in einem anderen
-    /// Repository. Die Liste darf nur schrumpfen: Wandert eine Seite zum Plugin, fällt ihr
-    /// Eintrag hier weg.
+    /// ebenfalls <c>Retention</c> hieße, machte ihn nicht zu <c>RetentionOptions</c>.
+    /// Der Host kann solche Schlüssel nicht prüfen — ihr Feld liegt in einem anderen
+    /// Repository.
+    /// <para>
+    /// Die Liste ist leer und darf nur schrumpfen. Sie stand einmal auf
+    /// <c>Retention:CallLogDays</c> aus der Communication-Seite; mit deren Umzug fiel der
+    /// Eintrag weg. Ein neuer Eintrag hier ist ein Hinweis, dass Plugin-Dokumentation in
+    /// diesem Repository liegt, wo sie nicht hingehört.
+    /// </para>
     /// </summary>
-    private static readonly HashSet<string> PluginOwnedKeys = new(StringComparer.Ordinal)
-    {
-        "Retention:CallLogDays",
-    };
+    private static readonly HashSet<string> PluginOwnedKeys = new(StringComparer.Ordinal);
 
     [Fact]
     public void EveryDocumentedConfigurationKeyExists()

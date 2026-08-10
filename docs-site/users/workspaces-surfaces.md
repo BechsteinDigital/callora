@@ -146,4 +146,4 @@ Theme administration lives under `/themes` (API base `/api/themes`):
 The workspace UI itself resolves its effective theme through
 `GET /workspace/themes/effective?workspaceKey=...`.
 
-Next: [Communication (VoIP)](communication.md).
+Next: [Flows](flows.md).

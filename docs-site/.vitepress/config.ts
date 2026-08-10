@@ -144,7 +144,6 @@ export default defineConfig({
             { text: 'Getting Started', link: '/users/getting-started' },
             { text: 'Administration', link: '/users/administration' },
             { text: 'Workspaces & Surfaces', link: '/users/workspaces-surfaces' },
-            { text: 'Communication', link: '/users/communication' },
             { text: 'Flows', link: '/users/flows' },
             { text: 'Operations', link: '/users/operations' },
           ],
