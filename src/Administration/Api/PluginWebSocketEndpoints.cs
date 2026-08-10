@@ -42,6 +42,8 @@ public static class PluginWebSocketEndpoints
         // Composed with the surface identity subsystem; a host without it upgrades
         // exactly as before, with no caller on the connect request.
         [FromServices] SurfaceUpgradeCallerResolver? callerResolver,
+        // Optional: Ein Host ohne Fehlerbudget rechnet nichts zu und verhält sich unverändert.
+        [FromServices] PluginFaultRegistry? faults,
         CancellationToken cancellationToken)
     {
         if (!httpContext.WebSockets.IsWebSocketRequest)
@@ -84,6 +86,24 @@ public static class PluginWebSocketEndpoints
 
         using var socket = await httpContext.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
         var connection = new HostWebSocketConnection(socket, connectRequest, authorization.Subject);
-        await match.Route.Handler.HandleAsync(connection, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await match.Route.Handler.HandleAsync(connection, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Der Aufrufer geht — oder der Host fährt herunter. Das ist das normale Ende einer
+            // langlebigen Verbindung und kein Fehler des Plugins.
+            throw;
+        }
+        catch (Exception)
+        {
+            // Zurechnen und weiterwerfen: Die Behandlung bleibt, wo sie war (die Pipeline), nur
+            // die Urheberschaft ist jetzt festgehalten. Eine geworfene WebSocket-Schleife wiegt
+            // schwerer als eine gescheiterte Anfrage — sie nimmt eine bestehende Verbindung mit,
+            // und der Client sieht einen Abbruch ohne Statuscode, den er als Netzproblem deutet.
+            faults?.Record(pluginId, PluginFaultOrigin.Realtime);
+            throw;
+        }
     }
 }

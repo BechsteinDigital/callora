@@ -12,7 +12,9 @@ namespace Callora.Core.Infrastructure.Events;
 public sealed class HostApplicationEventDispatcher(
     IServiceProvider services,
     ICalloraPluginCatalog pluginCatalog,
-    ILogger<HostApplicationEventDispatcher> logger) : IHostApplicationEventDispatcher
+    ILogger<HostApplicationEventDispatcher> logger,
+    // Optional: Ein Host ohne Fehlerbudget rechnet nichts zu und verhält sich unverändert.
+    PluginFaultRegistry? faults = null) : IHostApplicationEventDispatcher
 {
     public async Task DispatchAsync<TEvent>(TEvent appEvent, CancellationToken cancellationToken = default)
         where TEvent : IHostEvent
@@ -22,14 +24,18 @@ public sealed class HostApplicationEventDispatcher(
         var hostHandlers = services
             .GetServices<IHostApplicationEventSubscriber<TEvent>>()
             .ToArray();
+        // Mit Herkunft statt ohne: Dieselben Abonnenten, aber jeder weiß jetzt, wem er gehört.
+        // Anders ließe sich ein dauerhaft scheiternder Plugin-Abonnent nicht zurechnen.
         var pluginHandlers = pluginCatalog
-            .GetExports(typeof(IHostEventSubscriber<TEvent>))
-            .OfType<IHostEventSubscriber<TEvent>>()
+            .GetOwnedExports(typeof(IHostEventSubscriber<TEvent>))
+            .Where(owned => owned.Service is IHostEventSubscriber<TEvent>)
+            .Select(owned => (owned.PluginId, Subscriber: (IHostEventSubscriber<TEvent>)owned.Service))
             .ToArray();
 
         var handlers = hostHandlers
             .Select(x => new DispatchHandler<TEvent>(GetPriority(x), x.HandleAsync))
-            .Concat(pluginHandlers.Select(x => new DispatchHandler<TEvent>(x.Priority, x.HandleAsync)))
+            .Concat(pluginHandlers.Select(x =>
+                new DispatchHandler<TEvent>(x.Subscriber.Priority, x.Subscriber.HandleAsync, x.PluginId)))
             .OrderByDescending(x => x.Priority)
             .ToArray();
 
@@ -53,6 +59,14 @@ public sealed class HostApplicationEventDispatcher(
                     ex,
                     "Host event subscriber callback failed for event {EventType}. Continuing with remaining subscribers.",
                     typeof(TEvent).Name);
+
+                // Weitermachen bleibt richtig — ein Abonnent darf die übrigen nicht mitreißen.
+                // Aber Weitermachen ohne Buchführung machte den Verursacher unsichtbar: Der
+                // Fehler stand nur als Warnung im Log, und niemand zählte mit.
+                if (handler.OwnerPluginId is { } owner)
+                {
+                    faults?.Record(owner, PluginFaultOrigin.Event);
+                }
             }
         }
     }

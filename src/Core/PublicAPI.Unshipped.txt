@@ -976,6 +976,7 @@ Callora.Core.Application.Integrations.IntegrationApiKey
 Callora.Core.Application.Jobs.BackgroundJobHandlerResolver
 Callora.Core.Application.Jobs.BackgroundJobHandlerResolver.BackgroundJobHandlerResolver(System.Collections.Generic.IEnumerable<Callora.Core.Application.Jobs.Contracts.IBackgroundJobHandler!>! hostHandlers, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog) -> void
 Callora.Core.Application.Jobs.BackgroundJobHandlerResolver.Resolve(string! jobType) -> Callora.Core.Application.Jobs.Contracts.IBackgroundJobHandler?
+Callora.Core.Application.Jobs.BackgroundJobHandlerResolver.ResolveOwner(string! jobType) -> string?
 Callora.Core.Application.Jobs.BackgroundJobOptions
 Callora.Core.Application.Jobs.BackgroundJobOptions.BackgroundJobOptions() -> void
 Callora.Core.Application.Jobs.BackgroundJobOptions.LeaseDuration.get -> System.TimeSpan
@@ -989,7 +990,7 @@ Callora.Core.Application.Jobs.BackgroundJobOptions.RetryBaseDelay.set -> void
 Callora.Core.Application.Jobs.BackgroundJobOptions.SchedulerInterval.get -> System.TimeSpan
 Callora.Core.Application.Jobs.BackgroundJobOptions.SchedulerInterval.set -> void
 Callora.Core.Application.Jobs.BackgroundJobProcessor
-Callora.Core.Application.Jobs.BackgroundJobProcessor.BackgroundJobProcessor(Callora.Core.Application.Jobs.IBackgroundJobStore! jobStore, Callora.Core.Application.Jobs.BackgroundJobHandlerResolver! handlerResolver, Callora.Core.Application.Jobs.BackgroundJobOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Jobs.BackgroundJobProcessor!>! logger) -> void
+Callora.Core.Application.Jobs.BackgroundJobProcessor.BackgroundJobProcessor(Callora.Core.Application.Jobs.IBackgroundJobStore! jobStore, Callora.Core.Application.Jobs.BackgroundJobHandlerResolver! handlerResolver, Callora.Core.Application.Jobs.BackgroundJobOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Jobs.BackgroundJobProcessor!>! logger, Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null) -> void
 Callora.Core.Application.Jobs.BackgroundJobProcessor.ProcessNextAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Jobs.BackgroundJobTelemetry
 Callora.Core.Application.Jobs.Contracts.BackgroundJobExecutionContext
@@ -4845,7 +4846,7 @@ Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleto
 Callora.Core.Infrastructure.DependencyInjection.ServiceCollectionExtensions
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher.DispatchAsync<TEvent>(TEvent appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher.HostApplicationEventDispatcher(System.IServiceProvider! services, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher!>! logger) -> void
+Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher.HostApplicationEventDispatcher(System.IServiceProvider! services, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher!>! logger, Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null) -> void
 Callora.Core.Infrastructure.Events.HostApplicationEventPublisher
 Callora.Core.Infrastructure.Events.HostApplicationEventPublisher.HostApplicationEventPublisher(Callora.Core.Application.Events.IHostApplicationEventDispatcher! dispatcher, System.Collections.Generic.IEnumerable<Callora.Core.Application.Events.IHostApplicationEventPublisherDecorator!>! decorators) -> void
 Callora.Core.Infrastructure.Events.HostApplicationEventPublisher.PublishAsync<TEvent>(TEvent appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

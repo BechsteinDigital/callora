@@ -138,6 +138,23 @@ from that choice:
 Reactivating a plugin clears its history: a budget from the previous build would otherwise
 strike again immediately and make the new one look like the old.
 
+**Where faults are attributed.** Every seam through which the host calls into a plugin:
+
+| Seam | Origin | What counts |
+| --- | --- | --- |
+| Admin API routes | `HttpRoute` | The handler throws (rethrown — the response is unchanged) |
+| Surface API routes | `HttpRoute` | The handler throws **or** exceeds its deadline |
+| Public HTTP routes | `HttpRoute` | The handler throws |
+| WebSocket handlers | `Realtime` | The handler throws; a caller disconnect does not |
+| Background jobs | `Job` | The handler throws — attributed via the job type's owning plugin |
+| Event subscribers | `Event` | The subscriber throws; dispatch still continues to the rest |
+| Draining | `Lifecycle` | A drain that fails, which otherwise leaves no trace |
+
+A **failed activation** is deliberately not counted: it already makes the plugin `Faulted` and
+withdraws availability through `RuntimeHealthy`. Counting it twice would only lengthen the
+lockout. Host-owned handlers are never attributed to a plugin — a host job or subscriber that
+throws is the host's problem.
+
 ::: tip Lower the threshold, don't shorten the window
 A short window makes the budget forgetful — faults age out before they add up. A low
 threshold makes it sensitive, which is what you actually want when you want it to bite sooner.

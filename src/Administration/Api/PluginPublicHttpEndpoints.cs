@@ -1,6 +1,7 @@
 using System.Text;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Administration.Api;
@@ -60,6 +61,8 @@ public static class PluginPublicHttpEndpoints
         HttpContext httpContext,
         ICalloraPluginCatalog pluginCatalog,
         ILoggerFactory loggerFactory,
+        // Optional: Ein Host ohne Fehlerbudget rechnet nichts zu und verhält sich unverändert.
+        [FromServices] PluginFaultRegistry? faults,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("Callora.Administration.Api.PluginPublicHttpEndpoints");
@@ -108,6 +111,7 @@ public static class PluginPublicHttpEndpoints
                 "Unhandled exception in public HTTP handler for plugin {PluginId}, route {RoutePath}",
                 pluginId, routePath);
 
+            faults?.Record(pluginId, PluginFaultOrigin.HttpRoute);
             httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
             return;
         }

@@ -12,7 +12,9 @@ public sealed class BackgroundJobProcessor(
     IBackgroundJobStore jobStore,
     BackgroundJobHandlerResolver handlerResolver,
     BackgroundJobOptions options,
-    ILogger<BackgroundJobProcessor> logger)
+    ILogger<BackgroundJobProcessor> logger,
+    // Optional: Ein Host ohne Fehlerbudget rechnet nichts zu und verhält sich unverändert.
+    Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null)
 {
     /// <summary>
     /// Processes the next due job. Returns false when no job was due.
@@ -65,6 +67,14 @@ public sealed class BackgroundJobProcessor(
         {
             job.MarkFailedAttempt(ex.Message, RetryDelayFor(job), DateTimeOffset.UtcNow);
             logger.LogError(ex, "Job {JobId} ({JobType}) failed on attempt {Attempt}.", job.Id, job.JobType, job.AttemptCount);
+
+            // Hintergrundarbeit ist der Fall, den sonst niemand meldet: Vor einer fehlgeschlagenen
+            // Anfrage sitzt jemand, der sich beschwert; vor einem gescheiterten Job sitzt niemand.
+            // Genau deshalb gehört er ins Budget.
+            if (faults is not null && handlerResolver.ResolveOwner(job.JobType) is { } owner)
+            {
+                faults.Record(owner, Plugins.PluginFaultOrigin.Job);
+            }
         }
 
         if (!await jobStore.SaveAsync(job, cancellationToken).ConfigureAwait(false))

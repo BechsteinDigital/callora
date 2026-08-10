@@ -66,6 +66,36 @@ public sealed class BackgroundJobHandlerResolverTests
         Assert.Null(resolver.Resolve("   "));
     }
 
+    [Fact]
+    public void ResolveOwner_PluginHandler_NamesThePlugin()
+    {
+        var resolver = new BackgroundJobHandlerResolver(
+            [],
+            new StaticPluginExportCatalog().Add("comm", new StubHandler("call.export")));
+
+        Assert.Equal("comm", resolver.ResolveOwner("call.export"));
+    }
+
+    [Fact]
+    public void ResolveOwner_HostHandler_IsNobody()
+    {
+        // Ein Host-Handler gehört keinem Plugin. Ihn zuzurechnen hieße, dem Host sein eigenes
+        // Fehlerbudget aufzuschreiben — und das könnte kein Plugin je zurückzahlen.
+        var resolver = new BackgroundJobHandlerResolver(
+            [new StubHandler("retention.cleanup")],
+            new StaticPluginExportCatalog());
+
+        Assert.Null(resolver.ResolveOwner("retention.cleanup"));
+    }
+
+    [Fact]
+    public void ResolveOwner_UnknownJobType_IsNobody()
+    {
+        var resolver = new BackgroundJobHandlerResolver([], new StaticPluginExportCatalog());
+
+        Assert.Null(resolver.ResolveOwner("nope"));
+    }
+
     private static StaticPluginCatalog Catalog(params IBackgroundJobHandler[] plugins) =>
         new(new Dictionary<Type, IReadOnlyList<object>>
         {
