@@ -48,6 +48,19 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         _mcpTools = mcpTools;
     }
 
+    /// <summary>
+    /// Wird ausgelöst, wenn sich die Menge der aktiven Exports geändert hat — insbesondere
+    /// unmittelbar nachdem die Exports eines Plugins zurückgezogen wurden und BEVOR sein
+    /// Ladekontext entladen wird.
+    /// </summary>
+    /// <remarks>
+    /// Für Verbraucher, die aus den Exports etwas Eigenes ableiten und festhalten (die
+    /// Routing-Tabelle hält Delegaten auf Plugin-Methoden). Sie müssen ihre Ableitung an dieser
+    /// Stelle fallen lassen, sonst hält sie den Ladekontext fest und das Entladen scheitert.
+    /// Das Lifecycle-Ereignis genügt dafür nicht: Es kommt erst nach der Deaktivierung.
+    /// </remarks>
+    public event Action? ExportsChanged;
+
     /// <inheritdoc />
     public IReadOnlyCollection<RuntimePluginDescriptor> LoadedPlugins =>
         _installed.Values
@@ -796,6 +809,14 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         // Drop any runtime capability source the plugin registered (idempotent if it had none), so its
         // conditional capabilities immediately stop counting when it is deactivated.
         _runtimeCapabilities?.Unregister(pluginId);
+
+        // Jeder, der aus den Exports etwas ABGELEITET hat, muss es JETZT wegwerfen — vor dem
+        // Entladen, nicht danach. Die Routing-Tabelle etwa hält Delegaten auf Plugin-Methoden;
+        // solange sie stehen, ist der Ladekontext angeheftet, und die Prüfung nach dem Unload
+        // meldet UnloadFailed für ein Plugin, mit dem nichts verkehrt ist. Das
+        // Lifecycle-Ereignis kommt für diesen Zweck zu spät: Es wird erst nach der Deaktivierung
+        // veröffentlicht, also nach eben dieser Prüfung.
+        ExportsChanged?.Invoke();
 
         // Die Fehlerhistorie geht mit: Wer ein Plugin neu aktiviert, hat in aller Regel die
         // Ursache behandelt — ein Budget aus der vorigen Fassung schlüge sonst sofort wieder zu

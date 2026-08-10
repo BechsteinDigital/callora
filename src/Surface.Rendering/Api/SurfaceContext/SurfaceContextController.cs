@@ -73,9 +73,18 @@ public sealed class SurfaceContextController : ControllerBase
             return NotFound();
         }
 
-        var caller = callerResolver is null
+        var callerContext = callerResolver is null
             ? null
             : await callerResolver.ResolveAsync(HttpContext, cancellationToken).ConfigureAwait(false);
+
+        // Die Sitzung gilt für EINE Fläche. Ohne diesen Vergleich zählte eine auf Fläche A
+        // ausgestellte Sitzung auch am Socket der Fläche B als Anmeldung — und der Socket
+        // überträgt anschließend den Kontext von B. Der Renderpfad löst den Aufrufer aus der
+        // Route auf und kann gar nicht abweichen; dieser Seam liest ihn aus dem Cookie und muss
+        // deshalb selbst fragen (ADR-017 §9).
+        var caller = SurfaceSessionScope.Matches(callerContext, surface.WorkspaceKey, surface.SurfaceKey)
+            ? callerContext!.Caller
+            : null;
 
         // An authenticated surface without an established caller gets no socket. Same rule as the
         // render path: a bridge that upgraded where a page would have redirected to login would be

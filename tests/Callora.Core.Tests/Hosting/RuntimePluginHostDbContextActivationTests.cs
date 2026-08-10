@@ -1,3 +1,4 @@
+using Xunit;
 using Callora.Core.Application.Options;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Tests.Cli;
@@ -17,6 +18,7 @@ namespace Callora.Core.Tests.Hosting;
 /// full-publish bundle. The fixture plugin forces that constraint check in its
 /// <c>StartAsync</c>, so activation succeeds only when EF Core is unified.
 /// </summary>
+[Collection(PluginLoadContextCollection.Name)]
 public sealed class RuntimePluginHostDbContextActivationTests
 {
     [Fact]

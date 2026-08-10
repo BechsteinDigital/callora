@@ -20,10 +20,20 @@ public sealed class SurfaceUpgradeCallerResolver(
     SurfaceSessionAuthenticator authenticator,
     ILogger<SurfaceUpgradeCallerResolver> logger)
 {
-    /// <summary>Resolves the caller for one upgrade request, or null when it carries none.</summary>
+    /// <summary>
+    /// Resolves the caller for one upgrade request together with the surface scope its cookie
+    /// was minted for, or null when it carries none.
+    /// </summary>
+    /// <remarks>
+    /// Der Scope gehört zum Ergebnis, nicht nur der Aufrufer. Vorher gab diese Methode
+    /// <c>context?.Caller</c> zurück und warf den Rest weg — damit konnte kein Aufrufer mehr
+    /// prüfen, ob die Sitzung überhaupt für SEINE Fläche gilt. Eine auf Fläche A angemeldete
+    /// Sitzung wurde am Socket der Fläche B als Anmeldung akzeptiert, weil die Frage niemand
+    /// mehr stellen konnte.
+    /// </remarks>
     /// <param name="httpContext">The upgrade request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task<SurfaceCaller?> ResolveAsync(
+    public async Task<SurfaceCallerContext?> ResolveAsync(
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
@@ -44,10 +54,9 @@ public sealed class SurfaceUpgradeCallerResolver(
             return null;
         }
 
-        var context = await authenticator
+        return await authenticator
             .AuthenticateAsync(cookie, host, cancellationToken)
             .ConfigureAwait(false);
-        return context?.Caller;
     }
 
     private static bool IsSameOrigin(HttpContext httpContext, string host)

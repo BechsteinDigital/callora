@@ -24,6 +24,7 @@ namespace Callora.Core.Tests.Hosting;
 /// <see cref="RuntimePluginHostActivationTests"/> stops at <c>registry.IsSatisfied</c>; this closes the
 /// last hop to the guard, over a real plugin ALC (no mocking of the export path).
 /// </summary>
+[Collection(PluginLoadContextCollection.Name)]
 public sealed class RuntimeCapabilityGateEndToEndTests
 {
     // These match the fixed grant baked into ExportingTestPlugin's runtime-capability source.

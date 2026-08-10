@@ -33,6 +33,17 @@ public sealed class OperatorPermissionsBecomeSurfaceClaimsTests
         {
             new(ClaimTypes.NameIdentifier, "operator-7"),
             new(ClaimTypes.Name, "Ops"),
+            // Die Sitzung MUSS ihre Reichweite tragen. Vorher stand hier keine, und die Quelle
+            // prüfte auch keine: Sie authentifizierte auf jeder Fläche jedes Workspaces. Seit sie
+            // die Bindung prüft (WorkspaceScopeEvaluator.HasWorkspaceAccess, fail-closed), wäre
+            // ein Principal ohne Reichweite ein Zustand, den das System gar nicht erzeugt —
+            // AdminLoginResolver vergibt immer entweder Platform-Scope oder Workspace-Scope
+            // samt Schlüssel.
+            //
+            // Hier Platform-Scope, weil es in dieser Klasse um OPERATOREN geht: Sie sind an
+            // keinen Workspace gebunden und tragen deshalb auch keinen host.workspace-key-Claim
+            // auf die Fläche — was zwei der Tests unten ausdrücklich prüfen.
+            new(BackendClaimTypes.CalloraScope, BackendAuthScopes.Platform),
         };
         if (role is not null)
         {

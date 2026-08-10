@@ -72,6 +72,60 @@ public sealed class AdminLoginResolverTests
         Assert.Null(grant);
     }
 
+    [Theory]
+    [InlineData(BackendRoles.SuperAdmin)]
+    [InlineData("SuperAdmin")]
+    [InlineData("  superadmin  ")]
+    [InlineData(BackendRoles.HostApi)]
+    public async Task AMembershipRoleNamingAPlatformOperator_GrantsNothing(string role)
+    {
+        // Die Mitgliedsrolle ist ein FREIER String: Wer membership.update hat — jeder
+        // Workspace-Admin (WorkspaceRolePermissions.AdminPermissions) — schreibt sie selbst.
+        // Landete sie ungeprüft im Rollen-Claim, machte EndpointAuthorizationExtensions
+        // daraus über `IsInRole(SuperAdmin)` unbeschränkten Plattformzugriff: aus
+        // "Admin in EINEM Workspace" würde "Operator über ALLE".
+        var (userStore, rbacStore, options) = await SetupAsync();
+        userStore.AddWorkspaceMember("workspace-a", "mallory", role);
+        await userStore.UpsertCredentialsAsync("mallory", "m@example.test", "Mallory", "pass-m");
+        var mallory = await userStore.GetByExternalIdAsync("mallory");
+
+        var grant = await AdminLoginResolver.ResolveAsync(mallory!, "workspace-a", userStore, rbacStore, options);
+
+        Assert.Null(grant);
+    }
+
+    [Fact]
+    public async Task AConfiguredOperatorRoleName_IsAlsoRefusedAsMembershipRole()
+    {
+        // Nicht nur "superadmin": Die Operator-Rollen sind konfigurierbar, und jede von
+        // ihnen erreicht jeden Workspace (BackendHostOptions.PlatformOperatorRoles).
+        var (userStore, rbacStore, options) = await SetupAsync();
+        options.PlatformOperatorRoles = [BackendRoles.SuperAdmin, "plattform-betrieb"];
+        userStore.AddWorkspaceMember("workspace-a", "mallory", "plattform-betrieb");
+        await userStore.UpsertCredentialsAsync("mallory", "m@example.test", "Mallory", "pass-m");
+        var mallory = await userStore.GetByExternalIdAsync("mallory");
+
+        var grant = await AdminLoginResolver.ResolveAsync(mallory!, "workspace-a", userStore, rbacStore, options);
+
+        Assert.Null(grant);
+    }
+
+    [Fact]
+    public async Task AnOrdinaryMembershipRole_StillWorks()
+    {
+        // Die Gegenprobe: Die Sperre darf nur Operator-Namen treffen, nicht jede Rolle.
+        var (userStore, rbacStore, options) = await SetupAsync();
+        userStore.AddWorkspaceMember("workspace-a", "dave", "agent");
+        await userStore.UpsertCredentialsAsync("dave", "d@example.test", "Dave", "pass-d");
+        var dave = await userStore.GetByExternalIdAsync("dave");
+
+        var grant = await AdminLoginResolver.ResolveAsync(dave!, "workspace-a", userStore, rbacStore, options);
+
+        Assert.NotNull(grant);
+        Assert.Equal(BackendAuthScopes.Workspace, grant!.Scope);
+        Assert.Equal("agent", grant.Role);
+    }
+
     private static async Task<(InMemoryBackendUserStore UserStore, InMemoryBackendRbacStore RbacStore, BackendHostOptions Options)> SetupAsync()
     {
         var options = new BackendHostOptions

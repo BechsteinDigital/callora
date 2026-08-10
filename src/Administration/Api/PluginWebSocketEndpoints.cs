@@ -61,9 +61,13 @@ public static class PluginWebSocketEndpoints
             return;
         }
 
+        // Nur der Aufrufer: Ein Plugin-Socket hängt an keiner Fläche (der Pfad ist
+        // /ws/{pluginId}/…), es gibt hier also nichts, wogegen sich der Scope der Sitzung
+        // vergleichen ließe. Ob der Aufrufer für diese Verbindung genügt, entscheidet der
+        // IWebSocketConnectAuthorizer der Route — das Plugin kennt seine eigene Zuordnung.
         var caller = callerResolver is null
             ? null
-            : await callerResolver.ResolveAsync(httpContext, cancellationToken).ConfigureAwait(false);
+            : (await callerResolver.ResolveAsync(httpContext, cancellationToken).ConfigureAwait(false))?.Caller;
 
         var connectRequest = new HostWebSocketConnectRequest(
             match.Contributor.PluginId,
