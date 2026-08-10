@@ -2,25 +2,27 @@
   auto_https off
 }
 
+# Die lokale Frontdoor vor dem Host. Sie terminiert nichts und verteilt nichts —
+# sie gibt einen stabilen Port (8080) vor einem Prozess, der auf 5000 hört.
+#
+# Sie sah einmal ganz anders aus, und das ist der Grund für diesen Kommentar: Sie
+# leitete /admin* auf einen Admin-Shell-Dev-Server (3200), /_nuxt/* und alles
+# Übrige auf eine Nuxt-Workspace-Shell (3300), und nur eine handverlesene Liste
+# von Pfaden ging an das Backend. Beide Shells gibt es nicht mehr — die
+# Admin-Oberfläche liegt colocated im Administration-Modul und wird vom Host unter
+# /admin ausgeliefert, die öffentliche Fläche rendert Callora.Surface.Rendering.
+#
+# Die Konfiguration blieb trotzdem stehen. Wer die Frontdoor benutzte, bekam für
+# jeden UI-Pfad einen Verbindungsfehler gegen einen Port, auf dem nichts lief, und
+# jeder neue Host-Endpunkt (/surface, /ws, /mcp, /ready, /extensions) fehlte in der
+# Pfadliste und fiel in denselben toten Zweig. Eine Frontdoor, die eine Liste aller
+# Backend-Routen pflegen muss, ist ohnehin die falsche Bauform: Sie veraltet bei
+# jedem neuen Endpunkt, und zwar still.
+#
+# Deshalb jetzt eine Regel statt einer Liste. Kommt eine Shell als eigener Prozess
+# zurück, kommt hier ein Zweig dazu — bis dahin ist jede Sonderbehandlung eine
+# Behauptung über eine Aufteilung, die es nicht gibt.
+
 :80 {
-  handle_path /admin* {
-    reverse_proxy {$ADMIN_UI_UPSTREAM:host.docker.internal:3200}
-  }
-
-  @workspace_shell_assets path /_nuxt/*
-  handle @workspace_shell_assets {
-    reverse_proxy {$WORKSPACE_UI_UPSTREAM:host.docker.internal:3300}
-  }
-
-  @api path /api /api/* /workspace /workspace/* /plugin-assets /plugin-assets/* /manifests /manifests/* /health /swagger /swagger/* /login
-  handle @api {
-    reverse_proxy {$BACKEND_UPSTREAM:callora-backend:5000}
-  }
-
-  handle {
-    forward_auth {$BACKEND_UPSTREAM:callora-backend:5000} {
-      uri /workspace/public/resolve
-    }
-    reverse_proxy {$WORKSPACE_UI_UPSTREAM:host.docker.internal:3300}
-  }
+  reverse_proxy {$BACKEND_UPSTREAM:callora-backend:5000}
 }

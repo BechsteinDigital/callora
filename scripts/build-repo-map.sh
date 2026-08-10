@@ -96,7 +96,7 @@ purpose_for() {
     "tests/TestPlugins")          echo "Minimal-Plugins, gegen die die Laufzeit getestet wird (Export, eigener DbContext)." ;;
     "docs/adr")                   echo "Architekturentscheidungen. Bei Konflikt mit einem Issue führt das Issue." ;;
     "docs-site")                  echo "Die konzeptuelle Dokumentation (VitePress, Diátaxis)." ;;
-    "ops")                        echo "Betrieb: Runbooks, Frontdoor-Konfiguration, Asterisk-Spike." ;;
+    "ops")                        echo "Betrieb: Runbooks, Frontdoor-Konfiguration, npm-Ausnahmen." ;;
     "scripts")                    echo "Build-, Prüf- und Release-Automatisierung." ;;
     ".github/workflows")          echo "CI, Golden Path, Docs, Release, npm-Publish." ;;
     *)                            echo "(nicht beschrieben — bitte in scripts/build-repo-map.sh ergänzen)" ;;
@@ -132,6 +132,7 @@ while IFS= read -r dir; do
 done < <(find . -maxdepth 1 -mindepth 1 -type d \
   -not -name '.git' -not -name 'node_modules' -not -name 'graphify-out' \
   -not -name '.config' -not -name 'docfx' -not -name 'bin' -not -name 'obj' \
+  -not -name '.claude' \
   | sed 's|^\./||' | sort)
 
 {

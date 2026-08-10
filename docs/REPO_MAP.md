@@ -22,11 +22,11 @@ Bedeutung ist kuratiert, Struktur und Größe kommen aus dem Dateisystem.
 | `src/Host/Dev` | 2 | Die einzige lauffähige Zusammenstellung im Repo. Kein Produkt — das liegt in callora-production. |
 | `custom/plugins` | 1 | Installationsziel für dynamische Plugins. Im Repository absichtlich leer. |
 | `custom/static-plugins` | 1 | Leer. Communication und Composer sind in eigene Repositories ausgezogen (ADR-020). |
-| `tests/Callora.Core.Tests` | 295 | Die Hauptsuite. Enthält auch die Architektur- und Dokumentations-Gates. |
+| `tests/Callora.Core.Tests` | 296 | Die Hauptsuite. Enthält auch die Architektur- und Dokumentations-Gates. |
 | `tests/Callora.Analyzers.Tests` | 5 | Analyzer-Tests: prüfen, dass CAL0001–0004 zubeißen und wo sie es nicht dürfen. |
 | `tests/TestPlugins` | 7 | Minimal-Plugins, gegen die die Laufzeit getestet wird (Export, eigener DbContext). |
 | `docs/adr` | 17 | Architekturentscheidungen. Bei Konflikt mit einem Issue führt das Issue. |
-| `docs-site` | 77 | Die konzeptuelle Dokumentation (VitePress, Diátaxis). |
-| `ops` | 9 | Betrieb: Runbooks, Frontdoor-Konfiguration, Asterisk-Spike. |
+| `docs-site` | 76 | Die konzeptuelle Dokumentation (VitePress, Diátaxis). |
+| `ops` | 4 | Betrieb: Runbooks, Frontdoor-Konfiguration, npm-Ausnahmen. |
 | `scripts` | 9 | Build-, Prüf- und Release-Automatisierung. |
 | `.github/workflows` | 5 | CI, Golden Path, Docs, Release, npm-Publish. |

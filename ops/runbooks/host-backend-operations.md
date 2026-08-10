@@ -6,9 +6,11 @@ Vorwissen über die Codebasis.
 ## Start & Umgebungen
 
 - **Dev-Stack:** `docker start callora-backend-dev` (dotnet watch, Port 5000),
-  Frontdoor über Caddy auf Port 8080, Shells auf 3200 (legacy-admin) und
-  3300 (workspace). Host-Builds erfordern gestoppten Container
-  (NuGet-obj-Race im Bind-Mount → NETSDK1064; danach ggf.
+  Frontdoor über Caddy auf Port 8080. Ein Prozess bedient alles: die Administration
+  unter `/admin` (colocated im Administration-Modul) und die öffentliche Fläche über
+  `Callora.Surface.Rendering`. Separate Shell-Prozesse auf 3200/3300 gab es früher,
+  gibt es nicht mehr. Host-Builds erfordern gestoppten Container (NuGet-obj-Race im
+  Bind-Mount → NETSDK1064; danach ggf.
   `dotnet restore Callora.Host.sln --force`).
 - **Produktion:** Nicht aus diesem Repository. `src/Core` ist seit dem
   Modul-Split `OutputType=Library` und hat keinen Einstiegspunkt — ein
