@@ -19,14 +19,48 @@
     <ProjectReference Include="../../Administration/Callora.Administration.csproj" />
     <ProjectReference Include="../../Workspace/Callora.Workspace.csproj" />
     <ProjectReference Include="../../Surface.Rendering/Callora.Surface.Rendering.csproj" />
-    <!-- Bewusst KEIN Plugin-Vertrag. Hier stand die Referenz auf
+    <!-- Kein NAMENTLICHER Plugin-Vertrag. Hier stand die Referenz auf
          Callora.Plugin.Communication.Abstractions, damit Host und Plugin-ALCs
          ICommunicationChannelRegistry als EINEN Typ teilen. Seit die Plugins in
-         eigenen Repositories leben (ADR-020), gibt es hier nichts mehr zu
+         eigenen Repositories leben (ADR-020), gibt es hier nichts fest zu
          referenzieren — und es wäre auch die falsche Stelle: WELCHE Vertrags-
-         pakete in den Default-Kontext vorgeladen werden, entscheidet die
-         Distribution, nicht das Framework. callora-production trägt die
-         Referenz für Produktions-Distributionen (REV2 §10.1A). -->
+         pakete eine Distribution vorlädt, entscheidet die Distribution, nicht
+         das Framework. callora-production trägt die Referenz für Produktions-
+         Distributionen (REV2 §10.1A). -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Der lokale Entwicklungsfall, den ADR-020 offen ließ: ein Plugin liegt mit
+         vollem Quelltext in einem Discovery-Ordner und soll gebaut, geladen und
+         benutzt werden — ohne Umweg über Paket, Publish oder Kopie.
+
+         Das scheitert sonst an der Vertragsgrenze: PluginAssemblyLoadContext
+         delegiert JEDE Assembly, die "Callora" heißt oder mit "Callora."
+         beginnt, an den Default-Kontext, damit Host und Plugin dieselben
+         Vertragstypen benutzen. Stellt der Host sie nicht, stirbt das Plugin
+         beim Laden — als nackte TargetInvocationException ohne innere Ursache.
+         Und über die Shared-Registry geht es bewusst nicht: die weist
+         plugin-mitgebrachte Callora.*-Verträge ab (SharedContractAssemblyRegistry),
+         weil ein Plugin sonst einen reservierten Namen besetzen könnte.
+
+         Deshalb ein Glob und keine Liste. Dieser Host entscheidet nicht, WELCHE
+         Verträge vorgeladen werden — er spiegelt, was der Entwickler lokal
+         installiert hat. In CI, im Container-Build und in jeder ausgelieferten
+         Distribution sind die Discovery-Ordner leer, die ItemGroup ist dann
+         leer, und nichts ändert sich. Ein neu dazugeklontes Plugin bringt seinen
+         Vertrag mit, ohne dass hier eine Zeile fällig wird.
+
+         Das Muster trifft genau die Menge, die der Ladekontext an den Host
+         delegiert: Callora.*-Verträge. Ein Plugin, das seinen Vertrag außerhalb
+         dieses Präfixes benennt (wie VideoConference.Contracts), teilt ihn über
+         die Shared-Registry und braucht hier nichts.
+
+         Abschaltbar für den Fall, dass jemand die Vertragsgrenze bewusst OHNE
+         Host-Referenz prüfen will:
+           dotnet run -p:CalloraDevLoadLocalPluginContracts=false -->
+    <ProjectReference
+        Condition="'$(CalloraDevLoadLocalPluginContracts)' != 'false'"
+        Include="$(MSBuildThisFileDirectory)../../../custom/*/*/src/**/Callora.*.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,14 @@
+<Project>
+
+  <!-- Wird von NuGet beim Konsumenten automatisch importiert (build/$(PackageId).props),
+       vor seinem eigenen Projektinhalt. Hier stehen deshalb nur Schalter — die Regeln
+       selbst liegen in der .targets, wo die Referenzen aufgelöst sind. -->
+  <PropertyGroup>
+    <!-- Die Zusage des Pakets: der Plugin-Ausgabeordner bleibt frei von
+         Plattform-Assemblies. Abschaltbar, weil ein Schalter, den man kennt, besser
+         ist als ein Plugin-Autor, der die Regel mit einer Zeile Copy-Paste umgeht. -->
+    <CalloraExcludePlatformAssembliesFromOutput
+        Condition="'$(CalloraExcludePlatformAssembliesFromOutput)' == ''">true</CalloraExcludePlatformAssembliesFromOutput>
+  </PropertyGroup>
+
+</Project>

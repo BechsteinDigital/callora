@@ -5,6 +5,12 @@
 [Oo]bj/
 out/
 build/
+# Ausnahme: die MSBuild-Regeln, die Callora.Plugin.Sdk seinen Konsumenten
+# mitgibt, LIEGEN in build/ — die csproj packt sie explizit
+# (build/Callora.Plugin.Sdk.props|.targets). Von `build/` verschluckt fehlen sie
+# im Klon, `dotnet pack` bricht für dieses eine Projekt ab, und jedes Plugin baut
+# danach nur noch, solange das Paket zufällig im NuGet-Cache liegt.
+!src/Plugin.Sdk/build/
 artifacts/
 publish/
 apps/*/node_modules/
@@ -145,8 +151,20 @@ src/Administration/wwwroot/admin/
 # Vom Surface-Runtime-Build (Vite) generiert (Resources/app/surface → wwwroot/surface-app).
 src/Surface.Rendering/wwwroot/surface-app/
 
-custom/plugins/*/node_modules/
-custom/static-plugins/*/node_modules/
-# Archived plugins keep their own app trees; their dependencies are never tracked.
-custom/static-plugins/_archive/*/node_modules/
-custom/static-plugins/*/app/*/node_modules/
+# Die Discovery-Ordner sind Installationsziele, kein Repository-Inhalt — beide
+# README.md sagen das, und ab hier setzt git es durch. In der lokalen
+# Dev-Umgebung liegen hier ganze Plugin-KLONE mit eigenem .git; ohne diese Regel
+# nimmt ein `git add -A` sie als Gitlink auf, der Commit sieht harmlos aus, und
+# der Push trägt Verweise auf fremde Repositories mit, die niemand auflösen kann.
+# Deckt die früheren node_modules-Regeln mit ab.
+#
+# `custom/<root>/*` statt `custom/<root>/`: nur mit dem Stern greifen die
+# Ausnahmen darunter noch. Die README.md braucht ihre eigene Ausnahme, weil
+# dieses Muster nach dem globalen `!README.md` weiter oben steht und das letzte
+# passende Muster gewinnt.
+custom/plugins/*
+custom/static-plugins/*
+!custom/plugins/.gitkeep
+!custom/plugins/README.md
+!custom/static-plugins/.gitkeep
+!custom/static-plugins/README.md
