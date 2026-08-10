@@ -48,6 +48,20 @@ public sealed class BackendPrincipalSurfaceIdentitySource(
             return ValueTask.FromResult(HostSurfaceIdentityResult.Anonymous);
         }
 
+        // Die Mandantengrenze: Eine an einen Workspace gebundene Sitzung authentifiziert nur
+        // auf Flächen DIESES Workspaces. Ohne diese Zeile las die Methode zwar den gebundenen
+        // Workspace, verglich ihn aber nie mit dem der Fläche — ein Workspace-Admin von A bekam
+        // auf der Administrations-Fläche von B eine gültige Identität, das Gate sah einen
+        // authentifizierten Aufrufer und servierte. Ohne eigene Domain ist die fremde Fläche
+        // dabei nur einen Pfadwechsel entfernt (ADR-021).
+        //
+        // Dieselbe Regel wie im Backend, nicht eine zweite: Plattform-Operatoren sind nicht
+        // gebunden und kommen überall herein, alle anderen nur in ihren eigenen Workspace.
+        if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(principal, request.WorkspaceKey))
+        {
+            return ValueTask.FromResult(HostSurfaceIdentityResult.Anonymous);
+        }
+
         var now = timeProvider.GetUtcNow();
         var boundWorkspace = principal.FindFirstValue(BackendClaimTypes.WorkspaceKey);
         var claims = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
