@@ -241,6 +241,15 @@ public static class CalloraHostCompositionExtensions
                 sp.GetRequiredService<Callora.Core.Application.Options.CalloraHostingOptions>().RuntimeCapabilityGracePeriod,
                 System.TimeProvider.System,
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.RuntimeCapabilityRegistry>>()));
+        // Fehlerbudget je Plugin: zählt zugerechnete Fehler in einem gleitenden Fenster und nimmt
+        // einem Plugin die Verfügbarkeit, das reihenweise wirft. Singleton, weil der Zähler den
+        // Request überdauern muss — ein Budget je Anfrage wäre keines.
+        builder.Services.AddSingleton(
+            static sp => new Callora.Core.Application.Plugins.PluginFaultRegistry(
+                sp.GetRequiredService<Callora.Core.Application.Options.CalloraHostingOptions>().PluginFaultThreshold,
+                sp.GetRequiredService<Callora.Core.Application.Options.CalloraHostingOptions>().PluginFaultWindow,
+                System.TimeProvider.System,
+                sp.GetService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.PluginFaultRegistry>>()));
         builder.Services.AddScoped<Callora.Core.Application.Lifecycle.PluginCapabilityGuard>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.PluginAvailabilityEvaluator>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator>(

@@ -51,6 +51,11 @@ public sealed record PluginAvailability(bool IsAvailable, IReadOnlyList<PluginAv
             unmet.Add(PluginAvailabilityFactor.RequiredCapabilitiesAvailable);
         }
 
+        if (!inputs.WithinFaultBudget)
+        {
+            unmet.Add(PluginAvailabilityFactor.WithinFaultBudget);
+        }
+
         return new PluginAvailability(unmet.Count == 0, unmet);
     }
 }

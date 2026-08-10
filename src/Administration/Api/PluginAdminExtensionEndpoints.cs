@@ -4,6 +4,7 @@ using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Claims;
 using System.Text.Json;
@@ -95,6 +96,8 @@ public static class PluginAdminExtensionEndpoints
         HttpContext httpContext,
         ICalloraPluginCatalog pluginCatalog,
         IWorkspaceScopeContext workspaceScope,
+        // Optional: Ein Host ohne Fehlerbudget rechnet nichts zu und verhält sich unverändert.
+        [FromServices] PluginFaultRegistry? faults,
         CancellationToken cancellationToken)
     {
         var contributors = pluginCatalog.GetExports<IHostAdminApiExtensionContributor>();
@@ -157,7 +160,27 @@ public static class PluginAdminExtensionEndpoints
             ResolveUserId(httpContext.User),
             workspaceKey);
 
-        var response = await match.Route.Handler.HandleAsync(request, cancellationToken).ConfigureAwait(false);
+        HostAdminApiResponse response;
+        try
+        {
+            response = await match.Route.Handler.HandleAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Der Aufrufer hat abgebrochen. Das ist keine Verfehlung des Plugins.
+            throw;
+        }
+        catch (Exception)
+        {
+            // Zurechnen und weiterwerfen: Die Antwort bleibt, was sie war — der zentrale
+            // CalloraExceptionHandler macht daraus ein RFC-9457-Problem. Hier wird nur
+            // festgehalten, WER geworfen hat, denn genau das ging bisher verloren: Ein
+            // Plugin, das ausschließlich über Admin-Routen scheitert, lief unbemerkt weiter,
+            // während dieselbe Fehlerrate auf einer Surface-Route längst gezählt wurde.
+            faults?.Record(match.Contributor.PluginId, PluginFaultOrigin.HttpRoute);
+            throw;
+        }
+
         var statusCode = response.StatusCode;
 
         if (response.Payload is null)

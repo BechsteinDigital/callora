@@ -29,4 +29,34 @@ public sealed class BackgroundJobHandlerResolver(
             static handler => handler.JobType,
             jobType);
     }
+
+    /// <summary>
+    /// Das Plugin, dem der Handler dieses Job-Typs gehört, oder <c>null</c>, wenn ihn der Host
+    /// selbst stellt.
+    /// </summary>
+    /// <remarks>
+    /// Ein <see cref="Domain.Jobs.BackgroundJob"/> trägt keine Plugin-Id — er kennt nur seinen
+    /// Typ, und das ist richtig so: Wer einen Job einreiht, muss nicht wissen, wer ihn später
+    /// ausführt. Für die Fehlerzurechnung fehlt damit aber genau die Angabe, ohne die ein
+    /// reihenweise scheiternder Job-Handler niemandem zuzuordnen ist. Der Katalog kennt die
+    /// Herkunft jedes Exports; hier wird sie nur nachgeschlagen.
+    /// </remarks>
+    public string? ResolveOwner(string jobType)
+    {
+        if (string.IsNullOrWhiteSpace(jobType))
+        {
+            return null;
+        }
+
+        foreach (var owned in pluginCatalog.GetOwnedExports(typeof(IBackgroundJobHandler)))
+        {
+            if (owned.Service is IBackgroundJobHandler handler &&
+                string.Equals(handler.JobType, jobType, StringComparison.OrdinalIgnoreCase))
+            {
+                return owned.PluginId;
+            }
+        }
+
+        return null;
+    }
 }

@@ -23,6 +23,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     private readonly SemaphoreSlim _mutationLock = new(1, 1);
     private readonly SharedContractAssemblyRegistry _sharedContracts;
     private readonly RuntimeCapabilityRegistry? _runtimeCapabilities;
+    private readonly PluginFaultRegistry? _faults;
     private readonly Callora.Core.Infrastructure.Mcp.McpToolRegistry? _mcpTools;
     private long _exportSequence;
     private int _disposed;
@@ -35,6 +36,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         CalloraHostingOptions options,
         ILogger<RuntimePluginHost> logger,
         RuntimeCapabilityRegistry? runtimeCapabilities = null,
+        PluginFaultRegistry? faults = null,
         Callora.Core.Infrastructure.Mcp.McpToolRegistry? mcpTools = null)
     {
         _services = services;
@@ -42,6 +44,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         _logger = logger;
         _sharedContracts = new SharedContractAssemblyRegistry(logger);
         _runtimeCapabilities = runtimeCapabilities;
+        _faults = faults;
         _mcpTools = mcpTools;
     }
 
@@ -794,6 +797,11 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         // conditional capabilities immediately stop counting when it is deactivated.
         _runtimeCapabilities?.Unregister(pluginId);
 
+        // Die Fehlerhistorie geht mit: Wer ein Plugin neu aktiviert, hat in aller Regel die
+        // Ursache behandelt — ein Budget aus der vorigen Fassung schlüge sonst sofort wieder zu
+        // und ließe die neue wie die alte aussehen.
+        _faults?.Clear(pluginId);
+
         // Withdraw the plugin's MCP tools from the live collection (idempotent if it had none), so they
         // immediately stop being advertised when it is deactivated.
         _mcpTools?.Deregister(pluginId);
@@ -844,6 +852,13 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         {
             // A failed drain must not block the stop — the plugin is going away either way.
             _logger.LogWarning(ex, "Draining plugin {PluginId} failed; stopping it anyway.", pluginId);
+            // Ein fehlgeschlagener Drain hinterlässt KEINEN Zustand: Das Plugin wird gestoppt
+            // und sieht danach aus wie jedes andere inaktive. Ein Plugin, das seine laufende
+            // Arbeit nie sauber beendet, schneidet aber bei jeder Deaktivierung Arbeit ab —
+            // deshalb zählt es hier, wo es sonst spurlos bliebe. Eine gescheiterte AKTIVIERUNG
+            // zählt bewusst nicht: Die führt zu Faulted und entzieht die Verfügbarkeit bereits
+            // über RuntimeHealthy; sie ein zweites Mal zu zählen verlängerte nur die Sperre.
+            _faults?.Record(pluginId, PluginFaultOrigin.Lifecycle);
         }
     }
 

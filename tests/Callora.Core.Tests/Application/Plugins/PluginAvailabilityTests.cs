@@ -12,7 +12,29 @@ public sealed class PluginAvailabilityTests
 {
     private static PluginAvailabilityInputs AllMet() =>
         new(BundledOrInstalled: true, RuntimeHealthy: true, Entitled: true, WorkspaceEnabled: true,
+            TenantActive: true, WorkspaceActive: true, RequiredCapabilitiesAvailable: true,
+            WithinFaultBudget: true);
+
+    [Fact]
+    public void From_ExceededFaultBudget_IsUnavailable_AndNamesTheFactor()
+    {
+        var result = PluginAvailability.From(AllMet() with { WithinFaultBudget = false });
+
+        Assert.False(result.IsAvailable);
+        Assert.Equal(PluginAvailabilityFactor.WithinFaultBudget, Assert.Single(result.UnmetFactors));
+    }
+
+    [Fact]
+    public void From_WithoutTheFaultBudgetArgument_TreatsItAsMet()
+    {
+        // Der Vorgabewert hält jede bestehende Ableitung gültig: Ein Host ohne Fehlerbudget
+        // ändert sein Verhalten nicht, nur weil der Faktor hinzugekommen ist.
+        var withoutBudget = new PluginAvailabilityInputs(
+            BundledOrInstalled: true, RuntimeHealthy: true, Entitled: true, WorkspaceEnabled: true,
             TenantActive: true, WorkspaceActive: true, RequiredCapabilitiesAvailable: true);
+
+        Assert.True(PluginAvailability.From(withoutBudget).IsAvailable);
+    }
 
     [Fact]
     public void From_AllFactorsMet_IsAvailable()

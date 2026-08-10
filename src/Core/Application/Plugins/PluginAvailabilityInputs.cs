@@ -11,4 +11,5 @@ public readonly record struct PluginAvailabilityInputs(
     bool WorkspaceEnabled,
     bool TenantActive,
     bool WorkspaceActive,
-    bool RequiredCapabilitiesAvailable);
+    bool RequiredCapabilitiesAvailable,
+    bool WithinFaultBudget = true);

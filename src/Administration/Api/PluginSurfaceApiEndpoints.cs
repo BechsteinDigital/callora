@@ -4,6 +4,7 @@ using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Application.Surfaces;
 using Callora.Core.Infrastructure.Surfaces;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -61,6 +62,8 @@ public static class PluginSurfaceApiEndpoints
         SurfaceSessionCookieAccessor cookies,
         SurfaceApiOptions options,
         ILoggerFactory loggerFactory,
+        // Optional: Ein Host ohne Fehlerbudget rechnet nichts zu und verhält sich unverändert.
+        [FromServices] PluginFaultRegistry? faults,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("Callora.Administration.Api.PluginSurfaceApi");
@@ -134,7 +137,7 @@ public static class PluginSurfaceApiEndpoints
             context.Caller);
 
         return await DispatchAsync(
-                httpContext, match, request, context, options, logger, cancellationToken)
+                httpContext, match, request, context, options, logger, faults, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -145,6 +148,7 @@ public static class PluginSurfaceApiEndpoints
         SurfaceCallerContext context,
         SurfaceApiOptions options,
         ILogger logger,
+        PluginFaultRegistry? faults,
         CancellationToken cancellationToken)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -171,6 +175,9 @@ public static class PluginSurfaceApiEndpoints
                 request.HttpMethod,
                 request.RoutePath,
                 request.RequestId);
+            // Ein Handler, der reihenweise in die Frist läuft, kostet den Host dasselbe wie
+            // einer, der wirft: eine belegte Anfrage bis zum Timeout. Deshalb zählt beides.
+            faults?.Record(request.PluginId, PluginFaultOrigin.HttpRoute);
             await AuditAsync(httpContext, request, context, StatusCodes.Status504GatewayTimeout, "timeout")
                 .ConfigureAwait(false);
             return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
@@ -186,6 +193,7 @@ public static class PluginSurfaceApiEndpoints
                 request.HttpMethod,
                 request.RoutePath,
                 request.RequestId);
+            faults?.Record(request.PluginId, PluginFaultOrigin.HttpRoute);
             await AuditAsync(httpContext, request, context, StatusCodes.Status500InternalServerError, ex.GetType().Name)
                 .ConfigureAwait(false);
             return Results.StatusCode(StatusCodes.Status500InternalServerError);

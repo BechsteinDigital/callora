@@ -113,6 +113,52 @@ plugin discovery is configured.
 | `PluginDrainTimeout` | `TimeSpan` | `00:00:30` | How long a plugin implementing `IDrainablePlugin` may take to run its outstanding work dry before it is stopped anyway. `00:00:00` skips draining. |
 | `SessionResumeMaxLifetime` | `TimeSpan` | `00:15:00` | Longest a session resume promise may hold. A plugin asking for more is clamped to this. |
 | `SessionResumeMaxPayloadBytes` | `int` | `4096` | Largest resume payload a plugin may store, in UTF-8 bytes. Issuing a larger one is refused rather than truncated. |
+| `PluginFaultThreshold` | `int` | `10` | Attributed faults within `PluginFaultWindow` before a plugin stops counting as available. `0` disables the budget — faults are then counted but never acted on. |
+| `PluginFaultWindow` | `TimeSpan` | `00:05:00` | Sliding window the threshold counts over. Once it clears without new faults, the plugin is available again with no operator action. |
+
+### The fault budget
+
+A plugin that fails to *activate* becomes `Faulted` and loses availability through the
+`RuntimeHealthy` factor. A plugin that is **active** and throws on every other request did
+not: it stayed available indefinitely and took each request down with it. In a process
+shared by several plugins, that cost is not paid by whoever caused it.
+
+The budget closes that gap as an availability factor (`WithinFaultBudget`), not as a new
+state. The plugin keeps running, the operator's desired activation is untouched — it simply
+does not count as available while the window holds too many faults. Two consequences follow
+from that choice:
+
+- **It heals itself.** When the window clears, the plugin is back without anyone intervening.
+  A budget with no way back would be a silent deactivation — the operator would go looking for
+  a switch nobody flipped.
+- **It is visible.** Crossing the threshold is logged once with the contributing origins
+  (`HttpRoute`, `Job`, `Event`, `Realtime`, `Lifecycle`), so the first question — is this
+  coming from requests or from background work? — is answered without correlating logs.
+
+Reactivating a plugin clears its history: a budget from the previous build would otherwise
+strike again immediately and make the new one look like the old.
+
+**Where faults are attributed.** Every seam through which the host calls into a plugin:
+
+| Seam | Origin | What counts |
+| --- | --- | --- |
+| Admin API routes | `HttpRoute` | The handler throws (rethrown — the response is unchanged) |
+| Surface API routes | `HttpRoute` | The handler throws **or** exceeds its deadline |
+| Public HTTP routes | `HttpRoute` | The handler throws |
+| WebSocket handlers | `Realtime` | The handler throws; a caller disconnect does not |
+| Background jobs | `Job` | The handler throws — attributed via the job type's owning plugin |
+| Event subscribers | `Event` | The subscriber throws; dispatch still continues to the rest |
+| Draining | `Lifecycle` | A drain that fails, which otherwise leaves no trace |
+
+A **failed activation** is deliberately not counted: it already makes the plugin `Faulted` and
+withdraws availability through `RuntimeHealthy`. Counting it twice would only lengthen the
+lockout. Host-owned handlers are never attributed to a plugin — a host job or subscriber that
+throws is the host's problem.
+
+::: tip Lower the threshold, don't shorten the window
+A short window makes the budget forgetful — faults age out before they add up. A low
+threshold makes it sensitive, which is what you actually want when you want it to bite sooner.
+:::
 
 ::: warning Raising `PluginDrainTimeout` alone does not lengthen a restart
 On process shutdown the wait is bounded by ASP.NET Core's `HostOptions.ShutdownTimeout`
