@@ -2416,6 +2416,7 @@ Callora.Core.Application.Plugins.RuntimePluginHost
 Callora.Core.Application.Plugins.RuntimePluginHost.ActivateAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.RuntimePluginActivateResult!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.DeactivateAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.RuntimePluginDeactivateResult!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Callora.Core.Application.Plugins.RuntimePluginHost.ExportsChanged -> System.Action?
 Callora.Core.Application.Plugins.RuntimePluginHost.GetExports(System.Type! contractType) -> System.Collections.Generic.IReadOnlyList<object!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.GetOwnedExports(System.Type! contractType) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.CalloraPluginExport!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.InstallAsync(string! assemblyPath, string? entryTypeName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.RuntimePluginInstallResult!>!

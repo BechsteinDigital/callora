@@ -14,6 +14,7 @@ namespace Callora.Core.Tests.Hosting;
 /// (ADR-018 §2.1). These run against a real plugin load context, because the ordering being asserted
 /// is the host's, not a mock's.
 /// </summary>
+[Collection(PluginLoadContextCollection.Name)]
 public sealed class RuntimePluginHostDrainTests
 {
     [Fact]

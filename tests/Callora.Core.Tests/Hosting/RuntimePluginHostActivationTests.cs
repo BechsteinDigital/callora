@@ -1,7 +1,9 @@
+using Xunit;
 using Callora.Core.Application.Options;
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Tests.Cli;
+using Callora.Core.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.CompilerServices;
@@ -17,12 +19,13 @@ namespace Callora.Core.Tests.Hosting;
 /// The plugin assembly is built with the solution, then loaded through a real
 /// <c>PluginAssemblyLoadContext</c> — no service mocking of the export path.
 /// </summary>
+[Collection(PluginLoadContextCollection.Name)]
 public sealed class RuntimePluginHostActivationTests
 {
     [Fact]
     public async Task ActivatePlugin_ExportIsResolvableCrossAlc_AndWithdrawnOnDeactivate()
     {
-        var assemblyPath = ResolveExportingPluginAssemblyPath();
+        var assemblyPath = TestPluginAssemblies.Exporting();
         Assert.True(File.Exists(assemblyPath), $"Test plugin was not built at {assemblyPath}.");
 
         await using var host = new RuntimePluginHost(
@@ -60,7 +63,7 @@ public sealed class RuntimePluginHostActivationTests
     [Fact]
     public async Task ActivatePlugin_RegistersRuntimeCapabilitySource_AndUnregistersOnDeactivate()
     {
-        var assemblyPath = ResolveExportingPluginAssemblyPath();
+        var assemblyPath = TestPluginAssemblies.Exporting();
         Assert.True(File.Exists(assemblyPath), $"Test plugin was not built at {assemblyPath}.");
 
         var registry = new RuntimeCapabilityRegistry(TimeSpan.Zero, TimeProvider.System);
@@ -95,19 +98,4 @@ public sealed class RuntimePluginHostActivationTests
         Assert.NotNull(exported);
     }
 
-    private static string ResolveExportingPluginAssemblyPath()
-    {
-        // The plugin builds to bin/<Config>/<Tfm>/ just like this test assembly,
-        // so mirror the current build config/framework from the test's location.
-        var testOutput = new DirectoryInfo(
-            AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        var targetFramework = testOutput.Name;
-        var configuration = testOutput.Parent!.Name;
-
-        return Path.Combine(
-            ScaffoldedPluginFixture.ResolveRepositoryRoot(),
-            "tests", "TestPlugins", "ExportingPlugin",
-            "bin", configuration, targetFramework,
-            "Callora.TestPlugin.Exporting.dll");
-    }
 }

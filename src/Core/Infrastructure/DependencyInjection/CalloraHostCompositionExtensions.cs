@@ -274,7 +274,20 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<Callora.Core.Application.Configuration.SystemConfigResolver>();
         builder.Services.AddScoped<Callora.Core.Infrastructure.Configuration.RegistryConfigSchemaSyncService>();
         builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginConfigSchemaSyncSubscriber>();
-        builder.Services.AddSingleton<Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource>();
+        // Die Routing-Tabelle hört auf das Zurückziehen von Exports, nicht nur auf das
+        // Lifecycle-Ereignis. Beides ist nötig und beides ist verschieden: Das Ereignis kommt
+        // NACH der Deaktivierung — zu spät, um den Ladekontext freizugeben, den die eigenen
+        // Endpunkt-Delegaten festhalten. Ohne diese Zeile landete jedes Plugin mit API-Route
+        // beim Deaktivieren in UnloadFailed und verlangte einen Host-Neustart.
+        builder.Services.AddSingleton(sp =>
+        {
+            var dataSource = new Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource(
+                sp.GetRequiredService<ICalloraPluginCatalog>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Http.PluginApiEndpointDataSource>>());
+            sp.GetRequiredService<Callora.Core.Application.Plugins.RuntimePluginHost>().ExportsChanged
+                += dataSource.Refresh;
+            return dataSource;
+        });
         builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>,
             Callora.Core.Infrastructure.Http.PluginApiRoutingRefreshSubscriber>();
         builder.Services.AddSingleton<Callora.Core.Application.Configuration.Contracts.IPluginConfigReader, Callora.Core.Application.Configuration.ScopedPluginConfigReader>();
