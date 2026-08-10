@@ -2868,6 +2868,7 @@ Callora.Core.Application.Security.IUserDataSubjectService.ExportAsync(string! ex
 Callora.Core.Application.Security.IWorkspaceScopeContext
 Callora.Core.Application.Security.IWorkspaceScopeContext.IsWorkspaceScoped.get -> bool
 Callora.Core.Application.Security.IWorkspaceScopeContext.WorkspaceKey.get -> string?
+Callora.Core.Application.Security.ReservedMembershipRoles
 Callora.Core.Application.Security.SessionRevocationPurgeJobHandler
 Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.ExecuteAsync(Callora.Core.Application.Jobs.Contracts.BackgroundJobExecutionContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.JobType.get -> string!
@@ -6668,6 +6669,7 @@ static Callora.Core.Application.Security.BackendUserException.PasswordRequired()
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Created(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Deleted(string! externalId) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Updated(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
+static Callora.Core.Application.Security.ReservedMembershipRoles.IsReserved(string? role, Callora.Core.Application.Policies.BackendHostOptions! options) -> bool
 static Callora.Core.Application.Security.SingleUseSecret.Create() -> string!
 static Callora.Core.Application.Security.SingleUseSecret.Hash(string! secret) -> string!
 static Callora.Core.Application.Security.UserDataExport.operator !=(Callora.Core.Application.Security.UserDataExport? left, Callora.Core.Application.Security.UserDataExport? right) -> bool

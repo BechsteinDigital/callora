@@ -16,6 +16,31 @@ namespace Callora.Core.Tests.Api;
 
 public sealed class WorkspaceEndpointsTests
 {
+    [Theory]
+    [InlineData("superadmin")]
+    [InlineData("SuperAdmin")]
+    [InlineData("host.api")]
+    public async Task UpsertMember_WithAPlatformOperatorRoleName_IsRefused(string role)
+    {
+        // Der Rollenstring der Mitgliedschaft landet beim Anmelden im Rollen-Claim, und auf
+        // `superadmin` antwortet die Berechtigungsprüfung bedingungslos mit Ja. Ohne diese
+        // Sperre hätte sich ein Workspace-Admin — der membership.update ohnehin besitzt —
+        // selbst zum Plattform-Operator über alle Mandanten gemacht.
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "workspace.update");
+        await client.PutAsJsonAsync(
+            "/api/workspaces/workspace-a",
+            new UpsertWorkspaceApiRequest("tenant-a", "Workspace A", "team", true));
+
+        var response = await client.PutAsJsonAsync(
+            "/api/workspaces/workspace-a/members/mallory",
+            new UpsertWorkspaceMemberApiRequest(role));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task WorkspaceAndMembershipCrud_WithPermissions_Works()
     {

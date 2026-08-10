@@ -203,6 +203,17 @@ public static class WorkspaceEndpoints
                 return ApiProblems.BadRequest("Workspace host default tenant key is not configured.");
             }
 
+            // Die Mitgliedsrolle darf keine Plattform-Rolle benennen. Sie wird beim Anmelden
+            // zum Rollen-Claim, und auf `superadmin` antwortet die Berechtigungsprüfung
+            // bedingungslos mit Ja — ein Workspace-Admin hätte sich damit selbst zum Operator
+            // über alle Mandanten gemacht. Die Anmeldung weist solche Zeilen zusätzlich ab
+            // (AdminLoginResolver); hier entstehen sie erst gar nicht.
+            if (ReservedMembershipRoles.IsReserved(request.Role, hostOptions))
+            {
+                return ApiProblems.BadRequest(
+                    $"Role '{request.Role}' is reserved for platform operators and cannot be a workspace membership role.");
+            }
+
             var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
             if (workspace is null ||
                 !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase))

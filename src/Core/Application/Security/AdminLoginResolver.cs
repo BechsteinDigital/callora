@@ -70,6 +70,15 @@ public static class AdminLoginResolver
             return null;
         }
 
+        // Fail-closed gegen einen Rollennamen, den sich ein Workspace-Admin selbst geben kann.
+        // Der Schreibpfad weist ihn inzwischen ab, aber dieser Zweig ist der wirksame: Er gilt
+        // auch für Zeilen, die vor der Sperre entstanden sind, und für jeden künftigen Weg, auf
+        // dem eine Mitgliedschaft in die Datenbank kommt (Migration, Seed, Direktzugriff).
+        if (ReservedMembershipRoles.IsReserved(workspaceRole, options))
+        {
+            return null;
+        }
+
         return new AdminLoginGrant(
             Scope: BackendAuthScopes.Workspace,
             WorkspaceKey: trimmedKey,
