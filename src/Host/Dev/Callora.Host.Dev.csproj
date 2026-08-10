@@ -19,10 +19,14 @@
     <ProjectReference Include="../../Administration/Callora.Administration.csproj" />
     <ProjectReference Include="../../Workspace/Callora.Workspace.csproj" />
     <ProjectReference Include="../../Surface.Rendering/Callora.Surface.Rendering.csproj" />
-    <!-- Communication's contract in the host's default load context, so host and
-         plugins share ICommunicationChannelRegistry as ONE type. Without it, type
-         identity breaks the moment a Communication plugin loads. -->
-    <ProjectReference Include="../../../custom/static-plugins/Communication/src/Abstractions/Callora.Plugin.Communication.Abstractions.csproj" />
+    <!-- Bewusst KEIN Plugin-Vertrag. Hier stand die Referenz auf
+         Callora.Plugin.Communication.Abstractions, damit Host und Plugin-ALCs
+         ICommunicationChannelRegistry als EINEN Typ teilen. Seit die Plugins in
+         eigenen Repositories leben (ADR-020), gibt es hier nichts mehr zu
+         referenzieren — und es wäre auch die falsche Stelle: WELCHE Vertrags-
+         pakete in den Default-Kontext vorgeladen werden, entscheidet die
+         Distribution, nicht das Framework. callora-production trägt die
+         Referenz für Produktions-Distributionen (REV2 §10.1A). -->
   </ItemGroup>
 
   <ItemGroup>
