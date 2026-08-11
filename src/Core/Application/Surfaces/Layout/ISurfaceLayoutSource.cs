@@ -41,6 +41,24 @@ public interface ISurfaceLayoutSource
     /// <summary>
     /// The working draft, for the editor. Requires operator permission at its call site — the
     /// public render path must never reach this.
+    /// <para>
+    /// <b>The workspace key is a parameter, not the caller's job.</b> A layout key IS a surface
+    /// key, and surfaces are called <c>kontakt</c>, <c>impressum</c>, <c>startseite</c> — two
+    /// tenants picking the same name is the normal case, which is why a composed layout is keyed
+    /// by <c>(workspace, key)</c>. Without the workspace an implementation cannot decide WHICH
+    /// draft it owes and returns whichever row it finds first.
+    /// </para>
+    /// <para>
+    /// This method had no caller in the core when the parameter was added, and that was the
+    /// argument FOR adding it: the first caller would have inherited the missing scope. In the
+    /// composer that had already happened once — four route handlers took the layout key from the
+    /// path and passed it on unfiltered, so an operator could read and publish another tenant's
+    /// layouts. The test that was supposed to cover it asserted <c>route.Scope</c>, a metadatum,
+    /// and stayed green throughout.
+    /// </para>
     /// </summary>
-    Task<SurfaceLayoutDocument?> GetDraftAsync(string layoutKey, CancellationToken cancellationToken = default);
+    Task<SurfaceLayoutDocument?> GetDraftAsync(
+        string workspaceKey,
+        string layoutKey,
+        CancellationToken cancellationToken = default);
 }

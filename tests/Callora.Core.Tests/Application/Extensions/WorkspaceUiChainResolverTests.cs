@@ -212,6 +212,7 @@ public sealed class WorkspaceUiChainResolverTests
                 published is null ? new HashSet<string>() : new HashSet<string> { published.Key });
 
         public Task<SurfaceLayoutDocument?> GetDraftAsync(
+            string workspaceKey,
             string layoutKey,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(published);
