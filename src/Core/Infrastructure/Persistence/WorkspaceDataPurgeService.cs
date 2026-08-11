@@ -8,8 +8,16 @@ namespace Callora.Core.Infrastructure.Persistence;
 /// Deletes a workspace together with all workspace-bound data in one
 /// transaction (GDPR cascading deletion, PLAT-242): jobs, notifications,
 /// flows, webhooks, plugin data, activations, theme values, config values,
-/// custom fields, media rows and memberships. Media blobs are removed
+/// custom fields, media rows, memberships, surface sessions and tickets, and
+/// workspace-bound integration credentials. Media blobs are removed
 /// best-effort after the commit.
+/// <para>
+/// <b>Vollständigkeit wird geprüft, nicht erinnert.</b> Diese Liste war einmal unvollständig, und
+/// zwar nicht durch einen Fehler: Vier Tabellen kamen später dazu, jede mit einer
+/// <c>workspace_key</c>-Spalte und ohne kaskadierenden Fremdschlüssel. Wer hier eine Tabelle
+/// ergänzt oder eine neue workspace-gebundene anlegt, wird von
+/// <c>WorkspacePurgeReachesEveryWorkspaceBoundTableTests</c> daran erinnert.
+/// </para>
 /// </summary>
 public sealed class WorkspaceDataPurgeService(
     HostPersistenceDbContext dbContext,
@@ -77,6 +85,29 @@ public sealed class WorkspaceDataPurgeService(
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         deletedRows += await dbContext.WorkspaceMemberships
             .Where(x => x.WorkspaceId == workspace.Id)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+
+        // Besucherdaten der Flächen. Kein Fremdschlüssel kaskadiert sie (die Migration legt nur
+        // einen PK an), und der SurfaceSessionPurgeJobHandler räumt erst nach ExpiresAtUtc ab —
+        // bei einem Gast-Kontext 30 Tage später. Bis dahin stünden subject_id, display_name und
+        // claims_json eines gelöschten Workspaces weiter in der Datenbank.
+        deletedRows += await dbContext.SurfaceSessions
+            .Where(x => x.WorkspaceKey == key)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        deletedRows += await dbContext.SurfaceHandoffTickets
+            .Where(x => x.WorkspaceKey == key)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        deletedRows += await dbContext.SessionResumeTickets
+            .Where(x => x.WorkspaceKey == key)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+
+        // Workspace-gebundene Integrations-Schlüssel bleiben sonst AKTIV: Die Suche beim
+        // Authentifizieren filtert nur auf IsActive und RevokedAtUtc, nie auf den Workspace, und
+        // der Schlüssel trägt seinen workspace_key als Claim weiter. Da der Unique-Index auf
+        // workspaces.WorkspaceKey nach der Löschung wieder frei ist, greift ein alter Schlüssel
+        // auf die Daten eines gleichnamigen neuen Workspaces zu.
+        deletedRows += await dbContext.IntegrationCredentials
+            .Where(x => x.WorkspaceKey == key)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 
         dbContext.Workspaces.Remove(workspace);
