@@ -54,8 +54,7 @@ internal static class SurfaceContributors
                 continue;
             }
 
-            var separator = blockId.IndexOf('.', StringComparison.Ordinal);
-            needed.Add(separator > 0 ? blockId[..separator] : blockId);
+            needed.Add(PluginOf(blockId));
         }
 
         if (!string.IsNullOrWhiteSpace(surface.ThemePluginId))
@@ -64,5 +63,37 @@ internal static class SurfaceContributors
         }
 
         return chain.Where(needed.Contains).ToArray();
+    }
+
+    /// <summary>
+    /// Ob ein Block überhaupt ausgeliefert werden darf: nur, wenn sein Plugin in der Kette steht.
+    /// </summary>
+    /// <remarks>
+    /// Die Kette ist bereits über <c>IPluginAvailabilityEvaluator</c> gefiltert — was hier fehlt,
+    /// ist deinstalliert, deaktiviert oder für diesen Workspace nicht berechtigt.
+    /// <para>
+    /// Ohne diese Prüfung lieferte der Renderpfad die Insel samt <c>data-callora-props</c> weiter
+    /// aus. Das JS dazu wurde zwar nie geladen — <see cref="OnThisSurface"/> schneidet die Kette
+    /// auf die benutzten Präfixe —, die Insel blieb also tot. Im HTML stand aber weiter die vom
+    /// Operator gespeicherte Konfiguration eines Plugins, das dieser Workspace nicht mehr haben
+    /// darf.
+    /// </para>
+    /// </remarks>
+    public static Func<string, bool> BlockIsAvailable(IReadOnlyCollection<string> chain)
+    {
+        ArgumentNullException.ThrowIfNull(chain);
+
+        var available = new HashSet<string>(chain, StringComparer.OrdinalIgnoreCase);
+        return blockId => !string.IsNullOrWhiteSpace(blockId) && available.Contains(PluginOf(blockId));
+    }
+
+    /// <summary>
+    /// Das Plugin hinter einer Block-Kennung: <c>communication.incoming-call</c> gehört
+    /// <c>communication</c>. Dieselbe Konvention, nach der die Block-Registry im Browser sortiert.
+    /// </summary>
+    private static string PluginOf(string blockId)
+    {
+        var separator = blockId.IndexOf('.', StringComparison.Ordinal);
+        return separator > 0 ? blockId[..separator] : blockId;
     }
 }
