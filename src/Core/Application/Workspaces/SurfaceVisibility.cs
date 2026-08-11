@@ -42,6 +42,32 @@ public static class SurfaceVisibility
     }
 
     /// <summary>
+    /// Ob ein Knoten für diesen Aufrufer erreichbar ist — die Entscheidung, die JEDER Seam
+    /// treffen muss, der eine Fläche aus einer öffentlichen Route auflöst.
+    /// <para>
+    /// Es gibt mehr als einen solchen Seam: den Renderpfad und den Kontext-Socket. Der Socket
+    /// hatte die Prüfung nicht, und damit war er die Umgehung — wem die Seite mit 404 antwortete,
+    /// der bekam dort ein Abo auf denselben Knoten. Der Access Mode allein reicht nicht: Eine
+    /// Fläche kann öffentlich sein und trotzdem einen Claim verlangen.
+    /// </para>
+    /// </summary>
+    /// <param name="caller">Wer fragt; <c>null</c> zählt als Gast (siehe <see cref="ClaimsOn"/>).</param>
+    /// <param name="identityAvailable">
+    /// Ob ein Identitäts-Subsystem zusammengesetzt ist. Ohne eines gibt es gar keine Claims, und
+    /// ein Knoten, der welche verlangt, ist damit unerreichbar — auch über die gewährten. Ihn
+    /// durchzulassen wäre die gefährlichste Variante: Die Anforderung stünde in der Verwaltung
+    /// und wirkte nicht.
+    /// </param>
+    public static bool IsReachableBy(
+        string? requiredClaims,
+        string? grantedClaims,
+        SurfaceCaller? caller,
+        bool identityAvailable) =>
+        identityAvailable
+            ? Satisfies(requiredClaims, ClaimsOn(caller, grantedClaims))
+            : Parse(requiredClaims).Count == 0;
+
+    /// <summary>
     /// Ob diese Claim-Anforderung erfüllt ist. Leer heißt: keine Anforderung.
     /// <para>
     /// UND, nicht ODER — alle geforderten Claims müssen da sein. Das ist die vorsichtige
@@ -87,9 +113,17 @@ public static class SurfaceVisibility
     /// unerreichbar — auch für einen Gast mit gültiger Einladung, und ohne dass irgendwo stand,
     /// warum.
     /// </remarks>
-    public static IReadOnlySet<string> ClaimsOn(SurfaceCaller caller, string? grantedClaims)
+    /// <param name="caller">
+    /// Wer fragt — <c>null</c>, wenn kein Aufrufer aufgelöst werden konnte. Das ist kein Fehler,
+    /// sondern der Normalfall am Kontext-Socket: Dessen Sitzung kommt aus dem Cookie und gilt für
+    /// EINE Fläche, also bleibt sie an der Fläche daneben ohne Wirkung. Behandelt wie ein Gast —
+    /// eigene Claims: keine; die der Fläche gewährten: ja.
+    /// </param>
+    public static IReadOnlySet<string> ClaimsOn(SurfaceCaller? caller, string? grantedClaims)
     {
-        var claims = ClaimsOf(caller).ToHashSet(StringComparer.Ordinal);
+        var claims = caller is null
+            ? new HashSet<string>(StringComparer.Ordinal)
+            : ClaimsOf(caller).ToHashSet(StringComparer.Ordinal);
         foreach (var granted in Parse(grantedClaims))
         {
             claims.Add(granted);

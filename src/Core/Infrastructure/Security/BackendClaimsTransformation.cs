@@ -20,6 +20,21 @@ public sealed class BackendClaimsTransformation(IBackendRbacStore rbacStore) : I
             return principal;
         }
 
+        // Rollennamen sind EIN Namensraum, Scopes sind zwei. Eine Workspace-Mitgliedschaft heißt
+        // "admin" (BackendRoles.Admin), und eine Plattformrolle darf genauso heißen — gesperrt ist
+        // nur "superadmin". Ohne diesen Ausstieg schlug die Projektion den Rollen-Claim der Session
+        // nach, ohne auf den Scope zu sehen: Jeder Workspace-Admin JEDES Mandanten bekam damit die
+        // Plattform-Permissions der gleichnamigen RBAC-Rolle. Dasselbe galt für die global
+        // zugewiesene Rolle, die unten unabhängig vom Scope ergänzt wurde.
+        //
+        // Eine Workspace-Session verliert dabei nichts: Sie trägt ihre Permissions vollständig aus
+        // WorkspaceRolePermissions im Token (AdminLoginResolver) — die Projektion ist der Weg für
+        // Plattform-Operatoren, nicht für Mitgliedschaften.
+        if (principal.HasClaim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Workspace))
+        {
+            return principal;
+        }
+
         var effectiveRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var claim in principal.FindAll(ClaimTypes.Role))
         {

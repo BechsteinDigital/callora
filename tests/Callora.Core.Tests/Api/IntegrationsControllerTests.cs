@@ -109,6 +109,25 @@ public sealed class IntegrationsControllerTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    /// <summary>
+    /// Die Reichweite eines Schlüssels wird ausgeschrieben. Ein fehlendes <c>scope</c> hieß vorher
+    /// „platform" — die weitreichendere der beiden Möglichkeiten, gewählt durch Weglassen.
+    /// </summary>
+    [Fact]
+    public async Task Create_WithoutScope_Returns400()
+    {
+        var options = CreateOptions();
+        await using var app = await CreateAppAsync(options, new InMemoryIntegrationCredentialStore());
+        var client = app.GetTestClient();
+        Authenticate(client, CreateJwt(options, "admin", [BackendRoles.SuperAdmin]));
+
+        var response = await client.PostAsJsonAsync(
+            "/api/security/integrations",
+            new IntegrationCreateApiRequest("billing", ReaderRole, null, null));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     private static BackendHostOptions CreateOptions() => new()
     {
         JwtIssuer = "callora-tests",

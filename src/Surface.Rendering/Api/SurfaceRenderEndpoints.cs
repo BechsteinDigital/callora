@@ -177,12 +177,24 @@ public static class SurfaceRenderEndpoints
                     typeof(ISurfaceLayoutSource).Assembly.FullName,
                     string.Join(", ", exports.Select(export => export.GetType().FullName)));
         }
+        // Die UI-Kette schon HIER, nicht erst beim Zusammenstellen der Contributors: Sie sagt
+        // nicht nur, was geladen wird, sondern auch, was ausgeliefert werden darf. Sie ist über
+        // IPluginAvailabilityEvaluator gefiltert — wer fehlt, ist deinstalliert, abgeschaltet
+        // oder für diesen Workspace nicht berechtigt, und dessen Blöcke gehören nicht ins HTML.
+        // Einmal aufgelöst, zweimal benutzt: eine zweite Abfrage wäre auch eine zweite Antwort.
+        var chain = chainResolver is null
+            ? null
+            : await chainResolver
+                .ResolveAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
+                .ConfigureAwait(false);
+
         var composed = layouts is null
             ? default
             : await RenderCompositionAsync(
                     layouts,
                     surface,
                     resolvedTheme,
+                    chain,
                     loggerFactory.CreateLogger("Callora.Surface.Rendering.SurfaceRender"),
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -227,14 +239,9 @@ public static class SurfaceRenderEndpoints
             // Wer auf dieser Fläche beitragen darf: die UI-Kette. Ohne diese Grenze steuerte
             // jedes im Workspace aktive Plugin seine Navigation zu JEDER Fläche bei — die
             // Videokonferenz stand im Menü einer Inhaltsseite, die sie nie erwähnt.
-            var contributors = chainResolver is null
+            var contributors = chain is null
                 ? null
-                : SurfaceContributors.OnThisSurface(
-                    await chainResolver
-                        .ResolveAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
-                        .ConfigureAwait(false),
-                    surface,
-                    usedBlockIds);
+                : SurfaceContributors.OnThisSurface(chain, surface, usedBlockIds);
 
             // Resolved per request because it depends on the caller: claim-gated views
             // are filtered here, not hidden in the browser.
@@ -396,6 +403,7 @@ public static class SurfaceRenderEndpoints
         ISurfaceLayoutSource layouts,
         WorkspaceSurfaceSnapshot surface,
         WorkspacePublicTheme? theme,
+        IReadOnlyCollection<string>? chain,
         ILogger? logger,
         CancellationToken cancellationToken)
     {
@@ -431,8 +439,16 @@ public static class SurfaceRenderEndpoints
             (theme?.SectionLayouts ?? SurfaceBaseSectionLayouts.All).Select(layout => layout.LayoutKey),
             StringComparer.Ordinal);
 
+        // Ohne Ketten-Auflösung gibt es keine Verfügbarkeitsaussage — dann bleibt es beim
+        // bisherigen Verhalten und alles wird ausgeliefert. Ein Host ohne diesen Dienst hat auch
+        // keine Plugins, die er zurückhalten müsste.
+        var blockIsAvailable = chain is null ? null : SurfaceContributors.BlockIsAvailable(chain);
+
         return (
-            new SurfaceCompositionRenderer(layoutIsKnown: knownLayouts.Contains).Render(document),
+            new SurfaceCompositionRenderer(
+                    blockIsAvailable: blockIsAvailable,
+                    layoutIsKnown: knownLayouts.Contains)
+                .Render(document),
             document.Sections.SelectMany(section => section.Blocks).Select(block => block.BlockId).ToArray());
     }
 

@@ -39,7 +39,17 @@ public sealed class SurfaceCompositionRenderer
     /// uninstalled — is left out of the delivered page rather than rendered as a hole; the layout
     /// stays intact and becomes whole again when the plugin returns.
     /// </param>
-    /// <param name="confidentialControls">Controls a block declared confidential, by block id.</param>
+    /// <param name="confidentialControls">
+    /// Controls a block declared confidential, by block id.
+    /// <para>
+    /// <b>Heute unversorgt, und das ist die ehrliche Antwort.</b> <c>confidential</c> steht im
+    /// Browser-Vertrag der Blöcke (<c>block-contract.ts</c>); serverseitig gibt es keine
+    /// Blockbeschreibung, aus der der Host es lesen könnte. Der Parameter ist deshalb der
+    /// vorbereitete Anschluss, nicht eine Filterung, die nur gerade niemand benutzt — wer eine
+    /// solche Quelle baut, verdrahtet sie hier, und bis dahin sagt der Renderpfad nicht zu, was
+    /// er nicht halten kann (siehe <c>page/composed.njk</c>).
+    /// </para>
+    /// </param>
     /// <param name="layoutIsKnown">
     /// Whether the active theme still declares this section layout. It stops declaring one when
     /// somebody switches themes — and then <c>data-cal-layout="two-2-1"</c> would name a grid

@@ -152,6 +152,12 @@ The split is the guarantee: there is no `?preview=true`, no header, no parameter
 a draft could be requested from outside. On a `Public` surface such a hole would sit behind
 no authentication at all — and a single method with a boolean would put both behind one
 call, making the guarantee a matter of remembering to pass `false`.
+
+Every method takes a `workspaceKey` first, including `GetDraftAsync`. A layout key IS a
+surface key, and `kontakt` is what every second tenant calls one — without the workspace an
+implementation cannot decide which draft it owes and answers with whatever row it finds
+first. Scoping belongs in the contract, where it can be enforced, not at a call site that
+may not exist yet.
 :::
 
 ::: tip The realtime bridge is one-way
