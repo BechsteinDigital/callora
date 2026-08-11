@@ -6811,7 +6811,8 @@ static Callora.Core.Application.Workspaces.SurfaceTree.Inherited<T, TValue>(Syst
 static Callora.Core.Application.Workspaces.SurfaceTree.InheritedFrom<T, TValue>(System.Collections.Generic.IReadOnlyList<T!>! ancestry, System.Func<T!, TValue?>! select) -> T?
 static Callora.Core.Application.Workspaces.SurfaceTree.WouldCreateCycle(System.Guid nodeId, System.Guid? newParentId, System.Collections.Generic.IReadOnlyDictionary<System.Guid, System.Guid?>! parentById) -> bool
 static Callora.Core.Application.Workspaces.SurfaceVisibility.ClaimsOf(Callora.Core.Application.Surfaces.SurfaceCaller! caller) -> System.Collections.Generic.IReadOnlySet<string!>!
-static Callora.Core.Application.Workspaces.SurfaceVisibility.ClaimsOn(Callora.Core.Application.Surfaces.SurfaceCaller! caller, string? grantedClaims) -> System.Collections.Generic.IReadOnlySet<string!>!
+static Callora.Core.Application.Workspaces.SurfaceVisibility.ClaimsOn(Callora.Core.Application.Surfaces.SurfaceCaller? caller, string? grantedClaims) -> System.Collections.Generic.IReadOnlySet<string!>!
+static Callora.Core.Application.Workspaces.SurfaceVisibility.IsReachableBy(string? requiredClaims, string? grantedClaims, Callora.Core.Application.Surfaces.SurfaceCaller? caller, bool identityAvailable) -> bool
 static Callora.Core.Application.Workspaces.SurfaceVisibility.IsVisibleTo(System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Workspaces.WorkspaceSurface!>! ancestry, Callora.Core.Application.Surfaces.SurfaceCaller! caller) -> bool
 static Callora.Core.Application.Workspaces.SurfaceVisibility.Parse(string? requiredClaims) -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Workspaces.SurfaceVisibility.Satisfies(string? requiredClaims, System.Collections.Generic.IReadOnlySet<string!>! callerClaims) -> bool

@@ -91,4 +91,42 @@ public sealed class SurfaceVisibilityTests
         Assert.Empty(SurfaceVisibility.Parse(null));
         Assert.Empty(SurfaceVisibility.Parse("  "));
     }
+
+    /// <summary>
+    /// Der Befund hinter <c>IsReachableBy</c>: Am Kontext-Socket gibt es keinen aufgelösten
+    /// Aufrufer, wenn die Cookie-Sitzung zu einer ANDEREN Fläche gehört. Genau dieser Fall — ein
+    /// Aufrufer, der auf dem Renderpfad ein 404 bekäme — hatte dort ein Abo erhalten.
+    /// </summary>
+    [Fact]
+    public void AnUnresolvedCallerCannotReachAGatedNode()
+    {
+        Assert.False(SurfaceVisibility.IsReachableBy("partner", null, caller: null, identityAvailable: true));
+    }
+
+    [Fact]
+    public void AnUnresolvedCallerReachesWhatTheSurfaceGrantsToEveryone()
+    {
+        // Dieselbe Regel wie auf dem Renderpfad: Was die Fläche jedem gewährt, gilt auch für den,
+        // der keine eigene Identität mitbringt. Sonst wäre eine Anforderung auf einer Fläche ohne
+        // Identitätsanbieter für niemanden erfüllbar.
+        Assert.True(SurfaceVisibility.IsReachableBy("partner", "partner", caller: null, identityAvailable: true));
+        Assert.True(SurfaceVisibility.IsReachableBy(null, null, caller: null, identityAvailable: true));
+    }
+
+    [Fact]
+    public void TheCallersOwnClaimReachesTheNode()
+    {
+        Assert.True(SurfaceVisibility.IsReachableBy("partner", null, WithClaims("partner"), identityAvailable: true));
+        Assert.False(SurfaceVisibility.IsReachableBy("partner", null, WithClaims("kunde"), identityAvailable: true));
+    }
+
+    [Fact]
+    public void WithoutAnIdentitySubsystemAGatedNodeIsUnreachableEvenIfTheSurfaceGrantsTheClaim()
+    {
+        // Ohne Identitäts-Subsystem gibt es keine Claims — auch keine gewährten. Ein Knoten mit
+        // Anforderung durchzulassen wäre die gefährlichste Variante: Die Anforderung stünde in
+        // der Verwaltung und wirkte nicht.
+        Assert.False(SurfaceVisibility.IsReachableBy("partner", "partner", caller: null, identityAvailable: false));
+        Assert.True(SurfaceVisibility.IsReachableBy(null, null, caller: null, identityAvailable: false));
+    }
 }

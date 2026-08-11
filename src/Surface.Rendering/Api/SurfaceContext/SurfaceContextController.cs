@@ -95,6 +95,20 @@ public sealed class SurfaceContextController : ControllerBase
             return Unauthorized();
         }
 
+        // Dieselbe Sichtbarkeitsprüfung wie im Renderpfad (ADR-019 §4) — und aus demselben Grund
+        // 404 statt 403. Ohne sie war der Socket die Umgehung: Wem die Seite mit 404 antwortete,
+        // der bekam hier ein Abo auf denselben Knoten und damit jeden Wert, dessen Adresse kein
+        // Subjekt nennt (SurfaceContextAddress.Covers). Der Access Mode allein deckt das nicht ab —
+        // eine Fläche kann öffentlich sein und trotzdem einen Claim verlangen.
+        if (!SurfaceVisibility.IsReachableBy(
+                surface.RequiredClaims,
+                surface.GrantedClaims,
+                caller,
+                identityAvailable: callerResolver is not null))
+        {
+            return NotFound();
+        }
+
         await PumpAsync(
                 surface,
                 caller,
