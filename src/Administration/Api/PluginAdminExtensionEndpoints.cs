@@ -45,6 +45,9 @@ public static class PluginAdminExtensionEndpoints
         group.MapGet("/ui-chain", HandleUiChainAsync)
             .WithName("PluginExtensions_AdminUiChain");
 
+        group.MapGet("/surface-ui-chain", HandleSurfaceUiChainCatalogAsync)
+            .WithName("PluginExtensions_AdminSurfaceUiChainCatalog");
+
         group.MapMethods("/plugins/{pluginId}/{**routePath}", ["GET", "POST", "PUT", "DELETE"], HandlePluginAdminRouteAsync)
             .WithName("PluginExtensions_AdminApiProxy");
     }
@@ -85,6 +88,44 @@ public static class PluginAdminExtensionEndpoints
 
         var chain = await chainResolver
             .ResolveAsync(workspaceKey, cancellationToken)
+            .ConfigureAwait(false);
+
+        return Results.Ok(new UiChainApiResponse(workspaceKey, chain));
+    }
+
+    /// <summary>
+    /// Die Flächen-Ladekette für einen EDITOR: was auf dieser Fläche eingebaut werden könnte.
+    /// <para>
+    /// Der Composer lud seine Flächen-Bundles bisher über die öffentliche Render-Kette, und die
+    /// ist auf das gekürzt, was das veröffentlichte Layout verlangt. Für einen Editor ist das
+    /// zirkulär: die Block-Palette braucht das Bundle, um dessen Blöcke anzubieten, und das
+    /// Bundle kam erst, wenn einer seiner Blöcke bereits im Layout stand. Eine leere Fläche
+    /// blieb deshalb dauerhaft leer — ohne Fehler, ohne Hinweis.
+    /// </para>
+    /// <para>
+    /// Bewusst hier und nicht als Parameter am anonymen Endpunkt: Die ungekürzte Kette ist das
+    /// Plugin-Inventar einer Fläche. <c>/workspace/public/ui-chain</c> antwortet einem
+    /// nicht angemeldeten Aufrufer absichtlich mit 404 statt einer aufzählbaren Liste; ein
+    /// Schalter, der diese Kürzung dort abschaltet, wäre genau die Lücke, die dort vermieden
+    /// wird. Diese Gruppe verlangt eine Anmeldung, der Editor läuft ohnehin darin.
+    /// </para>
+    /// </summary>
+    private static async Task<IResult> HandleSurfaceUiChainCatalogAsync(
+        HttpContext httpContext,
+        string? surfaceKey,
+        IWorkspaceScopeContext workspaceScope,
+        WorkspaceUiChainResolver chainResolver,
+        CancellationToken cancellationToken)
+    {
+        var workspaceKey = PluginAdminWorkspaceResolver.Resolve(httpContext, workspaceScope.WorkspaceKey);
+        if (string.IsNullOrWhiteSpace(workspaceKey))
+        {
+            // Wie bei /ui-chain: kein Workspace ist eine Antwort, keine fehlerhafte Anfrage.
+            return Results.Ok(new UiChainApiResponse(string.Empty, []));
+        }
+
+        var chain = await chainResolver
+            .ResolveAsync(workspaceKey, surfaceKey, WorkspaceUiChainPurpose.Catalog, cancellationToken)
             .ConfigureAwait(false);
 
         return Results.Ok(new UiChainApiResponse(workspaceKey, chain));

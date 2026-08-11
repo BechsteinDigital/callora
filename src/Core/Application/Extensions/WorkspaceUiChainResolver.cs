@@ -62,6 +62,18 @@ public sealed class WorkspaceUiChainResolver
     public async Task<IReadOnlyList<string>> ResolveAsync(
         string workspaceKey,
         string? surfaceKey,
+        CancellationToken cancellationToken = default) =>
+        await ResolveAsync(workspaceKey, surfaceKey, WorkspaceUiChainPurpose.Render, cancellationToken)
+            .ConfigureAwait(false);
+
+    /// <param name="purpose">
+    /// Anzeigen oder Bearbeiten. Der Standard bleibt <see cref="WorkspaceUiChainPurpose.Render"/>,
+    /// damit kein Aufrufer versehentlich mehr bekommt als die Fläche zeigt.
+    /// </param>
+    public async Task<IReadOnlyList<string>> ResolveAsync(
+        string workspaceKey,
+        string? surfaceKey,
+        WorkspaceUiChainPurpose purpose,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceKey);
@@ -140,7 +152,12 @@ public sealed class WorkspaceUiChainResolver
         // lädt danach seine Bundles. Läge die Kürzung nur im Renderpfad, käme das Server-Markup
         // sauber und der Browser mountete trotzdem jeden Block, den irgendein aktives Plugin
         // mitbringt — genau der Zustand, der wie ein Rendering-Fehler aussieht und keiner ist.
-        if (!ownedByAnApp && _layouts is not null && !string.IsNullOrWhiteSpace(surfaceKey))
+        // Nicht beim Bearbeiten: der Editor braucht die Bundles, um überhaupt eine Block-Wahl
+        // anzubieten. Kürzte man auch hier auf das veröffentlichte Layout, könnte eine leere
+        // Fläche nie ihren ersten Block bekommen — die Palette bliebe leer, und zwar genau in
+        // dem Moment, in dem jemand sie füllen will (siehe WorkspaceUiChainPurpose.Catalog).
+        if (purpose == WorkspaceUiChainPurpose.Render
+            && !ownedByAnApp && _layouts is not null && !string.IsNullOrWhiteSpace(surfaceKey))
         {
             var document = await _layouts
                 .GetPublishedAsync(normalizedKey, surfaceKey.Trim(), cancellationToken)
