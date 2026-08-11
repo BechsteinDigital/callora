@@ -9,6 +9,7 @@ using Callora.Core.Tests.Support;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -46,6 +47,30 @@ public sealed class SessionRevocationEndpointTests
 
         // Clearing the browser cookie is not enough — a copied bearer token must die too.
         Assert.Equal(HttpStatusCode.Unauthorized, (await GetMeAsync(app, token)).StatusCode);
+    }
+
+    /// <summary>
+    /// Der Endpunkt ist mit Absicht anonym — er darf trotzdem nicht jedem erlauben, in die
+    /// Revocation-Tabelle zu schreiben. Vorher genügte ein selbst gebautes JWT: gelesen statt
+    /// geprüft, landeten dessen jti und exp direkt im Store. Mit einem exp weit in der Zukunft
+    /// löschte PurgeExpiredAsync die Zeile nie — unauthentifiziertes, dauerhaftes Tabellenwachstum
+    /// mit 5 Schreibvorgängen pro Minute und IP.
+    /// </summary>
+    [Fact]
+    public async Task Logout_WithAForgedToken_WritesNothingToTheRevocationList()
+    {
+        await using var app = await CreateAppAsync();
+        var (forged, tokenId) = ForgeToken();
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", forged);
+        var response = await client.PostAsync("/api/auth/logout", null);
+
+        // Der Aufrufer erfährt nichts: Logout scheitert nie, es passiert nur nichts.
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var store = app.Services.GetRequiredService<IBackendSessionRevocationStore>();
+        Assert.False(await store.IsRevokedAsync(tokenId));
     }
 
     [Fact]
@@ -123,6 +148,34 @@ public sealed class SessionRevocationEndpointTests
             new LoginApiRequest(OperatorId, OperatorPassword));
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    /// <summary>
+    /// Ein strukturell einwandfreies Token mit fremder Signatur und einem exp in tausend Jahren —
+    /// gebaut mit demselben Aussteller wie der Host, nur mit einem Schlüssel, den er nicht kennt.
+    /// </summary>
+    private static (string Token, string TokenId) ForgeToken()
+    {
+        var token = BackendJwtTokenIssuer.Issue(
+            new BackendHostOptions
+            {
+                JwtIssuer = "callora-tests",
+                JwtAudience = "callora-host-api",
+                JwtSigningKey = "not-the-hosts-key-not-the-hosts-key-not-the-hosts"
+            },
+            subject: OperatorId,
+            displayName: null,
+            email: null,
+            roles: [BackendRoles.SuperAdmin],
+            lifetime: TimeSpan.FromDays(365_000));
+
+        var tokenId = new JwtSecurityTokenHandler()
+            .ReadJwtToken(token)
+            .Claims
+            .First(claim => claim.Type == BackendClaimTypes.TokenId)
+            .Value;
+
+        return (token, tokenId);
     }
 
     private static Task<HttpResponseMessage> GetMeAsync(WebApplication app, string token)
