@@ -212,7 +212,18 @@ public sealed class ArchitectureRulesTests
     private static IEnumerable<(string RelativePath, string[] Lines)> EnumerateProductionSourceFiles()
     {
         var repoRoot = FindRepoRoot();
-        var roots = new[] { Path.Combine(repoRoot, "src"), Path.Combine(repoRoot, "custom") };
+
+        // Nur src/. custom/ ist seit ADR-020 Installationsziel und kein Repository-Inhalt: was
+        // dort liegt, sind fremde Plugin-Repositories — in einer lokalen Entwicklungsumgebung als
+        // Klone mit eigenem .git, eigener Directory.Build.props und eigenen Regeln. Sie an den
+        // Regeln DIESES Repositories zu messen ist nicht nur falsch zuständig, es macht die
+        // Testsuite von einem Verzeichnis abhängig, das gitignored ist: Wer ein Plugin lokal
+        // auscheckt, sah drei rote Architekturtests über Code, den er nicht geschrieben hat und
+        // der in keinem Commit dieses Repos steht.
+        //
+        // Als die Plugins noch im Monorepo lagen, war custom/ hier richtig. Seit sie ausgezogen
+        // sind, ist der einzige committete Inhalt dort die README.md je Discovery-Ordner.
+        var roots = new[] { Path.Combine(repoRoot, "src") };
 
         foreach (var root in roots.Where(Directory.Exists))
         {
