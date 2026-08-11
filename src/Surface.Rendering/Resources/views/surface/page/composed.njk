@@ -2,8 +2,14 @@
   What a surface renders when a layout was composed in the editor.
 
   The sections and blocks are already markup by the time this template runs — the composition
-  renderer produced them, with every attribute encoded and every confidential control left out.
-  This template only decides where they sit, which is why it is this short.
+  renderer produced them, with every attribute encoded. This template only decides where they
+  sit, which is why it is this short.
+
+  What it does NOT do is keep a secret. `confidential` is declared in the browser block contract,
+  and the host has no server-side block description to read it from — so a block's stored
+  configuration reaches data-callora-props as it is, on a Public surface without a login. A value
+  that must not be public does not belong in a block binding; the block asks for it at render
+  time instead.
 
   A plugin that wants its own frame around a composed page extends this file and fills
   composed_before or composed_after; overriding composed_body would drop the composition.
