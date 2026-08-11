@@ -256,12 +256,26 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         var bestScore = int.MinValue;
         foreach (var surface in surfaces)
         {
-            if (!surface.IsActive || !surface.Workspace.IsActive || !surface.Workspace.Tenant.IsActive)
+            if (!surface.Workspace.IsActive || !surface.Workspace.Tenant.IsActive)
             {
                 continue;
             }
 
-            var effective = EffectiveSurface.From(AncestryOf(surface, byId));
+            var ancestry = AncestryOf(surface, byId);
+
+            // Abgeschaltet gilt nach unten, nicht nur für den Knoten selbst. Vorher nahm das
+            // Deaktivieren einer Eltern-Fläche nur sie vom Netz: Ihre Kinder blieben unter ihrer
+            // eigenen URL erreichbar — und zwar über Host und Pfad, die sie von genau diesem
+            // Elternteil erben. Die Navigation zeigte sie da längst nicht mehr
+            // (SurfaceNavigationBuilder schneidet den Teilbaum ab), was den Widerspruch erst
+            // recht unsichtbar machte: Der Betreiber sah eine abgeschaltete Gliederung und einen
+            // trotzdem ausgelieferten Knoten darunter.
+            if (ancestry.Any(node => !node.IsActive))
+            {
+                continue;
+            }
+
+            var effective = EffectiveSurface.From(ancestry);
             if (!PublicRouteMatching.HostMatches(effective.PublicHost, normalizedHost) ||
                 !PublicRouteMatching.PathMatches(effective.PublicPathPrefix, normalizedPath))
             {

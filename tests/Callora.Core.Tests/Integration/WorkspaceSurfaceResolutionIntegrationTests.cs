@@ -174,6 +174,78 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task InactiveParent_TakesItsChildrenOffTheNetwork_Too()
+    {
+        // Ein Kind erbt Host und Pfad von genau dem Elternteil, den jemand abgeschaltet hat, und
+        // hat trotzdem eine eigene URL. Ohne diese Prüfung nahm das Deaktivieren nur den
+        // Elternknoten vom Netz, während die Navigation den ganzen Teilbaum längst ausblendete —
+        // der Betreiber sah eine abgeschaltete Gliederung und bekam den Knoten darunter serviert.
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        await using var context = await FreshContextWithTenantAsync();
+        var workspaceStore = new EfWorkspaceManagementStore(context);
+        var surfaceStore = new EfWorkspaceSurfaceStore(context);
+
+        _ = await workspaceStore.UpsertAsync(
+            "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "primary.example.de");
+
+        await surfaceStore.UpsertAsync("workspace-a", new WorkspaceSurfaceInput(
+            SurfaceKey: "portal",
+            DisplayName: "Portal",
+            SurfaceType: "portal",
+            PublicBaseUrl: "portal.example.de",
+            PublicHost: "portal.example.de",
+            PublicPathPrefix: "/",
+            Authentication: SurfaceAuthentication.Public,
+            Locale: null,
+            TemplatePluginId: null,
+            TemplateVersion: null,
+            ThemePluginId: null,
+            ThemeVersion: null,
+            IsActive: true));
+
+        await surfaceStore.UpsertAsync("workspace-a", new WorkspaceSurfaceInput(
+            SurfaceKey: "downloads",
+            DisplayName: "Downloads",
+            SurfaceType: "portal",
+            PublicBaseUrl: null,
+            PublicHost: null,
+            PublicPathPrefix: "downloads",
+            Authentication: SurfaceAuthentication.Public,
+            Locale: null,
+            TemplatePluginId: null,
+            TemplateVersion: null,
+            ThemePluginId: null,
+            ThemeVersion: null,
+            IsActive: true)
+        {
+            ParentSurfaceKey = "portal"
+        });
+
+        // Solange das Elternteil steht, ist das Kind erreichbar.
+        var beforeDeactivation = await workspaceStore
+            .ResolveSurfaceByPublicRouteAsync("portal.example.de", "/downloads");
+        Assert.Equal("downloads", beforeDeactivation?.SurfaceKey);
+
+        await surfaceStore.UpsertAsync("workspace-a", new WorkspaceSurfaceInput(
+            SurfaceKey: "portal",
+            DisplayName: "Portal",
+            SurfaceType: "portal",
+            PublicBaseUrl: "portal.example.de",
+            PublicHost: "portal.example.de",
+            PublicPathPrefix: "/",
+            Authentication: SurfaceAuthentication.Public,
+            Locale: null,
+            TemplatePluginId: null,
+            TemplateVersion: null,
+            ThemePluginId: null,
+            ThemeVersion: null,
+            IsActive: false));
+
+        Assert.Null(await workspaceStore.ResolveSurfaceByPublicRouteAsync("portal.example.de", "/downloads"));
+        Assert.Null(await workspaceStore.ResolveSurfaceByPublicRouteAsync("portal.example.de", "/"));
+    }
+
+    [SkippableFact]
     public async Task ResolveByPublicRoute_BehaviourUnchanged_AlongsideResolveSurface()
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
