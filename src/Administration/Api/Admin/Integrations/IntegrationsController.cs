@@ -69,12 +69,14 @@ public sealed class IntegrationsController : ControllerBase
             return BadRequest(new { error = $"Unknown RBAC role '{role}'." });
         }
 
-        var scope = string.IsNullOrWhiteSpace(request.Scope)
-            ? BackendAuthScopes.Platform
-            : request.Scope.Trim().ToLowerInvariant();
+        // Pflichtfeld, kein Default. Ein fehlendes scope hieß vorher "platform" — die
+        // weitreichendere der beiden Möglichkeiten, ausgewählt durch Weglassen. Die Autorität
+        // begrenzt zwar weiterhin die geprüfte RBAC-Rolle, aber die Reichweite eines Schlüssels
+        // gehört ausgeschrieben und nicht geraten.
+        var scope = request.Scope?.Trim().ToLowerInvariant();
         if (scope != BackendAuthScopes.Platform && scope != BackendAuthScopes.Workspace)
         {
-            return BadRequest(new { error = "scope must be 'platform' or 'workspace'." });
+            return BadRequest(new { error = "scope is required and must be 'platform' or 'workspace'." });
         }
 
         var workspaceKey = request.WorkspaceKey?.Trim();
