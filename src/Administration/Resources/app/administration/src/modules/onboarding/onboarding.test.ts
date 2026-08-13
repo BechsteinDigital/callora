@@ -85,4 +85,20 @@ describe('onboarding', () => {
     expect(onboarding.isDismissed.value).toBe(true)
     expect(localStorage.getItem('callora.onboarding.dismissed')).toBe('1')
   })
+
+  // #291: Ein einmaliger Serverfehler machte aus „unbekannt" eine 0 und schob den Operator in
+  // den Erstinstallations-Assistenten — samt Verbrauch des Einmal-Flags.
+  it('does not auto-redirect when the workspace list could not be loaded', async () => {
+    wsList.mockRejectedValueOnce(new Error('500'))
+    plList.mockResolvedValueOnce([])
+    usList.mockResolvedValueOnce([])
+
+    const { loadStatus, steps } = useOnboarding()
+    await loadStatus()
+
+    // Kein Umleiten: Der Stand ist unbekannt, nicht null Workspaces.
+    expect(shouldAutoRedirect()).toBe(false)
+    // Und der erste Schritt gilt nicht als offen, nur weil die Abfrage scheiterte.
+    expect(steps.value[0].done).toBe(false)
+  })
 })

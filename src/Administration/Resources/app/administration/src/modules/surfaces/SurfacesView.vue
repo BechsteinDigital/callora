@@ -12,8 +12,10 @@
     />
 
     <div class="surfaces__detail">
+      <CalAlert v-if="error" class="surfaces__message" tone="danger">{{ error }}</CalAlert>
+
       <CalEmptyState
-        v-if="!loading && surfaces.length === 0"
+        v-else-if="!loading && surfaces.length === 0"
         :icon="Layers"
         title="Noch keine Fläche"
         description="Eine Fläche ist der Zugang zu diesem Workspace — eine Website, ein Portal, eine Anwendung."
@@ -50,6 +52,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Layers, MousePointerClick } from 'lucide-vue-next'
+import CalAlert from '@/core/ui/CalAlert.vue'
 import CalButton from '@/core/ui/CalButton.vue'
 import CalEmptyState from '@/core/ui/CalEmptyState.vue'
 import { useAuthStore } from '@/core/auth/authStore'
@@ -73,6 +76,7 @@ const canManage = computed(() => hasPermission(ctx.value, 'workspace.update'))
 
 const surfaces = ref<WorkspaceSurface[]>([])
 const loading = ref(true)
+const error = ref<string | null>(null)
 const creating = ref(false)
 const creatingParentKey = ref<string | null>(null)
 
@@ -90,8 +94,15 @@ async function load(): Promise<void> {
   }
 
   loading.value = true
+  error.value = null
   try {
     surfaces.value = await api.listSurfaces(workspaceKey.value)
+  } catch (e) {
+    // Ohne diesen Zweig war ein fehlgeschlagener Ladevorgang von „keine Fläche vorhanden"
+    // nicht zu unterscheiden: Die Liste blieb leer, und die Oberfläche bot an, die erste
+    // Fläche anzulegen — für einen Workspace, der seine Flächen hat (#291). Der Operator
+    // legt dann plausiblerweise eine zweite an.
+    error.value = (e as Error).message
   } finally {
     loading.value = false
   }
