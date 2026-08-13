@@ -19,7 +19,7 @@ PROJECTS=(
   "src/Administration/Callora.Administration.csproj"
   "src/Workspace/Callora.Workspace.csproj"
   "src/Surface.Rendering/Callora.Surface.Rendering.csproj"
-  "custom/static-plugins/Communication/src/Abstractions/Callora.Plugin.Communication.Abstractions.csproj"
+  "custom/static-plugins/communication/src/Abstractions/Callora.Plugin.Communication.Abstractions.csproj"
 )
 
 echo "→ Feed: $FEED (Version $VERSION)"
