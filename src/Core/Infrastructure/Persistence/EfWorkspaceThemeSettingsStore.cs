@@ -223,6 +223,13 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
 
         var normalizedPluginId = pluginId.Trim();
+
+        // ExecuteDelete geht am ChangeTracker vorbei und committet sofort — zwei Aufrufe sind
+        // zwei Transaktionen. Bricht es dazwischen ab, sind die Definitionen weg und die Werte
+        // bleiben: Beim Neuinstallieren gelten sie wieder als gesetzt, obwohl niemand sie gesetzt
+        // hat. ReplaceDefinitionsForPluginAsync klammert dieselbe Tabellenkombination schon so.
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
         await dbContext.WorkspaceThemeSettingDefinitions
             .Where(x => x.PluginId == normalizedPluginId)
             .ExecuteDeleteAsync(cancellationToken)
@@ -231,6 +238,8 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
             .Where(x => x.PluginId == normalizedPluginId)
             .ExecuteDeleteAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

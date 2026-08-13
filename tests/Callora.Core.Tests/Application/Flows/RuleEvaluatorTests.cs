@@ -89,4 +89,52 @@ public sealed class RuleEvaluatorTests
         Assert.True(evaluator.Evaluate(nightShift, Context(now: new DateTimeOffset(2026, 7, 15, 5, 0, 0, TimeSpan.Zero))));
         Assert.False(evaluator.Evaluate(nightShift, Context(now: new DateTimeOffset(2026, 7, 15, 12, 0, 0, TimeSpan.Zero))));
     }
+
+    [Fact]
+    public void TimeWindow_AcceptsLongWeekdayNames()
+    {
+        var evaluator = CreateEvaluator();
+        var weekdays = new RuleConditionNode("time.window", Params: new()
+        {
+            ["days"] = "monday,Tuesday,WEDNESDAY"
+        });
+
+        Assert.True(evaluator.Evaluate(weekdays, Context(now: new DateTimeOffset(2026, 7, 15, 10, 0, 0, TimeSpan.Zero)))); // Mittwoch
+        Assert.False(evaluator.Evaluate(weekdays, Context(now: new DateTimeOffset(2026, 7, 16, 10, 0, 0, TimeSpan.Zero)))); // Donnerstag
+    }
+
+    /// <summary>
+    /// Ein Fenster, dessen Tagesangabe niemand kennt, kann nie zutreffen. Still false zu liefern
+    /// sähe wie „gerade nicht" aus und wäre „nie" — der Betreiber sucht den Fehler dann in der
+    /// Uhrzeit, im Zeitraum, im Trigger, nur nicht im Tippfehler.
+    /// </summary>
+    [Fact]
+    public void TimeWindow_UnknownWeekdayNames_Throw()
+    {
+        var evaluator = CreateEvaluator();
+        var typo = new RuleConditionNode("time.window", Params: new()
+        {
+            ["days"] = "montag,dienstag"
+        });
+
+        var exception = Assert.Throws<InvalidOperationException>(() => evaluator.Evaluate(typo, Context()));
+        Assert.Contains("montag,dienstag", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Die Abgrenzung dazu: Wird ein bekannter Tag mitgeliefert, bleibt der unbekannte daneben
+    /// wirkungslos — nur der Totalausfall ist ein Konfigurationsfehler.
+    /// </summary>
+    [Fact]
+    public void TimeWindow_PartiallyUnknownWeekdayNames_StillMatchTheKnownOnes()
+    {
+        var evaluator = CreateEvaluator();
+        var mixed = new RuleConditionNode("time.window", Params: new()
+        {
+            ["days"] = "wed,funday"
+        });
+
+        Assert.True(evaluator.Evaluate(mixed, Context(now: new DateTimeOffset(2026, 7, 15, 10, 0, 0, TimeSpan.Zero))));
+        Assert.False(evaluator.Evaluate(mixed, Context(now: new DateTimeOffset(2026, 7, 16, 10, 0, 0, TimeSpan.Zero))));
+    }
 }

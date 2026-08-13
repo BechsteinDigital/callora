@@ -60,4 +60,26 @@ public sealed class SystemConfigResolverTests
 
         Assert.Equal("\"PCMA\"", await resolver.ResolveValueAsync("voip", "codec.preferred", workspaceKey: "workspace-a"));
     }
+
+    /// <summary>
+    /// Zwei Workspaces, die sich nur in der Schreibweise unterscheiden, sind zwei Workspaces — der
+    /// Workspace-Store trimmt beim Anlegen und schreibt sonst nichts klein. Der Lesepfad der
+    /// Konfiguration war der einzige Beteiligte, der Groß- und Kleinschreibung ignorierte: Der
+    /// Unique-Index tut es nicht, der Schreibpfad tut es nicht. Damit sahen "Acme" und "acme"
+    /// gegenseitig ihre Werte, und welcher gewann, hing an der Zeilenreihenfolge.
+    /// </summary>
+    [Fact]
+    public async Task WorkspacesThatDifferOnlyInCasingDoNotSeeEachOthersValues()
+    {
+        var store = new InMemorySystemConfigStore();
+        await store.ReplaceDefinitionsForPluginAsync("voip", "1.0.0",
+            [new SystemConfigDefinitionInput("codec.preferred", "Codec", "text", null, "\"PCMA\"", null, null, 10, true)]);
+        await store.UpsertValuesAsync("voip", SystemConfigScopes.Workspace, "Acme", new Dictionary<string, string?> { ["codec.preferred"] = "\"opus\"" });
+        var resolver = new SystemConfigResolver(store);
+
+        Assert.Equal("\"opus\"", await resolver.ResolveValueAsync("voip", "codec.preferred", workspaceKey: "Acme"));
+
+        // Der andere Workspace fällt auf den Vorgabewert zurück, statt den fremden Wert zu erben.
+        Assert.Equal("\"PCMA\"", await resolver.ResolveValueAsync("voip", "codec.preferred", workspaceKey: "acme"));
+    }
 }

@@ -26,11 +26,13 @@ public sealed class RegistryCustomFieldSyncService(ICustomFieldStore store)
             pluginId,
             version,
             await File.ReadAllTextAsync(registryPath, cancellationToken).ConfigureAwait(false));
-        if (definitions.Count == 0)
-        {
-            return;
-        }
 
+        // Kein Frühausstieg bei einer leeren Liste: Genau der Aufruf mit leerer Liste ist das
+        // Aufräumwerkzeug. ReplaceDefinitionsForPluginAsync löscht alle Zeilen des Plugins und
+        // legt die übergebenen an — wer den Abschnitt aus seiner registry.json entfernt, will die
+        // Felder loswerden. Vorher blieben sie stehen, weil auch der Update-Pfad nichts löscht:
+        // Der Subscriber ruft ClearPluginDefinitionsAsync nur beim Deinstallieren. Für ein Plugin,
+        // das nie customFields hatte, ist der Aufruf ein No-op — es gibt keine Zeilen zu löschen.
         await store
             .ReplaceDefinitionsForPluginAsync(pluginId, version, definitions, cancellationToken)
             .ConfigureAwait(false);

@@ -209,6 +209,35 @@ public sealed class ArchitectureRulesTests
             "Application-Schicht referenziert ASP.NET:\n" + string.Join('\n', violations));
     }
 
+    /// <summary>
+    /// Die Lücke, durch die zwei Verstöße jahrelang liefen: Geprüft wurde Domain→außen und
+    /// Application→ASP.NET, aber nie Application→Infrastructure. Beide Fundstellen kamen deshalb
+    /// auch ohne <c>using</c> aus — sie schrieben den Infrastructure-Typ voll qualifiziert
+    /// mitten in den Ausdruck, wo keine Prüfung hinsah und keine Zeile auffiel.
+    /// </summary>
+    [Fact]
+    public void ApplicationLayer_DoesNotDependOnInfrastructure()
+    {
+        var violations = EnumerateProductionSourceFiles()
+            .Where(file => file.RelativePath.Contains(
+                $"{Path.DirectorySeparatorChar}Application{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(file => file.Lines.Any(static line =>
+                // Nicht nur using-Zeilen: Der voll qualifizierte Typ im Ausdruck ist genau die
+                // Form, in der beide Altfälle standen.
+                line.Contains(".Infrastructure.", StringComparison.Ordinal) &&
+                !line.TrimStart().StartsWith("//", StringComparison.Ordinal) &&
+                !line.TrimStart().StartsWith("///", StringComparison.Ordinal) &&
+                !line.TrimStart().StartsWith('*')))
+            .Select(file => file.RelativePath)
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Application-Schicht referenziert Infrastructure (CODE_STRUCTURE_RULES: Application "
+            + "kennt nur Domain — für alles andere gehört ein Port in die Application):\n"
+            + string.Join('\n', violations));
+    }
+
     private static IEnumerable<(string RelativePath, string[] Lines)> EnumerateProductionSourceFiles()
     {
         var repoRoot = FindRepoRoot();

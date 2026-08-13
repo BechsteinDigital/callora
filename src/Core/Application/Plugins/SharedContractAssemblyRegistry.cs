@@ -167,6 +167,20 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
 
                 // A later declarer of an already-shared contract still belongs in the catalog's
                 // dependents, but the first registration keeps ownership of the identity.
+                //
+                // One exception: the first registration usually happens during inspection, where
+                // the plugin id does not exist yet — it is only known once the entry point has
+                // been instantiated. Install always precedes activation, so for plugin-provided
+                // contracts the catalog reported declaringPluginId = null as the rule, not as an
+                // edge case. Filling in a still-missing id is not a change of ownership; it is
+                // the same registration finally learning who it belongs to.
+                if (declaringPluginId is not null &&
+                    _registrationsByName.TryGetValue(name, out var registration) &&
+                    registration.DeclaringPluginId is null)
+                {
+                    _registrationsByName[name] = registration with { DeclaringPluginId = declaringPluginId };
+                }
+
                 return;
             }
 

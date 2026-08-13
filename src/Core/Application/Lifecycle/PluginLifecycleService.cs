@@ -61,9 +61,14 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
             catalog,
             extensionPointRegistryStore,
             extensionRegistrationStore);
+        // Der Rückfall baut hier KEIN Infrastructure-Objekt mehr. Er ist im Host ohnehin
+        // unerreichbar — die Composition-Root registriert ein Gate, dessen Anbieter zusätzlich die
+        // Shared-Contract-Registry liest, und der MS-DI-Konstruktorwähler nimmt den breitesten
+        // auflösbaren Konstruktor. Erreicht wird diese Zeile nur, wenn jemand den Dienst von Hand
+        // baut; dass sie trotzdem in die Infrastructure griff, war ein Schichtbruch ohne Nutzen.
         var effectiveDependencyGate = dependencyVersionGate
             ?? new Callora.Core.Application.Plugins.PluginDependencyVersionGate(
-                new Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider());
+                Callora.Core.Application.Plugins.UnknownProvidedContractVersionProvider.Instance);
         _installer = new PluginInstaller(
             lifecycle,
             packageRegistryReader,

@@ -20,11 +20,23 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     private readonly ConcurrentDictionary<string, InstalledPluginRecord> _installed = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, ActivePluginHandle> _active = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<Type, ImmutableArray<PluginExportRegistration>> _exports = new();
+
+    /// <summary>
+    /// Plugins, deren Exporte bereits eingesammelt wurden — der Sperrvermerk für späte Exporte.
+    /// <para>
+    /// Ein Plugin hält die Export-Delegate über seinen Kontext dauerhaft, und der Vertrag verbietet
+    /// keinen späten Aufruf. Ohne diesen Vermerk landete ein Export NACH dem Einsammeln dauerhaft
+    /// in der Tabelle: Kein weiterer Aufräumlauf kommt, also lieferten TryGetExport und GetExports
+    /// danach eine Instanz aus einem entladenen Ladekontext. Die Marke wird zu Beginn jeder
+    /// Aktivierung wieder gelöscht — sie sperrt den Nachzügler, nicht den Neustart.
+    /// </para>
+    /// </summary>
+    private readonly ConcurrentDictionary<string, byte> _exportsRevoked = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _mutationLock = new(1, 1);
     private readonly SharedContractAssemblyRegistry _sharedContracts;
     private readonly RuntimeCapabilityRegistry? _runtimeCapabilities;
     private readonly PluginFaultRegistry? _faults;
-    private readonly Callora.Core.Infrastructure.Mcp.McpToolRegistry? _mcpTools;
+    private readonly Callora.Core.Application.Mcp.Contracts.IMcpToolRegistry? _mcpTools;
     private long _exportSequence;
     private int _disposed;
 
@@ -37,7 +49,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         ILogger<RuntimePluginHost> logger,
         RuntimeCapabilityRegistry? runtimeCapabilities = null,
         PluginFaultRegistry? faults = null,
-        Callora.Core.Infrastructure.Mcp.McpToolRegistry? mcpTools = null)
+        Callora.Core.Application.Mcp.Contracts.IMcpToolRegistry? mcpTools = null)
     {
         _services = services;
         _options = options;
@@ -306,7 +318,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         await _mutationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (!_installed.TryGetValue(pluginId, out _))
+            if (!_installed.TryGetValue(pluginId, out var record))
             {
                 return new RuntimePluginUninstallResult(
                     RuntimePluginUninstallStatus.NotInstalled,
@@ -319,6 +331,15 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                 var deactivate = await DeactivateInternalAsync(pluginId, cancellationToken).ConfigureAwait(false);
                 if (!deactivate.IsSuccess)
                 {
+                    // Dieselbe Buchführung wie in DeactivateAsync — sie fehlte hier, weil der
+                    // Uninstall den internen Weg nimmt und der fasst den Zustand nie an. Bis
+                    // hierher ist das Plugin aber schon aus _active heraus, gedraint, seine
+                    // Exporte sind entfernt und StopAsync ist gelaufen: Es steht nur noch in
+                    // _installed als Active. LoadedPlugins liest genau daraus, also meldeten
+                    // Verfügbarkeitsprüfung und Installationsliste danach ein laufendes Plugin,
+                    // das nicht mehr läuft.
+                    record.State = RuntimePluginState.UnloadFailed;
+                    _installed[record.PluginId] = record;
                     return new RuntimePluginUninstallResult(
                         RuntimePluginUninstallStatus.Failed,
                         pluginId,
@@ -415,6 +436,10 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                     record.PluginId,
                     $"Plugin id mismatch. Expected '{record.PluginId}', but plugin returned '{plugin.PluginId}'.");
             }
+
+            // Der Sperrvermerk eines früheren Laufs fällt hier — und nicht erst nach StartAsync:
+            // Das Plugin exportiert genau dort, und in _active steht es erst danach.
+            _exportsRevoked.TryRemove(record.PluginId, out _);
 
             var pluginContext = new PluginContext(_services, record.PluginId, RegisterExport, ResolveExport);
             await plugin.StartAsync(pluginContext, cancellationToken).ConfigureAwait(false);
@@ -522,7 +547,14 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
         try
         {
-            RegisterDeclaredContracts(fullPath);
+            // Hier wird bewusst NICHTS registriert. Contract-Assemblies landen im Default-ALC und
+            // bleiben dort bis zum Prozessende — für ein Paket, das gleich darauf als
+            // EntryPointNotFound oder inkompatibel abgelehnt wird, ist das eine dauerhafte Spur
+            // von etwas, das nie installiert wurde: Ein späteres, echtes Plugin mit demselben
+            // Contract in anderer Hauptversion prallt dann an einer Registrierung ab, die einem
+            // abgelehnten Paket gehört. Die Inspektion braucht die Freigabe auch nicht — ihr
+            // Ladekontext löst Contracts sonst plugin-lokal auf und wird im finally entladen.
+            // Registriert wird beim Aktivieren (ActivateInternalAsync), und zwar mit Plugin-Id.
             loadContext = new PluginAssemblyLoadContext(fullPath, _sharedContracts);
             var assembly = loadContext.LoadFromAssemblyPath(fullPath);
             var pluginType = ResolvePluginType(assembly, entryTypeName);
@@ -726,6 +758,19 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                 $"Export instance type '{service.GetType().FullName}' does not implement '{contractType.FullName}'.");
         }
 
+        // Ein Export nach dem Einsammeln bliebe für immer stehen. Abgewiesen wird er, nicht
+        // geworfen: Der Aufrufer ist Plugin-Code, der beim Herunterfahren aus einem Timer oder
+        // einer laufenden Aufgabe kommen kann — eine Ausnahme dorthin zu werfen macht aus einem
+        // verspäteten Export einen Absturz beim Deaktivieren.
+        if (_exportsRevoked.ContainsKey(pluginId) && !_active.ContainsKey(pluginId))
+        {
+            _logger.LogWarning(
+                "Ignored export of '{ContractType}' from plugin {PluginId}: its exports were already withdrawn.",
+                contractType.FullName,
+                pluginId);
+            return;
+        }
+
         var registration = new PluginExportRegistration(
             pluginId,
             contractType,
@@ -781,29 +826,48 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
     private void RemoveExportsByPlugin(string pluginId)
     {
-        foreach (var (contractType, exports) in _exports)
+        // Erst der Vermerk, dann das Einsammeln: Andersherum bliebe genau das Fenster offen,
+        // das hier geschlossen werden soll — ein Export zwischen letztem Filterlauf und Vermerk
+        // wäre durchgerutscht und dauerhaft geblieben.
+        _exportsRevoked[pluginId] = 0;
+
+        foreach (var contractType in _exports.Keys)
         {
-            if (exports.Length == 0)
+            // Lesen, filtern, zurückschreiben war drei Schritte weit vom Rest entfernt: Eine
+            // Indexer-Zuweisung schreibt den gefilterten Stand auch dann, wenn dazwischen jemand
+            // anderes etwas eingetragen hat, und macht dessen Eintrag wieder zunichte. Compare-
+            // and-Swap mit Wiederholung schreibt nur auf den Stand, den wir gelesen haben.
+            while (_exports.TryGetValue(contractType, out var exports))
             {
-                continue;
+                if (exports.Length == 0)
+                {
+                    break;
+                }
+
+                var filtered = exports
+                    .Where(export => !string.Equals(export.PluginId, pluginId, StringComparison.OrdinalIgnoreCase))
+                    .ToImmutableArray();
+
+                if (filtered.Length == exports.Length)
+                {
+                    break;
+                }
+
+                if (filtered.IsEmpty)
+                {
+                    if (_exports.TryRemove(new KeyValuePair<Type, ImmutableArray<PluginExportRegistration>>(contractType, exports)))
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                if (_exports.TryUpdate(contractType, filtered, exports))
+                {
+                    break;
+                }
             }
-
-            var filtered = exports
-                .Where(export => !string.Equals(export.PluginId, pluginId, StringComparison.OrdinalIgnoreCase))
-                .ToImmutableArray();
-
-            if (filtered.Length == exports.Length)
-            {
-                continue;
-            }
-
-            if (filtered.IsEmpty)
-            {
-                _exports.TryRemove(contractType, out _);
-                continue;
-            }
-
-            _exports[contractType] = filtered;
         }
 
         // Drop any runtime capability source the plugin registered (idempotent if it had none), so its

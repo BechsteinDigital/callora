@@ -29,11 +29,11 @@ public sealed class RegistryConfigSchemaSyncService(ISystemConfigStore store)
         }
 
         var definitions = ParseConfigFields(await File.ReadAllTextAsync(registryPath, cancellationToken).ConfigureAwait(false));
-        if (definitions.Count == 0)
-        {
-            return;
-        }
 
+        // Kein Frühausstieg bei einer leeren Liste — dieselbe Begründung wie in
+        // RegistryCustomFieldSyncService: Der Replace mit leerer Liste IST das Aufräumen. Wer ein
+        // Konfigurationsfeld aus seiner registry.json nimmt, sah es bisher trotzdem weiter in der
+        // Verwaltung, weil auf dem Update-Pfad nichts löscht.
         await store
             .ReplaceDefinitionsForPluginAsync(pluginId, version, definitions, cancellationToken)
             .ConfigureAwait(false);

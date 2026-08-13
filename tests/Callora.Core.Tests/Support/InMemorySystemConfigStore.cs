@@ -61,7 +61,9 @@ public sealed class InMemorySystemConfigStore : ISystemConfigStore
                 string.Equals(value.PluginId, pluginId, StringComparison.OrdinalIgnoreCase) &&
                 scopeChain.Any(scope =>
                     value.Scope == scope.Scope &&
-                    string.Equals(value.ScopeKey, scope.ScopeKey, StringComparison.OrdinalIgnoreCase)))
+                    // Ordinal wie EfSystemConfigStore: Ein Fake, der grosszuegiger sucht als der
+                    // echte Store, laesst genau die Verwechslung durch, die er beweisen soll.
+                    string.Equals(value.ScopeKey, scope.ScopeKey, StringComparison.Ordinal)))
             .ToArray();
         return Task.FromResult(result);
     }
@@ -79,7 +81,7 @@ public sealed class InMemorySystemConfigStore : ISystemConfigStore
                 string.Equals(value.PluginId, pluginId, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(value.ConfigKey, configKey, StringComparison.OrdinalIgnoreCase) &&
                 value.Scope == scope &&
-                string.Equals(value.ScopeKey, scopeKey, StringComparison.OrdinalIgnoreCase));
+                string.Equals(value.ScopeKey, scopeKey, StringComparison.Ordinal));
 
             if (valueJson is not null)
             {

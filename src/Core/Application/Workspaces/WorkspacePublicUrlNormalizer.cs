@@ -17,6 +17,19 @@ public static class WorkspacePublicUrlNormalizer
         var normalizedInput = rawPublicBaseUrl.Trim();
         if (normalizedInput.StartsWith('/'))
         {
+            // The path-only branch returns before the Uri-based checks below, so
+            // it has to reject query and fragment itself. Without this, "/shop?ref=1"
+            // was stored verbatim as a route prefix and never matched a request —
+            // HttpContext.Request.Path carries no query string. The same input
+            // without the leading slash was rejected, which made the rule look arbitrary.
+            if (normalizedInput.Contains('?', StringComparison.Ordinal) ||
+                normalizedInput.Contains('#', StringComparison.Ordinal))
+            {
+                descriptor = new WorkspacePublicUrlDescriptor(null, null, "/");
+                errorMessage = "PublicBaseUrl must not contain query string or fragment.";
+                return false;
+            }
+
             descriptor = new WorkspacePublicUrlDescriptor(
                 normalizedInput,
                 null,

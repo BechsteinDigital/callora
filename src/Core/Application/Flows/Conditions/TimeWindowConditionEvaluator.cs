@@ -5,9 +5,10 @@ namespace Callora.Core.Application.Flows.Conditions;
 
 /// <summary>
 /// Matches when the event time falls into a weekly window — business hours.
-/// Parameters: "days" (csv: mon,tue,wed,thu,fri,sat,sun; default all),
-/// "from"/"to" ("HH:mm", default full day), "timezone" (IANA/Windows id,
-/// default UTC). Windows crossing midnight (22:00→06:00) are supported.
+/// Parameters: "days" (csv: mon,tue,wed,thu,fri,sat,sun — long forms like
+/// "monday" are accepted too; default all), "from"/"to" ("HH:mm", default
+/// full day), "timezone" (IANA/Windows id, default UTC). Windows crossing
+/// midnight (22:00→06:00) are supported.
 /// </summary>
 public sealed class TimeWindowConditionEvaluator : IRuleConditionEvaluator
 {
@@ -19,7 +20,17 @@ public sealed class TimeWindowConditionEvaluator : IRuleConditionEvaluator
         ["thu"] = DayOfWeek.Thursday,
         ["fri"] = DayOfWeek.Friday,
         ["sat"] = DayOfWeek.Saturday,
-        ["sun"] = DayOfWeek.Sunday
+        ["sun"] = DayOfWeek.Sunday,
+        // Long forms cost nothing and remove the most common way to write a
+        // window that never matches: "monday,tuesday" used to be filtered out
+        // silently, leaving the condition permanently false.
+        ["monday"] = DayOfWeek.Monday,
+        ["tuesday"] = DayOfWeek.Tuesday,
+        ["wednesday"] = DayOfWeek.Wednesday,
+        ["thursday"] = DayOfWeek.Thursday,
+        ["friday"] = DayOfWeek.Friday,
+        ["saturday"] = DayOfWeek.Saturday,
+        ["sunday"] = DayOfWeek.Sunday
     };
 
     public string Type => "time.window";
@@ -30,11 +41,25 @@ public sealed class TimeWindowConditionEvaluator : IRuleConditionEvaluator
 
         if (parameters.TryGetValue("days", out var daysCsv) && !string.IsNullOrWhiteSpace(daysCsv))
         {
-            var allowedDays = daysCsv
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            var requestedDays = daysCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var allowedDays = requestedDays
                 .Where(DayNames.ContainsKey)
                 .Select(day => DayNames[day])
                 .ToHashSet();
+
+            // Distinguishing "no days given" from "every given day was unknown"
+            // is the whole point here: the former never reaches this branch,
+            // the latter used to return false for all eternity without a trace.
+            // A misconfigured window that can never match is a configuration
+            // error, not a non-match — RuleEvaluator throws for the structurally
+            // broken 'not' node for the same reason.
+            if (requestedDays.Length > 0 && allowedDays.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    $"time.window: none of the configured days ('{daysCsv}') is a known weekday name. " +
+                    "Expected mon,tue,wed,thu,fri,sat,sun (long forms accepted).");
+            }
+
             if (!allowedDays.Contains(localTime.DayOfWeek))
             {
                 return false;

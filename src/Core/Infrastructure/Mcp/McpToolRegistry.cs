@@ -16,7 +16,7 @@ namespace Callora.Core.Infrastructure.Mcp;
 /// serves, so newly activated tools are live without a restart, re-mount or dropped connection.
 /// </summary>
 /// <remarks>Thread-safe: per-plugin tracking uses a concurrent map and the SDK collection is itself thread-safe.</remarks>
-public sealed class McpToolRegistry
+public sealed class McpToolRegistry : IMcpToolRegistry
 {
     private readonly McpServerPrimitiveCollection<McpServerTool> _tools;
     private readonly IHttpContextAccessor _httpContextAccessor;

@@ -80,6 +80,12 @@ public static class CalloraMcpCompositionExtensions
             toolCollection,
             sp.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>(),
             sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<McpToolRegistry>>()));
+        // Ausgeschrieben auf DIESELBE Instanz, nicht als zweite Registrierung: Die Laufzeit greift
+        // über den Port zu (RuntimePluginHost steht in der Application-Schicht), der MCP-Server
+        // über den konkreten Typ. Zwei Instanzen hießen zwei Sammlungen — angemeldete Werkzeuge
+        // landeten in der einen, ausgeliefert würde die andere, und niemand sähe einen Fehler.
+        services.AddSingleton<Callora.Core.Application.Mcp.Contracts.IMcpToolRegistry>(
+            static sp => sp.GetRequiredService<McpToolRegistry>());
 
         authenticationBuilder.AddMcp(options =>
         {

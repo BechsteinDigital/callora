@@ -34,6 +34,36 @@ internal sealed class StaticPluginPackageRegistryReader : IPluginPackageRegistry
                 [],
                 dependencies));
 
+    /// <summary>
+    /// Declares one plugin's tier and capabilities at an assembly path — for callers that test the
+    /// activation ORDER rather than the dependency gate.
+    /// </summary>
+    /// <param name="assemblyPath">Path the installation record points at.</param>
+    /// <param name="tier">Raw manifest value ("system"/"application"/null), unresolved.</param>
+    /// <param name="capabilities">Capabilities this plugin provides.</param>
+    /// <param name="requiredCapabilities">Capabilities it needs first.</param>
+    public void AddMetadata(
+        string assemblyPath,
+        string? tier = null,
+        IReadOnlyList<string>? capabilities = null,
+        IReadOnlyList<string>? requiredCapabilities = null) =>
+        _byPath[assemblyPath] = new PluginPackageRegistryReadResult(
+            true,
+            true,
+            null,
+            new PluginPackageRegistryMetadata(
+                "v1",
+                "1.0",
+                "Test",
+                Path.GetFileNameWithoutExtension(assemblyPath),
+                "1.0.0",
+                Path.GetFileName(assemblyPath),
+                "Test.Plugin",
+                capabilities ?? [],
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                RequiredCapabilities: requiredCapabilities,
+                Tier: tier));
+
     public ValueTask<PluginPackageRegistryReadResult> ReadForAssemblyAsync(
         string assemblyPath,
         CancellationToken cancellationToken = default)

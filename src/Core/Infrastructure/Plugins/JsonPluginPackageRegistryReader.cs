@@ -151,7 +151,8 @@ public sealed class JsonPluginPackageRegistryReader : IPluginPackageRegistryRead
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => x.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray());
+                .ToArray(),
+                dto.Tier);
 
             var warningMessage = contractPolicy.Status is PluginContractSupportStatus.Deprecated
                 ? $"registry.json: contractVersion '{dto.ContractVersion}' is deprecated and will be removed in a future release."
