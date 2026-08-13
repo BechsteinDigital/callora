@@ -26,7 +26,15 @@ internal static class PluginActivationOrdering
             var metadata = registry.Registry;
             nodes.Add(new PluginActivationNode(
                 pluginId,
-                IsFoundation: false,
+                // Stand hier hart auf false, womit der Sortierschlüssel des Planers auf den
+                // Eingabeindex zusammenfiel: „Foundation zuerst" war im Produktivpfad ein toter
+                // Parameter. Der Weg war doppelt abgeschnitten — die Angabe wurde zwar aus der
+                // registry.json geparst, aber nicht bis hierher durchgereicht.
+                //
+                // Application als Vorgabe und nicht das Quellverzeichnis: Wer die Reihenfolge
+                // beeinflussen will, sagt es im Manifest. Eine Fläche, die allein daran hängt,
+                // WO ein Paket liegt, wäre beim Verschieben still eine andere.
+                IsFoundation: PluginTierResolver.Resolve(metadata?.Tier, PluginTier.Application) == PluginTier.System,
                 metadata?.Capabilities ?? [],
                 metadata?.RequiredCapabilities ?? []));
         }

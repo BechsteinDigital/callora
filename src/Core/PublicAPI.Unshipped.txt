@@ -2285,7 +2285,7 @@ Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ConditionalCapabi
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ConditionalCapabilities.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ContractVersion.get -> string!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ContractVersion.init -> void
-Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Deconstruct(out string! ContractVersion, out string! SchemaVersion, out string! Name, out string! PluginId, out string! Version, out string! AssemblyFileName, out string! EntryTypeName, out System.Collections.Generic.IReadOnlyList<string!>! Capabilities, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations, out System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities, out System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities) -> void
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Deconstruct(out string! ContractVersion, out string! SchemaVersion, out string! Name, out string! PluginId, out string! Version, out string! AssemblyFileName, out string! EntryTypeName, out System.Collections.Generic.IReadOnlyList<string!>! Capabilities, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations, out System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities, out System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities, out string? Tier) -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Dependencies.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Dependencies.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.EntryTypeName.get -> string!
@@ -2297,11 +2297,13 @@ Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Name.get -> strin
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Name.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginId.get -> string!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginId.init -> void
-Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginPackageRegistryMetadata(string! ContractVersion, string! SchemaVersion, string! Name, string! PluginId, string! Version, string! AssemblyFileName, string! EntryTypeName, System.Collections.Generic.IReadOnlyList<string!>! Capabilities, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations = null, System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities = null, System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities = null) -> void
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginPackageRegistryMetadata(string! ContractVersion, string! SchemaVersion, string! Name, string! PluginId, string! Version, string! AssemblyFileName, string! EntryTypeName, System.Collections.Generic.IReadOnlyList<string!>! Capabilities, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations = null, System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities = null, System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities = null, string? Tier = null) -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.RequiredCapabilities.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.RequiredCapabilities.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.SchemaVersion.get -> string!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.SchemaVersion.init -> void
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Tier.get -> string?
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Tier.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Version.get -> string!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Version.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryReadResult
