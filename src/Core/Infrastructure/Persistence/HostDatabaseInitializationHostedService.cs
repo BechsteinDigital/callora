@@ -6,11 +6,13 @@ using Microsoft.EntityFrameworkCore;
 namespace Callora.Core.Infrastructure.Persistence;
 
 /// <summary>
-/// One-time startup work: applies EF migrations under a Postgres advisory
-/// lock (safe multi-instance start, PLAT-233), imports legacy filesystem
-/// data-protection keys into the database keyring (PLAT-232) and seeds the
-/// default tenant and RBAC baseline. Schema changes live exclusively in EF
-/// migrations — the former inline DDL is gone.
+/// One-time startup work under a single Postgres advisory lock (safe
+/// multi-instance start, PLAT-233): applies EF migrations, imports legacy
+/// filesystem data-protection keys into the database keyring (PLAT-232) and
+/// seeds the default tenant and RBAC baseline. The seeding is inside the lock
+/// because it is check-then-write against unique indexes — outside it, two
+/// fresh nodes race and one fails its start. Schema changes live exclusively
+/// in EF migrations — the former inline DDL is gone.
 /// </summary>
 public sealed class HostDatabaseInitializationHostedService(IServiceProvider services) : IHostedService
 {
@@ -31,6 +33,20 @@ public sealed class HostDatabaseInitializationHostedService(IServiceProvider ser
             try
             {
                 await dbContext.ApplyMigrationsAsync(cancellationToken).ConfigureAwait(false);
+
+                // Das Seeding gehört unter denselben Lock wie die Migrationen. Beide Seeder
+                // prüfen auf Leerheit und schreiben dann — zwei frische Knoten, die gleichzeitig
+                // an dieser Prüfung vorbeikommen, laufen in den Unique-Index, und einer stirbt
+                // beim Start. Der Fall heilt sich beim Neustart (die Tabelle ist dann nicht mehr
+                // leer), aber ein vermeidbarer fehlgeschlagener Start ist trotzdem einer: Der
+                // Lock, der das Rennen ausschließt, wurde bis hierher genau eine Zeile zu früh
+                // wieder freigegeben.
+                var options = scope.ServiceProvider.GetRequiredService<BackendHostOptions>();
+                await ImportLegacyDataProtectionKeysAsync(dbContext, options, cancellationToken).ConfigureAwait(false);
+                await EnsureDefaultTenantExistsAsync(dbContext, options, cancellationToken).ConfigureAwait(false);
+
+                var rbacSeeder = scope.ServiceProvider.GetRequiredService<BackendRbacDatabaseSeeder>();
+                await rbacSeeder.SeedAsync(dbContext, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -42,13 +58,6 @@ public sealed class HostDatabaseInitializationHostedService(IServiceProvider ser
         {
             await connection.CloseAsync().ConfigureAwait(false);
         }
-
-        var options = scope.ServiceProvider.GetRequiredService<BackendHostOptions>();
-        await ImportLegacyDataProtectionKeysAsync(dbContext, options, cancellationToken).ConfigureAwait(false);
-        await EnsureDefaultTenantExistsAsync(dbContext, options, cancellationToken).ConfigureAwait(false);
-
-        var rbacSeeder = scope.ServiceProvider.GetRequiredService<BackendRbacDatabaseSeeder>();
-        await rbacSeeder.SeedAsync(dbContext, cancellationToken).ConfigureAwait(false);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
