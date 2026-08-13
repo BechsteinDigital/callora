@@ -48,6 +48,16 @@ public sealed class WebhookDeliveryJobHandler(
             WebhookSignature.HeaderName,
             WebhookSignature.Compute(subscription.Secret, payload.BodyJson));
 
+        // Leer nur bei Jobs, die vor der Einführung der Id in die Warteschlange gingen. Dann gar
+        // keinen Header zu senden ist ehrlicher als einen erfundenen: Der Empfänger sieht, dass er
+        // nicht deduplizieren kann, statt es zu glauben.
+        if (payload.DeliveryId != Guid.Empty)
+        {
+            request.Headers.TryAddWithoutValidation(
+                WebhookSignature.DeliveryHeaderName,
+                payload.DeliveryId.ToString("D"));
+        }
+
         var startedAt = Stopwatch.GetTimestamp();
         try
         {

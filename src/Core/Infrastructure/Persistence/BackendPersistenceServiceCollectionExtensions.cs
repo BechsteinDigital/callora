@@ -15,6 +15,27 @@ namespace Callora.Core.Infrastructure.Persistence;
 
 public static class BackendPersistenceServiceCollectionExtensions
 {
+    /// <summary>
+    /// Obergrenze für eine einzelne Datenbankanweisung im Anfragepfad.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Nicht „vorher gab es keine": Npgsql bringt 30 Sekunden mit. Nur war das ein Wert, den
+    /// niemand gewählt hatte, und für eine Web-Anfrage ist er zu hoch — der öffentliche
+    /// Renderpfad setzt mehrere Abfragen hintereinander ab, und schon zwei davon in der Vorgabe
+    /// überschreiten jede Geduld auf der anderen Seite. Wer wartet, ist nicht der Host, sondern
+    /// der Besucher.
+    /// </para>
+    /// <para>
+    /// Zehn Sekunden liegen weit über jeder gesunden Abfrage hier und weit unter dem, was ein
+    /// Browser abwartet. Eine Abfrage, die sie reißt, ist kein langsamer Normalfall, sondern eine
+    /// blockierte Verbindung — und die soll abbrechen, solange der Fehler noch bei ihr steht.
+    /// Migrationen laufen ausdrücklich nicht hierunter, siehe
+    /// <see cref="DbContextMigrationExtensions.MigrationCommandTimeout"/>.
+    /// </para>
+    /// </remarks>
+    public static readonly TimeSpan RequestCommandTimeout = TimeSpan.FromSeconds(10);
+
     public static IServiceCollection AddBackendPersistence(
         this IServiceCollection services,
         BackendHostOptions options)
@@ -22,7 +43,9 @@ public static class BackendPersistenceServiceCollectionExtensions
         ArgumentException.ThrowIfNullOrWhiteSpace(options.DatabaseConnectionString);
 
         services.AddDbContext<HostPersistenceDbContext>(db =>
-            db.UseNpgsql(options.DatabaseConnectionString));
+            db.UseNpgsql(
+                options.DatabaseConnectionString,
+                npgsql => npgsql.CommandTimeout((int)RequestCommandTimeout.TotalSeconds)));
 
         // Trägt den Workspace-Scope des Requests in den globalen Query-Filter
         // des DbContext (PLAT-267). Operatoren/Nicht-Requests umgehen ihn.

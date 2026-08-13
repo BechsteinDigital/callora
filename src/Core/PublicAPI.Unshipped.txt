@@ -3670,13 +3670,15 @@ Callora.Core.Application.Webhooks.WebhookDeliveryPayload
 Callora.Core.Application.Webhooks.WebhookDeliveryPayload.<Clone>$() -> Callora.Core.Application.Webhooks.WebhookDeliveryPayload!
 Callora.Core.Application.Webhooks.WebhookDeliveryPayload.BodyJson.get -> string!
 Callora.Core.Application.Webhooks.WebhookDeliveryPayload.BodyJson.init -> void
-Callora.Core.Application.Webhooks.WebhookDeliveryPayload.Deconstruct(out System.Guid SubscriptionId, out string! EventName, out string! BodyJson) -> void
+Callora.Core.Application.Webhooks.WebhookDeliveryPayload.Deconstruct(out System.Guid SubscriptionId, out string! EventName, out string! BodyJson, out System.Guid DeliveryId) -> void
+Callora.Core.Application.Webhooks.WebhookDeliveryPayload.DeliveryId.get -> System.Guid
+Callora.Core.Application.Webhooks.WebhookDeliveryPayload.DeliveryId.init -> void
 Callora.Core.Application.Webhooks.WebhookDeliveryPayload.Equals(Callora.Core.Application.Webhooks.WebhookDeliveryPayload? other) -> bool
 Callora.Core.Application.Webhooks.WebhookDeliveryPayload.EventName.get -> string!
 Callora.Core.Application.Webhooks.WebhookDeliveryPayload.EventName.init -> void
 Callora.Core.Application.Webhooks.WebhookDeliveryPayload.SubscriptionId.get -> System.Guid
 Callora.Core.Application.Webhooks.WebhookDeliveryPayload.SubscriptionId.init -> void
-Callora.Core.Application.Webhooks.WebhookDeliveryPayload.WebhookDeliveryPayload(System.Guid SubscriptionId, string! EventName, string! BodyJson) -> void
+Callora.Core.Application.Webhooks.WebhookDeliveryPayload.WebhookDeliveryPayload(System.Guid SubscriptionId, string! EventName, string! BodyJson, System.Guid DeliveryId = default(System.Guid)) -> void
 Callora.Core.Application.Webhooks.WebhookDispatcher
 Callora.Core.Application.Webhooks.WebhookDispatcher.DispatchAsync(string! eventName, string? workspaceKey, object! payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Webhooks.WebhookDispatcher.WebhookDispatcher(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Callora.Core.Application.Jobs.Contracts.IBackgroundJobQueue! jobQueue, Callora.Core.Application.Webhooks.SensitivePayloadFieldRegistry! sensitiveFieldRegistry, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Webhooks.WebhookDispatcher!>! logger) -> void
@@ -4861,6 +4863,7 @@ Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleto
 Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleton(System.Type! serviceType, System.Type! implementationType) -> void
 Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleton(System.Type! serviceType, object! instance) -> void
 Callora.Core.Infrastructure.DependencyInjection.ServiceCollectionExtensions
+Callora.Core.Infrastructure.DependencyInjection.WebhookDeliveryResilienceExtensions
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher.DispatchAsync<TEvent>(TEvent appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher.HostApplicationEventDispatcher(System.IServiceProvider! services, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher!>! logger, Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null) -> void
@@ -5753,6 +5756,7 @@ const Callora.Core.Application.Surfaces.SurfaceSessionEnvelope.CurrentVersion = 
 const Callora.Core.Application.Surfaces.SurfaceSessionPurgeJobHandler.JobTypeName = "surfaces.session-purge" -> string!
 const Callora.Core.Application.Webhooks.WebhookDeliveryJobHandler.HttpClientName = "callora-webhooks" -> string!
 const Callora.Core.Application.Webhooks.WebhookDispatcher.DeliveryJobType = "webhook.deliver" -> string!
+const Callora.Core.Application.Webhooks.WebhookSignature.DeliveryHeaderName = "X-Callora-Delivery" -> string!
 const Callora.Core.Application.Webhooks.WebhookSignature.EventHeaderName = "X-Callora-Event" -> string!
 const Callora.Core.Application.Webhooks.WebhookSignature.HeaderName = "X-Callora-Signature" -> string!
 const Callora.Core.Application.Webhooks.WebhookTargetException.InvalidSchemeCode = "WEBHOOK__INVALID_SCHEME" -> string!
@@ -6874,6 +6878,7 @@ static Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExte
 static Callora.Core.Infrastructure.DependencyInjection.CalloraObservabilityExtensions.AddCalloraObservability(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Monitoring.ObservabilityOptions! observabilityOptions) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.DependencyInjection.DecoratableServiceCollectionExtensions.AddDecoratableSingleton<TService, TImplementation>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.DependencyInjection.ServiceCollectionExtensions.AddCalloraHosting(Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry! services, System.Action<Callora.Core.Application.Options.CalloraHostingOptions!>? configure = null) -> void
+static Callora.Core.Infrastructure.DependencyInjection.WebhookDeliveryResilienceExtensions.AddWebhookDeliveryResilience(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Callora.Core.Infrastructure.Extensions.BackendExtensionPointCatalog.Build() -> System.Collections.Generic.IReadOnlyCollection<Callora.Core.Domain.Extensions.ExtensionPointDefinition!>!
 static Callora.Core.Infrastructure.Extensions.BackendExtensionPointCatalog.Version.get -> string!
 static Callora.Core.Infrastructure.Extensions.SectionLayoutManifestReader.Parse(System.Text.Json.JsonElement root) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Extensions.SectionLayoutDefinition!>!
@@ -6929,6 +6934,8 @@ static readonly Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Em
 static readonly Callora.Core.Application.Surfaces.Data.SurfaceDataResolver.ContributorBudget -> System.TimeSpan
 static readonly Callora.Core.Application.Surfaces.Data.SurfaceDataResult.Missing -> Callora.Core.Application.Surfaces.Data.SurfaceDataResult!
 static readonly Callora.Core.Application.Surfaces.Data.SurfaceDataResult.Nothing -> Callora.Core.Application.Surfaces.Data.SurfaceDataResult!
+static readonly Callora.Core.Infrastructure.Persistence.BackendPersistenceServiceCollectionExtensions.RequestCommandTimeout -> System.TimeSpan
+static readonly Callora.Core.Infrastructure.Persistence.DbContextMigrationExtensions.MigrationCommandTimeout -> System.TimeSpan
 static readonly Callora.Core.Infrastructure.Security.BackendSessionStateCache.Lifetime -> System.TimeSpan
 virtual Callora.Core.Application.Events.HostApplicationEventPublishNext<TEvent>.Invoke(TEvent appEvent, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 virtual Callora.Core.Application.Surfaces.SurfaceCaller.EqualityContract.get -> System.Type!

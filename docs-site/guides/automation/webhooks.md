@@ -159,11 +159,25 @@ queue's durability. Per delivery:
 - **`X-Callora-Signature`** carries `sha256=<hmac>` — an HMAC-SHA256 of the exact body using the
   subscription's `Secret` (`WebhookSignature`). Receivers verify origin and integrity by recomputing
   the HMAC over the received body.
+- **`X-Callora-Delivery`** carries the delivery id — **the same value on every attempt of that
+  delivery**. It is generated once when the job is enqueued, so it is what you deduplicate on.
 - Any **non-2xx** response **throws**, so the job queue **retries with backoff**. Deliveries are
   enqueued with **`MaxAttempts: 5`** (`WebhookDispatcher`), then land as a dead letter in
   [`/api/jobs`](./background-jobs#monitoring).
+- On top of that, the HTTP client retries **twice** on a transient failure before the attempt is
+  handed back to the queue, and a **circuit breaker** stops calling a receiver that keeps failing —
+  per receiver, so one dead endpoint does not hold up the others.
 - If the subscription was deleted or disabled while the job was queued, the handler quietly does
   nothing.
+
+::: warning Deliveries repeat — deduplicate on `X-Callora-Delivery`
+The queue retries up to five times and the HTTP client up to three, so one event can reach you more
+than once. Two identical events are indistinguishable to you otherwise: the body, the signature and
+the event name are all the same. Record the delivery id and ignore one you have already processed.
+
+Jobs enqueued before this header existed arrive **without** it. Treat a missing header as
+"cannot deduplicate" rather than substituting a value of your own.
+:::
 
 ::: tip Verify the signature on your receiver
 Recompute `HMAC-SHA256(secret, rawBody)`, hex-encode it lowercased, prefix `sha256=`, and compare
@@ -253,6 +267,7 @@ POST /hooks/callora HTTP/1.1
 Content-Type: application/json
 X-Callora-Event: call.ended
 X-Callora-Signature: sha256=9a1c…f0
+X-Callora-Delivery: 4f1d9c2e-8b30-4a1e-9f77-2c5a1e6b0d84
 
 {
   "event": "call.ended",
