@@ -101,16 +101,33 @@ public sealed class EfSystemConfigStore(
         CancellationToken cancellationToken = default)
     {
         var normalized = pluginId.Trim();
-        var all = await dbContext.SystemConfigValues
+
+        // Die Scope-Kette gehört in die Abfrage. Vorher kam sie nur im Speicherfilter vor: Gelesen
+        // wurden ALLE Werte des Plugins über alle Workspaces und Mandanten hinweg, um am Ende die
+        // zwei oder drei zutreffenden zu behalten — der Unique-Index (PluginId, ConfigKey, Scope,
+        // ScopeKey) blieb für die Auswahl ungenutzt, und ein Cache-Decorator existiert nicht.
+        //
+        // Zwei getrennte IN-Listen statt der Paare, weil EF Werte-Tupel nicht übersetzt. Das lädt
+        // Überkreuz-Kombinationen mit (Scope A mit ScopeKey aus B), die es meist gar nicht gibt;
+        // der exakte Paarabgleich steht darunter.
+        var scopes = scopeChain.Select(static scope => scope.Scope).Distinct(StringComparer.Ordinal).ToArray();
+        var scopeKeys = scopeChain.Select(static scope => scope.ScopeKey).Distinct(StringComparer.Ordinal).ToArray();
+
+        var candidates = await dbContext.SystemConfigValues
             .AsNoTracking()
-            .Where(x => x.PluginId == normalized)
+            .Where(x => x.PluginId == normalized && scopes.Contains(x.Scope) && scopeKeys.Contains(x.ScopeKey))
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return all
+        return candidates
+            // Ordinal, nicht OrdinalIgnoreCase: Der Unique-Index ist es, der Schreibpfad
+            // normalisiert nur mit Trim, und Workspace-Schlüssel werden nirgends kleingeschrieben.
+            // Der Lesepfad war der einzige Beteiligte, der Groß- und Kleinschreibung ignorierte —
+            // womit die Workspaces "Acme" und "acme" (zwei getrennte Workspaces, der Store trimmt
+            // nur) sich gegenseitig ihre Werte zeigten und je nach Zeilenreihenfolge überschrieben.
             .Where(value => scopeChain.Any(scope =>
                 value.Scope == scope.Scope &&
-                string.Equals(value.ScopeKey, scope.ScopeKey, StringComparison.OrdinalIgnoreCase)))
+                string.Equals(value.ScopeKey, scope.ScopeKey, StringComparison.Ordinal)))
             .Select(value => new SystemConfigValueSnapshot(
                 value.PluginId,
                 value.ConfigKey,

@@ -34,9 +34,12 @@ public sealed class SystemConfigResolver(ISystemConfigStore store)
         // Apply least-specific first so more specific scopes win.
         foreach (var (scope, scopeKey) in scopeChain)
         {
+            // Ordinal wie im Store: Der Unique-Index unterscheidet Groß- und Kleinschreibung, der
+            // Schreibpfad trimmt nur, und Workspace-Schlüssel werden nirgends kleingeschrieben.
+            // Ein Vergleich, der sie ignoriert, macht aus zwei getrennten Workspaces einen.
             foreach (var value in values.Where(value =>
                          value.Scope == scope &&
-                         string.Equals(value.ScopeKey, scopeKey, StringComparison.OrdinalIgnoreCase)))
+                         string.Equals(value.ScopeKey, scopeKey, StringComparison.Ordinal)))
             {
                 effective[value.ConfigKey] = value.ValueJson;
             }
