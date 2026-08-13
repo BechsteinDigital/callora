@@ -27,7 +27,7 @@ public sealed class TheRouteTableIsDroppedOnEveryWriteTests
     {
         await using var context = CreateContext();
         var routeTable = new PassThroughSurfaceRouteTable(context);
-        var store = new EfWorkspaceManagementStore(context, routeTable);
+        var store = new EfWorkspaceManagementStore(context, routeTable, new CountingThemeResolutionCache());
         context.Tenants.Add(new Tenant
         {
             Id = Guid.NewGuid(),
@@ -51,7 +51,7 @@ public sealed class TheRouteTableIsDroppedOnEveryWriteTests
     {
         await using var context = CreateContext();
         var routeTable = new PassThroughSurfaceRouteTable(context);
-        var surfaceStore = new EfWorkspaceSurfaceStore(context, routeTable);
+        var surfaceStore = new EfWorkspaceSurfaceStore(context, routeTable, new CountingThemeResolutionCache());
         var workspaceId = await SeedWorkspaceAsync(context);
 
         await surfaceStore.UpsertAsync("acme", SurfaceInput(isActive: true));
@@ -70,7 +70,7 @@ public sealed class TheRouteTableIsDroppedOnEveryWriteTests
     {
         await using var context = CreateContext();
         var routeTable = new PassThroughSurfaceRouteTable(context);
-        var store = new EfWorkspaceManagementStore(context, routeTable);
+        var store = new EfWorkspaceManagementStore(context, routeTable, new CountingThemeResolutionCache());
         _ = await SeedWorkspaceAsync(context);
         var before = routeTable.InvalidationCount;
 
