@@ -3792,6 +3792,9 @@ Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.EventNam
 Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.ToEventData() -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 Callora.Core.Application.Workspaces.Events.WorkspaceMemberBusinessEvent.WorkspaceKey.get -> string?
 Callora.Core.Application.Workspaces.Events.WorkspaceMemberEventTypes
+Callora.Core.Application.Workspaces.ISurfaceRouteTable
+Callora.Core.Application.Workspaces.ISurfaceRouteTable.Invalidate() -> void
+Callora.Core.Application.Workspaces.ISurfaceRouteTable.LoadAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Workspaces.WorkspaceSurface!>!>
 Callora.Core.Application.Workspaces.IWorkspaceDataPurgeService
 Callora.Core.Application.Workspaces.IWorkspaceDataPurgeService.PurgeAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Workspaces.IWorkspaceManagementStore
@@ -4961,6 +4964,10 @@ Callora.Core.Infrastructure.Persistence.BackendPersistenceServiceCollectionExten
 Callora.Core.Infrastructure.Persistence.BackendRbacDatabaseSeeder
 Callora.Core.Infrastructure.Persistence.BackendRbacDatabaseSeeder.BackendRbacDatabaseSeeder(Callora.Core.Application.Policies.BackendHostOptions! options, Microsoft.AspNetCore.Identity.IPasswordHasher<Callora.Core.Domain.Security.BackendUser!>! passwordHasher, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Persistence.BackendRbacDatabaseSeeder!>! logger) -> void
 Callora.Core.Infrastructure.Persistence.BackendRbacDatabaseSeeder.SeedAsync(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Persistence.CachedSurfaceRouteTable
+Callora.Core.Infrastructure.Persistence.CachedSurfaceRouteTable.CachedSurfaceRouteTable(Microsoft.Extensions.Caching.Memory.IMemoryCache! cache, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory) -> void
+Callora.Core.Infrastructure.Persistence.CachedSurfaceRouteTable.Invalidate() -> void
+Callora.Core.Infrastructure.Persistence.CachedSurfaceRouteTable.LoadAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Workspaces.WorkspaceSurface!>!>
 Callora.Core.Infrastructure.Persistence.Configurations.BackendRbacRoleEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.BackendRbacRoleEntityTypeConfiguration.BackendRbacRoleEntityTypeConfiguration() -> void
 Callora.Core.Infrastructure.Persistence.Configurations.BackendRbacRoleEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Security.BackendRbacRole!>! builder) -> void
@@ -5217,7 +5224,7 @@ Callora.Core.Infrastructure.Persistence.EfWebhookSubscriptionStore.ListAsync(str
 Callora.Core.Infrastructure.Persistence.EfWebhookSubscriptionStore.SetActiveAsync(System.Guid id, bool isActive, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.ClearThemeAssignmentAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
-Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.EfWorkspaceManagementStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
+Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.EfWorkspaceManagementStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext, Callora.Core.Application.Workspaces.ISurfaceRouteTable! routeTable) -> void
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.GetAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.GetThemeAssignmentAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.ListAsync(string? tenantKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.WorkspaceSnapshot!>!>!
@@ -5243,7 +5250,7 @@ Callora.Core.Infrastructure.Persistence.EfWorkspaceSectionLayoutStore.ReplaceFor
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.AssignIdentityProviderAsync(string! workspaceKey, string! surfaceKey, string? pluginId, string? version, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.DeleteAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.SurfaceDeleteResult>!
-Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.EfWorkspaceSurfaceStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
+Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.EfWorkspaceSurfaceStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext, Callora.Core.Application.Workspaces.ISurfaceRouteTable! routeTable) -> void
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.GetAsync(string! workspaceKey, string! surfaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.ListAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot!>!>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceSurfaceStore.UpsertAsync(string! workspaceKey, Callora.Core.Application.Workspaces.WorkspaceSurfaceInput! input, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceSurfaceSnapshot?>!

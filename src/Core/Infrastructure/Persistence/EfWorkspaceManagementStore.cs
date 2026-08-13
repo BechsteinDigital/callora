@@ -6,7 +6,9 @@ using WorkspaceEntity = Callora.Core.Domain.Workspaces.Workspace;
 
 namespace Callora.Core.Infrastructure.Persistence;
 
-public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContext) : IWorkspaceManagementStore
+public sealed class EfWorkspaceManagementStore(
+    HostPersistenceDbContext dbContext,
+    ISurfaceRouteTable routeTable) : IWorkspaceManagementStore
 {
     public async Task<IReadOnlyList<WorkspaceSnapshot>> ListAsync(
         string? tenantKey = null,
@@ -170,6 +172,11 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         defaultSurface.UpdatedAtUtc = nowUtc;
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        // Host, Pfad und Aktivierung der Default-Fläche hängen an diesem Aufruf — die geladene
+        // Tabelle ist damit veraltet, und zwar in einer Weise, die Besucher sofort merken.
+        routeTable.Invalidate();
+
         return new WorkspaceUpsertResult(WorkspaceUpsertStatus.Ok, ToSnapshot(workspace, tenant));
     }
 
@@ -229,50 +236,24 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         // Public routing resolves through surfaces (ADR-014 §5/§14): a workspace's
         // "default" surface mirrors its public route, so today's behaviour is preserved
         // while additional surfaces route to the same workspace.
-        var query = dbContext.WorkspaceSurfaces
-            .AsNoTracking()
-            .Include(x => x.Workspace)
-            .ThenInclude(w => w.Tenant)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(tenantKey))
-        {
-            var normalizedTenantKey = tenantKey.Trim();
-            query = query.Where(x => x.Workspace.Tenant.TenantKey == normalizedTenantKey);
-        }
-
-        // Vorgefiltert wird über den WORKSPACE, nicht über die einzelne Fläche — und das ist kein
-        // Umweg, sondern die Bedingung dafür, dass der Filter überhaupt zulässig ist. Der
-        // effektive Host eines Knotens ist der erste gesetzte entlang seiner Kette; ein Filter,
-        // der einzelne Flächen wegwirft, kann einem Kind seinen Vorfahren nehmen. AncestryOf
-        // bricht dann still ab, das Kind gilt als Wurzel — und eine Fläche ohne eigenen Host
-        // matcht als Wildcard JEDEN Host. Aus einer Optimierung wäre so ein Fremdzugriff geworden.
         //
-        // Vollständig ist der Filter, weil eine Fläche nur matchen kann, wenn irgendein Knoten
-        // ihrer Kette entweder den angefragten Host trägt oder gar keinen (dann greift die
-        // Wildcard, ggf. über den Workspace-Host). Beide Fälle sind unten erfasst, und da Ketten
-        // den Workspace nie verlassen, kommt mit dem Workspace die ganze Kette mit.
-        // ILike statt eines Gleichheitsvergleichs, weil der Vergleich in der Datenbank
-        // stattfinden muss und Bestandsdaten aus direkten SQL-Eingriffen groß geschrieben sein
-        // können — der Speichervorgang senkt den Host, ältere Zeilen hat er nie angefasst. Dass
-        // ILike '%' und '_' als Platzhalter liest, ist hier unschädlich: Der Vorfilter darf zu
-        // viel laden, nur nichts verlieren; entschieden wird ohnehin unten am effektiven Wert.
-        query = query.Where(x => dbContext.WorkspaceSurfaces
-            .Where(candidate =>
-                candidate.PublicHost == null ||
-                candidate.PublicHost.Trim() == "" ||
-                EF.Functions.ILike(candidate.PublicHost, normalizedHost))
-            .Select(candidate => candidate.WorkspaceId)
-            .Contains(x.WorkspaceId));
+        // Geladen wird die GANZE Tabelle, einmal, aus ISurfaceRouteTable — und danach im Speicher
+        // zugeordnet. Der frühere Vorfilter per SQL ist damit weg, und mit ihm sein Preis: Er
+        // brauchte den angefragten Host in der Abfrage, also eine Abfrage je Anfrage. Dass der
+        // Host kein Cache-Schlüssel werden darf, steht bei ISurfaceRouteTable; die Konsequenz
+        // daraus ist genau diese Zeile.
+        var all = await routeTable.LoadAsync(cancellationToken).ConfigureAwait(false);
 
-        // Ohne feste Reihenfolge entschied bei Gleichstand, in welcher Reihenfolge Postgres die
-        // Zeilen zurückgab — zwei Flächen auf derselben Adresse konnten sich von Anfrage zu
-        // Anfrage abwechseln. Die Doppelbelegung bleibt eine Fehlkonfiguration; sie soll nur
-        // nicht auch noch unvorhersehbar sein.
-        var surfaces = await query
-            .OrderBy(x => x.Id)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
+        // Der Mandantenfilter wandert mit in den Speicher. Er ist der einzige Filter, der hier je
+        // in SQL stand und nicht die Auflösung selbst betraf: Beide öffentlichen Aufrufer lassen
+        // ihn null (SurfaceRenderEndpoints, SurfaceContextController), er greift also nur, wenn
+        // ein Verwaltungspfad ausdrücklich einen Mandanten nennt.
+        var surfaces = string.IsNullOrWhiteSpace(tenantKey)
+            ? all
+            : [.. all.Where(x => string.Equals(
+                x.Workspace.Tenant.TenantKey,
+                tenantKey.Trim(),
+                StringComparison.Ordinal))];
 
         // Gematcht wird gegen die EFFEKTIVEN Werte (ADR-019): Ein Kind trägt sein Segment, sein
         // Host kommt von der Wurzel. `/portal/partner` gegen `partner` zu prüfen fände nichts,
@@ -357,6 +338,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
 
         dbContext.Workspaces.Remove(workspace);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        routeTable.Invalidate();
         return true;
     }
 
@@ -387,6 +369,11 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         workspace.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        // Auch das Theme steht in der geladenen Menge: EffectiveSurface liest es aus dem
+        // Workspace, wenn keine Fläche der Kette ein eigenes setzt.
+        routeTable.Invalidate();
+
         return new WorkspaceThemeAssignmentSnapshot(
             workspace.WorkspaceKey,
             workspace.ThemePluginId,
@@ -420,6 +407,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         workspace.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        routeTable.Invalidate();
         return true;
     }
 
