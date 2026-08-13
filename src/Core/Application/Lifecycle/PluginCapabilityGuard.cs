@@ -41,16 +41,58 @@ public sealed class PluginCapabilityGuard(
 
         var activeInScope = await LoadActiveInScopeAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
         var installations = await installationRepository.ListAsync(cancellationToken).ConfigureAwait(false);
+
+        return CheckActivation(installation, installations, workspaceKey, activeInScope);
+    }
+
+    /// <summary>
+    /// Dieselbe Prüfung wie <see cref="CheckActivationAsync"/>, aber mit bereits geladenen Daten.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Getrennt, weil die Regel eine Sache ist und ihre Beschaffung eine andere. Wer viele Plugins
+    /// hintereinander prüft, lädt die Installationsliste sonst je Plugin einmal — bei zehn aktiven
+    /// Plugins zehnmal dieselbe Tabelle, und das innerhalb einer Schleife, die schon läuft, weil
+    /// jemand eine Seite aufruft.
+    /// </para>
+    /// <para>
+    /// Die Regel selbst bleibt hier und wird nicht beim Aufrufer nachgebaut: Zwei Fassungen davon,
+    /// wovon eine im Verwaltungspfad und eine im Renderpfad gilt, wären zwei Gelegenheiten, sie
+    /// unterschiedlich zu meinen — und die zweite fiele erst auf, wenn ein Plugin ausgeliefert
+    /// wird, das der Guard eigentlich abgelehnt hätte.
+    /// </para>
+    /// </remarks>
+    /// <param name="installation">Die Installation des zu prüfenden Plugins.</param>
+    /// <param name="installations">Alle Installationen, einmal geladen.</param>
+    /// <param name="workspaceKey">Zielbereich, oder null für global.</param>
+    /// <param name="activeInScope">
+    /// Die im Workspace aktivierten Plugins, oder null bei globalem Bereich.
+    /// </param>
+    public CapabilityCheckResult CheckActivation(
+        PluginInstallation installation,
+        IReadOnlyList<PluginInstallation> installations,
+        string? workspaceKey,
+        IReadOnlySet<string>? activeInScope)
+    {
+        ArgumentNullException.ThrowIfNull(installation);
+        ArgumentNullException.ThrowIfNull(installations);
+
+        var required = installation.GetRequiredCapabilities();
+        if (required.Count == 0)
+        {
+            return CapabilityCheckResult.Allowed;
+        }
+
         foreach (var capability in required)
         {
-            if (HasActiveProvider(installations, pluginId, capability, workspaceKey, activeInScope))
+            if (HasActiveProvider(installations, installation.PluginId, capability, workspaceKey, activeInScope))
             {
                 continue;
             }
 
             var scopeSuffix = workspaceKey is null ? "." : $" in workspace '{workspaceKey}'.";
             return CapabilityCheckResult.Denied(
-                $"Plugin '{pluginId}' requires capability '{capability}', but no active plugin provides it{scopeSuffix}",
+                $"Plugin '{installation.PluginId}' requires capability '{capability}', but no active plugin provides it{scopeSuffix}",
                 new Dictionary<string, string>
                 {
                     ["requiredCapability"] = capability

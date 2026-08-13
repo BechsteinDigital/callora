@@ -126,23 +126,34 @@ public sealed class WorkspaceUiChainResolver
             return chain;
         }
 
-        foreach (var pluginId in activePluginIds)
+        // An active plugin only contributes UI when it is effectively
+        // available in the workspace (REV2 §13): a lapsed entitlement,
+        // missing capability or an unhealthy runtime drops it from the chain
+        // without touching its desired activation.
+        //
+        // In EINEM Zug ausgewertet, nicht je Plugin. Die Einzelabfrage in der Schleife holte den
+        // Workspace, seine aktivierten Plugins und die gesamte Installationsliste für jedes
+        // Plugin erneut — bei zehn aktiven Plugins rund fünfzig Datenbankzugriffe, und zwar auf
+        // dem Weg, den der Client bei jedem Seitenaufbau geht. Die Ableitung ist unverändert;
+        // nur ihre Eingaben werden nicht mehr wiederholt beschafft.
+        var candidates = activePluginIds.Where(pluginId => !seen.Contains(pluginId)).ToArray();
+        if (candidates.Length > 0)
         {
-            if (!seen.Add(pluginId))
-            {
-                continue;
-            }
-
-            // An active plugin only contributes UI when it is effectively
-            // available in the workspace (REV2 §13): a lapsed entitlement,
-            // missing capability or an unhealthy runtime drops it from the chain
-            // without touching its desired activation.
             var availability = await _availabilityEvaluator
-                .EvaluateAsync(pluginId, normalizedKey, cancellationToken)
+                .EvaluateManyAsync(candidates, normalizedKey, cancellationToken)
                 .ConfigureAwait(false);
-            if (availability.IsAvailable)
+
+            foreach (var pluginId in candidates)
             {
-                chain.Add(pluginId);
+                if (!seen.Add(pluginId))
+                {
+                    continue;
+                }
+
+                if (availability.TryGetValue(pluginId, out var evaluated) && evaluated.IsAvailable)
+                {
+                    chain.Add(pluginId);
+                }
             }
         }
 
