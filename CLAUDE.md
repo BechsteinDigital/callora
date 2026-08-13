@@ -121,3 +121,11 @@ Die öffentliche Fläche ist per Baseline nachverfolgt (`PublicAPI.Unshipped.txt
 daran ist kein Versehen, sondern ein reviewbarer Diff — `dotnet build` erzwingt das. Die
 Governance-Analyzer CAL0001–0004 bewachen dieselbe Grenze zur Bauzeit; ihre Regeln stehen in
 [`docs-site/reference/analyzer-rules.md`](docs-site/reference/analyzer-rules.md).
+
+Für die Teilmenge, die mit `[CalloraExtensible]` markiert ist, kommt eine zweite Stufe dazu:
+`src/Core/ExtensionSurface.txt`. Sie darf sich ändern — aber nicht beiläufig. Der Grund steht in
+#283: Eine Signatur bekam einen Parameter, `contractVersion` blieb stehen, und ein Plugin aus einem
+fremden Repository ließ sich danach nicht mehr laden. Die `PublicAPI`-Baseline enthielt die
+Änderung, nur fragt niemand beim Nachziehen, ob sie fremde Bauwerke bricht. Genau diese Frage
+stellt das Gate, und beantworten muss sie ein Mensch: Ist es ein Bruch, steigt vorher
+`contractVersion`; ist es rein additiv, genügt das Erneuern der Datei.

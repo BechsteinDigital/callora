@@ -1,0 +1,79 @@
+# Erweiterungsflächen, gegen die Plugins bauen. Erzeugt von TheExtensionSurfaceMatchesItsContractVersionTests
+# contractVersion: v2
+Callora.Core.Application.Surfaces.Data.SurfaceDataVisibility Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor.Visibility { get; }
+System.Boolean Callora.Core.Application.Features.IFeatureFlagService.IsEnabled(System.String key)
+System.Boolean Callora.Core.Application.Flows.Contracts.IRuleConditionEvaluator.Evaluate(Callora.Core.Application.Flows.Contracts.RuleContext context, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> parameters)
+System.Boolean Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor.Required { get; }
+System.Boolean Callora.Core.Application.Surfaces.SharedContext.ISharedContextService.Publish(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor anchor, System.String key, System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object> value)
+System.Collections.Generic.IReadOnlyDictionary<System.String, System.Boolean> Callora.Core.Application.Features.IFeatureFlagService.GetAll()
+System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Callora.Core.Application.Events.Contracts.IBusinessEvent.ToEventData()
+System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Callora.Core.Application.Events.MutableBusinessEvent.ToEventData()
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Events.Contracts.BusinessEventDescriptor> Callora.Core.Application.Events.Contracts.IBusinessEventProvider.GetDescriptors()
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Jobs.Contracts.RecurringJobDefinition> Callora.Core.Application.Jobs.Contracts.IRecurringJobProvider.GetDefinitions()
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostAdminApiRouteRegistration> Callora.Core.Application.Plugins.Contracts.IHostAdminApiExtensionContributor.Routes { get; }
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostAdminNavigationItem> Callora.Core.Application.Plugins.Contracts.IHostAdminApiExtensionContributor.NavigationItems { get; }
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostPluginExtensionRegistration> Callora.Core.Application.Plugins.Contracts.IHostPluginExtensionContributor.GetRegistrations()
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostPublicHttpRouteRegistration> Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor.PublicHttpRoutes { get; }
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRouteRegistration> Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor.Routes { get; }
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostSurfaceNavigationItem> Callora.Core.Application.Plugins.Contracts.IHostSurfaceViewContributor.NavigationItems { get; }
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostSurfaceViewRegistration> Callora.Core.Application.Plugins.Contracts.IHostSurfaceViewContributor.Views { get; }
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.HostWebSocketRouteRegistration> Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor.WebSocketRoutes { get; }
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.Contracts.SurfaceIdentityCredentialSource> Callora.Core.Application.Plugins.Contracts.IHostSurfaceIdentityProvider.CredentialSources { get; }
+System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextKeyDeclaration> Callora.Core.Application.Surfaces.SharedContext.ISharedContextKeyContributor.SharedContextKeys { get; }
+System.Collections.Generic.IReadOnlyList<System.String> Callora.Core.Application.Plugins.Contracts.IHostAdminApiExtensionContributor.PermissionKeys { get; }
+System.Collections.Generic.IReadOnlyList<System.String> Callora.Core.Application.Plugins.Contracts.IHostPluginExtensionContributor.Capabilities { get; }
+System.DateTimeOffset Callora.Core.Application.Events.MutableHostEvent.OccurredAtUtc { get; }
+System.Int32 Callora.Core.Application.Events.Contracts.IBusinessEventListener.Priority { get; }
+System.Int32 Callora.Core.Application.Events.Contracts.IHostEventSubscriber`1.Priority { get; }
+System.Int32 Callora.Core.Application.Extensibility.Contracts.IServiceDecorator`1.Order { get; }
+System.Int32 Callora.Core.Application.Migrations.Contracts.IPluginMigration.Version { get; }
+System.String Callora.Core.Application.Cli.ICalloraConsoleCommand.Description { get; }
+System.String Callora.Core.Application.Cli.ICalloraConsoleCommand.Name { get; }
+System.String Callora.Core.Application.Events.Contracts.IBusinessEvent.EventName { get; }
+System.String Callora.Core.Application.Events.Contracts.IBusinessEvent.WorkspaceKey { get; }
+System.String Callora.Core.Application.Events.MutableBusinessEvent.EventName { get; }
+System.String Callora.Core.Application.Events.MutableBusinessEvent.WorkspaceKey { get; }
+System.String Callora.Core.Application.Flows.Contracts.IFlowActionHandler.Type { get; }
+System.String Callora.Core.Application.Flows.Contracts.IRuleConditionEvaluator.Type { get; }
+System.String Callora.Core.Application.Jobs.Contracts.IBackgroundJobHandler.JobType { get; }
+System.String Callora.Core.Application.Migrations.Contracts.IPluginMigration.Description { get; }
+System.String Callora.Core.Application.Plugins.Contracts.IHostAdminApiExtensionContributor.PluginId { get; }
+System.String Callora.Core.Application.Plugins.Contracts.IHostPluginExtensionContributor.PluginId { get; }
+System.String Callora.Core.Application.Plugins.Contracts.IHostPublicHttpEndpointContributor.PluginId { get; }
+System.String Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiContributor.PluginId { get; }
+System.String Callora.Core.Application.Plugins.Contracts.IHostSurfaceIdentityProvider.PluginId { get; }
+System.String Callora.Core.Application.Plugins.Contracts.IHostSurfaceViewContributor.PluginId { get; }
+System.String Callora.Core.Application.Plugins.Contracts.IHostWebSocketEndpointContributor.PluginId { get; }
+System.String Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor.Namespace { get; }
+System.String Callora.Core.Domain.Plugins.Contracts.IHostManagedPlugin.DisplayName { get; }
+System.String Callora.Core.Domain.Plugins.Contracts.IHostManagedPlugin.PluginId { get; }
+System.Threading.Tasks.Task Callora.Core.Application.Events.Contracts.IBusinessEventListener.OnBusinessEventAsync(Callora.Core.Application.Events.Contracts.IBusinessEvent businessEvent, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Events.Contracts.IHostEventSubscriber`1.HandleAsync(TEvent appEvent, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Flows.Contracts.IFlowActionHandler.ExecuteAsync(Callora.Core.Application.Flows.Contracts.RuleContext context, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> parameters, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Jobs.Contracts.IBackgroundJobHandler.ExecuteAsync(Callora.Core.Application.Jobs.Contracts.BackgroundJobExecutionContext context, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Mail.Contracts.IMailSender.SendAsync(Callora.Core.Application.Mail.Contracts.MailMessage message, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Migrations.Contracts.IPluginMigration.UpAsync(System.Data.Common.DbConnection connection, System.Data.Common.DbTransaction transaction, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Notifications.Contracts.INotificationPublisher.PublishAsync(System.String title, System.String message, System.String level, System.String workspaceKey, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Persistence.Contracts.IWorkspaceDataPurgeContributor.PurgeWorkspaceAsync(System.String workspaceKey, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Plugins.Contracts.IHostSessionResumeService.RevokeAsync(System.String token, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Plugins.Contracts.IHostWebSocketHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostWebSocketConnection connection, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task Callora.Core.Application.Webhooks.Contracts.IWebhookEventPublisher.PublishAsync(System.String eventName, System.String workspaceKey, System.Object payload, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task<Callora.Core.Application.Plugins.Contracts.HostSessionResume> Callora.Core.Application.Plugins.Contracts.IHostSessionResumeService.RedeemAsync(System.String token, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task<Callora.Core.Application.Plugins.Contracts.HostSessionResumeTicket> Callora.Core.Application.Plugins.Contracts.IHostSessionResumeService.IssueAsync(System.String sessionKind, System.String payload, System.TimeSpan lifetime, System.String workspaceKey, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Data.SurfaceDataResult> Callora.Core.Application.Surfaces.Data.IHostSurfaceDataContributor.ContributeAsync(Callora.Core.Application.Surfaces.Data.SurfaceDataRequest request, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument> Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource.GetDraftAsync(System.String workspaceKey, System.String layoutKey, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task<Callora.Core.Application.Surfaces.Layout.SurfaceLayoutDocument> Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource.GetPublishedAsync(System.String workspaceKey, System.String surfaceKey, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlySet<System.String>> Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource.ListPublishedSurfaceKeysAsync(System.String workspaceKey, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.Task<System.Int32> Callora.Core.Application.Cli.ICalloraConsoleCommand.ExecuteAsync(System.Collections.Generic.IReadOnlyList<System.String> args, System.IO.TextWriter output, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.ValueTask Callora.Core.Domain.Plugins.Contracts.IDrainablePlugin.DrainAsync(System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.ValueTask Callora.Core.Domain.Plugins.Contracts.IHostManagedPlugin.StartAsync(Callora.Core.Application.Plugins.Contracts.IHostPluginContext context, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.ValueTask Callora.Core.Domain.Plugins.Contracts.IHostManagedPlugin.StopAsync(System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostAdminApiResponse> Callora.Core.Application.Plugins.Contracts.IHostAdminApiRouteHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostAdminApiRequest request, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostPublicHttpResponse> Callora.Core.Application.Plugins.Contracts.IHostPublicHttpRouteHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostPublicHttpRequest request, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceApiResponse> Callora.Core.Application.Plugins.Contracts.IHostSurfaceApiRouteHandler.HandleAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceApiRequest request, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityResult> Callora.Core.Application.Plugins.Contracts.IHostSurfaceIdentityProvider.AuthenticateAsync(Callora.Core.Application.Plugins.Contracts.HostSurfaceIdentityRequest request, System.Threading.CancellationToken cancellationToken)
+System.Threading.Tasks.ValueTask<Callora.Core.Application.Plugins.Contracts.WebSocketConnectAuthorization> Callora.Core.Application.Plugins.Contracts.IWebSocketConnectAuthorizer.AuthorizeAsync(Callora.Core.Application.Plugins.Contracts.HostWebSocketConnectRequest request, System.Threading.CancellationToken cancellationToken)
+System.Void Callora.Core.Application.Surfaces.Contracts.ISurfaceContextBroadcaster.Publish(Callora.Core.Application.Surfaces.Contracts.SurfaceContextAddress address, System.String key, System.Object value)
+System.Void Callora.Core.Application.Surfaces.SharedContext.ISharedContextService.ReleaseConversation(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor anchor)
+System.Void Callora.Core.Application.Surfaces.SharedContext.ISharedContextService.SetParticipants(Callora.Core.Application.Surfaces.SharedContext.SharedContextAnchor anchor, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SharedContext.SharedContextParticipation> participants)
+TService Callora.Core.Application.Extensibility.Contracts.IServiceDecorator`1.Decorate(TService inner)
