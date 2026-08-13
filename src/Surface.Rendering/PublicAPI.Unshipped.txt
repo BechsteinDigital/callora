@@ -29,6 +29,7 @@ Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.SurfaceHandoffTick
 Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.TargetSurfaceKey.get -> string!
 Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.TargetSurfaceKey.init -> void
 Callora.Surface.Rendering.Api.SurfaceRenderEndpoints
+Callora.Surface.Rendering.Api.SurfaceRenderTelemetry
 Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions
 Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider
 Callora.Surface.Rendering.DirectorySurfaceTemplateBundleProvider.DirectorySurfaceTemplateBundleProvider(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! bundleRoots) -> void
@@ -104,6 +105,18 @@ Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException() ->
 Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message) -> void
 Callora.Surface.Rendering.SurfaceTemplateException.SurfaceTemplateException(string! message, System.Exception! innerException) -> void
 Callora.Surface.Rendering.SurfaceThemeTokens
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.ActivitySourceName = "Callora.Surface.Rendering" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.DurationMetricName = "callora.surface.render.duration.ms" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.MeterName = "Callora.Surface.Rendering" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.ReasonAccessRejected = "access_rejected" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.ReasonDataMissing = "data_missing" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.ReasonDataUnavailable = "data_unavailable" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.ReasonNone = "none" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.ReasonPathNotClaimed = "path_not_claimed" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.ReasonRouteNotFound = "route_not_found" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.ReasonSignInRequired = "sign_in_required" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.ReasonVisibilityDenied = "visibility_denied" -> string!
+const Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.RequestCountMetricName = "callora.surface.render.requests" -> string!
 const Callora.Surface.Rendering.Rendering.Composition.SurfaceCompositionRenderer.FallbackLayout = "single" -> string!
 const Callora.Surface.Rendering.SurfaceCallerView.AuthenticatedState = "authenticated" -> string!
 const Callora.Surface.Rendering.SurfaceCallerView.GuestState = "guest" -> string!
@@ -129,6 +142,9 @@ static Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiRequest.operator ==(
 static Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.operator !=(Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse? left, Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse? right) -> bool
 static Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse.operator ==(Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse? left, Callora.Surface.Rendering.Api.SurfaceHandoffTicketApiResponse? right) -> bool
 static Callora.Surface.Rendering.Api.SurfaceRenderEndpoints.MapSurfaceRenderEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.CompleteRender(System.Diagnostics.Activity? activity, string! workspaceKey, string! surfaceKey, bool isSuccess, string! reason, long startTimestamp) -> void
+static Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.StartRender(string! host, string! path) -> System.Diagnostics.Activity?
+static Callora.Surface.Rendering.Api.SurfaceRenderTelemetry.StartStep(string! step) -> System.Diagnostics.Activity?
 static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.AddCalloraSurfaceRendering(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Surface.Rendering.CalloraSurfaceRenderingExtensions.MapCalloraSurfaceRendering(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
 static Callora.Surface.Rendering.Rendering.Composition.SurfaceBlockPropsSerializer.Serialize(Callora.Core.Application.Surfaces.Layout.SurfaceLayoutBlock! block, System.Collections.Generic.IReadOnlySet<string!>? confidentialControls = null) -> string?

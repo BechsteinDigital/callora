@@ -161,7 +161,12 @@ public static class CalloraHostCompositionExtensions
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddEntityFrameworkCoreInstrumentation()
-                .AddSource(PluginLifecycleTelemetry.ActivitySourceName))
+                // Wildcard aus demselben Grund wie bei den Metern unten, und nicht nur aus
+                // Bequemlichkeit: Der Renderpfad liegt in Callora.Surface.Rendering, also in einem
+                // Modul ÜBER dem Core. Seinen ActivitySource hier namentlich zu nennen hieße, dass
+                // der Core ein höheres Modul kennt — die Abhängigkeit liefe verkehrt herum. Mit
+                // dem Wildcard wird jede Callora-Quelle erfasst, auch die aus Plugins.
+                .AddSource("Callora.*"))
             .WithMetrics(metrics => metrics
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()

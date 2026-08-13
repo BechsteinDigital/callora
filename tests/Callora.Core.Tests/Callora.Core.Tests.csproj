@@ -45,6 +45,17 @@
     <ProjectReference Include="..\..\src\Administration\Callora.Administration.csproj" />
     <ProjectReference Include="..\..\src\Workspace\Callora.Workspace.csproj" />
     <ProjectReference Include="..\..\src\Surface.Rendering\Callora.Surface.Rendering.csproj" />
+    <!-- Gebaut, aber NICHT referenziert und NICHT kopiert.
+         Das Fixture-Plugin wird ausschließlich über einen Plugin-Ladekontext geladen; läge seine
+         Assembly im Testausgabeverzeichnis, käme sie über den Default-ALC und die Tests bewiesen
+         das Gegenteil dessen, wofür sie da sind. Deshalb referenziert es niemand — womit
+         `dotnet test` es bislang auch nie baute: Wer den Branch wechselte, testete gegen eine
+         Fixture-DLL von vorgestern und bekam „No host plugin entrypoint found" für einen Typ, der
+         vor ihm auf der Platte lag. ReferenceOutputAssembly=false löst genau das: bauen ja,
+         verlinken nein. -->
+    <ProjectReference Include="..\TestPlugins\ExportingPlugin\Callora.TestPlugin.Exporting.csproj"
+                      ReferenceOutputAssembly="false"
+                      Private="false" />
   </ItemGroup>
 
 </Project>

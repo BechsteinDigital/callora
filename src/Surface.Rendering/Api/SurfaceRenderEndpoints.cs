@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Surfaces;
@@ -68,7 +69,73 @@ public static class SurfaceRenderEndpoints
         }
     }
 
+    /// <summary>
+    /// Misst und delegiert. Die Messung sitzt hier und nicht im Kern, damit jeder seiner Ausgänge
+    /// gezählt wird, ohne dass der Kern an jedem Rücksprung daran denken muss.
+    /// </summary>
     private static async Task<IResult> RenderEndpointAsync(
+        HttpContext httpContext,
+        IWorkspaceManagementStore workspaceStore,
+        ISurfaceRenderer renderer,
+        PublishedSurfaceTemplateBundles bundles,
+        ILoggerFactory loggerFactory,
+        [FromServices] WorkspaceUiChainResolver? chainResolver,
+        [FromServices] WorkspacePublicThemeResolver? themeResolver,
+        [FromServices] SurfaceRequestCallerResolver? callerResolver,
+        [FromServices] SurfaceSlotResolver? slotResolver,
+        CancellationToken cancellationToken)
+    {
+        var host = httpContext.Request.Host.Host;
+        var path = httpContext.Request.Path.HasValue ? httpContext.Request.Path.Value! : "/";
+
+        // Der Catch-All /{**surfacePath} fängt JEDEN unaufgelösten Pfad — auch /api/…, wenn
+        // dort ein Endpunkt fehlt oder der Aufrufer sich vertippt. Ohne diese Prüfung kam
+        // darauf 200 mit einer gerenderten Seite und einem gesetzten Surface-Cookie zurück,
+        // statt 404. Ein 200 mit falschem Inhalt ist die unangenehmste Sorte Fehler: Der
+        // Aufrufer meldet einen Parse-Fehler, und niemand sucht beim Routing. Genau so blieb
+        // ein falscher API-Pfad im Composer-Bundle unsichtbar, bis jemand die Oberfläche
+        // öffnete.
+        // Der Workspace-Catch-All hatte diese Abgrenzung von Anfang an; in einer colocated
+        // Komposition gewinnt aber dieser hier.
+        //
+        // VOR der Messung, mit Absicht: Diese Anfragen sind keine Renderversuche. Sie mitzuzählen
+        // hieße, die Fehlerrate der Oberfläche mit vertippten API-Aufrufen zu füllen — der Alarm
+        // wäre danach unbrauchbar.
+        if (PlatformOwnedPathSegments.IsPlatformOwned(path))
+        {
+            return Results.NotFound();
+        }
+
+        var startTimestamp = Stopwatch.GetTimestamp();
+        using var activity = SurfaceRenderTelemetry.StartRender(host, path);
+
+        var outcome = await RenderCoreAsync(
+                httpContext,
+                workspaceStore,
+                renderer,
+                bundles,
+                loggerFactory,
+                chainResolver,
+                themeResolver,
+                callerResolver,
+                slotResolver,
+                host,
+                path,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        SurfaceRenderTelemetry.CompleteRender(
+            activity,
+            outcome.WorkspaceKey,
+            outcome.SurfaceKey,
+            outcome.IsSuccess,
+            outcome.Reason,
+            startTimestamp);
+
+        return outcome.Result;
+    }
+
+    private static async Task<SurfaceRenderOutcome> RenderCoreAsync(
         HttpContext httpContext,
         IWorkspaceManagementStore workspaceStore,
         ISurfaceRenderer renderer,
@@ -87,33 +154,25 @@ public static class SurfaceRenderEndpoints
         // Slot composition is opt-in with the plugin catalog; a host without it renders
         // the template with empty slots rather than failing (#125 block C).
         [FromServices] SurfaceSlotResolver? slotResolver,
+        string host,
+        string path,
         CancellationToken cancellationToken)
     {
-        var host = httpContext.Request.Host.Host;
-        var path = httpContext.Request.Path.HasValue ? httpContext.Request.Path.Value! : "/";
-
-        // Der Catch-All /{**surfacePath} fängt JEDEN unaufgelösten Pfad — auch /api/…, wenn
-        // dort ein Endpunkt fehlt oder der Aufrufer sich vertippt. Ohne diese Prüfung kam
-        // darauf 200 mit einer gerenderten Seite und einem gesetzten Surface-Cookie zurück,
-        // statt 404. Ein 200 mit falschem Inhalt ist die unangenehmste Sorte Fehler: Der
-        // Aufrufer meldet einen Parse-Fehler, und niemand sucht beim Routing. Genau so blieb
-        // ein falscher API-Pfad im Composer-Bundle unsichtbar, bis jemand die Oberfläche
-        // öffnete.
-        // Der Workspace-Catch-All hatte diese Abgrenzung von Anfang an; in einer colocated
-        // Komposition gewinnt aber dieser hier.
-        if (PlatformOwnedPathSegments.IsPlatformOwned(path))
+        WorkspaceSurfaceSnapshot? surface;
+        using (SurfaceRenderTelemetry.StartStep("resolve-route"))
         {
-            return Results.NotFound();
+            surface = await workspaceStore
+                .ResolveSurfaceByPublicRouteAsync(host, path, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        var surface = await workspaceStore
-            .ResolveSurfaceByPublicRouteAsync(host, path, cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
         // A non-null result is already guaranteed active: the store's matching loop
         // skips inactive surfaces, workspaces and tenants — no re-check needed here.
         if (surface is null)
         {
-            return Results.NotFound();
+            return SurfaceRenderOutcome.FailedBeforeResolution(
+                Results.NotFound(),
+                SurfaceRenderTelemetry.ReasonRouteNotFound);
         }
 
         var locale = string.IsNullOrWhiteSpace(surface.Locale) ? "de" : surface.Locale;
@@ -138,9 +197,13 @@ public static class SurfaceRenderEndpoints
             // workspace's. Previously only the workspace values were read, so a
             // surface with its own theme rendered that theme's identity with the
             // workspace theme's values.
-            resolvedTheme = await themeResolver
-                .ResolveForSurfaceAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
-                .ConfigureAwait(false);
+            using (SurfaceRenderTelemetry.StartStep("resolve-theme"))
+            {
+                resolvedTheme = await themeResolver
+                    .ResolveForSurfaceAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
             effectiveTheme = resolvedTheme?.ValuesByKey;
         }
 
@@ -182,11 +245,16 @@ public static class SurfaceRenderEndpoints
         // IPluginAvailabilityEvaluator gefiltert — wer fehlt, ist deinstalliert, abgeschaltet
         // oder für diesen Workspace nicht berechtigt, und dessen Blöcke gehören nicht ins HTML.
         // Einmal aufgelöst, zweimal benutzt: eine zweite Abfrage wäre auch eine zweite Antwort.
-        var chain = chainResolver is null
-            ? null
-            : await chainResolver
-                .ResolveAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
-                .ConfigureAwait(false);
+        IReadOnlyList<string>? chain = null;
+        if (chainResolver is not null)
+        {
+            using (SurfaceRenderTelemetry.StartStep("resolve-ui-chain"))
+            {
+                chain = await chainResolver
+                    .ResolveAsync(surface.WorkspaceKey, surface.SurfaceKey, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
 
         var composed = layouts is null
             ? default
@@ -209,13 +277,22 @@ public static class SurfaceRenderEndpoints
         var compositionSlots = SurfaceComposition.Empty;
         if (callerResolver is not null)
         {
-            var establishment = await callerResolver
-                .EstablishAsync(httpContext, surface, locale, cancellationToken)
-                .ConfigureAwait(false);
+            SurfaceSessionEstablishment establishment;
+            using (SurfaceRenderTelemetry.StartStep("establish-caller"))
+            {
+                establishment = await callerResolver
+                    .EstablishAsync(httpContext, surface, locale, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
 
             if (SurfaceAccessGate.Reject(surface, establishment, httpContext) is { } rejection)
             {
-                return rejection;
+                return SurfaceRenderOutcome.Failed(
+                    rejection,
+                    SurfaceRenderTelemetry.ReasonAccessRejected,
+                    surface.WorkspaceKey,
+                    surface.SurfaceKey);
             }
 
             caller = SurfaceCallerViewFactory.Create(establishment.Caller);
@@ -233,7 +310,8 @@ public static class SurfaceRenderEndpoints
                     // Die Fläche gewährt mit: Ein Gast hat sonst nie einen Claim.
                     SurfaceVisibility.ClaimsOn(establishment.Caller, surface.GrantedClaims)))
             {
-                return Results.NotFound();
+                return SurfaceRenderOutcome.Failed(
+                    Results.NotFound(), SurfaceRenderTelemetry.ReasonVisibilityDenied, surface.WorkspaceKey, surface.SurfaceKey);
             }
 
             // Wer auf dieser Fläche beitragen darf: die UI-Kette. Ohne diese Grenze steuerte
@@ -267,7 +345,8 @@ public static class SurfaceRenderEndpoints
             // gefährlichste Variante — die Anforderung stünde in der Verwaltung und wirkte nicht.
             if (SurfaceVisibility.Parse(surface.RequiredClaims).Count > 0)
             {
-                return Results.NotFound();
+                return SurfaceRenderOutcome.Failed(
+                    Results.NotFound(), SurfaceRenderTelemetry.ReasonVisibilityDenied, surface.WorkspaceKey, surface.SurfaceKey);
             }
 
             if (surface.Authentication.RequiresSignIn() &&
@@ -275,7 +354,10 @@ public static class SurfaceRenderEndpoints
             {
                 // Ansonsten bleibt das Verhalten vor ADR-017 exakt wie es war, damit ein
                 // bestehender Host unberührt bleibt.
-                return SurfaceAccessGate.LoginRedirect(surface, httpContext);
+                return SurfaceRenderOutcome.Failed(
+                    SurfaceAccessGate.LoginRedirect(surface, httpContext),
+                    SurfaceRenderTelemetry.ReasonSignInRequired,
+                    surface.WorkspaceKey, surface.SurfaceKey);
             }
         }
 
@@ -300,7 +382,8 @@ public static class SurfaceRenderEndpoints
             // Seite auszuliefern wäre schlimmer als beide — sie sähe vollständig aus.
             if (data.MissingRequiredNamespace is not null)
             {
-                return Results.NotFound();
+                return SurfaceRenderOutcome.Failed(
+                    Results.NotFound(), SurfaceRenderTelemetry.ReasonDataMissing, surface.WorkspaceKey, surface.SurfaceKey);
             }
 
             if (data.FailedRequiredNamespace is not null)
@@ -312,7 +395,10 @@ public static class SurfaceRenderEndpoints
                         data.FailedRequiredNamespace,
                         surface.SurfaceKey,
                         surfacePath);
-                return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+                return SurfaceRenderOutcome.Failed(
+                    Results.StatusCode(StatusCodes.Status503ServiceUnavailable),
+                    SurfaceRenderTelemetry.ReasonDataUnavailable,
+                    surface.WorkspaceKey, surface.SurfaceKey);
             }
 
             // Caller-abhängige Daten stehen im HTML. Ein Proxy davor lieferte sonst die Daten
@@ -365,7 +451,8 @@ public static class SurfaceRenderEndpoints
             !string.Equals(path, DirectRenderPath, StringComparison.OrdinalIgnoreCase) &&
             SurfaceRouteRemainder.Of(surface.PublicPathPrefix, path) is not "")
         {
-            return Results.NotFound();
+            return SurfaceRenderOutcome.Failed(
+                Results.NotFound(), SurfaceRenderTelemetry.ReasonPathNotClaimed, surface.WorkspaceKey, surface.SurfaceKey);
         }
 
         var shell = await ChooseShellAsync(
@@ -378,7 +465,8 @@ public static class SurfaceRenderEndpoints
             .ConfigureAwait(false);
 
         var html = RenderSurface(renderer, loggerFactory, shell, surface.WorkspaceKey, context);
-        return Results.Content(html, "text/html; charset=utf-8");
+        return SurfaceRenderOutcome.Rendered(
+            Results.Content(html, "text/html; charset=utf-8"), surface.WorkspaceKey, surface.SurfaceKey);
     }
 
     /// <summary>
