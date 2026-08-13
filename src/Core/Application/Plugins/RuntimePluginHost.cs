@@ -36,7 +36,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
     private readonly SharedContractAssemblyRegistry _sharedContracts;
     private readonly RuntimeCapabilityRegistry? _runtimeCapabilities;
     private readonly PluginFaultRegistry? _faults;
-    private readonly Callora.Core.Infrastructure.Mcp.McpToolRegistry? _mcpTools;
+    private readonly Callora.Core.Application.Mcp.Contracts.IMcpToolRegistry? _mcpTools;
     private long _exportSequence;
     private int _disposed;
 
@@ -49,7 +49,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         ILogger<RuntimePluginHost> logger,
         RuntimeCapabilityRegistry? runtimeCapabilities = null,
         PluginFaultRegistry? faults = null,
-        Callora.Core.Infrastructure.Mcp.McpToolRegistry? mcpTools = null)
+        Callora.Core.Application.Mcp.Contracts.IMcpToolRegistry? mcpTools = null)
     {
         _services = services;
         _options = options;

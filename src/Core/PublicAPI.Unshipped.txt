@@ -1319,6 +1319,9 @@ Callora.Core.Application.Mail.MailSendJobHandler.MailSendJobHandler(Callora.Core
 Callora.Core.Application.Mail.MailTemplateRenderer
 Callora.Core.Application.Mcp.Contracts.IMcpToolContributor
 Callora.Core.Application.Mcp.Contracts.IMcpToolContributor.Tools.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Mcp.Contracts.McpToolRegistration!>!
+Callora.Core.Application.Mcp.Contracts.IMcpToolRegistry
+Callora.Core.Application.Mcp.Contracts.IMcpToolRegistry.Deregister(string! pluginId) -> void
+Callora.Core.Application.Mcp.Contracts.IMcpToolRegistry.Register(string! pluginId, Callora.Core.Application.Mcp.Contracts.IMcpToolContributor! contributor) -> void
 Callora.Core.Application.Mcp.Contracts.McpToolInvocation
 Callora.Core.Application.Mcp.Contracts.McpToolInvocation.<Clone>$() -> Callora.Core.Application.Mcp.Contracts.McpToolInvocation!
 Callora.Core.Application.Mcp.Contracts.McpToolInvocation.Arguments.get -> System.Text.Json.JsonElement
@@ -2427,7 +2430,7 @@ Callora.Core.Application.Plugins.RuntimePluginHost.GetExports(System.Type! contr
 Callora.Core.Application.Plugins.RuntimePluginHost.GetOwnedExports(System.Type! contractType) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.CalloraPluginExport!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.InstallAsync(string! assemblyPath, string? entryTypeName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.RuntimePluginInstallResult!>!
 Callora.Core.Application.Plugins.RuntimePluginHost.LoadedPlugins.get -> System.Collections.Generic.IReadOnlyCollection<Callora.Core.Application.Plugins.RuntimePluginDescriptor!>!
-Callora.Core.Application.Plugins.RuntimePluginHost.RuntimePluginHost(System.IServiceProvider! services, Callora.Core.Application.Options.CalloraHostingOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.RuntimePluginHost!>! logger, Callora.Core.Application.Plugins.RuntimeCapabilityRegistry? runtimeCapabilities = null, Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null, Callora.Core.Infrastructure.Mcp.McpToolRegistry? mcpTools = null) -> void
+Callora.Core.Application.Plugins.RuntimePluginHost.RuntimePluginHost(System.IServiceProvider! services, Callora.Core.Application.Options.CalloraHostingOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.RuntimePluginHost!>! logger, Callora.Core.Application.Plugins.RuntimeCapabilityRegistry? runtimeCapabilities = null, Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null, Callora.Core.Application.Mcp.Contracts.IMcpToolRegistry? mcpTools = null) -> void
 Callora.Core.Application.Plugins.RuntimePluginHost.SharedContracts.get -> Callora.Core.Application.Plugins.SharedContractAssemblyRegistry!
 Callora.Core.Application.Plugins.RuntimePluginHost.TryGetExport(System.Type! contractType, out object? service) -> bool
 Callora.Core.Application.Plugins.RuntimePluginHost.UninstallAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.RuntimePluginUninstallResult!>!
@@ -2542,6 +2545,8 @@ Callora.Core.Application.Plugins.TrustedPluginSigner.Source.init -> void
 Callora.Core.Application.Plugins.TrustedPluginSigner.Thumbprint.get -> string!
 Callora.Core.Application.Plugins.TrustedPluginSigner.Thumbprint.init -> void
 Callora.Core.Application.Plugins.TrustedPluginSigner.TrustedPluginSigner(string! PublisherId, string! DisplayName, string! Thumbprint, string! Source) -> void
+Callora.Core.Application.Plugins.UnknownProvidedContractVersionProvider
+Callora.Core.Application.Plugins.UnknownProvidedContractVersionProvider.Resolve(string! contractId) -> Semver.SemVersion?
 Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment
 Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment.DisplayName.get -> string!
 Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignment.IsActive.get -> bool
@@ -6652,6 +6657,7 @@ static Callora.Core.Application.Plugins.Signing.PluginSignatureManifestSerialize
 static Callora.Core.Application.Plugins.Signing.PluginSignatureManifestSerializer.SerializeToFileJson(Callora.Core.Application.Plugins.Signing.PluginSignatureManifest! manifest) -> string!
 static Callora.Core.Application.Plugins.TrustedPluginSigner.operator !=(Callora.Core.Application.Plugins.TrustedPluginSigner? left, Callora.Core.Application.Plugins.TrustedPluginSigner? right) -> bool
 static Callora.Core.Application.Plugins.TrustedPluginSigner.operator ==(Callora.Core.Application.Plugins.TrustedPluginSigner? left, Callora.Core.Application.Plugins.TrustedPluginSigner? right) -> bool
+static Callora.Core.Application.Plugins.UnknownProvidedContractVersionProvider.Instance.get -> Callora.Core.Application.Plugins.UnknownProvidedContractVersionProvider!
 static Callora.Core.Application.Policies.BackendSecretHygiene.Inspect(Callora.Core.Application.Policies.BackendHostOptions! options) -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Security.AdminContextView.FromPrincipal(System.Security.Claims.ClaimsPrincipal! user) -> Callora.Core.Application.Security.AdminContextView?
 static Callora.Core.Application.Security.AdminContextView.operator !=(Callora.Core.Application.Security.AdminContextView? left, Callora.Core.Application.Security.AdminContextView? right) -> bool
