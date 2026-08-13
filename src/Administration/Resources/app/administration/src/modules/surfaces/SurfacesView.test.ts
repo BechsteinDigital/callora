@@ -243,4 +243,16 @@ describe('SurfacesView', () => {
     const parent = wrapper.find('select[name="parentSurfaceKey"]').element as HTMLSelectElement
     expect(parent.value).toBe('portal')
   })
+
+  // #291: Ohne den Fehlerzweig war ein 500er von „keine Flaeche vorhanden" nicht zu
+  // unterscheiden — inklusive Angebot, die erste anzulegen.
+  it('shows the error instead of the empty state when loading fails', async () => {
+    listSurfacesMock.mockRejectedValueOnce(new Error('Serverfehler 500'))
+
+    const wrapper = mount(SurfacesView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Serverfehler 500')
+    expect(wrapper.text()).not.toContain('Noch keine Fläche')
+  })
 })

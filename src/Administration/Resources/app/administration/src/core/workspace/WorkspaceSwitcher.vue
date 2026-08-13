@@ -13,10 +13,21 @@
       </option>
     </CalSelect>
   </div>
+
+  <!--
+    Ohne diesen Zweig blendete ein gescheiterter Ladevorgang den Umschalter einfach aus: canSwitch
+    haengt an workspaces.length > 0, und die Topbar sah aus, als haette dieser Operator schlicht
+    keine Auswahl (#291). Ein sichtbares „nicht geladen" ist die einzige Variante, aus der jemand
+    schliessen kann, dass etwas fehlt.
+  -->
+  <div v-else-if="loadFailed" class="ws-switcher ws-switcher--failed" title="Die Workspace-Liste konnte nicht geladen werden. Neu laden versucht es erneut.">
+    <CalIcon class="ws-switcher__icon" :icon="Boxes" size="sm" />
+    <span class="ws-switcher__failed-label">Workspaces nicht geladen</span>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { Boxes } from 'lucide-vue-next'
 import CalIcon from '@/core/ui/CalIcon.vue'
 import CalSelect from '@/core/ui/CalSelect.vue'
@@ -26,11 +37,25 @@ import { useWorkspaceContext } from './workspaceContext'
 // for an operator who has workspaces to choose from; a workspace-bound admin has
 // a fixed context and sees nothing here.
 const { workspaces, activeWorkspace, canSwitch, ensure, setActive } = useWorkspaceContext()
+const loadFailed = ref(false)
 
-onMounted(ensure)
+// ensureLoaded wirft bewusst weiter, damit ein spaeterer Aufruf es erneut versuchen kann
+// (workspaceContext.ts). onMounted(ensure) nahm die Rejection nicht entgegen — sie lief ins
+// Leere, und uebrig blieb eine Topbar ohne Umschalter.
+onMounted(() => {
+  void ensure().catch((error: unknown) => {
+    loadFailed.value = true
+    console.error('[callora-admin] workspace list could not be loaded.', error)
+  })
+})
 </script>
 
 <style scoped lang="scss">
+.ws-switcher--failed {
+  color: var(--cal-text-subtle);
+  font-size: var(--cal-font-size-sm);
+}
+
 .ws-switcher {
   display: flex;
   align-items: center;

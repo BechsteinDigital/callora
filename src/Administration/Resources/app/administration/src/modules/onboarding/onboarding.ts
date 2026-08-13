@@ -69,16 +69,24 @@ const steps = computed<OnboardingStep[]>(() => [
 const completedCount = computed(() => steps.value.filter((s) => s.done).length)
 const isComplete = computed(() => completedCount.value === steps.value.length)
 
+// Zaehlt den Einrichtungsstand. Ein gescheiterter Aufruf hinterlaesst `null` — „unbekannt" —
+// und nicht 0.
+//
+// Vorher machten drei `.catch(() => [])` aus jedem Fehler ein leeres Ergebnis. Ein einmaliger
+// 500er auf /api/workspaces setzte damit workspaceCount auf 0, shouldAutoRedirect() wurde wahr,
+// und der Operator wurde aus seiner Route in den Erstinstallations-Assistenten geschoben —
+// ohne Fehlerhinweis, mit „0 von 4 erledigt" fuer eine eingerichtete Installation. Nebenbei
+// verbrauchte markAutoShown() dabei das Einmal-Flag (#291).
 async function loadStatus(): Promise<void> {
   const [workspaces, plugins, users] = await Promise.all([
-    workspacesApi.list().catch(() => []),
-    pluginsApi.list().catch(() => []),
-    usersApi.list().catch(() => []),
+    workspacesApi.list().catch(() => null),
+    pluginsApi.list().catch(() => null),
+    usersApi.list().catch(() => null),
   ])
-  workspaceCount.value = workspaces.length
-  firstWorkspaceKey.value = workspaces[0]?.workspaceKey ?? null
-  activePluginCount.value = plugins.filter((p) => isPluginActive(p.state)).length
-  userCount.value = users.length
+  workspaceCount.value = workspaces?.length ?? null
+  firstWorkspaceKey.value = workspaces?.[0]?.workspaceKey ?? null
+  activePluginCount.value = plugins ? plugins.filter((p) => isPluginActive(p.state)).length : null
+  userCount.value = users?.length ?? null
   sipAccountCount.value = firstWorkspaceKey.value ? await countSipAccounts(firstWorkspaceKey.value) : 0
   ready.value = true
 }
@@ -131,6 +139,9 @@ export function useOnboarding() {
 
 // Auto-open the wizard once on a truly fresh install (no workspace yet) and only if
 // it has not been auto-shown before. Callers must loadStatus() first.
+// `=== 0` und nicht `!workspaceCount.value`: null heisst, dass die Abfrage gescheitert ist, und
+// aus einem unbekannten Stand darf kein Assistent folgen — schon gar keiner, der dabei sein
+// Einmal-Flag verbraucht.
 export function shouldAutoRedirect(): boolean {
   return workspaceCount.value === 0 && !readFlag(AUTO_SHOWN_KEY)
 }
