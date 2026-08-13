@@ -134,7 +134,49 @@ Jint sandbox).
    and CPU/memory — the sandbox limits are per-render, so broad degradation points
    at the host, not one template.
 
-> **Status:** A dedicated surface-render SLO and alert set does not exist yet (the
-> shipped SLO/alerts cover the plugin lifecycle). Until then, use host
-> health/readiness plus the plugin-lifecycle dashboard, and treat surface-render
-> incidents with the sandbox-containment reasoning above.
+### Surface render metrics
+
+Meter `Callora.Surface.Rendering`, picked up by the `Callora.*` wildcard in the
+host composition — no extra registration.
+
+| Metric | Type | What it answers |
+|---|---|---|
+| `callora.surface.render.requests` | Counter | How many renders, split by outcome and failure reason |
+| `callora.surface.render.duration.ms` | Histogram | How long a render takes |
+
+Both carry the same four dimensions: `workspace.key`, `surface.key`,
+`surface.render.outcome` (`success`/`failure`) and `surface.render.reason`.
+
+The reason is one of a fixed set, never free text — that is what makes it safe to
+group on:
+
+| Reason | Meaning |
+|---|---|
+| `none` | Success. Set so the tag schema is identical on both outcomes |
+| `route_not_found` | No surface for this host and path. `workspace.key` is empty |
+| `visibility_denied` | The surface exists, this visitor may not see it (answered 404, not 403) |
+| `sign_in_required` | The surface wants a sign-in and the visitor has none |
+| `access_rejected` | The surface's access gate refused |
+| `data_missing` | A required data contributor does not know this address (404) |
+| `data_unavailable` | A required data contributor could not answer (503) |
+| `path_not_claimed` | The sub-path belongs to no surface that claims it |
+
+**When reading these, mind two things.** Requests to platform-owned paths
+(`/api/…` and friends) are *not* counted at all — the catch-all answers them with
+404 before the measurement starts, so a mistyped API call cannot inflate the
+surface error rate. And `sign_in_required` is an outcome, not an incident: exclude
+it before alerting on the failure ratio, or every login prompt reads as a fault.
+
+Traces come from the `Callora.Surface.Rendering` activity source: one
+`surface.render` span per request with a child span per resolution step
+(`resolve-route`, `resolve-theme`, `resolve-ui-chain`, `establish-caller`). That
+is where you find out *which* step spent the time — deliberately not a metric
+dimension, because per-step timings per surface would multiply the time series.
+
+**Suggested alerts** (no SLO agreed yet — pick thresholds against your own
+baseline):
+
+- Failure ratio excluding `sign_in_required`, over a 15-minute window
+- p99 of `callora.surface.render.duration.ms` per workspace
+- Any sustained `data_unavailable` — a required contributor is down, and the
+  surface is degraded for everyone on it
