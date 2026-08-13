@@ -126,7 +126,15 @@ public sealed class PluginLifecycleTelemetryTests
             x.Scope == "workspace" &&
             x.Outcome == "success");
 
-        Assert.All(metricMeasurements, x => Assert.False(string.IsNullOrWhiteSpace(x.CorrelationId)));
+        // UMGEKEHRT zur ersten Fassung, und das ist der Punkt: Die Korrelations-Id gehört an den
+        // Trace und NICHT an die Metrik. Sie ist pro Operation einzigartig, also erzeugte jede
+        // gemessene Operation eine eigene Zeitreihe — bei genügend Aufrufen bringt das jedes
+        // Metrik-Backend um. Verbunden werden Metrik und Log über den Trace, dafür ist er da.
+        Assert.All(metricMeasurements, x => Assert.True(string.IsNullOrEmpty(x.CorrelationId)));
+
+        // Am Trace muss sie dagegen stehen, sonst ist die Verbindung ganz weg.
+        Assert.All(activities, activity => Assert.False(
+            string.IsNullOrWhiteSpace(activity.GetTagItem("correlation.id") as string)));
     }
 
     private static ActivityListener CreateActivityListener(List<Activity> activities)
@@ -238,9 +246,11 @@ public sealed class PluginLifecycleTelemetryTests
             }
         }
 
+        // Die Korrelations-Id ist KEINE Bedingung mehr: Sie steht seit der Kardinalitäts-Korrektur
+        // nur noch am Trace. Bliebe sie hier stehen, verwürfe der Leser jede Messung — und der
+        // Test schlüge mit einer leeren Sammlung fehl statt mit einer sprechenden Aussage.
         return !string.IsNullOrWhiteSpace(action) &&
                !string.IsNullOrWhiteSpace(scope) &&
-               !string.IsNullOrWhiteSpace(outcome) &&
-               !string.IsNullOrWhiteSpace(correlationId);
+               !string.IsNullOrWhiteSpace(outcome);
     }
 }

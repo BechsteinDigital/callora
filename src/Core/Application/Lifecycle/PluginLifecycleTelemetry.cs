@@ -54,19 +54,24 @@ public static class PluginLifecycleTelemetry
         long startTimestamp)
     {
         var outcome = isSuccess ? "success" : "failure";
-        var correlationId = GetCurrentCorrelationId(activity);
 
         activity?.SetTag("plugin.lifecycle.outcome", outcome);
         activity?.SetTag("plugin.lifecycle.error_code", errorCode);
         activity?.SetStatus(isSuccess ? ActivityStatusCode.Ok : ActivityStatusCode.Error, errorCode);
 
+        // Die Korrelations-Id steht an der Activity (oben) und NICHT an den Metriken.
+        //
+        // Sie ist die Trace-Id, also pro Operation einzigartig. Als Metrik-Dimension erzeugt jeder
+        // einzelne Aufruf damit eine eigene Zeitreihe — der klassische Weg, ein Metrik-Backend
+        // umzubringen. Hier war der Schaden begrenzt, weil Lifecycle-Operationen selten sind; als
+        // Muster kopiert hätte er in den Renderpfad gehört, wo jede öffentliche Anfrage
+        // hindurchläuft. Zusammengeführt wird über den Trace, dafür ist er da.
         TagList tags =
         [
             new KeyValuePair<string, object?>("plugin.lifecycle.action", action),
             new KeyValuePair<string, object?>("plugin.lifecycle.scope", scope),
             new KeyValuePair<string, object?>("plugin.id", pluginId),
-            new KeyValuePair<string, object?>("plugin.lifecycle.outcome", outcome),
-            new KeyValuePair<string, object?>("correlation.id", correlationId)
+            new KeyValuePair<string, object?>("plugin.lifecycle.outcome", outcome)
         ];
 
         OperationCounter.Add(1, tags);
