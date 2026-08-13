@@ -25,6 +25,10 @@ public sealed class PluginApiEndpointDataSource(
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly object _syncLock = new();
+
+    // Getrennt von _syncLock, weil er über den gesamten Neubau gehalten wird: Leser dürfen
+    // dabei nicht warten. Siehe Refresh().
+    private readonly object _rebuildLock = new();
     private IReadOnlyList<Endpoint> _endpoints = [];
     private CancellationTokenSource _changeTokenSource = new();
 
@@ -48,17 +52,35 @@ public sealed class PluginApiEndpointDataSource(
     }
 
     /// <summary>Rebuilds all plugin endpoints and signals the routing system.</summary>
+    /// <remarks>
+    /// Der Neubau steht MIT im Lock, nicht davor. Vorher las jeder Aufrufer den Katalog frei und
+    /// schrieb sein Ergebnis danach — bei zwei Lebenszyklus-Ereignissen kurz nacheinander gewann
+    /// der langsamere Bau, obwohl er den älteren Katalog gelesen hatte. Ein deaktiviertes Plugin
+    /// behielt dann seine Routen bis zum nächsten Ereignis, und ihr Delegat hielt dessen
+    /// Controller-Instanz aus einem bereits entladenen Ladekontext am Leben. Dieselbe Klasse von
+    /// Fehler wie der stehengebliebene Export in #253: nicht die einzelne Operation ist unsicher,
+    /// sondern die Folge aus Lesen und Schreiben.
+    /// <para>
+    /// Serialisieren kostet hier nichts: Refresh läuft nur auf Lebenszyklus-Ereignisse, und Leser
+    /// nehmen <c>_syncLock</c>, nicht diesen — sie warten also nicht auf den Neubau mit.
+    /// </para>
+    /// </remarks>
     public void Refresh()
     {
-        var endpoints = BuildEndpoints();
         CancellationTokenSource previousTokenSource;
-        lock (_syncLock)
+        lock (_rebuildLock)
         {
-            _endpoints = endpoints;
-            previousTokenSource = _changeTokenSource;
-            _changeTokenSource = new CancellationTokenSource();
+            var endpoints = BuildEndpoints();
+            lock (_syncLock)
+            {
+                _endpoints = endpoints;
+                previousTokenSource = _changeTokenSource;
+                _changeTokenSource = new CancellationTokenSource();
+            }
         }
 
+        // Außerhalb beider Locks: Die Callbacks des Routers laufen synchron und lesen dabei
+        // Endpoints — unter _syncLock wäre das ein Deadlock.
         previousTokenSource.Cancel();
         previousTokenSource.Dispose();
     }
