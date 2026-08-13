@@ -1,6 +1,7 @@
 using Callora.Core.Application.Plugins.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Collections.Concurrent;
 
 namespace Callora.Core.Application.Plugins;
 
@@ -13,7 +14,12 @@ namespace Callora.Core.Application.Plugins;
 /// capability guard consults; <see cref="EffectiveChanged"/> fires on every effective flip so
 /// availability-derived gates can be invalidated.
 /// </summary>
-/// <remarks>Thread-safe. Events are raised outside the internal lock.</remarks>
+/// <remarks>
+/// Thread-safe. Events are raised outside the internal lock, and <see cref="IsSatisfied"/> does not
+/// take it at all — the request path must not queue behind a plugin's own code (see the field comment
+/// on the effective-state table). A change arriving from a source that is no longer the registered one
+/// is dropped rather than applied.
+/// </remarks>
 public sealed class RuntimeCapabilityRegistry : IDisposable
 {
     private readonly TimeSpan _gracePeriod;
@@ -21,7 +27,13 @@ public sealed class RuntimeCapabilityRegistry : IDisposable
     private readonly ILogger<RuntimeCapabilityRegistry> _logger;
     private readonly object _gate = new();
 
-    private readonly Dictionary<RuntimeCapabilityKey, RuntimeCapabilityEntry> _effective = [];
+    // Nebenläufig, damit IsSatisfied ohne _gate auskommt: Die Verfügbarkeitsprüfung liest diese
+    // Tabelle pro Anfrage, und _gate wird beim Registrieren gehalten, während Plugin-Code läuft
+    // (CurrentGrants). Eine Quelle, die dort hängt, hätte sonst jede laufende Anfrage mit
+    // angehalten. Geschrieben wird weiterhin ausschließlich unter _gate — die mehrschrittigen
+    // Folgen in Apply/Unregister bleiben also gegeneinander atomar; nur der Einzelschlüssel-Lesezugriff
+    // schert aus, und der ist ohnehin eine Momentaufnahme.
+    private readonly ConcurrentDictionary<RuntimeCapabilityKey, RuntimeCapabilityEntry> _effective = new();
     private readonly Dictionary<RuntimeCapabilityKey, ITimer> _pendingTimers = [];
     private readonly Dictionary<string, (IRuntimeCapabilitySource Source, Action<RuntimeCapabilityChanged> Handler)> _registrations =
         new(StringComparer.OrdinalIgnoreCase);
@@ -69,7 +81,7 @@ public sealed class RuntimeCapabilityRegistry : IDisposable
                 throw new InvalidOperationException($"A runtime capability source for plugin '{pluginId}' is already registered.");
             }
 
-            void Handler(RuntimeCapabilityChanged change) => OnCapabilityChanged(pluginId, change);
+            void Handler(RuntimeCapabilityChanged change) => OnCapabilityChanged(pluginId, source, change);
             _registrations[pluginId] = (source, Handler);
             source.CapabilitiesChanged += Handler;
 
@@ -116,7 +128,7 @@ public sealed class RuntimeCapabilityRegistry : IDisposable
                     flips.Add(new RuntimeCapabilityFlip(entry.PluginId, entry.Capability, entry.WorkspaceKey, Satisfied: false));
                 }
 
-                _effective.Remove(key);
+                _effective.TryRemove(key, out _);
             }
         }
 
@@ -130,18 +142,29 @@ public sealed class RuntimeCapabilityRegistry : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(capability);
 
         var key = RuntimeCapabilityKey.Create(pluginId, capability, workspaceKey);
-        lock (_gate)
-        {
-            return _effective.TryGetValue(key, out var entry) && entry.Satisfied;
-        }
+        return _effective.TryGetValue(key, out var entry) && entry.Satisfied;
     }
 
-    private void OnCapabilityChanged(string pluginId, RuntimeCapabilityChanged change)
+    private void OnCapabilityChanged(string pluginId, IRuntimeCapabilitySource source, RuntimeCapabilityChanged change)
     {
         List<RuntimeCapabilityFlip> flips = [];
         lock (_gate)
         {
             if (_disposed)
+            {
+                return;
+            }
+
+            // Die Quelle muss noch die registrierte sein. Unregister hängt den Handler ab, aber das
+            // Ereignis darf laut Vertrag aus jedem Thread kommen: Ein Aufruf, der beim Abhängen schon
+            // unterwegs war, wartet hier auf das Lock und schriebe danach einen Eintrag für ein längst
+            // abgemeldetes Plugin zurück — IsSatisfied meldete es dann dauerhaft als erfüllt, und der
+            // Capability-Guard ließe ein deaktiviertes Plugin verfügbar erscheinen. Das ist das Muster
+            // aus #253 eine Registry weiter: nicht die Operation ist unsicher, sondern die Folge.
+            // Verglichen wird die Instanz, nicht nur die Id — sonst könnte der Nachzügler einer alten
+            // Quelle den Zustand einer bereits neu registrierten überschreiben.
+            if (!_registrations.TryGetValue(pluginId, out var registration) ||
+                !ReferenceEquals(registration.Source, source))
             {
                 return;
             }
