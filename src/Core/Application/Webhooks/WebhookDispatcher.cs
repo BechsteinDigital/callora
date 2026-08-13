@@ -60,8 +60,14 @@ public sealed class WebhookDispatcher(
                 var subscriptionBody = subscription.IncludeSensitiveData
                     ? body
                     : minimizedBody ??= WebhookPayloadMinimizer.Minimize(body, sensitiveFieldRegistry.EffectiveFields());
+                // Die Zustell-Id entsteht HIER, nicht beim Zustellen: Der Job wird bis zu
+                // MaxAttempts-mal ausgeführt, und eine pro Versuch neu erzeugte Id wäre für den
+                // Empfänger wertlos — er könnte eine Wiederholung nicht von einem neuen Ereignis
+                // unterscheiden, weil zwei gleiche Ereignisse sich in nichts unterscheiden, das er
+                // sieht.
                 var jobPayload = JsonSerializer.Serialize(
-                    new WebhookDeliveryPayload(subscription.Id, eventName, subscriptionBody), JsonOptions);
+                    new WebhookDeliveryPayload(subscription.Id, eventName, subscriptionBody, Guid.NewGuid()),
+                    JsonOptions);
                 await jobQueue.EnqueueAsync(
                         new BackgroundJobRequest(
                             DeliveryJobType,

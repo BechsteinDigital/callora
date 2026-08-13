@@ -12,6 +12,18 @@ public static class WebhookSignature
     public const string HeaderName = "X-Callora-Signature";
     public const string EventHeaderName = "X-Callora-Event";
 
+    /// <summary>
+    /// Stable id of one delivery, identical across every retry of that delivery — the value a
+    /// receiver deduplicates on.
+    /// </summary>
+    /// <remarks>
+    /// Not signed, and deliberately so: the signature covers the body, and the id belongs to the
+    /// delivery attempt rather than to the event. Same split as GitHub's X-GitHub-Delivery. A
+    /// forged id needs a man in the middle, who could drop the request outright — dedup is not the
+    /// weak point there.
+    /// </remarks>
+    public const string DeliveryHeaderName = "X-Callora-Delivery";
+
     public static string Compute(string secret, string body)
     {
         ArgumentNullException.ThrowIfNull(secret);

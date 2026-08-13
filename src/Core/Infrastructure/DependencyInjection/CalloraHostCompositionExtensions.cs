@@ -285,7 +285,12 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton<Callora.Core.Application.Webhooks.WebhookEgressGuard>();
         builder.Services.AddHttpClient(Callora.Core.Application.Webhooks.WebhookDeliveryJobHandler.HttpClientName, client =>
             {
-                client.Timeout = TimeSpan.FromSeconds(10);
+                // Nicht mehr 10 Sekunden: HttpClient.Timeout umschließt den GESAMTEN Aufruf
+                // einschließlich aller Wiederholungen der Pipeline unten. Bliebe er bei 10, käme
+                // der erste Versuch gerade noch durch und jede Wiederholung stürbe am Client —
+                // die Pipeline wäre eingebaut und wirkungslos. Der Wert ist nur noch ein Fangnetz
+                // oberhalb des Gesamt-Timeouts der Pipeline, nicht die eigentliche Grenze.
+                client.Timeout = TimeSpan.FromSeconds(60);
             })
             // Redirects could re-target a validated URL into private ranges; the
             // ConnectCallback re-validates resolved addresses at connect time so a
@@ -298,7 +303,8 @@ public static class CalloraHostCompositionExtensions
                     AllowAutoRedirect = false,
                     ConnectCallback = egressGuard.ConnectAsync
                 };
-            });
+            })
+            .AddWebhookDeliveryResilience();
         builder.Services.AddScoped<Callora.Core.Application.Notifications.INotificationStore, EfNotificationStore>();
         builder.Services.AddDecoratableSingleton<Callora.Core.Application.Notifications.Contracts.INotificationPublisher, Callora.Core.Application.Notifications.ScopedNotificationPublisher>();
         // Dekorierbarer Host-Service (PLAT-266): Plugins können den Mailversand
