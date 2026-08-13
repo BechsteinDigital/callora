@@ -50,4 +50,61 @@ describe('extension hooks', () => {
 
     expect(payload.done).toBe(true)
   })
+
+  // #289: Ein werfender Handler riss vorher die Aufrufstelle mit. Bei "after" ist die Aktion
+  // zu dem Zeitpunkt bereits gelungen — der Operator sah einen Fehlschlag fuer etwas, das
+  // vollstaendig funktioniert hatte.
+  it('lets a successful action stay successful when an after-handler throws', async () => {
+    const seen: string[] = []
+    registerHook('media.after-upload', () => {
+      throw new Error('plugin ist kaputt')
+    }, 0, 'acme-media')
+    registerHook('media.after-upload', () => {
+      seen.push('zweiter Handler')
+    }, 1, 'other')
+
+    const outcome = await runHook('media.after-upload', {})
+
+    expect(outcome.canceled).toBe(false)
+    expect(seen).toEqual(['zweiter Handler'])
+    expect(outcome.failures).toHaveLength(1)
+    expect(outcome.failures[0].pluginId).toBe('acme-media')
+  })
+
+  // Die andere Haelfte, und sie muss entgegengesetzt ausfallen: Ein before-Handler STEHT fuer
+  // eine Pruefung. Wer ueber dessen Ausnahme hinweggeht, ueberspringt genau die Pruefung.
+  it('treats a throwing before-handler as a cancel', async () => {
+    const seen: string[] = []
+    registerHook('users.before-save', () => {
+      throw new Error('Berechtigungspruefung gescheitert')
+    }, 0, 'acme-policy')
+    registerHook('users.before-save', () => {
+      seen.push('darf nicht laufen')
+    }, 1, 'other')
+
+    const outcome = await runHook('users.before-save', {})
+
+    expect(outcome.canceled).toBe(true)
+    expect(outcome.cancelReason).toContain('acme-policy')
+    expect(seen).toEqual([])
+  })
+
+  // Ein Name, der in kein Schema passt, faellt auf die sichere Seite.
+  it('fails closed for a hook name that is neither before nor after', async () => {
+    registerHook('something.custom', () => {
+      throw new Error('kaputt')
+    }, 0, 'acme')
+
+    const outcome = await runHook('something.custom', {})
+
+    expect(outcome.canceled).toBe(true)
+  })
+
+  it('reports no failures when every handler succeeds', async () => {
+    registerHook('media.after-upload', () => {}, 0, 'acme')
+
+    const outcome = await runHook('media.after-upload', {})
+
+    expect(outcome.failures).toEqual([])
+  })
 })

@@ -114,6 +114,12 @@ Das ist der Grund, warum man sich hier zurechtfindet.
   Output liegt. In Plugin-Repositories läuft das Tooling über das Testprojekt als Startprojekt.
 - **Vite `emptyOutDir`** räumt beim Bauen mehr weg, als man erwartet — Ausgabepfade prüfen,
   bevor man ihn anschaltet.
+- **Static-Web-Assets-Cache zeigt auf alte Hashes.** Fehlerbild: `No file exists for the asset
+  at either location '…/wwwroot/admin/assets/app-window-DVp9p-wK.js'`, obwohl dort ein
+  `app-window-<anderer Hash>.js` liegt. Der Name im Cache stammt aus einem früheren
+  Frontend-Build; MSBuild sucht ihn und findet ihn nicht. Behoben durch Löschen von
+  `src/Administration/obj/<Config>/net10.0/staticwebassets*` und `rbcswa*` — der Build danach
+  läuft durch. Kein Grund, die Frontend-Änderung zu suchen, die es nicht ist.
 
 ## Wenn du etwas veränderst, das andere bauen
 
