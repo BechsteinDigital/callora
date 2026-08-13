@@ -51,7 +51,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
         await context.Database.EnsureCreatedAsync();
         await SeedWorkspaceAsync(context, "workspace-a");
 
-        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context));
+        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         var created = await store.UpsertAsync("workspace-a", new WorkspaceSurfaceInput(
             SurfaceKey: "portal",
@@ -98,7 +98,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
         await context.Database.EnsureCreatedAsync();
         await SeedWorkspaceAsync(context, "workspace-identity");
 
-        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context));
+        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
         await store.UpsertAsync("workspace-identity", new WorkspaceSurfaceInput(
             "portal", "Portal", "spa", null, null, "/", SurfaceAuthentication.SurfaceIdentity,
             null, null, null, null, null, true));
@@ -135,7 +135,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
         await context.Database.EnsureCreatedAsync();
         await SeedWorkspaceAsync(context, "workspace-clear");
 
-        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context));
+        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
         await store.UpsertAsync("workspace-clear", new WorkspaceSurfaceInput(
             "portal", "Portal", "spa", null, null, "/", SurfaceAuthentication.Public,
             null, null, null, null, null, true));
@@ -161,7 +161,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
 
         await using var context = new HostPersistenceDbContext(options);
         await context.Database.EnsureCreatedAsync();
-        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context));
+        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         Assert.Null(await store.AssignIdentityProviderAsync(
             "no-such-workspace", "portal", "crm", "1.0.0", "operator@example.de"));
@@ -175,7 +175,7 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
 
         await using var context = new HostPersistenceDbContext(options);
         await context.Database.EnsureCreatedAsync();
-        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context));
+        var store = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         var result = await store.UpsertAsync("no-such-workspace", new WorkspaceSurfaceInput(
             "x", "X", "spa", null, null, "/", SurfaceAuthentication.Public, null, null, null, null, null, true));

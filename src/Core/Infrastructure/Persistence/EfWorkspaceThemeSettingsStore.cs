@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Core.Infrastructure.Persistence;
 
-public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbContext) : IWorkspaceThemeSettingsStore
+public sealed class EfWorkspaceThemeSettingsStore(
+    HostPersistenceDbContext dbContext,
+    IThemeResolutionCache themeCache) : IWorkspaceThemeSettingsStore
 {
     public async Task<IReadOnlyList<WorkspaceThemeSettingDefinitionSnapshot>> ListDefinitionsAsync(
         string pluginId,
@@ -100,6 +102,7 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        themeCache.Invalidate();
 
         return entities.Select(ToDefinitionSnapshot).ToArray();
     }
@@ -212,6 +215,7 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
         }
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        themeCache.Invalidate();
         return await ListValuesAsync(normalizedWorkspaceKey, normalizedSurfaceKey, normalizedPluginId, cancellationToken)
             .ConfigureAwait(false);
     }
@@ -240,6 +244,7 @@ public sealed class EfWorkspaceThemeSettingsStore(HostPersistenceDbContext dbCon
             .ConfigureAwait(false);
 
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        themeCache.Invalidate();
     }
 
     /// <summary>

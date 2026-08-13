@@ -80,7 +80,7 @@ public static class SurfaceRenderEndpoints
         PublishedSurfaceTemplateBundles bundles,
         ILoggerFactory loggerFactory,
         [FromServices] WorkspaceUiChainResolver? chainResolver,
-        [FromServices] WorkspacePublicThemeResolver? themeResolver,
+        [FromServices] IWorkspacePublicThemeResolver? themeResolver,
         [FromServices] SurfaceRequestCallerResolver? callerResolver,
         [FromServices] SurfaceSlotResolver? slotResolver,
         CancellationToken cancellationToken)
@@ -147,7 +147,7 @@ public static class SurfaceRenderEndpoints
         [FromServices] WorkspaceUiChainResolver? chainResolver,
         // The effective theme values are wired in when the theme subsystem is
         // composed; a minimal host without it still renders (unthemed) — optional.
-        [FromServices] WorkspacePublicThemeResolver? themeResolver,
+        [FromServices] IWorkspacePublicThemeResolver? themeResolver,
         // Identity is composed with the surface session subsystem; a host without it
         // keeps the pre-ADR-017 behaviour (backend principal or anonymous) — optional.
         [FromServices] SurfaceRequestCallerResolver? callerResolver,

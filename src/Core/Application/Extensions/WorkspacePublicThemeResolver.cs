@@ -23,7 +23,7 @@ public sealed class WorkspacePublicThemeResolver(
     IWorkspaceManagementStore workspaceStore,
     IWorkspaceSurfaceStore surfaceStore,
     IWorkspaceThemeSettingsStore settingsStore,
-    IWorkspaceSectionLayoutStore sectionLayoutStore)
+    IWorkspaceSectionLayoutStore sectionLayoutStore) : IWorkspacePublicThemeResolver
 {
     /// <summary>
     /// The workspace-level theme, without any surface override. Used where no

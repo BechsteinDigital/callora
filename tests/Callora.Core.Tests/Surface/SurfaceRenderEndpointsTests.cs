@@ -181,6 +181,8 @@ public sealed class SurfaceRenderEndpointsTests
                 services.AddSingleton<IWorkspaceSectionLayoutStore>(
                     new InMemoryWorkspaceSectionLayoutStore());
                 services.AddScoped<WorkspacePublicThemeResolver>();
+                services.AddScoped<IWorkspacePublicThemeResolver>(
+                    static sp => sp.GetRequiredService<WorkspacePublicThemeResolver>());
                 services.AddSingleton<ISurfaceRenderer>(capturingRenderer);
             });
         var client = app.GetTestClient();
@@ -348,6 +350,10 @@ public sealed class SurfaceRenderEndpointsTests
         builder.Services.AddSingleton<IWorkspaceSectionLayoutStore>(
             new InMemoryWorkspaceSectionLayoutStore());
         builder.Services.AddScoped<WorkspacePublicThemeResolver>();
+        // Der Port zeigt hier direkt auf den echten Resolver, nicht auf den Cache: Diese Tests
+        // schreiben und lesen im selben Lauf und müssen sehen, was sie gerade gesetzt haben.
+        builder.Services.AddScoped<IWorkspacePublicThemeResolver>(
+            static sp => sp.GetRequiredService<WorkspacePublicThemeResolver>());
         builder.Services.AddCalloraSurfaceRendering();
         if (authenticate)
         {

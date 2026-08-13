@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Workspaces;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,8 @@ namespace Callora.Core.Infrastructure.Persistence;
 
 public sealed class EfWorkspaceSurfaceStore(
     HostPersistenceDbContext dbContext,
-    ISurfaceRouteTable routeTable) : IWorkspaceSurfaceStore
+    ISurfaceRouteTable routeTable,
+    IThemeResolutionCache themeCache) : IWorkspaceSurfaceStore
 {
     public async Task<IReadOnlyList<WorkspaceSurfaceSnapshot>> ListAsync(
         string workspaceKey,
@@ -118,6 +120,7 @@ public sealed class EfWorkspaceSurfaceStore(
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         routeTable.Invalidate();
+        themeCache.Invalidate();
 
         return ToSnapshotObject(
             normalizedWorkspaceKey,
@@ -213,6 +216,7 @@ public sealed class EfWorkspaceSurfaceStore(
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         routeTable.Invalidate();
+        themeCache.Invalidate();
 
         return ToSnapshotObject(normalizedWorkspaceKey, surface);
     }
@@ -253,6 +257,7 @@ public sealed class EfWorkspaceSurfaceStore(
         dbContext.WorkspaceSurfaces.Remove(surface);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         routeTable.Invalidate();
+        themeCache.Invalidate();
         return SurfaceDeleteResult.Deleted;
     }
 

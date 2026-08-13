@@ -5,7 +5,9 @@ using System.Text.Json;
 
 namespace Callora.Core.Infrastructure.Persistence;
 
-public sealed class EfWorkspaceSectionLayoutStore(HostPersistenceDbContext dbContext)
+public sealed class EfWorkspaceSectionLayoutStore(
+    HostPersistenceDbContext dbContext,
+    IThemeResolutionCache themeCache)
     : IWorkspaceSectionLayoutStore
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
@@ -86,6 +88,7 @@ public sealed class EfWorkspaceSectionLayoutStore(HostPersistenceDbContext dbCon
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        themeCache.Invalidate();
     }
 
     public async Task ClearForPluginAsync(string pluginId, CancellationToken cancellationToken = default)

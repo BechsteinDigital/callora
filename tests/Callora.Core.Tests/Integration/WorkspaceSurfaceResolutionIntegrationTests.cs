@@ -45,14 +45,14 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
-        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context));
+        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         var upsert = await workspaceStore.UpsertAsync(
             "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "portal.example.de/app");
         Assert.Equal(WorkspaceUpsertStatus.Ok, upsert.Status);
 
         // Write-through created a default surface mirroring the public route.
-        var defaultSurface = await new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context)).GetAsync("workspace-a", "default");
+        var defaultSurface = await new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache()).GetAsync("workspace-a", "default");
         Assert.NotNull(defaultSurface);
         Assert.Equal("portal.example.de", defaultSurface!.PublicHost);
         Assert.Equal("/app", defaultSurface.PublicPathPrefix);
@@ -71,8 +71,8 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
-        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context));
-        var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context));
+        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
+        var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         _ = await workspaceStore.UpsertAsync(
             "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "primary.example.de");
@@ -105,8 +105,8 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
-        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context));
-        var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context));
+        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
+        var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         _ = await workspaceStore.UpsertAsync(
             "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "primary.example.de");
@@ -148,8 +148,8 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         // inactive surfaces. This proves that filter directly against real Postgres.
         Skip.IfNot(_started, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
-        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context));
-        var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context));
+        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
+        var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         _ = await workspaceStore.UpsertAsync(
             "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "primary.example.de");
@@ -183,8 +183,8 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         // der Betreiber sah eine abgeschaltete Gliederung und bekam den Knoten darunter serviert.
         Skip.IfNot(_started, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
-        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context));
-        var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context));
+        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
+        var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         _ = await workspaceStore.UpsertAsync(
             "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "primary.example.de");
@@ -251,7 +251,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
-        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context));
+        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         _ = await workspaceStore.UpsertAsync(
             "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "portal.example.de/app");
@@ -272,14 +272,14 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     {
         Skip.IfNot(_started, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
-        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context));
+        var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
         _ = await workspaceStore.UpsertAsync(
             "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "first.example.de");
         _ = await workspaceStore.UpsertAsync(
             "tenant-a", "workspace-a", "Workspace A", "team", isActive: true, defaultSurfaceBaseUrl: "second.example.de/x");
 
-        var defaults = (await new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context)).ListAsync("workspace-a"))
+        var defaults = (await new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache()).ListAsync("workspace-a"))
             .Where(s => s.SurfaceKey == "default")
             .ToList();
 

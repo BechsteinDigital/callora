@@ -273,7 +273,15 @@ public static class CalloraHostCompositionExtensions
                 .OfType<Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource>()
                 .FirstOrDefault()
                 ?? sp.GetService<Callora.Core.Application.Surfaces.Layout.ISurfaceLayoutSource>()));
+        // Der konkrete Resolver bleibt scoped — er hängt an scoped Stores und wird vom Cache
+        // über einen eigenen Scope geholt. Nach außen zeigt der Port auf den Cache, damit der
+        // Renderpfad nicht sechs Datenbankzugriffe je Anfrage macht.
         builder.Services.AddScoped<WorkspacePublicThemeResolver>();
+        builder.Services.AddSingleton<CachedWorkspacePublicThemeResolver>();
+        builder.Services.AddSingleton<IWorkspacePublicThemeResolver>(
+            static sp => sp.GetRequiredService<CachedWorkspacePublicThemeResolver>());
+        builder.Services.AddSingleton<IThemeResolutionCache>(
+            static sp => sp.GetRequiredService<CachedWorkspacePublicThemeResolver>());
         builder.Services.AddScoped<SurfaceThemeService>();
         builder.Services.AddScoped<Callora.Core.Application.Configuration.ISystemConfigStore, EfSystemConfigStore>();
         builder.Services.AddScoped<Callora.Core.Application.Configuration.SystemConfigResolver>();

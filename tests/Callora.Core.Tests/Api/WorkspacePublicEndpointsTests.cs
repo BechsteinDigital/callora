@@ -520,6 +520,10 @@ public sealed class WorkspacePublicEndpointsTests
         builder.Services.AddSingleton<Callora.Core.Application.Extensions.IWorkspaceSectionLayoutStore>(
             new Callora.Core.Tests.Support.InMemoryWorkspaceSectionLayoutStore());
         builder.Services.AddScoped<Callora.Core.Application.Extensions.WorkspacePublicThemeResolver>();
+        // Port auf den echten Resolver, nicht auf den Cache: Diese Tests setzen Werte und lesen
+        // sie im selben Lauf zurück.
+        builder.Services.AddScoped<Callora.Core.Application.Extensions.IWorkspacePublicThemeResolver>(
+            static sp => sp.GetRequiredService<Callora.Core.Application.Extensions.WorkspacePublicThemeResolver>());
         if (authenticate)
         {
             builder.Services
