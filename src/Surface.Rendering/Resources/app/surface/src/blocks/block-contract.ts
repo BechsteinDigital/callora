@@ -92,9 +92,23 @@ export interface BlockControl<T = unknown> {
    */
   visibleWhen?: (values: Readonly<Record<string, unknown>>) => boolean
   /**
-   * Keeps the value out of the delivered markup. For anything the visitor must not read
-   * in view-source — an API key, an internal id. The renderer resolves it server-side
-   * and ships the result, not the input (design §7.5).
+   * Marks the value as one the visitor must not read in view-source — an API key, an
+   * internal id (design §7.5).
+   *
+   * **This is a declaration of intent, not a guarantee the render path currently keeps.**
+   * Do not put a secret behind it today: `SurfaceCompositionRenderer` accepts a set of
+   * confidential controls and would filter them out of `data-callora-props`, but nothing
+   * supplies that set — there is no server-side block description to read it from, so
+   * `SurfaceRenderEndpoints` constructs the renderer without it and every value ships as
+   * written.
+   *
+   * The wording used to promise the opposite, which is the worse half of the same gap: a
+   * block author read it and had no reason to doubt it, while the C# side had said plainly
+   * that it was unwired all along.
+   *
+   * Once a block description exists server-side and is wired into that parameter, this
+   * becomes a promise and this note goes — `TheConfidentialFlagDoesNotPromiseMoreThanItKeeps`
+   * fails if the two sides drift apart again in either direction.
    */
   confidential?: boolean
 }
