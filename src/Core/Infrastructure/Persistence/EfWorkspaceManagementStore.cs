@@ -179,7 +179,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         string? tenantKey = null,
         CancellationToken cancellationToken = default)
     {
-        var best = await MatchSurfaceByPublicRouteAsync(requestHost, requestPath, tenantKey, cancellationToken)
+        var (best, _) = await MatchSurfaceByPublicRouteAsync(requestHost, requestPath, tenantKey, cancellationToken)
             .ConfigureAwait(false);
         return best is null ? null : ToSnapshot(best.Workspace, best.Workspace.Tenant);
     }
@@ -190,7 +190,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         string? tenantKey = null,
         CancellationToken cancellationToken = default)
     {
-        var best = await MatchSurfaceByPublicRouteAsync(requestHost, requestPath, tenantKey, cancellationToken)
+        var (best, byId) = await MatchSurfaceByPublicRouteAsync(requestHost, requestPath, tenantKey, cancellationToken)
             .ConfigureAwait(false);
         if (best is null)
         {
@@ -201,32 +201,31 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
         // eigen. Die Verwaltung (GetSurfaceAsync, ListSurfacesAsync) bekommt weiterhin die
         // eigenen: Sonst könnte eine Oberfläche einen geerbten Wert nicht von einem gesetzten
         // unterscheiden und machte beim Speichern aus der Vererbung eine Kopie.
-        var byId = await LoadWorkspaceSurfacesAsync(best.WorkspaceId, cancellationToken)
-            .ConfigureAwait(false);
+        //
+        // Die Kette kommt aus der Menge, die der Matcher ohnehin geladen hat. Vorher holte diese
+        // Stelle dieselben Zeilen ein zweites Mal aus der Datenbank — pro Anfrage, im heißesten
+        // Pfad, den dieses Repository hat. Der Vorfilter im Matcher arbeitet auf WORKSPACE-Ebene,
+        // deshalb liegt die vollständige Kette darin: Sie verlässt den Workspace nie.
         return ToEffectiveSurfaceSnapshot(best, EffectiveSurface.From(AncestryOf(best, byId)));
     }
 
-    private async Task<IReadOnlyDictionary<Guid, WorkspaceSurface>> LoadWorkspaceSurfacesAsync(
-        Guid workspaceId,
-        CancellationToken cancellationToken)
+    /// <summary>
+    /// Die passendste Fläche für Host und Pfad — und die Menge, in der sie gefunden wurde.
+    /// <para>
+    /// Die Menge kommt mit zurück, weil der Aufrufer die Vererbungskette daraus baut. Sie ein
+    /// zweites Mal zu laden war die teuerste Zeile im öffentlichen Renderpfad.
+    /// </para>
+    /// </summary>
+    private async Task<(WorkspaceSurface? Best, IReadOnlyDictionary<Guid, WorkspaceSurface> ById)>
+        MatchSurfaceByPublicRouteAsync(
+            string requestHost,
+            string requestPath,
+            string? tenantKey,
+            CancellationToken cancellationToken)
     {
-        var surfaces = await dbContext.WorkspaceSurfaces
-            .AsNoTracking()
-            .Include(x => x.Workspace)
-            .ThenInclude(w => w.Tenant)
-            .Where(x => x.WorkspaceId == workspaceId)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
+        var normalizedHost = (requestHost ?? string.Empty).Trim().ToLowerInvariant();
+        var normalizedPath = PublicRouteMatching.NormalizePath(requestPath);
 
-        return surfaces.ToDictionary(surface => surface.Id);
-    }
-
-    private async Task<WorkspaceSurface?> MatchSurfaceByPublicRouteAsync(
-        string requestHost,
-        string requestPath,
-        string? tenantKey,
-        CancellationToken cancellationToken)
-    {
         // Public routing resolves through surfaces (ADR-014 §5/§14): a workspace's
         // "default" surface mirrors its public route, so today's behaviour is preserved
         // while additional surfaces route to the same workspace.
@@ -242,10 +241,38 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             query = query.Where(x => x.Workspace.Tenant.TenantKey == normalizedTenantKey);
         }
 
-        var surfaces = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        // Vorgefiltert wird über den WORKSPACE, nicht über die einzelne Fläche — und das ist kein
+        // Umweg, sondern die Bedingung dafür, dass der Filter überhaupt zulässig ist. Der
+        // effektive Host eines Knotens ist der erste gesetzte entlang seiner Kette; ein Filter,
+        // der einzelne Flächen wegwirft, kann einem Kind seinen Vorfahren nehmen. AncestryOf
+        // bricht dann still ab, das Kind gilt als Wurzel — und eine Fläche ohne eigenen Host
+        // matcht als Wildcard JEDEN Host. Aus einer Optimierung wäre so ein Fremdzugriff geworden.
+        //
+        // Vollständig ist der Filter, weil eine Fläche nur matchen kann, wenn irgendein Knoten
+        // ihrer Kette entweder den angefragten Host trägt oder gar keinen (dann greift die
+        // Wildcard, ggf. über den Workspace-Host). Beide Fälle sind unten erfasst, und da Ketten
+        // den Workspace nie verlassen, kommt mit dem Workspace die ganze Kette mit.
+        // ILike statt eines Gleichheitsvergleichs, weil der Vergleich in der Datenbank
+        // stattfinden muss und Bestandsdaten aus direkten SQL-Eingriffen groß geschrieben sein
+        // können — der Speichervorgang senkt den Host, ältere Zeilen hat er nie angefasst. Dass
+        // ILike '%' und '_' als Platzhalter liest, ist hier unschädlich: Der Vorfilter darf zu
+        // viel laden, nur nichts verlieren; entschieden wird ohnehin unten am effektiven Wert.
+        query = query.Where(x => dbContext.WorkspaceSurfaces
+            .Where(candidate =>
+                candidate.PublicHost == null ||
+                candidate.PublicHost.Trim() == "" ||
+                EF.Functions.ILike(candidate.PublicHost, normalizedHost))
+            .Select(candidate => candidate.WorkspaceId)
+            .Contains(x.WorkspaceId));
 
-        var normalizedHost = (requestHost ?? string.Empty).Trim().ToLowerInvariant();
-        var normalizedPath = PublicRouteMatching.NormalizePath(requestPath);
+        // Ohne feste Reihenfolge entschied bei Gleichstand, in welcher Reihenfolge Postgres die
+        // Zeilen zurückgab — zwei Flächen auf derselben Adresse konnten sich von Anfrage zu
+        // Anfrage abwechseln. Die Doppelbelegung bleibt eine Fehlkonfiguration; sie soll nur
+        // nicht auch noch unvorhersehbar sein.
+        var surfaces = await query
+            .OrderBy(x => x.Id)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         // Gematcht wird gegen die EFFEKTIVEN Werte (ADR-019): Ein Kind trägt sein Segment, sein
         // Host kommt von der Wurzel. `/portal/partner` gegen `partner` zu prüfen fände nichts,
@@ -292,7 +319,7 @@ public sealed class EfWorkspaceManagementStore(HostPersistenceDbContext dbContex
             bestScore = score;
         }
 
-        return best;
+        return (best, byId);
     }
 
     /// <summary>
