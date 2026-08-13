@@ -1,5 +1,6 @@
 using Callora.Core.Application.Surfaces;
 using Callora.Core.Application.Surfaces.Data;
+using Callora.Core.Application.Surfaces.SharedContext;
 using Callora.Surface.Rendering.Api;
 using Callora.Surface.Rendering.Api.SurfaceContext;
 using Callora.Surface.Rendering.Rendering;
@@ -72,6 +73,21 @@ public static class CalloraSurfaceRenderingExtensions
         });
         services.AddSingleton<ISurfaceContextBroadcaster>(
             sp => sp.GetRequiredService<SurfaceContextBroadcaster>());
+
+        // Der geteilte Kontext war komplett gebaut und an keiner Stelle verdrahtet: Weder
+        // ISharedContextService noch SharedContextStore wurden registriert, und es gibt kein
+        // Assembly-Scanning, das das nachgeholt hätte. Die Extension-Point-Doku führte beide
+        // trotzdem als auflösbar samt Beispielcode — ein Plugin, das ihr folgte, bekam eine
+        // InvalidOperationException statt eines Dienstes.
+        //
+        // Die Schlüssel werden EINMAL bei der Komposition gelesen, wie ISharedContextKeyContributor
+        // es zusagt. Das ist keine Nachlässigkeit gegenüber später aktivierten Plugins, sondern
+        // die Bedingung dafür, dass die Deklaration eine Zusage ist: Ein Schlüssel, der zur
+        // Laufzeit dazukommen könnte, wäre keine Vorbedingung mehr, sondern eine Nachmeldung.
+        services.AddSingleton(sp => new SharedContextStore(
+            sp.GetServices<ISharedContextKeyContributor>()
+                .SelectMany(contributor => contributor.SharedContextKeys)));
+        services.AddSingleton<ISharedContextService, SharedContextBroadcastService>();
         return services;
     }
 
