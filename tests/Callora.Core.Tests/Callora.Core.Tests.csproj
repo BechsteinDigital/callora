@@ -17,6 +17,15 @@
     <PackageReference Include="Microsoft.AspNetCore.TestHost" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <PackageReference Include="Testcontainers.PostgreSql" />
+    <!-- Direkt-Pin, obwohl niemand hier SSH spricht: Testcontainers zieht SSH.NET transitiv, und
+         alles bis 2025.1.0 hat GHSA-q939-rpr3-3284 (HIGH — ScpClient schreibt bei rekursivem
+         Download Dateien an server-kontrollierte Pfade). Gefixt erst in 2026.0.0, und
+         Testcontainers 4.13.0 ist bereits die neueste Fassung — es gibt also keine Version, die
+         den Patch von selbst mitbringt. NU1903 ist hier als Fehler geschaltet, der Bruch war
+         daher kein Warnhinweis, sondern ein roter Build.
+         Anders als beim früheren Xml-Pin (siehe Directory.Packages.props) ist ein Pin hier
+         folgenlos für Fremdkonsumenten: Das ist ein Testprojekt, es wird nicht paketiert. -->
+    <PackageReference Include="SSH.NET" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
