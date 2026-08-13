@@ -28,9 +28,17 @@ public static class BackendContentSecurityPolicy
     /// </summary>
     /// <remarks>
     /// <list type="bullet">
-    ///   <item><c>script-src 'self'</c> — plugin bundles are same-origin under /plugin-assets. No
-    ///   <c>unsafe-eval</c>: nothing in the shells needs it, and it is the difference between a
-    ///   bundle running its reviewed code and running code it fetched.</item>
+    ///   <item><c>script-src 'self' 'wasm-unsafe-eval'</c> — plugin bundles are same-origin under
+    ///   /plugin-assets. Still no <c>unsafe-eval</c>: that one covers <c>eval()</c> and
+    ///   <c>new Function()</c> too, and it is the difference between a bundle running its reviewed
+    ///   code and running code it fetched.
+    ///   <para>
+    ///   <c>wasm-unsafe-eval</c> is narrower and exists for exactly this: compiling WebAssembly, and
+    ///   nothing else. Without it a browser refuses every
+    ///   <c>WebAssembly.instantiate</c> — which took out the background blur, whose segmentation
+    ///   model runs as WASM. The refusal names <c>unsafe-eval</c> in its message, and taking that
+    ///   literally would have opened <c>eval()</c> across both shells to load one model.
+    ///   </para></item>
     ///   <item><c>style-src</c> allows inline: Vue writes scoped styles and inline transitions at
     ///   runtime. Stated rather than quietly included — it is the one concession here.</item>
     ///   <item><c>img-src</c> allows <c>data:</c> and <c>blob:</c> for avatars and canvas output;
@@ -44,7 +52,7 @@ public static class BackendContentSecurityPolicy
     /// </remarks>
     public const string Default =
         "default-src 'self'; " +
-        "script-src 'self'; " +
+        "script-src 'self' 'wasm-unsafe-eval'; " +
         "style-src 'self' 'unsafe-inline'; " +
         "img-src 'self' data: blob:; " +
         "font-src 'self' data:; " +
