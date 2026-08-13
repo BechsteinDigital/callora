@@ -19,12 +19,10 @@ namespace Callora.Core.Tests.Infrastructure.Persistence;
 /// niemand mehr sagen kann, woran es lag.
 /// </para>
 /// <para>
-/// NICHT abgedeckt: <c>ReplaceDefinitionsForPluginAsync</c> und <c>ClearPluginDefinitionsAsync</c>.
-/// Beide benutzen <c>ExecuteDelete</c> in einer Transaktion, und der In-Memory-Provider kann
-/// weder das eine noch das andere — ein Test dafür bräuchte Postgres. Die Invalidierung steht
-/// dort trotzdem, sie ist hier nur nicht bewiesen. Beide laufen ausschließlich beim Installieren
-/// und Deinstallieren eines Theme-Plugins, also auf einem Weg, den ein Betreiber nicht im
-/// Minutentakt geht.
+/// Die beiden Wege über <c>ExecuteDelete</c> in einer Transaktion —
+/// <c>ReplaceDefinitionsForPluginAsync</c> und <c>ClearPluginDefinitionsAsync</c> — stehen nicht
+/// hier, weil der In-Memory-Provider beides nicht kann. Sie sind deshalb nicht ungeprüft: Sie
+/// laufen in <c>ThemeDefinitionWritesDropTheResolvedThemeTests</c> gegen echtes Postgres.
 /// </para>
 /// </summary>
 public sealed class TheResolvedThemeIsDroppedOnEveryWriteTests
