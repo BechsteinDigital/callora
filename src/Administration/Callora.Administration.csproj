@@ -78,6 +78,29 @@
       <Content Remove="wwwroot/admin/**" />
       <Content Include="wwwroot/admin/**" />
     </ItemGroup>
+
+    <!-- Das Neueinlesen oben repariert die ItemGroup — aber nicht die Zwischenstände, die das
+         Static-Web-Assets-SDK in obj/ ablegt. Die überleben den Lauf, und beim nächsten Build
+         wird der Fehler von dort neu geboren: „No file exists for the asset at
+         …/wwwroot/admin/assets/app-window-<alter Hash>.js", während daneben derselbe Name mit
+         einem neuen Hash liegt.
+
+         Zweimal gemessen, in dieselbe Falle gelaufen: Debug und Release führen GETRENNTE Caches
+         unter obj/<Config>/, teilen sich aber EIN wwwroot/admin. Wer nach einem Debug-Build
+         Release baut (oder umgekehrt), trifft deshalb auf einen Cache, der Namen aus dem jeweils
+         anderen Lauf führt — und `emptyOutDir` in vite.config.ts sorgt dafür, dass die alten
+         Dateien wirklich weg sind. Der Fehler sieht dann nach einem kaputten Frontend aus und ist
+         keiner.
+
+         Gelöscht wird bei jedem Lauf, nicht nur nach einem Frontend-Build — dieses Target trägt
+         bewusst keine Inkrementalität, aus demselben Grund wie der ItemGroup-Abgleich darüber.
+         Der Preis ist eine Neuberechnung der Asset-Liste; der Preis der Alternative ist ein Build,
+         der abbricht und nach einem Frontend-Fehler aussieht, den es nicht gibt. -->
+    <ItemGroup>
+      <StaleStaticWebAssetCache Include="$(IntermediateOutputPath)rbcswa.dswa.cache.json" />
+      <StaleStaticWebAssetCache Include="$(IntermediateOutputPath)staticwebassets.build.json.cache" />
+    </ItemGroup>
+    <Delete Files="@(StaleStaticWebAssetCache)" ContinueOnError="true" />
   </Target>
 
   <!-- Baustein 1: die Frontend-QUELLE (TS/Vite/npm, inkl. node_modules) gehört
