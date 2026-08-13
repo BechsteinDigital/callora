@@ -65,38 +65,9 @@ public sealed class BackendRbacDatabaseSeeder(
             }
         }
 
-        // Demo admin: development convenience, re-seeded on every start when enabled.
-        await EnsureDemoAdminUserAsync(dbContext, superAdminRole, cancellationToken).ConfigureAwait(false);
-        // Initial operator: production bootstrap, seeded once on an empty install.
+        // Bootstrap operator: seeded once on an empty install, never again.
         await EnsureInitialOperatorAsync(dbContext, superAdminRole, cancellationToken).ConfigureAwait(false);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task EnsureDemoAdminUserAsync(
-        HostPersistenceDbContext dbContext,
-        BackendRbacRole superAdminRole,
-        CancellationToken cancellationToken)
-    {
-        var demoUser = options.DemoAdminUser;
-        if (demoUser is null ||
-            !demoUser.Enabled ||
-            string.IsNullOrWhiteSpace(demoUser.ExternalId) ||
-            string.IsNullOrWhiteSpace(demoUser.Password))
-        {
-            return;
-        }
-
-        if (BackendPasswordPolicy.Validate(demoUser.Password) is { } violation)
-        {
-            logger.LogWarning(
-                "BackendHost.DemoAdminUser was not seeded: {Violation} Set a stronger BackendHost__DemoAdminUser__Password.",
-                violation);
-            return;
-        }
-
-        await UpsertOperatorAsync(
-            dbContext, demoUser.ExternalId, demoUser.Email, demoUser.DisplayName, demoUser.Password, superAdminRole, cancellationToken)
-            .ConfigureAwait(false);
     }
 
     private async Task EnsureInitialOperatorAsync(

@@ -19,9 +19,12 @@ Vorwissen über die Codebasis.
   packt hier nur die Pakete. Konfiguration über `appsettings.json` +
   Umgebungsvariablen (`BackendHost__...`).
 - **Pflicht vor Produktivstart:** `BackendHost:JwtSigningKey` setzen (der
-  Dev-Default verweigert außerhalb von Development den Start), API-Keys und
-  `DemoAdminUser:Password` ersetzen (Startup-Warnungen beachten),
-  `AllowPrivateWebhookTargets=false` belassen.
+  Dev-Default verweigert außerhalb von Development den Start), API-Keys ersetzen,
+  `AllowPrivateWebhookTargets=false` belassen. Für den Erstzugang
+  `BackendHost:InitialOperator` setzen — er seedet einmalig auf leerer Datenbank und
+  fasst danach nichts mehr an; nach der ersten Anmeldung Passwort ändern,
+  `Enabled=false` setzen und die Zugangsdaten aus der Konfiguration entfernen
+  (Startup-Warnungen beachten).
 
 ## Health & Readiness
 

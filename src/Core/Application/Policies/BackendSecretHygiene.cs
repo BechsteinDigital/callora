@@ -16,13 +16,6 @@ public static class BackendSecretHygiene
     /// <summary>Signing key shipped for local development; forges tokens if reused.</summary>
     public const string DefaultJwtSigningKey = "callora-local-dev-signing-key-change-me";
 
-    /// <summary>
-    /// Password of the seeded demo administrator. Satisfies
-    /// <c>BackendPasswordPolicy</c> like every other local credential (#104) — a
-    /// seed that skipped the policy would be the one weak super-admin in the system.
-    /// </summary>
-    public const string DefaultDemoAdminPassword = "callora-demo-admin!";
-
     /// <summary>Bootstrap API key shipped in the development configuration.</summary>
     public const string DefaultApiKey = "callora-local-dev-key-change-me";
 
@@ -46,13 +39,6 @@ public static class BackendSecretHygiene
         {
             violations.Add(
                 "BackendHost.JwtSigningKey still carries the development default — configure a strong secret.");
-        }
-
-        if (options.DemoAdminUser.Enabled &&
-            string.Equals(options.DemoAdminUser.Password, DefaultDemoAdminPassword, StringComparison.Ordinal))
-        {
-            violations.Add(
-                "BackendHost.DemoAdminUser is enabled with its default password — disable it or set a strong password.");
         }
 
         if (!string.IsNullOrEmpty(options.DatabaseConnectionString) &&

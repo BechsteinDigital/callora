@@ -85,7 +85,6 @@ it is shown as a relative fragment.
 | `ContentSecurityPolicy` | `string` | see `BackendContentSecurityPolicy` | CSP sent with every response. Same-origin scripts and connections, no `eval`, `frame-ancestors 'none'`. Empty string sends none. |
 | `RevokedSignerFingerprints` | `string[]` | `[]` | Signer key fingerprints (SHA-256 of the SPKI) that are revoked; enforced at install and at load. |
 | `RevokedContentHashes` | `string[]` | `[]` | Revoked plugin assembly content hashes (SHA-256, hex); rejected regardless of signature. |
-| `DemoAdminUser` | `BackendDemoAdminUserOptions` | `new()` | Development convenience admin, re-seeded on start when enabled. |
 | `InitialOperator` | `BackendInitialOperatorOptions` | `new()` | One-time bootstrap operator, seeded only on a fresh install (no users yet). |
 | `FeatureFlags` | `Dictionary<string, bool>` | empty (case-insensitive) | Central name→enabled feature-flag map, queried via `/api/features`. |
 

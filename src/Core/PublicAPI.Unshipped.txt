@@ -2592,18 +2592,6 @@ Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentS
 Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.PluginNotFound = 2 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
 Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus.WorkspaceNotFound = 1 -> Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentStatus
 Callora.Core.Application.Policies.BackendContentSecurityPolicy
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.BackendDemoAdminUserOptions() -> void
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.DisplayName.get -> string!
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.DisplayName.set -> void
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.Email.get -> string!
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.Email.set -> void
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.Enabled.get -> bool
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.Enabled.set -> void
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.ExternalId.get -> string!
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.ExternalId.set -> void
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.Password.get -> string!
-Callora.Core.Application.Policies.BackendDemoAdminUserOptions.Password.set -> void
 Callora.Core.Application.Policies.BackendForwardedHeadersOptions
 Callora.Core.Application.Policies.BackendForwardedHeadersOptions.BackendForwardedHeadersOptions() -> void
 Callora.Core.Application.Policies.BackendForwardedHeadersOptions.Enabled.get -> bool
@@ -2658,8 +2646,6 @@ Callora.Core.Application.Policies.BackendHostOptions.DefaultTenantDisplayName.ge
 Callora.Core.Application.Policies.BackendHostOptions.DefaultTenantDisplayName.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.DefaultTenantKey.get -> string!
 Callora.Core.Application.Policies.BackendHostOptions.DefaultTenantKey.set -> void
-Callora.Core.Application.Policies.BackendHostOptions.DemoAdminUser.get -> Callora.Core.Application.Policies.BackendDemoAdminUserOptions!
-Callora.Core.Application.Policies.BackendHostOptions.DemoAdminUser.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.EnableBootstrapApiKeys.get -> bool
 Callora.Core.Application.Policies.BackendHostOptions.EnableBootstrapApiKeys.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.EntitlementFailureFallbackMode.get -> Callora.Core.Application.Policies.EntitlementFailureFallbackMode
@@ -5683,7 +5669,6 @@ const Callora.Core.Application.Plugins.Signing.PluginContentHasher.SignatureFile
 const Callora.Core.Application.Plugins.Signing.PluginSignatureAlgorithms.EcdsaP256Sha256 = "ECDSA-P256-SHA256" -> string!
 const Callora.Core.Application.Policies.BackendContentSecurityPolicy.Default = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' ws: wss:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" -> string!
 const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultApiKey = "callora-local-dev-key-change-me" -> string!
-const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultDemoAdminPassword = "callora-demo-admin!" -> string!
 const Callora.Core.Application.Policies.BackendSecretHygiene.DefaultJwtSigningKey = "callora-local-dev-signing-key-change-me" -> string!
 const Callora.Core.Application.Retention.RetentionCleanupJobHandler.JobTypeName = "host.retention.cleanup" -> string!
 const Callora.Core.Application.Security.BackendAuthScopes.Platform = "platform" -> string!

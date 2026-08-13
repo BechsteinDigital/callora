@@ -33,48 +33,6 @@ public sealed class BackendSecretHygieneTests
     }
 
     [Fact]
-    public void EnabledDemoAdmin_WithDefaultPassword_IsAViolation()
-    {
-        var options = Secure();
-        options.DemoAdminUser = new BackendDemoAdminUserOptions
-        {
-            Enabled = true,
-            Password = BackendSecretHygiene.DefaultDemoAdminPassword
-        };
-
-        var violations = BackendSecretHygiene.Inspect(options);
-
-        Assert.Single(violations);
-        Assert.Contains("DemoAdminUser", violations[0], StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void DisabledDemoAdmin_WithDefaultPassword_IsClean()
-    {
-        var options = Secure();
-        options.DemoAdminUser = new BackendDemoAdminUserOptions
-        {
-            Enabled = false,
-            Password = BackendSecretHygiene.DefaultDemoAdminPassword
-        };
-
-        Assert.Empty(BackendSecretHygiene.Inspect(options));
-    }
-
-    [Fact]
-    public void EnabledDemoAdmin_WithCustomPassword_IsClean()
-    {
-        var options = Secure();
-        options.DemoAdminUser = new BackendDemoAdminUserOptions
-        {
-            Enabled = true,
-            Password = "a-strong-operator-password"
-        };
-
-        Assert.Empty(BackendSecretHygiene.Inspect(options));
-    }
-
-    [Fact]
     public void DefaultDatabasePassword_IsAViolation()
     {
         var options = Secure();
@@ -109,14 +67,12 @@ public sealed class BackendSecretHygieneTests
             DatabaseConnectionString =
                 "Host=localhost;Port=5432;Database=callora_host;Username=callora;Password=callora",
             ApiKeys = [BackendSecretHygiene.DefaultApiKey],
-            DemoAdminUser = new BackendDemoAdminUserOptions
-            {
-                Enabled = true,
-                Password = BackendSecretHygiene.DefaultDemoAdminPassword
-            }
         };
 
-        Assert.Equal(4, BackendSecretHygiene.Inspect(options).Count);
+        // Drei statt vier, seit der re-seedende Demo-Admin entfernt ist: Sein Verstoß war der
+        // vierte. Eine Zahl statt einer Aufzählung, weil der Test genau das prüfen soll — dass
+        // ALLE greifen und nicht nur die, an die jemand beim Schreiben gedacht hat.
+        Assert.Equal(3, BackendSecretHygiene.Inspect(options).Count);
     }
 
     [Fact]
@@ -148,6 +104,5 @@ public sealed class BackendSecretHygieneTests
         JwtSigningKey = "a-strong-production-signing-key-value-01",
         DatabaseConnectionString = "Host=db;Port=5432;Database=callora_host;Username=app;Password=Str0ngP@ss",
         ApiKeys = ["a-real-api-key"],
-        DemoAdminUser = new BackendDemoAdminUserOptions { Enabled = false, Password = "changed-strong" }
     };
 }
