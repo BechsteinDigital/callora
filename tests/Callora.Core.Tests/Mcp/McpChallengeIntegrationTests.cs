@@ -26,7 +26,19 @@ public sealed class McpChallengeIntegrationTests
     {
         await using var app = await StartAsync();
 
-        var response = await app.GetTestClient().GetAsync("/mcp");
+        // POST und nicht GET, seit ModelContextProtocol 2.2.0: Der Streamable-HTTP-Transport
+        // reserviert GET für den SSE-Strom und beantwortet es an dieser Route mit 405, bevor die
+        // Authentifizierung überhaupt zum Zug kommt. Ein Client, der die Challenge sucht, schickt
+        // ohnehin einen Request — und genau der bekommt sie weiterhin. Die Zusage aus RFC 9728
+        // steht also unverändert; nur die Methode, über die dieser Test sie abfragte, war eine,
+        // die das Protokoll dafür nie vorgesehen hat.
+        var probe = new HttpRequestMessage(HttpMethod.Post, "/mcp")
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
+        probe.Headers.Add("Accept", "application/json, text/event-stream");
+
+        var response = await app.GetTestClient().SendAsync(probe);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         var challenge = string.Join(" ", response.Headers.WwwAuthenticate.ToString());

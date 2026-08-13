@@ -20,16 +20,22 @@
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.11" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.11" />
     <!-- Roslyn analyzer authoring (Callora.Analyzers, REV2 §7). 4.8.0 targets a broadly
-         compatible Roslyn; analyzers bind to the host compiler, not this version. -->
+         compatible Roslyn; analyzers bind to the host compiler, not this version.
+         NICHT anheben, ohne die Compiler-Version des ÄLTESTEN unterstützten SDK zu kennen:
+         Ein Analyzer, der gegen eine neuere Roslyn-Fassung kompiliert ist, wird von einem
+         älteren Compiler gar nicht erst geladen (CS9057). Der Sprung auf 5.6.0 scheiterte
+         genau daran — schon in diesem Repository, dessen SDK Roslyn 5.3.0 ausführt. Bei einem
+         Plugin-Autor mit älterem SDK wäre der Effekt derselbe, nur unsichtbarer: Die Regeln
+         CAL0001-0003 fielen still aus, statt seinen Build zu schützen. -->
     <!-- Surface-Template-Engine (ADR-015 rev.): sandboxbarer .NET-JS-Interpreter,
          führt das gebündelte Nunjucks (native Twig-Block-Vererbung) im gehärteten
          Modus aus (kein CLR-Interop, Timeout/Memory/Recursion-Limits). -->
     <PackageVersion Include="Jint" Version="4.15.3" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.6.0" />
     <!-- Public-API baseline tracking (REV2 §7.3, WP-G2): any change to the public
          surface of a framework assembly must show up as a reviewable diff. -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
     <!-- Nur für Tests: eine Verdrahtungsprüfung, die eine echte Schreiboperation braucht,
@@ -48,10 +54,15 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.17.0-beta.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
-    <!-- Pin transitive Microsoft.OpenApi above the vulnerable 2.0.0 (GHSA-v5pm-xwqc-g5wc). -->
+    <!-- Pin transitive Microsoft.OpenApi above the vulnerable 2.0.0 (GHSA-v5pm-xwqc-g5wc).
+         Bleibt auf 2.x, und das ist keine Vorsicht, sondern eine Schranke: Microsoft.AspNetCore.OpenApi
+         10.0.11 fordert `>= 2.7.5 && < 3.0.0`. Mit 3.x bricht der Restore an NU1608 — hier als Fehler
+         geschaltet — in JEDEM Projekt der Solution. Der Sprung wird erst möglich, wenn ASP.NET Core
+         eine Fassung liefert, die 3.x zulässt; Dependabot sieht diese Schranke nicht und wird ihn
+         weiter vorschlagen. -->
     <PackageVersion Include="Microsoft.OpenApi" Version="2.10.0" />
     <!-- Offizielles MCP-SDK (ASP.NET-Host): agenten-native Tool-Fläche über /mcp (Streamable HTTP). -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.4.1" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.19" />
     <!-- SemVer parsing/ordering for the plugin dependency install gate (npm-style
          ranges). Correct prerelease ordering out of the box — no in-house parser. -->
