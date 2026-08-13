@@ -25,11 +25,11 @@
          führt das gebündelte Nunjucks (native Twig-Block-Vererbung) im gehärteten
          Modus aus (kein CLR-Interop, Timeout/Memory/Recursion-Limits). -->
     <PackageVersion Include="Jint" Version="4.15.3" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.6.0" />
     <!-- Public-API baseline tracking (REV2 §7.3, WP-G2): any change to the public
          surface of a framework assembly must show up as a reviewable diff. -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
     <!-- Nur für Tests: eine Verdrahtungsprüfung, die eine echte Schreiboperation braucht,
@@ -49,9 +49,9 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
     <!-- Pin transitive Microsoft.OpenApi above the vulnerable 2.0.0 (GHSA-v5pm-xwqc-g5wc). -->
-    <PackageVersion Include="Microsoft.OpenApi" Version="2.10.0" />
+    <PackageVersion Include="Microsoft.OpenApi" Version="3.10.0" />
     <!-- Offizielles MCP-SDK (ASP.NET-Host): agenten-native Tool-Fläche über /mcp (Streamable HTTP). -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.4.1" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.19" />
     <!-- SemVer parsing/ordering for the plugin dependency install gate (npm-style
          ranges). Correct prerelease ordering out of the box — no in-house parser. -->
