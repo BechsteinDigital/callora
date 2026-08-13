@@ -4854,6 +4854,7 @@ Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService.Registry
 Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService.SyncFromAssemblyAsync(string! pluginId, string! version, string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.DependencyInjection.CalloraHostCompositionExtensions
 Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions
+Callora.Core.Infrastructure.DependencyInjection.CalloraObservabilityExtensions
 Callora.Core.Infrastructure.DependencyInjection.DecoratableServiceCollectionExtensions
 Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry
 Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleton(System.Type! serviceType, System.Func<System.IServiceProvider!, object!>! implementationFactory) -> void
@@ -6870,6 +6871,7 @@ static Callora.Core.Infrastructure.DependencyInjection.CalloraHostCompositionExt
 static Callora.Core.Infrastructure.DependencyInjection.CalloraHostCompositionExtensions.MapCalloraHost(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
 static Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions.AddCalloraMcp(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.AspNetCore.Authentication.AuthenticationBuilder! authenticationBuilder, string! forwardAuthenticateScheme, string! resource, string? authorizationServer) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.DependencyInjection.CalloraMcpCompositionExtensions.MapCalloraMcp(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Callora.Core.Infrastructure.DependencyInjection.CalloraObservabilityExtensions.AddCalloraObservability(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Callora.Core.Application.Monitoring.ObservabilityOptions! observabilityOptions) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.DependencyInjection.DecoratableServiceCollectionExtensions.AddDecoratableSingleton<TService, TImplementation>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Callora.Core.Infrastructure.DependencyInjection.ServiceCollectionExtensions.AddCalloraHosting(Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry! services, System.Action<Callora.Core.Application.Options.CalloraHostingOptions!>? configure = null) -> void
 static Callora.Core.Infrastructure.Extensions.BackendExtensionPointCatalog.Build() -> System.Collections.Generic.IReadOnlyCollection<Callora.Core.Domain.Extensions.ExtensionPointDefinition!>!

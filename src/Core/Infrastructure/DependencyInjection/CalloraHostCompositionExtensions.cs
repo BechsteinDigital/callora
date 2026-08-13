@@ -154,33 +154,7 @@ public static class CalloraHostCompositionExtensions
 
         var observabilityOptions = new ObservabilityOptions();
         builder.Configuration.GetSection("Observability").Bind(observabilityOptions);
-        builder.Services.AddSingleton(observabilityOptions);
-        var openTelemetry = builder.Services.AddOpenTelemetry()
-            .ConfigureResource(resource => resource.AddService(observabilityOptions.ServiceName))
-            .WithTracing(tracing => tracing
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                .AddEntityFrameworkCoreInstrumentation()
-                // Wildcard aus demselben Grund wie bei den Metern unten, und nicht nur aus
-                // Bequemlichkeit: Der Renderpfad liegt in Callora.Surface.Rendering, also in einem
-                // Modul ÜBER dem Core. Seinen ActivitySource hier namentlich zu nennen hieße, dass
-                // der Core ein höheres Modul kennt — die Abhängigkeit liefe verkehrt herum. Mit
-                // dem Wildcard wird jede Callora-Quelle erfasst, auch die aus Plugins.
-                .AddSource("Callora.*"))
-            .WithMetrics(metrics => metrics
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                // Domänenneutral: ein Wildcard erfasst alle Callora-Meter — die Core-
-                // Subsysteme (Callora.Core.PluginLifecycle/BackgroundJobs/Webhooks) ebenso
-                // wie Plugin-Meter (z. B. Callora.Voip.Calls) —, ohne dass der Core einen
-                // konkreten Plugin-Meter-Namen kennt.
-                .AddMeter("Callora.*"));
-        if (!string.IsNullOrWhiteSpace(observabilityOptions.OtlpEndpoint))
-        {
-            openTelemetry.UseOtlpExporter(
-                OpenTelemetry.Exporter.OtlpExportProtocol.Grpc,
-                new Uri(observabilityOptions.OtlpEndpoint));
-        }
+        builder.Services.AddCalloraObservability(observabilityOptions);
 
         builder.Services.AddHealthChecks()
             .AddCheck<DatabaseReadinessHealthCheck>("database");
