@@ -202,7 +202,6 @@ public sealed class BackendHostOptions
     /// </remarks>
     public string ContentSecurityPolicy { get; set; } = BackendContentSecurityPolicy.Default;
 
-    public BackendDemoAdminUserOptions DemoAdminUser { get; set; } = new();
 
     /// <summary>
     /// One-time bootstrap operator for a fresh deployment (seeded only when no

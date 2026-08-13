@@ -95,6 +95,15 @@ services:
       BackendHost__DefaultTenantKey: ${BackendHost__DefaultTenantKey:-default}
       BackendHost__DefaultTenantDisplayName: ${BackendHost__DefaultTenantDisplayName:-Default Tenant}
       BackendHost__AuditFilePath: ${BackendHost__AuditFilePath:-plugins/audit-log.jsonl}
+      # Erstzugang für die Entwicklung. Seedet EINMAL auf einer leeren Datenbank und rührt
+      # danach nichts mehr an — ein im Admin geändertes Passwort überlebt also jeden Neustart.
+      # Vorher tat das ein DemoAdminUser, der bei JEDEM Start neu gesetzt wurde: Wer sein
+      # Passwort änderte, hatte es nach dem nächsten Deployment still wieder verloren.
+      BackendHost__InitialOperator__Enabled: ${BackendHost__InitialOperator__Enabled:-true}
+      BackendHost__InitialOperator__ExternalId: ${BackendHost__InitialOperator__ExternalId:-admin}
+      BackendHost__InitialOperator__Email: ${BackendHost__InitialOperator__Email:-admin@callora.local}
+      BackendHost__InitialOperator__DisplayName: ${BackendHost__InitialOperator__DisplayName:-Callora Admin}
+      BackendHost__InitialOperator__Password: ${BackendHost__InitialOperator__Password:-callora-demo-admin!}
       BackendHost__AdminShellBaseUrl: ${BackendHost__AdminShellBaseUrl:-/admin/}
       BackendHost__WorkspaceShellBaseUrl: ${BackendHost__WorkspaceShellBaseUrl:-/}
       BackendHost__PluginAssetBaseUrl: ${BackendHost__PluginAssetBaseUrl:-/plugin-assets}

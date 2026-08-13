@@ -82,7 +82,6 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
 
         var hostOptions = new BackendHostOptions
         {
-            DemoAdminUser = { Enabled = false },
             InitialOperator = { Enabled = true, ExternalId = "root", Email = "root@x.io", Password = "s3cret-pw-1234" },
         };
 
@@ -100,6 +99,53 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
         var role = await verify.BackendRbacRoles.SingleAsync(x => x.Name == BackendRoles.SuperAdmin);
         var assignment = await verify.BackendRbacUserRoles.SingleAsync(x => x.UserId == user.Id);
         Assert.Equal(role.Id, assignment.RoleId);
+    }
+
+    /// <summary>
+    /// Der Grund, aus dem der re-seedende Demo-Admin verschwunden ist: Ein im Admin geändertes
+    /// Passwort muss den nächsten Start überleben.
+    /// <para>
+    /// Vorher setzte <c>EnsureDemoAdminUserAsync</c> den Zugang bei JEDEM Start neu. Wer sein
+    /// Passwort änderte, hatte es nach dem nächsten Deployment still wieder verloren — ohne
+    /// Fehler, ohne Log, und die Hygieneprüfung schwieg dazu, sobald ein eigenes Passwort
+    /// konfiguriert war.
+    /// </para>
+    /// </summary>
+    [SkippableFact]
+    public async Task AChangedPasswordSurvivesTheNextSeedRun()
+    {
+        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        var options = await FreshDbAsync();
+
+        var hostOptions = new BackendHostOptions
+        {
+            InitialOperator = { Enabled = true, ExternalId = "root", Password = "s3cret-pw-1234" },
+        };
+
+        await using (var ctx = new HostPersistenceDbContext(options))
+        {
+            await Seeder(hostOptions).SeedAsync(ctx);
+        }
+
+        // Der Betreiber ändert sein Passwort über die Oberfläche.
+        string changedHash;
+        await using (var change = new HostPersistenceDbContext(options))
+        {
+            var user = await change.BackendUsers.SingleAsync(x => x.ExternalId == "root");
+            user.PasswordHash = "hash-set-through-the-admin-ui";
+            await change.SaveChangesAsync();
+            changedHash = user.PasswordHash;
+        }
+
+        // Nächster Start, gleiche Konfiguration.
+        await using (var restart = new HostPersistenceDbContext(options))
+        {
+            await Seeder(hostOptions).SeedAsync(restart);
+        }
+
+        await using var verify = new HostPersistenceDbContext(options);
+        var after = await verify.BackendUsers.SingleAsync(x => x.ExternalId == "root");
+        Assert.Equal(changedHash, after.PasswordHash);
     }
 
     [SkippableFact]
@@ -122,7 +168,6 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
 
         var hostOptions = new BackendHostOptions
         {
-            DemoAdminUser = { Enabled = false },
             InitialOperator = { Enabled = true, ExternalId = "root", Password = "s3cret-pw-1234" },
         };
 
@@ -143,7 +188,6 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
 
         var hostOptions = new BackendHostOptions
         {
-            DemoAdminUser = { Enabled = false },
             // Exactly 12 characters — the boundary is allowed (guards a <= off-by-one).
             InitialOperator = { Enabled = true, ExternalId = "root", Password = "twelvechars!" },
         };
@@ -165,7 +209,6 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
 
         var hostOptions = new BackendHostOptions
         {
-            DemoAdminUser = { Enabled = false },
             InitialOperator = { Enabled = false, ExternalId = "root", Password = "s3cret-pw-1234" },
         };
 
@@ -186,7 +229,6 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
 
         var hostOptions = new BackendHostOptions
         {
-            DemoAdminUser = { Enabled = false },
             // 8 characters — below the 12-character minimum: refused, not weakened.
             InitialOperator = { Enabled = true, ExternalId = "root", Password = "short-pw" },
         };
