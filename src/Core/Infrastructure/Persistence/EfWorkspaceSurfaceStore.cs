@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Callora.Core.Infrastructure.Persistence;
 
-public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) : IWorkspaceSurfaceStore
+public sealed class EfWorkspaceSurfaceStore(
+    HostPersistenceDbContext dbContext,
+    ISurfaceRouteTable routeTable) : IWorkspaceSurfaceStore
 {
     public async Task<IReadOnlyList<WorkspaceSurfaceSnapshot>> ListAsync(
         string workspaceKey,
@@ -115,6 +117,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
         }
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        routeTable.Invalidate();
 
         return ToSnapshotObject(
             normalizedWorkspaceKey,
@@ -209,6 +212,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
         surface.UpdatedAtUtc = nowUtc;
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        routeTable.Invalidate();
 
         return ToSnapshotObject(normalizedWorkspaceKey, surface);
     }
@@ -248,6 +252,7 @@ public sealed class EfWorkspaceSurfaceStore(HostPersistenceDbContext dbContext) 
 
         dbContext.WorkspaceSurfaces.Remove(surface);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        routeTable.Invalidate();
         return SurfaceDeleteResult.Deleted;
     }
 

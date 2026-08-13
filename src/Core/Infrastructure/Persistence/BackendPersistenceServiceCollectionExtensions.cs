@@ -45,6 +45,10 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddSingleton<BackendSessionStateCache>();
         services.AddScoped<IBackendSessionValidator, BackendSessionValidator>();
         services.AddScoped<ITenantManagementStore, EfTenantManagementStore>();
+        // Singleton, im Gegensatz zu den Stores darüber: Die Flächentabelle ist prozessweit und
+        // überlebt die Anfrage, die sie geladen hat — das ist ihr ganzer Zweck. Sie holt sich den
+        // DbContext über einen eigenen Scope, statt einen zu halten.
+        services.AddSingleton<ISurfaceRouteTable, CachedSurfaceRouteTable>();
         services.AddScoped<IWorkspaceManagementStore, EfWorkspaceManagementStore>();
         services.AddScoped<IWorkspaceSurfaceStore, EfWorkspaceSurfaceStore>();
         // Der verengte Vertrag für Plugins: lesen, anlegen, löschen — ohne die
