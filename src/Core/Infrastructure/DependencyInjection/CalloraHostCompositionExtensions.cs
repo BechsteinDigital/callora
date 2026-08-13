@@ -215,8 +215,8 @@ public static class CalloraHostCompositionExtensions
             authorizationServer: backendOptions.OidcAuthority);
         // Install-time SemVer dependency gate (ABI compatibility): resolves the versions the
         // host provides for a plugin's declared dependencies and rejects installs whose declared
-        // npm ranges are not satisfied. The provider reads from loaded assemblies (default ALC);
-        // the shared-contract registry is host-encapsulated, so it is not supplied here.
+        // npm ranges are not satisfied. The provider reads from the shared-contract registry
+        // first, then from the assemblies loaded in the default ALC.
         builder.Services.AddSingleton<Callora.Core.Application.Plugins.IProvidedContractVersionProvider>(
             static sp => new Callora.Core.Infrastructure.Plugins.LoadedContractVersionProvider(
                 // Plugin-provided contracts count too: without the registry the gate only ever saw

@@ -209,6 +209,9 @@ public sealed class LocalPluginInstallSourceResolver(
         }
     }
 
+    /// <summary>
+    /// Die Assembly an der Plugin-Wurzel, sonst die jüngste aus dem Build-Ausgabeverzeichnis.
+    /// </summary>
     private static string? ResolveAssemblyPath(string pluginRoot, string assemblyFileName)
     {
         var directAssemblyPath = Path.Combine(pluginRoot, assemblyFileName);
@@ -217,23 +220,17 @@ public sealed class LocalPluginInstallSourceResolver(
             return Path.GetFullPath(directAssemblyPath);
         }
 
-        var binDirectory = Path.Combine(pluginRoot, "bin");
-        if (!Directory.Exists(binDirectory))
-        {
-            return null;
-        }
-
-        var candidates = Directory
-            .EnumerateFiles(binDirectory, assemblyFileName, SearchOption.AllDirectories)
-            .Select(path => new FileInfo(path))
-            .OrderByDescending(file => file.LastWriteTimeUtc)
-            .ToArray();
-
-        return candidates.Length == 0
-            ? null
-            : candidates[0].FullName;
+        return ResolveAssemblyPathFromBuildOutput(pluginRoot, assemblyFileName);
     }
 
+    /// <summary>
+    /// Nur das Build-Ausgabeverzeichnis, ohne den Direktpfad davor.
+    /// <para>
+    /// Der Unterschied zu <see cref="ResolveAssemblyPath"/> ist der Zweck dieser Methode und
+    /// nicht versehentlich: Nach einem erzwungenen Build darf eine ältere DLL, die an der
+    /// Plugin-Wurzel liegen geblieben ist, nicht gegen das gerade Gebaute gewinnen.
+    /// </para>
+    /// </summary>
     private static string? ResolveAssemblyPathFromBuildOutput(string pluginRoot, string assemblyFileName)
     {
         var binDirectory = Path.Combine(pluginRoot, "bin");
