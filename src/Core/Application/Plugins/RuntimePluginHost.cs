@@ -407,6 +407,23 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             RegisterDeclaredContracts(record.AssemblyPath, record.PluginId);
             loadContext = new PluginAssemblyLoadContext(record.AssemblyPath, _sharedContracts);
             var assembly = loadContext.LoadFromAssemblyPath(record.AssemblyPath);
+
+            // Vor dem Einstiegspunkt, nicht danach: Ein gebrochener Vertrag trifft nicht unbedingt
+            // den Einstiegstyp. Im Anlassfall (#283) lud der sauber, das Plugin startete, und
+            // gefehlt hat nur der eine Typ, der den geänderten Vertrag implementierte — sichtbar
+            // wurde das als leere Stelle in der Oberfläche. Die Prüfung steht auch hier und nicht
+            // nur in der Inspektion, weil die beim Installieren läuft und ein Vertrag sich ändert,
+            // während das Plugin längst installiert ist.
+            var contractBreak = PluginContractBreakDiagnostics.Describe(assembly);
+            if (contractBreak is not null)
+            {
+                loadContext.Unload();
+                return new RuntimePluginActivateResult(
+                    RuntimePluginActivateStatus.Failed,
+                    record.PluginId,
+                    contractBreak);
+            }
+
             var pluginType = ResolvePluginType(assembly, record.EntryTypeName);
             if (pluginType is null)
             {
@@ -578,7 +595,8 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
                     Message: $"Type '{pluginType.FullName}' is not a valid host plugin entrypoint."));
             }
 
-            var compatibility = ValidateHostCompatibility(assembly);
+            var compatibility = ValidateHostCompatibility(assembly)
+                ?? PluginContractBreakDiagnostics.Describe(assembly);
             if (compatibility is not null)
             {
                 loadContext.Unload();

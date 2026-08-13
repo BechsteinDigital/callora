@@ -2224,6 +2224,7 @@ Callora.Core.Application.Plugins.PluginAvailabilityInputs.WorkspaceActive.get ->
 Callora.Core.Application.Plugins.PluginAvailabilityInputs.WorkspaceActive.init -> void
 Callora.Core.Application.Plugins.PluginAvailabilityInputs.WorkspaceEnabled.get -> bool
 Callora.Core.Application.Plugins.PluginAvailabilityInputs.WorkspaceEnabled.init -> void
+Callora.Core.Application.Plugins.PluginContractBreakDiagnostics
 Callora.Core.Application.Plugins.PluginContractSupportStatus
 Callora.Core.Application.Plugins.PluginContractSupportStatus.Deprecated = 1 -> Callora.Core.Application.Plugins.PluginContractSupportStatus
 Callora.Core.Application.Plugins.PluginContractSupportStatus.Removed = 2 -> Callora.Core.Application.Plugins.PluginContractSupportStatus
@@ -6617,6 +6618,8 @@ static Callora.Core.Application.Plugins.PluginAvailability.operator !=(Callora.C
 static Callora.Core.Application.Plugins.PluginAvailability.operator ==(Callora.Core.Application.Plugins.PluginAvailability? left, Callora.Core.Application.Plugins.PluginAvailability? right) -> bool
 static Callora.Core.Application.Plugins.PluginAvailabilityInputs.operator !=(Callora.Core.Application.Plugins.PluginAvailabilityInputs left, Callora.Core.Application.Plugins.PluginAvailabilityInputs right) -> bool
 static Callora.Core.Application.Plugins.PluginAvailabilityInputs.operator ==(Callora.Core.Application.Plugins.PluginAvailabilityInputs left, Callora.Core.Application.Plugins.PluginAvailabilityInputs right) -> bool
+static Callora.Core.Application.Plugins.PluginContractBreakDiagnostics.Describe(System.Reflection.Assembly! pluginAssembly) -> string?
+static Callora.Core.Application.Plugins.PluginContractBreakDiagnostics.Describe(System.Reflection.ReflectionTypeLoadException! exception, string? assemblyName) -> string!
 static Callora.Core.Application.Plugins.PluginContractVersionPolicy.GetAll() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginContractVersionSupport!>!
 static Callora.Core.Application.Plugins.PluginContractVersionPolicy.TryGet(string! contractVersion, out Callora.Core.Application.Plugins.PluginContractVersionSupport! support) -> bool
 static Callora.Core.Application.Plugins.PluginContractVersionSupport.operator !=(Callora.Core.Application.Plugins.PluginContractVersionSupport? left, Callora.Core.Application.Plugins.PluginContractVersionSupport? right) -> bool
