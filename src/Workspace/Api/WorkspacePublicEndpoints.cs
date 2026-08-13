@@ -274,7 +274,7 @@ public static class WorkspacePublicEndpoints
                 "/workspace/public/theme",
                 async (
                     string? workspaceKey,
-                    WorkspacePublicThemeResolver themeResolver,
+                    IWorkspacePublicThemeResolver themeResolver,
                     CancellationToken cancellationToken) =>
                 {
                     var normalizedKey = string.IsNullOrWhiteSpace(workspaceKey)

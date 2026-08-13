@@ -1,3 +1,4 @@
+using Callora.Core.Application.Extensions;
 using Callora.Core.Application.Workspaces;
 using Callora.Core.Domain.Workspaces;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,8 @@ namespace Callora.Core.Infrastructure.Persistence;
 
 public sealed class EfWorkspaceManagementStore(
     HostPersistenceDbContext dbContext,
-    ISurfaceRouteTable routeTable) : IWorkspaceManagementStore
+    ISurfaceRouteTable routeTable,
+    IThemeResolutionCache themeCache) : IWorkspaceManagementStore
 {
     public async Task<IReadOnlyList<WorkspaceSnapshot>> ListAsync(
         string? tenantKey = null,
@@ -339,6 +341,7 @@ public sealed class EfWorkspaceManagementStore(
         dbContext.Workspaces.Remove(workspace);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         routeTable.Invalidate();
+        themeCache.Invalidate();
         return true;
     }
 
@@ -371,8 +374,10 @@ public sealed class EfWorkspaceManagementStore(
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         // Auch das Theme steht in der geladenen Menge: EffectiveSurface liest es aus dem
-        // Workspace, wenn keine Fläche der Kette ein eigenes setzt.
+        // Workspace, wenn keine Fläche der Kette ein eigenes setzt. Und die aufgelösten
+        // Theme-Werte hängen ohnehin daran.
         routeTable.Invalidate();
+        themeCache.Invalidate();
 
         return new WorkspaceThemeAssignmentSnapshot(
             workspace.WorkspaceKey,
@@ -408,6 +413,7 @@ public sealed class EfWorkspaceManagementStore(
 
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         routeTable.Invalidate();
+        themeCache.Invalidate();
         return true;
     }
 
