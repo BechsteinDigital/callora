@@ -16,6 +16,15 @@ VERSION="${1:-0.1.0-local}"
 
 PROJECTS=(
   "src/Core/Callora.Core.csproj"
+  # Das SDK, gegen das JEDES Plugin baut. Es fehlte hier, und der Feed war damit unbrauchbar
+  # für genau den Zweck, für den er existiert: Communication, Composer und VideoConference
+  # referenzieren alle Callora.Plugin.Sdk, fanden nur die vorige Version und bauten deshalb
+  # weiter gegen einen älteren Vertrag als der Host bereitstellt — bis eine Signatur sich
+  # änderte und das Plugin beim Laden ausfiel.
+  "src/Plugin.Sdk/Callora.Plugin.Sdk.csproj"
+  # Der Governance-Analyzer (CAL0001-0004) reist als Paket mit, weil jedes Plugin-Repo ihn
+  # referenziert — ohne ihn im Feed scheitert dort schon der Restore.
+  "src/Analyzers/Callora.Analyzers.csproj"
   "src/Administration/Callora.Administration.csproj"
   "src/Workspace/Callora.Workspace.csproj"
   "src/Surface.Rendering/Callora.Surface.Rendering.csproj"
