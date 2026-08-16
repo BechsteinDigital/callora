@@ -71,6 +71,11 @@ public sealed class HostPersistenceDbContext(
     public DbSet<Callora.Core.Domain.Snippets.SnippetOverride> SnippetOverrides =>
         Set<Callora.Core.Domain.Snippets.SnippetOverride>();
 
+    /// <summary>Die Basis, wie die Pakete sie mitbringen — beim Installieren und Aktualisieren
+    /// vollständig ersetzt, beim Deinstallieren entfernt.</summary>
+    public DbSet<Callora.Core.Domain.Snippets.SnippetBaseEntry> SnippetBase =>
+        Set<Callora.Core.Domain.Snippets.SnippetBaseEntry>();
+
     public DbSet<Callora.Core.Domain.Webhooks.WebhookSubscription> WebhookSubscriptions =>
         Set<Callora.Core.Domain.Webhooks.WebhookSubscription>();
 
