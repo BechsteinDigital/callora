@@ -67,6 +67,10 @@ public sealed class HostPersistenceDbContext(
     public DbSet<Callora.Core.Domain.Configuration.SystemConfigValue> SystemConfigValues =>
         Set<Callora.Core.Domain.Configuration.SystemConfigValue>();
 
+    /// <summary>Nur die Abweichungen von der Basis — die Basis selbst liegt im Paket (ADR-024).</summary>
+    public DbSet<Callora.Core.Domain.Snippets.SnippetOverride> SnippetOverrides =>
+        Set<Callora.Core.Domain.Snippets.SnippetOverride>();
+
     public DbSet<Callora.Core.Domain.Webhooks.WebhookSubscription> WebhookSubscriptions =>
         Set<Callora.Core.Domain.Webhooks.WebhookSubscription>();
 
