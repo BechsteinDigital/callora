@@ -30,8 +30,8 @@
     <!-- Surface-Template-Engine (ADR-015 rev.): sandboxbarer .NET-JS-Interpreter,
          führt das gebündelte Nunjucks (native Twig-Block-Vererbung) im gehärteten
          Modus aus (kein CLR-Interop, Timeout/Memory/Recursion-Limits). -->
-    <PackageVersion Include="Jint" Version="4.15.3" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    <PackageVersion Include="Jint" Version="4.16.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.6.0" />
     <!-- Public-API baseline tracking (REV2 §7.3, WP-G2): any change to the public
          surface of a framework assembly must show up as a reviewable diff. -->
@@ -46,7 +46,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.9.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
     <PackageVersion Include="MinVer" Version="7.0.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
@@ -61,10 +61,10 @@
          geschaltet — in JEDEM Projekt der Solution. Der Sprung wird erst möglich, wenn ASP.NET Core
          eine Fassung liefert, die 3.x zulässt; Dependabot sieht diese Schranke nicht und wird ihn
          weiter vorschlagen. -->
-    <PackageVersion Include="Microsoft.OpenApi" Version="2.10.0" />
+    <PackageVersion Include="Microsoft.OpenApi" Version="3.10.0" />
     <!-- Offizielles MCP-SDK (ASP.NET-Host): agenten-native Tool-Fläche über /mcp (Streamable HTTP). -->
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.19" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.20" />
     <!-- SemVer parsing/ordering for the plugin dependency install gate (npm-style
          ranges). Correct prerelease ordering out of the box — no in-house parser. -->
     <PackageVersion Include="Semver" Version="3.0.0" />
@@ -72,9 +72,9 @@
          Begründung am PackageReference in Callora.Core.Tests.csproj. -->
     <PackageVersion Include="SSH.NET" Version="2026.0.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
-    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="Xunit.SkippableFact" Version="1.5.61" />
   </ItemGroup>
 </Project>
