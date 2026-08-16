@@ -102,6 +102,11 @@ export const router = createRouter({
           meta: { title: 'Webhooks' },
         },
         {
+          path: 'snippets',
+          component: () => import('@/modules/snippets/SnippetsListView.vue'),
+          meta: { title: 'Texte' },
+        },
+        {
           path: 'config',
           component: () => import('@/modules/config/SystemConfigView.vue'),
           meta: { title: 'Konfiguration' },

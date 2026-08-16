@@ -10,6 +10,7 @@ import { loadPluginExtensions } from '@/core/extensions/loader'
 import { readStoredWorkspace } from '@/core/workspace/workspaceContext'
 import { useAuthStore } from '@/core/auth/authStore'
 import { installClientErrorReporting, reportClientError } from '@/core/observability/clientErrorReporting'
+import { i18n, loadAdminSnippets } from '@/core/i18n/i18n'
 
 // Load plugin admin UI (slots/hooks/service overrides register against the global
 // API) before mounting, so a plugin's contributions are present on first render.
@@ -38,6 +39,10 @@ async function bootstrap(): Promise<void> {
     .catch(() => false)
 
   if (signedIn) {
+    // Vor dem Mounten: Ein Text, der erst nach dem ersten Rendern eintrifft, springt sichtbar um
+    // — und ausgerechnet die Verwaltung der Texte darf das nicht vorführen (#273).
+    await loadAdminSnippets()
+
     try {
       // A workspace-bound session needs no key — the server resolves the bound one and
       // ignores anything we send. A platform operator carries none in their token, so the
@@ -51,7 +56,7 @@ async function bootstrap(): Promise<void> {
   // Der dritte Weg neben window.onerror und unhandledrejection: Vue fängt Fehler aus Rendern,
   // Lifecycle und Watchern selbst ab, und ohne diesen Handler enden sie in der Konsole.
   app.config.errorHandler = (error) => reportClientError(error)
-  app.use(router).mount('#app')
+  app.use(i18n).use(router).mount('#app')
 }
 
 void bootstrap()
