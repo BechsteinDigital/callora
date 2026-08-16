@@ -1,8 +1,9 @@
 import { mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import App from './App.vue'
 import { createSurfaceRegistry } from './surface-registry'
+import { markBundlesSettled, resetBundleReadiness } from './bundle-readiness'
 
 const guestCaller = {
   state: 'guest' as const,
@@ -12,6 +13,14 @@ const guestCaller = {
 const context = { workspaceKey: 'acme', surfaceKey: 'portal', caller: guestCaller }
 
 describe('surface host (grundgerüst)', () => {
+  // Der Platzhalter gilt erst, wenn der Ladeversuch vorbei ist: Vorher stand er da, während die
+  // Bundles noch unterwegs waren — eine Aussage über einen Zustand, der gleich nicht mehr galt
+  // (#296).
+  beforeEach(() => {
+    resetBundleReadiness()
+    markBundlesSettled()
+  })
+
   it('shows a neutral empty state when no plugin registered a view', () => {
     const registry = createSurfaceRegistry()
 

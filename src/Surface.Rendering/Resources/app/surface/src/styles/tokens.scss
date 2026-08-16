@@ -22,6 +22,16 @@
   color: var(--cal-color-muted);
 }
 
+// Eine Insel, deren Bundle nicht ankam (#296). Bewusst so zurückhaltend wie der leere
+// Zustand darüber: Auf der Seite eines Kunden ist der Ausfall eines Bereichs eine
+// Randnotiz und kein Fehlerkasten — wer ihn deutlicher will, überschreibt die Klasse
+// in seinem Theme.
+.cal-island-unavailable {
+  margin: 0;
+  padding: var(--cal-space-4);
+  color: var(--cal-color-muted);
+}
+
 // ── Sektionen und Regionen ───────────────────────────────────────────────────
 //
 // Der Kompositions-Renderer gibt `data-cal-layout` und `data-cal-region` aus. Ohne diese

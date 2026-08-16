@@ -76,8 +76,12 @@
       {#
         The surface runtime reads its context from #callora-app or, failing that, from
         the nearest [data-workspace] ancestor of an island. A server-rendered page has
-        no single app root, so the body carries it — drop these and hydration silently
-        falls back to defaults.
+        no single app root, so the body carries it.
+
+        Drop these and NOTHING hydrates: without a context the runtime loads no plugin
+        bundles and never opens the context bridge, so every island reports itself as
+        unavailable. There is no fallback to defaults — a template that overrides
+        base_body_context without carrying the attributes forward gets a dead page.
       #}
       {% block base_body_context %}{% include "@callora/utilities/context-attributes.njk" %}{% endblock %}>
   {#
