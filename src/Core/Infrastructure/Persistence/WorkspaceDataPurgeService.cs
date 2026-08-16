@@ -76,6 +76,13 @@ public sealed class WorkspaceDataPurgeService(
         deletedRows += await dbContext.SystemConfigValues
             .Where(x => x.Scope == "workspace" && x.ScopeKey == key)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        // Wie die Konfiguration über Scope/ScopeKey gebunden, nicht über eine WorkspaceKey-Spalte
+        // (ADR-024). Blieben sie stehen, erbte ein gleichnamiger neuer Workspace die Texte des
+        // gelöschten — derselbe Befund, den dieser Dienst für vier andere Tabellen schon einmal
+        // hatte.
+        deletedRows += await dbContext.SnippetOverrides
+            .Where(x => x.Scope == "workspace" && x.ScopeKey == key)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         deletedRows += await dbContext.CustomFieldValues
             .Where(x => x.WorkspaceKey == key ||
                         (x.EntityName == "workspace" && x.EntityId == key))

@@ -77,15 +77,26 @@ public sealed class WorkspacePurgeReachesEveryWorkspaceBoundTableTests
             "Diese Ausnahmen beschreiben keine workspace-gebundene Tabelle mehr:\n" + string.Join('\n', stale));
     }
 
+    /// <summary>
+    /// Workspace-gebunden heißt nicht nur „hat eine WorkspaceKey-Spalte".
+    /// </summary>
+    /// <remarks>
+    /// Die Konfiguration bindet über <c>Scope</c>/<c>ScopeKey</c> („workspace" plus Schlüssel),
+    /// und die Snippet-Overrides tun es seit ADR-024 genauso. Diese Tabellen fielen durch das
+    /// Raster, obwohl sie dasselbe Problem haben — genau die Lücke, gegen die dieser Test
+    /// geschrieben wurde, nur eine Spaltenbenennung weiter.
+    /// </remarks>
     private static IEnumerable<string> WorkspaceBoundSets() =>
         typeof(HostPersistenceDbContext)
             .GetProperties()
             .Where(property => property.PropertyType.IsGenericType
                                && property.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>))
-            .Where(property => property.PropertyType
-                .GetGenericArguments()[0]
-                .GetProperty("WorkspaceKey") is not null)
+            .Where(property => IsWorkspaceBound(property.PropertyType.GetGenericArguments()[0]))
             .Select(property => property.Name);
+
+    private static bool IsWorkspaceBound(Type entity) =>
+        entity.GetProperty("WorkspaceKey") is not null
+        || (entity.GetProperty("Scope") is not null && entity.GetProperty("ScopeKey") is not null);
 
     private static string PurgeServiceSource()
     {
