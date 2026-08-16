@@ -46,7 +46,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null,
         Callora.Core.Application.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null,
         Callora.Core.Application.Plugins.IWorkspacePluginActivationReader? workspaceActivationReader = null,
-        Callora.Core.Application.Plugins.PluginDependencyVersionGate? dependencyVersionGate = null)
+        Callora.Core.Application.Plugins.PluginDependencyVersionGate? dependencyVersionGate = null,
+        Callora.Core.Application.Plugins.IPluginAssemblyPathPortability? pathPortability = null)
     {
         _lifecycle = lifecycle;
         _activationPolicy = activationPolicy;
@@ -56,7 +57,7 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
 
         var catalog = pluginCatalog ?? EmptyCalloraPluginCatalog.Instance;
         _reporter = new PluginLifecycleReporter(auditStore, eventPublisher);
-        _recorder = new PluginInstallationRecorder(installationRepository, unitOfWork);
+        _recorder = new PluginInstallationRecorder(installationRepository, unitOfWork, pathPortability);
         _extensionSynchronizer = new PluginExtensionSynchronizer(
             catalog,
             extensionPointRegistryStore,
@@ -193,7 +194,12 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
                 (int)x.State,
                 x.InstalledAtUtc,
                 x.UpdatedAtUtc,
-                running.Contains(x.PluginId)))
+                running.Contains(x.PluginId),
+                // Dieselbe Frage wie oben, eine Ebene tiefer: Die Zeile sagt „installiert", aber
+                // unter dem Pfad liegt nichts. Bisher stand das nur in einer Warnung beim Start
+                // (#307), und sichtbar wurde es als fehlende Oberfläche — hier ist der Ort, an
+                // dem jemand nachsieht.
+                !File.Exists(x.AssemblyPath)))
             .ToArray();
     }
 

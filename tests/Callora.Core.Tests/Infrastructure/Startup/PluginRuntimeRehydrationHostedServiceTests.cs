@@ -18,7 +18,7 @@ public sealed class PluginRuntimeRehydrationHostedServiceTests
         var active = PluginInstallation.CreateInstalled(
             pluginId: "voip",
             displayName: "Voip",
-            assemblyPath: "/tmp/voip.dll",
+            storedAssemblyPath: "/tmp/voip.dll",
             entryTypeName: "Voip.Entry",
             nowUtc: DateTimeOffset.UtcNow);
         active.MarkActivated(DateTimeOffset.UtcNow);
@@ -55,7 +55,7 @@ public sealed class PluginRuntimeRehydrationHostedServiceTests
         var inactive = PluginInstallation.CreateInstalled(
             pluginId: "voip",
             displayName: "Voip",
-            assemblyPath: "/tmp/voip.dll",
+            storedAssemblyPath: "/tmp/voip.dll",
             entryTypeName: "Voip.Entry",
             nowUtc: DateTimeOffset.UtcNow);
         inactive.MarkDeactivated(DateTimeOffset.UtcNow);

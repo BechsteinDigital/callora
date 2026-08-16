@@ -21,6 +21,7 @@ internal sealed class LocalPluginDiscoveryService(
     IPluginInstallationRepository installationRepository,
     IPluginLifecycleService lifecycleService,
     ILocalPluginProjectBuilder projectBuilder,
+    IPluginAssemblyPathPortability pathPortability,
     ILogger<LocalPluginDiscoveryService> logger) : IPluginDiscoveryService
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -77,7 +78,7 @@ internal sealed class LocalPluginDiscoveryService(
             cancellationToken.ThrowIfCancellationRequested();
             if (installation.State == PluginInstallationState.Uninstalled
                 || discovered.ContainsKey(installation.PluginId)
-                || !IsUnderScanRoots(installation.AssemblyPath, scanRoots))
+                || !pathPortability.IsUnderPluginRoots(installation.StoredAssemblyPath))
             {
                 continue;
             }
@@ -201,25 +202,6 @@ internal sealed class LocalPluginDiscoveryService(
         }
 
         return roots;
-    }
-
-    private static bool IsUnderScanRoots(string assemblyPath, IReadOnlyList<(string Directory, PluginTier DefaultTier)> scanRoots)
-    {
-        string full;
-        try
-        {
-            full = Path.GetFullPath(assemblyPath);
-        }
-        catch (ArgumentException)
-        {
-            return false;
-        }
-
-        return scanRoots.Any(root =>
-        {
-            var rootFull = Path.GetFullPath(root.Directory);
-            return full.StartsWith(rootFull.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
-        });
     }
 
     private static async Task<PluginRegistryJsonDto?> ReadManifestAsync(string registryFile, CancellationToken cancellationToken)

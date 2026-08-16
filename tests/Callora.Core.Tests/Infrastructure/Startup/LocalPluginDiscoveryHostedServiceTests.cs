@@ -3,6 +3,7 @@ using Callora.Core.Application.Options;
 using Callora.Core.Application.Persistence;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Domain.Plugins;
+using Callora.Core.Infrastructure.Plugins;
 using Callora.Core.Infrastructure.Startup;
 using Callora.Core.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
@@ -75,6 +76,7 @@ public sealed class LocalPluginDiscoveryHostedServiceTests
             repo,
             lifecycle,
             new RecordingLocalPluginProjectBuilder(),
+            new PluginAssemblyPathPortability(Options(pluginsRoot, autoActivate: false)),
             NullLogger<LocalPluginDiscoveryService>.Instance);
 
         var result = await sut.RefreshAsync(CancellationToken.None);
@@ -140,6 +142,7 @@ public sealed class LocalPluginDiscoveryHostedServiceTests
             repo,
             lifecycle,
             new RecordingLocalPluginProjectBuilder(),
+            new PluginAssemblyPathPortability(Options(pluginsRoot, autoActivate: false)),
             NullLogger<LocalPluginDiscoveryService>.Instance);
 
         var result = await sut.RefreshAsync(CancellationToken.None);
@@ -165,6 +168,7 @@ public sealed class LocalPluginDiscoveryHostedServiceTests
         services.AddScoped<IPluginInstallationRepository>(_ => repo);
         services.AddScoped<IPluginLifecycleService>(_ => lifecycle);
         services.AddScoped<ILocalPluginProjectBuilder>(_ => builder);
+        services.AddSingleton<IPluginAssemblyPathPortability>(_ => new PluginAssemblyPathPortability(options));
         services.AddScoped<ILogger<LocalPluginDiscoveryService>>(_ => NullLogger<LocalPluginDiscoveryService>.Instance);
         services.AddScoped<IPluginDiscoveryService, LocalPluginDiscoveryService>();
         return services.BuildServiceProvider();

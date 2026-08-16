@@ -373,6 +373,10 @@ public static class CalloraHostCompositionExtensions
         // rule evaluators, event listeners/providers) — the autoconfiguration equivalent
         // (R1); plugin-provided contributors of the same roles come from the catalog.
         builder.Services.AddCalloraContracts(typeof(CalloraHostCompositionExtensions).Assembly);
+        // Vor Discovery und Rehydration: Beide arbeiten mit den gespeicherten Pfaden, und ein
+        // Pfad aus einer anderen Umgebung soll geheilt sein, bevor jemand ihn zu laden versucht
+        // (#307).
+        builder.Services.AddHostedService<PluginAssemblyPathNormalizationHostedService>();
         builder.Services.AddHostedService<LocalPluginDiscoveryHostedService>();
         builder.Services.AddHostedService<PluginRuntimeRehydrationHostedService>();
         builder.Services.AddHostedService<PluginUiAssetPublishHostedService>();

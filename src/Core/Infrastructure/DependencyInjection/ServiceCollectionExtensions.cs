@@ -23,6 +23,11 @@ public static class ServiceCollectionExtensions
         CalloraHostingOptionsValidator.Validate(options);
 
         services.AddSingleton(typeof(CalloraHostingOptions), options);
+        // Hier, weil hier die Wurzeln entstehen, gegen die ein gespeicherter Plugin-Pfad
+        // aufgelöst wird (#307).
+        services.AddSingleton(
+            typeof(IPluginAssemblyPathPortability),
+            typeof(Callora.Core.Infrastructure.Plugins.PluginAssemblyPathPortability));
         services.AddSingleton(typeof(RuntimePluginHost), typeof(RuntimePluginHost));
         services.AddSingleton(typeof(ICalloraPluginRuntime), provider =>
             (ICalloraPluginRuntime)(provider.GetService(typeof(RuntimePluginHost))
