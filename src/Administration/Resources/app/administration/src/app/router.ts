@@ -39,16 +39,18 @@ export const router = createRouter({
         },
         { path: 'roles', component: () => import('@/modules/roles/RolesListView.vue'), meta: { title: 'Rollen' } },
         // Baum links, Detail rechts — der Knoten steht in der URL, damit ein Neuladen (und
-        // ein geteilter Link) dieselbe Seite zeigt.
+        // ein geteilter Link) dieselbe Seite zeigt. Der gemeinsame `viewKey` hält die
+        // Instanz über den Knotenwechsel hinweg (siehe AppRouterView): Die Ansicht liest
+        // den Parameter reaktiv, und der Baum links soll dabei stehen bleiben.
         {
           path: 'surfaces',
           component: () => import('@/modules/surfaces/SurfacesView.vue'),
-          meta: { title: 'Flächen' },
+          meta: { title: 'Flächen', viewKey: 'surfaces' },
         },
         {
           path: 'surfaces/:surfaceKey',
           component: () => import('@/modules/surfaces/SurfacesView.vue'),
-          meta: { title: 'Flächen' },
+          meta: { title: 'Flächen', viewKey: 'surfaces' },
         },
         {
           path: 'roles/new',
