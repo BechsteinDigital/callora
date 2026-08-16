@@ -37,4 +37,16 @@ public interface IPluginAssemblyPathPortability
     /// Bestand aus der Zeit vor dem Umbau dort absolut steht.
     /// </summary>
     bool IsUnderPluginRoots(string storedPath);
+
+    /// <summary>
+    /// Sucht dieselbe Datei unter den aktuell konfigurierten Wurzeln, wenn der gespeicherte Pfad
+    /// ins Leere zeigt — der Fall „installiert in der einen Umgebung, gestartet in der anderen".
+    /// </summary>
+    /// <remarks>
+    /// Probiert die Endstücke des gespeicherten Pfads, längstes zuerst, und nimmt das erste, das
+    /// unter einer Wurzel wirklich existiert. Geraten wird dabei nichts: Was zurückkommt, ist eine
+    /// Datei, die da ist — genau der Abgleich, den ein Betreiber im Kopf macht, wenn er
+    /// <c>/home/…</c> gegen <c>/app/…</c> tauscht.
+    /// </remarks>
+    bool TryLocateInRoots(string storedPath, out string fileSystemPath);
 }

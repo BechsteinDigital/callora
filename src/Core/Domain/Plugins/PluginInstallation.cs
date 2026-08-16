@@ -96,6 +96,19 @@ public sealed class PluginInstallation
     }
 
     /// <summary>
+    /// Schreibt den gespeicherten Pfad um, ohne den Zustand anzufassen — für den Bestand, der noch
+    /// absolut dasteht, und für den, dessen Umgebung es nicht mehr gibt (#307).
+    /// </summary>
+    public void RelocateAssembly(string storedAssemblyPath, DateTimeOffset nowUtc)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storedAssemblyPath);
+
+        StoredAssemblyPath = storedAssemblyPath;
+        _resolvedAssemblyPath = null;
+        UpdatedAtUtc = nowUtc;
+    }
+
+    /// <summary>
     /// Hinterlegt den Dateipfad, unter dem die Assembly in diesem Prozess liegt. Ändert den
     /// gespeicherten Wert nicht — die Zeile bleibt damit unverändert, auch wenn sie getrackt ist.
     /// </summary>

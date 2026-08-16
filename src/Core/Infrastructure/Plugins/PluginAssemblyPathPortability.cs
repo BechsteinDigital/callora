@@ -78,6 +78,37 @@ internal sealed class PluginAssemblyPathPortability(CalloraHostingOptions hostin
                && Roots().Any(entry => IsUnder(full, entry.Root));
     }
 
+    /// <inheritdoc />
+    public bool TryLocateInRoots(string storedPath, out string fileSystemPath)
+    {
+        fileSystemPath = string.Empty;
+        if (string.IsNullOrWhiteSpace(storedPath))
+        {
+            return false;
+        }
+
+        var segments = storedPath.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
+        var roots = Roots().Select(entry => entry.Root).Where(root => !string.IsNullOrEmpty(root)).ToArray();
+
+        // Längstes Endstück zuerst: „videoconference/bin/x.dll" ist eine Aussage, „x.dll" allein
+        // wäre eine Vermutung. Wer das umdreht, heilt irgendwann auf die falsche Datei.
+        for (var skip = 1; skip < segments.Length; skip++)
+        {
+            var suffix = Path.Combine(segments[skip..]);
+            foreach (var root in roots)
+            {
+                var candidate = Path.Combine(root, suffix);
+                if (File.Exists(candidate))
+                {
+                    fileSystemPath = Path.GetFullPath(candidate);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private IEnumerable<(string Token, string Root)> Roots()
     {
         yield return (PluginDirectoryToken, ResolveRoot(hostingOptions.PluginDirectory));

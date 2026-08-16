@@ -2094,6 +2094,7 @@ Callora.Core.Application.Plugins.IPluginAssemblyPathPortability
 Callora.Core.Application.Plugins.IPluginAssemblyPathPortability.IsUnderPluginRoots(string! storedPath) -> bool
 Callora.Core.Application.Plugins.IPluginAssemblyPathPortability.ToFileSystemPath(string! storedPath) -> string!
 Callora.Core.Application.Plugins.IPluginAssemblyPathPortability.ToStoredPath(string! fileSystemPath) -> string!
+Callora.Core.Application.Plugins.IPluginAssemblyPathPortability.TryLocateInRoots(string! storedPath, out string! fileSystemPath) -> bool
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator.EvaluateAsync(string! pluginId, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.PluginAvailability!>!
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator.EvaluateManyAsync(System.Collections.Generic.IReadOnlyCollection<string!>! pluginIds, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Plugins.PluginAvailability!>!>!
@@ -4476,6 +4477,7 @@ Callora.Core.Domain.Plugins.PluginInstallation.MarkUninstalled(System.DateTimeOf
 Callora.Core.Domain.Plugins.PluginInstallation.PluginId.get -> string!
 Callora.Core.Domain.Plugins.PluginInstallation.ProvidedCapabilities.get -> string?
 Callora.Core.Domain.Plugins.PluginInstallation.RequiredCapabilities.get -> string?
+Callora.Core.Domain.Plugins.PluginInstallation.RelocateAssembly(string! storedAssemblyPath, System.DateTimeOffset nowUtc) -> void
 Callora.Core.Domain.Plugins.PluginInstallation.ResolveAssemblyPath(string! fileSystemPath) -> void
 Callora.Core.Domain.Plugins.PluginInstallation.SetCapabilities(System.Collections.Generic.IReadOnlyList<string!>? providedCapabilities, System.Collections.Generic.IReadOnlyList<string!>? requiredCapabilities, System.Collections.Generic.IReadOnlyList<string!>? conditionalCapabilities, System.DateTimeOffset nowUtc) -> void
 Callora.Core.Domain.Plugins.PluginInstallation.State.get -> Callora.Core.Domain.Plugins.PluginInstallationState
