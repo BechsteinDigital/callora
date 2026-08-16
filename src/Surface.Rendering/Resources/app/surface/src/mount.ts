@@ -1,5 +1,6 @@
 import { computed, createApp, defineComponent, h, type App as VueApp } from 'vue'
 import App from './App.vue'
+import { bundlesSettled } from './bundle-readiness'
 import { reportClientError } from './client-error-reporting'
 import { readSurfaceContext, resolveSurfaceContext, type SurfaceContext } from './surface-context'
 import {
@@ -67,7 +68,27 @@ function islandHost(
             candidate.id === viewId && isSurfaceViewVisible(candidate, context.surfaceKey),
         ),
       )
-      return () => (view.value ? h(view.value.component, { context, params }) : null)
+      // Drei Zustände, nicht zwei. Solange die Bundles unterwegs sind, bleibt die Insel leer —
+      // ein Platzhalter, der eine Sekunde später wieder verschwindet, ist schlimmer als nichts.
+      // Ist der Versuch vorbei und die Ansicht fehlt weiterhin, sagt die Insel das: Ein leeres
+      // div ist die einzige Variante, die weder dem Besucher noch dem Betrieb etwas sagt (#296).
+      let reported = false
+
+      return () => {
+        if (view.value) {
+          return h(view.value.component, { context, params })
+        }
+        if (!bundlesSettled.value) {
+          return null
+        }
+
+        if (!reported) {
+          reported = true
+          reportClientError(new Error(`Surface island "${viewId}" has no registered view.`))
+        }
+
+        return h('p', { class: 'cal-island-unavailable' }, 'Dieser Bereich ist gerade nicht verfügbar.')
+      }
     },
   })
 }
