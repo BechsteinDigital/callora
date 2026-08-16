@@ -66,6 +66,11 @@ public static class BackendPersistenceServiceCollectionExtensions
         // Oberflächentexte: die Abweichungen aus dem Admin (#273, ADR-024). Die Basis kommt aus
         // den Paketen und braucht keinen Speicher.
         services.AddScoped<Callora.Core.Application.Snippets.ISnippetOverrideStore, EfSnippetOverrideStore>();
+        services.AddScoped<EfSnippetBaseStore>();
+        services.AddScoped<Callora.Core.Application.Snippets.ISnippetBaseStore>(
+            provider => provider.GetRequiredService<EfSnippetBaseStore>());
+        services.AddScoped<Callora.Core.Application.Snippets.ISnippetBaseSource>(
+            provider => provider.GetRequiredService<EfSnippetBaseStore>());
         services.AddScoped<Callora.Core.Application.Snippets.SnippetResolver>();
         services.AddScoped<IHostUnitOfWork, EfHostUnitOfWork>();
         services.AddScoped<IBackendRbacStore, EfBackendRbacStore>();

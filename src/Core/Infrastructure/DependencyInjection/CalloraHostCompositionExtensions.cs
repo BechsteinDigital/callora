@@ -261,6 +261,11 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<Callora.Core.Application.Configuration.SystemConfigResolver>();
         builder.Services.AddScoped<Callora.Core.Infrastructure.Configuration.RegistryConfigSchemaSyncService>();
         builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginConfigSchemaSyncSubscriber>();
+        // Oberflächentexte aus registry.json (#273, ADR-024) — dieselbe Mechanik eine Zeile
+        // weiter: Basis beim Installieren und Aktualisieren ersetzen, beim Deinstallieren
+        // entfernen. Die Abweichungen des Betreibers liegen woanders und bleiben stehen.
+        builder.Services.AddScoped<Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService>();
+        builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginSnippetSyncSubscriber>();
         // Die Routing-Tabelle hört auf das Zurückziehen von Exports, nicht nur auf das
         // Lifecycle-Ereignis. Beides ist nötig und beides ist verschieden: Das Ereignis kommt
         // NACH der Deaktivierung — zu spät, um den Ladekontext freizugeben, den die eigenen

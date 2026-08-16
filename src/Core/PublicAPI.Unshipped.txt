@@ -2975,6 +2975,9 @@ Callora.Core.Application.Security.WorkspaceRolePermissions
 Callora.Core.Application.Security.WorkspaceScopeEvaluator
 Callora.Core.Application.Snippets.ISnippetBaseSource
 Callora.Core.Application.Snippets.ISnippetBaseSource.GetAsync(string! locale, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>
+Callora.Core.Application.Snippets.ISnippetBaseStore
+Callora.Core.Application.Snippets.ISnippetBaseStore.ClearForPluginAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Snippets.ISnippetBaseStore.ReplaceForPluginAsync(string! pluginId, System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetBaseEntry!>! entries, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Snippets.ISnippetOverrideStore
 Callora.Core.Application.Snippets.ISnippetOverrideStore.ListAsync(System.Collections.Generic.IReadOnlyList<(string! Scope, string! ScopeKey)>! scopeChain, System.Collections.Generic.IReadOnlyList<string!>! locales, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetOverride!>!>!
 Callora.Core.Application.Snippets.ISnippetOverrideStore.RemoveAsync(string! snippetKey, string! locale, string! scope, string! scopeKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
@@ -4659,6 +4662,13 @@ Callora.Core.Domain.Security.BackendUser.UpdatedAtUtc.get -> System.DateTimeOffs
 Callora.Core.Domain.Security.BackendUser.UpdatedAtUtc.set -> void
 Callora.Core.Domain.Security.BackendUser.WorkspaceMemberships.get -> System.Collections.Generic.ICollection<Callora.Core.Domain.Workspaces.WorkspaceMembership!>!
 Callora.Core.Domain.Security.BackendUser.WorkspaceMemberships.set -> void
+Callora.Core.Domain.Snippets.SnippetBaseEntry
+Callora.Core.Domain.Snippets.SnippetBaseEntry.Id.get -> System.Guid
+Callora.Core.Domain.Snippets.SnippetBaseEntry.Locale.get -> string!
+Callora.Core.Domain.Snippets.SnippetBaseEntry.PluginId.get -> string!
+Callora.Core.Domain.Snippets.SnippetBaseEntry.SnippetKey.get -> string!
+Callora.Core.Domain.Snippets.SnippetBaseEntry.Value.get -> string!
+Callora.Core.Domain.Snippets.SnippetBaseEntry.Version.get -> string!
 Callora.Core.Domain.Snippets.SnippetOverride
 Callora.Core.Domain.Snippets.SnippetOverride.ChangeValue(string! value, string! updatedBy, System.DateTimeOffset nowUtc) -> void
 Callora.Core.Domain.Snippets.SnippetOverride.Id.get -> System.Guid
@@ -4948,6 +4958,9 @@ Callora.Core.Infrastructure.Events.PluginSchemaCleanupSubscriber.PluginSchemaCle
 Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber
 Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber.HandleAsync(Callora.Core.Application.Events.PluginLifecycleChangedEvent! appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber.PluginSensitiveFieldSyncSubscriber(Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService! syncService, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber!>! logger) -> void
+Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber
+Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber.HandleAsync(Callora.Core.Application.Events.PluginLifecycleChangedEvent! appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber.PluginSnippetSyncSubscriber(Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService! syncService, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber!>! logger) -> void
 Callora.Core.Infrastructure.Events.PluginUiAssetPublishSubscriber
 Callora.Core.Infrastructure.Events.PluginUiAssetPublishSubscriber.HandleAsync(Callora.Core.Application.Events.PluginLifecycleChangedEvent! appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Events.PluginUiAssetPublishSubscriber.PluginUiAssetPublishSubscriber(Callora.Core.Application.Plugins.IPluginUiAssetPublisher! assetPublisher, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.PluginUiAssetPublishSubscriber!>! logger) -> void
@@ -5091,6 +5104,9 @@ Callora.Core.Infrastructure.Persistence.Configurations.PluginMigrationRecordEnti
 Callora.Core.Infrastructure.Persistence.Configurations.SessionResumeTicketRecordEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.SessionResumeTicketRecordEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Plugins.SessionResumeTicketRecord!>! builder) -> void
 Callora.Core.Infrastructure.Persistence.Configurations.SessionResumeTicketRecordEntityTypeConfiguration.SessionResumeTicketRecordEntityTypeConfiguration() -> void
+Callora.Core.Infrastructure.Persistence.Configurations.SnippetBaseEntryEntityTypeConfiguration
+Callora.Core.Infrastructure.Persistence.Configurations.SnippetBaseEntryEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Snippets.SnippetBaseEntry!>! builder) -> void
+Callora.Core.Infrastructure.Persistence.Configurations.SnippetBaseEntryEntityTypeConfiguration.SnippetBaseEntryEntityTypeConfiguration() -> void
 Callora.Core.Infrastructure.Persistence.Configurations.SnippetOverrideEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.SnippetOverrideEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Snippets.SnippetOverride!>! builder) -> void
 Callora.Core.Infrastructure.Persistence.Configurations.SnippetOverrideEntityTypeConfiguration.SnippetOverrideEntityTypeConfiguration() -> void
@@ -5252,6 +5268,11 @@ Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore.CreateAsync(C
 Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore.DeleteAsync(string! tokenHash, string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore.EfSessionResumeTicketStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Persistence.EfSessionResumeTicketStore.PurgeExpiredAsync(System.DateTimeOffset nowUtc, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore
+Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore.ClearForPluginAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore.EfSnippetBaseStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
+Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore.GetAsync(string! locale, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>
+Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore.ReplaceForPluginAsync(string! pluginId, System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetBaseEntry!>! entries, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfSnippetOverrideStore
 Callora.Core.Infrastructure.Persistence.EfSnippetOverrideStore.EfSnippetOverrideStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Persistence.EfSnippetOverrideStore.ListAsync(System.Collections.Generic.IReadOnlyList<(string! Scope, string! ScopeKey)>! scopeChain, System.Collections.Generic.IReadOnlyList<string!>! locales, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetOverride!>!>!
@@ -5367,6 +5388,7 @@ Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.PluginEntitleme
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.PluginInstallations.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Plugins.PluginInstallation!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.PluginMigrations.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Plugins.PluginMigrationRecord!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SessionResumeTickets.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Plugins.SessionResumeTicketRecord!>!
+Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SnippetBase.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Snippets.SnippetBaseEntry!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SnippetOverrides.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Snippets.SnippetOverride!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SurfaceHandoffTickets.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Surfaces.SurfaceHandoffTicketRecord!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SurfaceSessions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Surfaces.SurfaceSessionRecord!>!
@@ -5606,6 +5628,10 @@ Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.SessionSt
 Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.SetEnabledAsync(string! externalId, bool enabled, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Infrastructure.Security.SessionStateInvalidatingUserStore.UpsertCredentialsAsync(string! externalId, string? email, string? displayName, string? password, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser!>!
 Callora.Core.Infrastructure.Security.WorkspaceScopeAuthorizationExtensions
+Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService
+Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService.ClearPluginSnippetsAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService.RegistrySnippetSyncService(Callora.Core.Application.Snippets.ISnippetBaseStore! store, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService!>! logger) -> void
+Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService.SyncFromAssemblyAsync(string! pluginId, string! version, string! assemblyPath, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Startup.BackgroundJobWorkerHostedService
 Callora.Core.Infrastructure.Startup.BackgroundJobWorkerHostedService.BackgroundJobWorkerHostedService(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Callora.Core.Application.Jobs.BackgroundJobOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Startup.BackgroundJobWorkerHostedService!>! logger) -> void
 Callora.Core.Infrastructure.Startup.CalloraHostStartupHostedService
@@ -6961,6 +6987,7 @@ static Callora.Core.Domain.Plugins.CapabilityListCodec.Split(string? encoded) ->
 static Callora.Core.Domain.Plugins.PluginDataDocument.Create(string! pluginId, string! workspaceKey, string! collection, string! entryKey, string! jsonDocument, System.DateTimeOffset nowUtc) -> Callora.Core.Domain.Plugins.PluginDataDocument!
 static Callora.Core.Domain.Plugins.PluginInstallation.CreateInstalled(string! pluginId, string! displayName, string! storedAssemblyPath, string? entryTypeName, System.DateTimeOffset nowUtc) -> Callora.Core.Domain.Plugins.PluginInstallation!
 static Callora.Core.Domain.Plugins.PluginInstallationException.AlreadyUninstalled(string! pluginId) -> Callora.Core.Domain.Plugins.PluginInstallationException!
+static Callora.Core.Domain.Snippets.SnippetBaseEntry.Create(string! pluginId, string! snippetKey, string! locale, string! value, string! version) -> Callora.Core.Domain.Snippets.SnippetBaseEntry!
 static Callora.Core.Domain.Snippets.SnippetOverride.Create(string! snippetKey, string! locale, string! scope, string! scopeKey, string! value, string! updatedBy, System.DateTimeOffset nowUtc) -> Callora.Core.Domain.Snippets.SnippetOverride!
 static Callora.Core.Domain.Workspaces.SurfaceAuthenticationExtensions.RequiresSignIn(this Callora.Core.Domain.Workspaces.SurfaceAuthentication authentication) -> bool
 static Callora.Core.Infrastructure.Configuration.RegistryConfigSchemaSyncService.ParseConfigFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Configuration.SystemConfigDefinitionInput!>!
@@ -7020,6 +7047,9 @@ static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.Requ
 static Callora.Core.Infrastructure.Security.EndpointAuthorizationExtensions.UserHasPermission(System.Security.Claims.ClaimsPrincipal! user, string! permissionKey) -> bool
 static Callora.Core.Infrastructure.Security.IntegrationPrincipalFactory.Create(Callora.Core.Domain.Integrations.IntegrationCredential! integration) -> System.Security.Claims.ClaimsPrincipal!
 static Callora.Core.Infrastructure.Security.WorkspaceScopeAuthorizationExtensions.RequireWorkspaceScope<TBuilder>(this TBuilder builder) -> TBuilder
+static Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService.BelongsTo(string! pluginId, string! snippetKey) -> bool
+static Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService.ParseSnippetFile(string! snippetJson) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+static Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService.ParseSnippetFiles(string! registryJson) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 static Callora.Core.Infrastructure.Surfaces.SurfaceRequestOrigin.IsSameOrigin(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> bool
 static Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ParseSensitiveFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<string!>!
 static readonly Callora.Core.Application.Security.BackendLockoutPolicy.LockoutDuration -> System.TimeSpan
