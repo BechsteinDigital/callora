@@ -47,6 +47,24 @@ public sealed class EfSnippetOverrideStore(HostPersistenceDbContext dbContext) :
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<SnippetOverride>> ListForScopeAsync(
+        string scope,
+        string scopeKey,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(scope);
+        ArgumentNullException.ThrowIfNull(scopeKey);
+
+        return await dbContext.SnippetOverrides
+            .AsNoTracking()
+            .Where(entry => entry.Scope == scope && entry.ScopeKey == scopeKey)
+            .OrderBy(entry => entry.SnippetKey)
+            .ThenBy(entry => entry.Locale)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task UpsertAsync(SnippetOverride entry, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entry);

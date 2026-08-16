@@ -53,4 +53,12 @@ public static class BackendPermissionKeys
     public const string WorkspaceDelete = "workspace.delete";
     public const string IntegrationRead = "integration.read";
     public const string IntegrationManage = "integration.manage";
+
+    /// <summary>
+    /// Oberflächentexte (ADR-024). Eigene Rechte statt <c>config.*</c>, weil es einen Fall gibt,
+    /// den es sonst nicht gäbe: jemandem die Texte anvertrauen, ohne ihm die Konfiguration zu
+    /// geben. Ein Snippet ist Wortlaut, keine Einstellung.
+    /// </summary>
+    public const string SnippetRead = "snippet.read";
+    public const string SnippetUpdate = "snippet.update";
 }

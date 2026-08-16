@@ -138,6 +138,12 @@ public sealed class RegistrySnippetSyncServiceTests : IDisposable
             return Task.CompletedTask;
         }
 
+
+        public Task<IReadOnlyList<SnippetBaseEntry>> ListForLocaleAsync(
+            string locale,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<SnippetBaseEntry>>([]);
+
         public Task ClearForPluginAsync(string pluginId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
     }

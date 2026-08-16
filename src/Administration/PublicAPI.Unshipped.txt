@@ -4,6 +4,39 @@ Callora.Administration.Api.Admin.Integrations.IntegrationsController.Create(Call
 Callora.Administration.Api.Admin.Integrations.IntegrationsController.IntegrationsController() -> void
 Callora.Administration.Api.Admin.Integrations.IntegrationsController.List(Callora.Core.Application.Integrations.IIntegrationCredentialStore! store, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
 Callora.Administration.Api.Admin.Integrations.IntegrationsController.Revoke(System.Guid id, Callora.Core.Application.Integrations.IIntegrationCredentialStore! store, Callora.Core.Application.Audit.IHostAuditStore! auditStore, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest
+Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.<Clone>$() -> Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest!
+Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.Deconstruct(out string! Value) -> void
+Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.Equals(Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest? other) -> bool
+Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.SetSnippetApiRequest(string! Value) -> void
+Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.Value.get -> string!
+Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.Value.init -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.<Clone>$() -> Callora.Administration.Api.Admin.Snippets.SnippetApiResponse!
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.BaseValue.get -> string?
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.BaseValue.init -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.Deconstruct(out string! SnippetKey, out string! Locale, out string! PluginId, out string? BaseValue, out string? OverrideValue, out string! EffectiveValue, out bool IsOverridden, out bool IsOrphaned) -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.EffectiveValue.get -> string!
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.EffectiveValue.init -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.Equals(Callora.Administration.Api.Admin.Snippets.SnippetApiResponse? other) -> bool
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.IsOrphaned.get -> bool
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.IsOrphaned.init -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.IsOverridden.get -> bool
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.IsOverridden.init -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.Locale.get -> string!
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.Locale.init -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.OverrideValue.get -> string?
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.OverrideValue.init -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.PluginId.get -> string!
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.PluginId.init -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.SnippetApiResponse(string! SnippetKey, string! Locale, string! PluginId, string? BaseValue, string? OverrideValue, string! EffectiveValue, bool IsOverridden, bool IsOrphaned) -> void
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.SnippetKey.get -> string!
+Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.SnippetKey.init -> void
+Callora.Administration.Api.Admin.Snippets.SnippetsController
+Callora.Administration.Api.Admin.Snippets.SnippetsController.List(string! locale, Callora.Core.Application.Snippets.SnippetAdminService! service, System.Threading.CancellationToken cancellationToken, string! scope = "global", string! scopeKey = "") -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Administration.Api.Admin.Snippets.SnippetsController.Reset(string! snippetKey, string! locale, Callora.Core.Application.Snippets.SnippetAdminService! service, System.Threading.CancellationToken cancellationToken, string! scope = "global", string! scopeKey = "") -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Administration.Api.Admin.Snippets.SnippetsController.Set(string! snippetKey, string! locale, Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest! request, Callora.Core.Application.Snippets.SnippetAdminService! service, System.Threading.CancellationToken cancellationToken, string! scope = "global", string! scopeKey = "") -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
+Callora.Administration.Api.Admin.Snippets.SnippetsController.SnippetsController() -> void
 Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest
 Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.IsAssigned.get -> bool
 Callora.Administration.Api.Admin.WorkspacePlugins.SetWorkspacePluginAssignmentApiRequest.IsAssigned.init -> void
@@ -983,6 +1016,12 @@ Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.WorkspaceKey.get ->
 Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.WorkspaceThemeSettingsApiResponse(string! WorkspaceKey, bool HasAssignedTheme, string? ThemePluginId, string? ThemeVersion, System.Collections.Generic.IReadOnlyList<Callora.Administration.Api.WorkspaceThemeSettingDefinitionApiResponse!>! Fields, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! ValuesByKey) -> void
 Callora.Administration.CalloraAdministrationExtensions
+override Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.ToString() -> string!
+override Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.ToString() -> string!
 override Callora.Administration.Api.BackendUserApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.BackendUserApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.BackendUserApiResponse.ToString() -> string!
@@ -1172,6 +1211,10 @@ override Callora.Administration.Api.WorkspaceThemeSettingDefinitionApiResponse.T
 override Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.ToString() -> string!
+static Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.operator !=(Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest? left, Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest? right) -> bool
+static Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.operator ==(Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest? left, Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest? right) -> bool
+static Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.operator !=(Callora.Administration.Api.Admin.Snippets.SnippetApiResponse? left, Callora.Administration.Api.Admin.Snippets.SnippetApiResponse? right) -> bool
+static Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.operator ==(Callora.Administration.Api.Admin.Snippets.SnippetApiResponse? left, Callora.Administration.Api.Admin.Snippets.SnippetApiResponse? right) -> bool
 static Callora.Administration.Api.AdminContextEndpoints.MapAdminContextEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.BackendUserApiResponse.operator !=(Callora.Administration.Api.BackendUserApiResponse? left, Callora.Administration.Api.BackendUserApiResponse? right) -> bool
 static Callora.Administration.Api.BackendUserApiResponse.operator ==(Callora.Administration.Api.BackendUserApiResponse? left, Callora.Administration.Api.BackendUserApiResponse? right) -> bool

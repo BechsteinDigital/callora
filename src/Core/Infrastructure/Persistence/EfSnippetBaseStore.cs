@@ -59,6 +59,24 @@ public sealed class EfSnippetBaseStore(HostPersistenceDbContext dbContext)
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<SnippetBaseEntry>> ListForLocaleAsync(
+        string locale,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(locale))
+        {
+            return [];
+        }
+
+        return await dbContext.SnippetBase
+            .AsNoTracking()
+            .Where(entry => entry.Locale == locale)
+            .OrderBy(entry => entry.SnippetKey)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public Task ClearForPluginAsync(string pluginId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
