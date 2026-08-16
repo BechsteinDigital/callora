@@ -10,10 +10,37 @@
        zweimal, und der Fehler fiele erst beim Laden auf, mit einer Meldung, die nach
        einem Fehler des Hosts aussieht.
 
-       Deshalb spiegelt die Bedingung unten die Laufzeitregel ZEICHENGENAU
-       (src/Core/Application/Plugins/PluginAssemblyLoadContext.cs). Wer eine der beiden
-       Seiten ändert, ändert beide — driften sie auseinander, kopiert der Build wieder
-       etwas mit, das der Ladekontext ohnehin am Host auflöst.
+       Die Bedingung unten prüft deshalb den Namen wie die Laufzeitregel
+       (src/Core/Application/Plugins/PluginAssemblyLoadContext.cs) — aber sie prüft
+       ZUSÄTZLICH die Herkunft, und das ist der Unterschied, an dem sie einmal
+       gescheitert ist:
+
+       Die Regel stand hier bis 08/2026 als reiner Namensvergleich, gespiegelt aus der
+       Laufzeit. Zur Laufzeit trägt der Name die ganze Aussage, weil dort nur nach
+       REFERENZEN gefragt wird — die Assembly des Plugins selbst geht nie durch Load.
+       Zur Bauzeit stehen in denselben Listen aber auch die eigene Ausgabe und die
+       Ausgaben der eigenen ProjectReferences, und für die ist der Name kein Kriterium:
+       Ein Plugin, das selbst "Callora." heißt, hat sich damit aus seinem eigenen
+       Ausgabeordner gefiltert. `dotnet publish` lieferte ein Verzeichnis ohne die
+       Haupt-DLL aus (deps.json beschrieb eine Datei, die nicht danebenlag), der Build
+       ließ die plugin-eigene Vertrags-Assembly aus ProjectReference weg. Beides fiel
+       erst in einer Betriebsnacht auf, weil der Signierschritt die deklarierte Assembly
+       nicht fand — der gute Fall; der schlechte ist ein gültig signiertes Bundle, das
+       kein Host laden kann.
+
+       Ein Fremdanbieter-Plugin (Acme.Plugin.Foo) trifft das nie. Genau deshalb ist der
+       Name die falsche Achse: Er beantwortet nicht, wonach hier gefragt wird — kommt
+       diese Datei aus einem Plattform-PAKET, oder ist sie das, was dieses Repository
+       selbst baut? Das beantwortet %(NuGetPackageId): gesetzt bei Paket-Assets, leer bei
+       der eigenen Ausgabe und bei ProjectReference-Ausgaben (empirisch an einem
+       Plugin-Publish geprüft, siehe PluginSdkOutputFilterTests).
+
+       Die Metadaten stehen QUALIFIZIERT in der Bedingung (%(ResolvedFileToPublish.…)
+       statt %(…)). Unqualifiziert bricht MSBuild mit MSB4096 ab, sobald ein Item der
+       Liste die Metadaten nicht definiert — und genau das ist der Normalfall: Was aus
+       keinem Paket kommt, trägt den Schlüssel nicht als Leerwert, sondern gar nicht.
+       Unqualifiziert wäre also jeder Plugin-Build rot geworden, statt nur der falsche
+       Teil des Ausgabeordners leer.
 
        CalloraVoipSdk fällt bewusst NICHT darunter: kein Punkt hinter "Callora", also
        plugin-lokal — beim Bauen wie zur Laufzeit. -->
@@ -40,7 +67,7 @@
     <ItemGroup>
       <ReferenceCopyLocalPaths
           Remove="@(ReferenceCopyLocalPaths)"
-          Condition="('%(Filename)' == 'Callora' Or $([System.String]::Copy('%(Filename)').StartsWith('Callora.'))) And !$([System.String]::Copy('$(CalloraKeepInOutputPattern)').Contains(';%(Filename);'))" />
+          Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' And ('%(Filename)' == 'Callora' Or $([System.String]::Copy('%(Filename)').StartsWith('Callora.'))) And !$([System.String]::Copy('$(CalloraKeepInOutputPattern)').Contains(';%(Filename);'))" />
     </ItemGroup>
   </Target>
 
@@ -53,7 +80,7 @@
     <ItemGroup>
       <ResolvedFileToPublish
           Remove="@(ResolvedFileToPublish)"
-          Condition="('%(Filename)' == 'Callora' Or $([System.String]::Copy('%(Filename)').StartsWith('Callora.'))) And !$([System.String]::Copy('$(CalloraKeepInOutputPattern)').Contains(';%(Filename);'))" />
+          Condition="'%(ResolvedFileToPublish.NuGetPackageId)' != '' And ('%(Filename)' == 'Callora' Or $([System.String]::Copy('%(Filename)').StartsWith('Callora.'))) And !$([System.String]::Copy('$(CalloraKeepInOutputPattern)').Contains(';%(Filename);'))" />
     </ItemGroup>
   </Target>
 
