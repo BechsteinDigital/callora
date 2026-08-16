@@ -59,4 +59,15 @@ public sealed record SurfaceRenderContext(
     /// markup, and a template that interpolated it would ship it escaped.
     /// </summary>
     public string? CompositionHtml { get; init; }
+
+    /// <summary>
+    /// Die Oberflächentexte dieser Anfrage, bereits aufgelöst (ADR-024 §5).
+    /// </summary>
+    /// <remarks>
+    /// Wie Slots und Navigation: Das Template liest, was der Host entschieden hat, und fragt
+    /// nichts nach. Ein Datenbankzugriff aus einem Template heraus wäre eine Abfrage je Aufruf
+    /// von <c>callora_t</c> — und ein Template ruft es je Beschriftung einmal.
+    /// </remarks>
+    public IReadOnlyDictionary<string, string> Snippets { get; init; } =
+        new Dictionary<string, string>(StringComparer.Ordinal);
 }
