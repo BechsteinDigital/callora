@@ -2973,19 +2973,49 @@ Callora.Core.Application.Security.UserDataExportMembership.WorkspaceKey.get -> s
 Callora.Core.Application.Security.UserDataExportMembership.WorkspaceKey.init -> void
 Callora.Core.Application.Security.WorkspaceRolePermissions
 Callora.Core.Application.Security.WorkspaceScopeEvaluator
+Callora.Core.Application.Snippets.CachedSnippetResolver
+Callora.Core.Application.Snippets.CachedSnippetResolver.CachedSnippetResolver(Microsoft.Extensions.Caching.Memory.IMemoryCache! cache, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory) -> void
+Callora.Core.Application.Snippets.CachedSnippetResolver.InvalidateAll() -> void
+Callora.Core.Application.Snippets.CachedSnippetResolver.InvalidateTenant(string! tenantKey) -> void
+Callora.Core.Application.Snippets.CachedSnippetResolver.InvalidateWorkspace(string! workspaceKey) -> void
+Callora.Core.Application.Snippets.CachedSnippetResolver.ResolveAsync(string? locale, string? tenantKey = null, string? workspaceKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>!
 Callora.Core.Application.Snippets.ISnippetBaseSource
 Callora.Core.Application.Snippets.ISnippetBaseSource.GetAsync(string! locale, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>
 Callora.Core.Application.Snippets.ISnippetBaseStore
 Callora.Core.Application.Snippets.ISnippetBaseStore.ClearForPluginAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Snippets.ISnippetBaseStore.ReplaceForPluginAsync(string! pluginId, System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetBaseEntry!>! entries, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Snippets.ISnippetCache
+Callora.Core.Application.Snippets.ISnippetCache.InvalidateAll() -> void
+Callora.Core.Application.Snippets.ISnippetCache.InvalidateTenant(string! tenantKey) -> void
+Callora.Core.Application.Snippets.ISnippetCache.InvalidateWorkspace(string! workspaceKey) -> void
+Callora.Core.Application.Snippets.ISnippetCatalog
+Callora.Core.Application.Snippets.ISnippetCatalog.LoadAsync(string? locale, string? tenantKey = null, string? workspaceKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Snippets.ISnippetCatalog.Locale.get -> string!
+Callora.Core.Application.Snippets.ISnippetCatalog.Snippets.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 Callora.Core.Application.Snippets.ISnippetOverrideStore
 Callora.Core.Application.Snippets.ISnippetOverrideStore.ListAsync(System.Collections.Generic.IReadOnlyList<(string! Scope, string! ScopeKey)>! scopeChain, System.Collections.Generic.IReadOnlyList<string!>! locales, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetOverride!>!>!
 Callora.Core.Application.Snippets.ISnippetOverrideStore.RemoveAsync(string! snippetKey, string! locale, string! scope, string! scopeKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Snippets.ISnippetOverrideStore.UpsertAsync(Callora.Core.Domain.Snippets.SnippetOverride! entry, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Snippets.ISnippetResolver
+Callora.Core.Application.Snippets.ISnippetResolver.ResolveAsync(string? locale, string? tenantKey = null, string? workspaceKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>!
+Callora.Core.Application.Snippets.SnippetCatalog
+Callora.Core.Application.Snippets.SnippetCatalog.LoadAsync(string? locale, string? tenantKey = null, string? workspaceKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Snippets.SnippetCatalog.Locale.get -> string!
+Callora.Core.Application.Snippets.SnippetCatalog.SnippetCatalog(Callora.Core.Application.Snippets.ISnippetResolver! resolver) -> void
+Callora.Core.Application.Snippets.SnippetCatalog.Snippets.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 Callora.Core.Application.Snippets.SnippetLocaleChain
 Callora.Core.Application.Snippets.SnippetResolver
 Callora.Core.Application.Snippets.SnippetResolver.ResolveAsync(string? locale, string? tenantKey = null, string? workspaceKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>!
 Callora.Core.Application.Snippets.SnippetResolver.SnippetResolver(Callora.Core.Application.Snippets.ISnippetBaseSource! baseSource, Callora.Core.Application.Snippets.ISnippetOverrideStore! overrides) -> void
+Callora.Core.Application.Snippets.SnippetStringLocalizer
+Callora.Core.Application.Snippets.SnippetStringLocalizer.GetAllStrings(bool includeParentCultures) -> System.Collections.Generic.IEnumerable<Microsoft.Extensions.Localization.LocalizedString!>!
+Callora.Core.Application.Snippets.SnippetStringLocalizer.SnippetStringLocalizer(Callora.Core.Application.Snippets.ISnippetCatalog! catalog) -> void
+Callora.Core.Application.Snippets.SnippetStringLocalizer.this[string! name, params object![]! arguments].get -> Microsoft.Extensions.Localization.LocalizedString!
+Callora.Core.Application.Snippets.SnippetStringLocalizer.this[string! name].get -> Microsoft.Extensions.Localization.LocalizedString!
+Callora.Core.Application.Snippets.SnippetStringLocalizerFactory
+Callora.Core.Application.Snippets.SnippetStringLocalizerFactory.Create(System.Type! resourceSource) -> Microsoft.Extensions.Localization.IStringLocalizer!
+Callora.Core.Application.Snippets.SnippetStringLocalizerFactory.Create(string! baseName, string! location) -> Microsoft.Extensions.Localization.IStringLocalizer!
+Callora.Core.Application.Snippets.SnippetStringLocalizerFactory.SnippetStringLocalizerFactory(Callora.Core.Application.Snippets.ISnippetCatalog! catalog) -> void
 Callora.Core.Application.Startup.CalloraHostStartup
 Callora.Core.Application.Startup.CalloraHostStartup.CalloraHostStartup(Callora.Core.Application.Options.CalloraHostingOptions! options, Callora.Core.Application.Plugins.ICalloraPluginRuntime? pluginRuntime = null) -> void
 Callora.Core.Application.Startup.CalloraHostStartup.StartAsync(System.IServiceProvider! services, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
@@ -4960,7 +4990,7 @@ Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber.HandleAsyn
 Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber.PluginSensitiveFieldSyncSubscriber(Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService! syncService, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.PluginSensitiveFieldSyncSubscriber!>! logger) -> void
 Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber
 Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber.HandleAsync(Callora.Core.Application.Events.PluginLifecycleChangedEvent! appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
-Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber.PluginSnippetSyncSubscriber(Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService! syncService, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber!>! logger) -> void
+Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber.PluginSnippetSyncSubscriber(Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService! syncService, Callora.Core.Application.Snippets.ISnippetCache! cache, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.PluginSnippetSyncSubscriber!>! logger) -> void
 Callora.Core.Infrastructure.Events.PluginUiAssetPublishSubscriber
 Callora.Core.Infrastructure.Events.PluginUiAssetPublishSubscriber.HandleAsync(Callora.Core.Application.Events.PluginLifecycleChangedEvent! appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Events.PluginUiAssetPublishSubscriber.PluginUiAssetPublishSubscriber(Callora.Core.Application.Plugins.IPluginUiAssetPublisher! assetPublisher, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.PluginUiAssetPublishSubscriber!>! logger) -> void
