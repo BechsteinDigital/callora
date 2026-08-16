@@ -10,6 +10,11 @@
 
         <div class="palette__search">
           <CalIcon :icon="Search" size="sm" />
+          <!--
+            Combobox-Muster (WAI-ARIA): Der Fokus bleibt im Eingabefeld, während die Auswahl in
+            der Liste wandert — ohne aria-activedescendant sagt eine Vorlesehilfe dazu nichts,
+            und die Pfeiltasten bewegen für sie nichts Sichtbares.
+          -->
           <input
             ref="inputEl"
             v-model="query"
@@ -17,6 +22,10 @@
             type="text"
             placeholder="Seite oder Aktion suchen…"
             aria-label="Suchbegriff"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="palette-results"
+            :aria-activedescendant="activeId ? optionDomId(activeId) : undefined"
             @keydown.down.prevent="move(1)"
             @keydown.up.prevent="move(-1)"
             @keydown.enter.prevent="runActive"
@@ -24,12 +33,24 @@
           <kbd class="palette__kbd">Esc</kbd>
         </div>
 
-        <div class="palette__results" role="listbox">
-          <template v-for="section in sections" :key="section.name">
-            <p class="palette__section">{{ section.name }}</p>
+        <!--
+          Die Überschriften standen als <p> direkt in der listbox — das erlaubt ARIA nicht, und
+          eine Vorlesehilfe darf eine Liste, die anderes als Optionen enthält, ignorieren. Jede
+          Sektion ist deshalb eine eigene group, die ihre Überschrift als Namen führt.
+        -->
+        <div id="palette-results" class="palette__results" role="listbox" aria-label="Ergebnisse">
+          <div
+            v-for="section in sections"
+            :key="section.name"
+            role="group"
+            :aria-labelledby="sectionDomId(section.name)"
+          >
+            <p :id="sectionDomId(section.name)" class="palette__section">{{ section.name }}</p>
             <button
               v-for="item in section.items"
+              :id="optionDomId(item.id)"
               :key="item.id"
+              :ref="(element) => registerOption(item.id, element)"
               type="button"
               role="option"
               class="palette__item"
@@ -42,7 +63,7 @@
               <span class="palette__item-label">{{ item.label }}</span>
               <CalIcon v-if="item.to" class="palette__item-go" :icon="CornerDownLeft" size="sm" />
             </button>
-          </template>
+          </div>
 
           <p v-if="!results.length" class="palette__empty">Nichts gefunden für „{{ query }}“.</p>
         </div>
@@ -101,9 +122,13 @@ const sections = computed(() => {
 })
 
 // Typing re-ranks the list, so the highlight moves back to the best match.
+//
+// `immediate`, weil die Markierung sonst erst durch eine ÄNDERUNG entsteht: Beim ersten Rendern
+// stand keine Option als aktiv da, und damit trug das Eingabefeld kein aria-activedescendant —
+// eine Vorlesehilfe fand die Liste, aber nichts Ausgewähltes darin.
 watch(results, (list) => {
   activeId.value = list[0]?.id ?? null
-})
+}, { immediate: true })
 
 watch(
   () => props.open,
@@ -124,6 +149,34 @@ function move(delta: number): void {
   // Wraps around: from the last entry, down lands on the first.
   const next = (current + delta + list.length) % list.length
   activeId.value = list[next].id
+  revealActive()
+}
+
+// Die Markierung wanderte bisher aus dem sichtbaren Bereich: Wer sich mit den Pfeiltasten durch
+// eine lange Liste bewegt, sah ab dem siebten Eintrag nichts mehr und musste raten, wo er ist.
+function revealActive(): void {
+  const element = activeId.value ? options.get(activeId.value) : undefined
+  element?.scrollIntoView({ block: 'nearest' })
+}
+
+// Die DOM-Ids sind aus zwei Gründen abgeleitet statt roh: aria-activedescendant braucht eine,
+// und eine Kommando-Id wie „nav:/users“ ist als Id im Dokument nicht eindeutig zulässig.
+function optionDomId(id: string): string {
+  return `palette-option-${id.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+}
+
+function sectionDomId(name: string): string {
+  return `palette-section-${name.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+}
+
+const options = new Map<string, HTMLElement>()
+
+function registerOption(id: string, element: unknown): void {
+  if (element instanceof HTMLElement) {
+    options.set(id, element)
+  } else {
+    options.delete(id)
+  }
 }
 
 function run(item: CommandItem): void {

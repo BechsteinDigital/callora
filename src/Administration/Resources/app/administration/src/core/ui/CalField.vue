@@ -7,16 +7,18 @@
       </label>
       <span v-if="hint && !error" class="cal-field__hint">{{ hint }}</span>
     </div>
-    <div class="cal-field__control">
-      <slot :id="inputId" />
-      <p v-if="error" class="cal-field__error">{{ error }}</p>
-      <p v-else-if="description" class="cal-field__description">{{ description }}</p>
+    <div ref="controlEl" class="cal-field__control">
+      <slot :id="inputId" :describedby="describedById ?? undefined" />
+      <p v-if="error" :id="`${inputId}-error`" class="cal-field__error">{{ error }}</p>
+      <p v-else-if="description" :id="`${inputId}-description`" class="cal-field__description">
+        {{ description }}
+      </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed, useId, useTemplateRef, watchEffect } from 'vue'
 
 /**
  * Label, help text and error message around one control. The generated id is
@@ -38,6 +40,54 @@ const props = defineProps<{
 
 const generatedId = useId()
 const inputId = computed(() => props.id ?? generatedId)
+
+const describedById = computed(() => {
+  if (props.error) {
+    return `${inputId.value}-error`
+  }
+  return props.description ? `${inputId.value}-description` : null
+})
+
+/**
+ * Verknüpft Fehler bzw. Beschreibung mit dem Bedienelement — und markiert es im Fehlerfall als
+ * ungültig.
+ *
+ * Das Label bekam jedes Formular hier schon umsonst; die Erklärung darunter nicht. Wer im Feld
+ * steht, hörte den Fehler deshalb nicht, den er verursacht hat: Er stand sichtbar daneben und
+ * gehörte zu nichts.
+ *
+ * Gesetzt wird am gerenderten Element statt über das Slot-Prop, obwohl es das Prop zusätzlich
+ * gibt. Der Grund ist derselbe wie bei jeder Zusage eines Primitivs: Was der Aufrufer binden
+ * MUSS, bindet irgendwann jemand nicht — und dann fehlt es an der einen Stelle, an der es
+ * niemand prüft. Hier gilt es für jedes Feld der Oberfläche, ohne dass eine Ansicht etwas dafür
+ * tun muss.
+ */
+const controlEl = useTemplateRef<HTMLElement>('controlEl')
+
+watchEffect(
+  () => {
+    const control = controlEl.value?.querySelector<HTMLElement>(
+      'input, select, textarea, [contenteditable="true"]',
+    )
+    if (!control) {
+      return
+    }
+
+    if (describedById.value) {
+      control.setAttribute('aria-describedby', describedById.value)
+    } else {
+      control.removeAttribute('aria-describedby')
+    }
+
+    if (props.error) {
+      control.setAttribute('aria-invalid', 'true')
+    } else {
+      control.removeAttribute('aria-invalid')
+    }
+  },
+  // Nach dem Rendern, sonst sucht der Effekt das Element, das gerade erst entsteht.
+  { flush: 'post' },
+)
 </script>
 
 <style scoped lang="scss">
