@@ -13,21 +13,32 @@ internal sealed class PluginAssemblyLoadContext(
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
-        if (assemblyName.Name is not { } name)
+        if (assemblyName.Name is null)
         {
             return null;
         }
 
-        // Callora.*-Verträge müssen aus dem Default-Kontext kommen, damit Host und Plugin
-        // dieselben Contract-Typen teilen. CalloraVoipSdk (ohne Punkt) bleibt plugin-lokal.
-        if (name.Equals("Callora", StringComparison.Ordinal) ||
-            name.StartsWith("Callora.", StringComparison.Ordinal))
-        {
-            return null;
-        }
+        // Hier stand bis 08/2026 ein Frühausstieg: Jeder Name, der "Callora" ist oder mit
+        // "Callora." beginnt, bekam sofort null und kam damit aus dem Default-Kontext.
+        // Als Aussage über PLATTFORM-Assemblies war das richtig; als Aussage über den
+        // NAMENSRAUM war es zu breit. Interne Plugins tragen dasselbe Präfix (ADR-025),
+        // und eine Vertrags-Assembly, die so ein Plugin mitbringt, stellt kein Host bereit:
+        // Der Frühausstieg schickte sie in einen Kontext, der sie nicht hat, und der erste
+        // Zugriff auf einen ihrer Typen endete in einer FileNotFoundException.
+        //
+        // Der Fallback darunter beantwortet dieselbe Frage genauer, und er stand schon
+        // immer da — nur für Callora-Namen unerreichbar: Erst die geteilten Verträge,
+        // dann was der Host tatsächlich stellt, erst dann plugin-lokal. Callora.Core
+        // löst weiterhin auf die Host-Kopie auf, weil der Host sie referenziert; eine
+        // plugin-eigene Callora.Plugin.X.Abstractions landet plugin-lokal, weil niemand
+        // sonst sie hat. Beides ohne Namensliste, die gepflegt werden müsste.
 
         // Von Plugins mitgebrachte Contract-Assemblies teilen ihre Typidentität
         // über die Shared-Registry (PLAT-256) statt pro Plugin geladen zu werden.
+        // Die Registry steht VOR dem Default-Kontext, weil nur sie die
+        // Major-Version-Prüfung trägt; dass ein Plugin darüber keine host-gestellte
+        // Assembly unterschieben kann, stellt sie selbst sicher (RegisterContractAssembly
+        // nimmt host-gestellte Namen nur auf, ohne sie zu laden).
         var sharedContract = sharedContracts?.TryResolve(assemblyName);
         if (sharedContract is not null)
         {

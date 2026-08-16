@@ -113,35 +113,19 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
             throw new InvalidOperationException($"Contract assembly '{fullPath}' has no assembly name.");
         }
 
-        // The Callora. prefix means "the host provides this": the plugin load context delegates
-        // those names to the default context instead of loading them locally. That only works when
-        // the host application actually references the assembly. A plugin-provided contract
-        // carrying the prefix would be skipped here AND absent from the default context, so it
-        // would fail to load the moment the plugin touched one of its types — a defect that
-        // previously surfaced as a debug line and a crash at plugin start.
-        if (name.Equals("Callora", StringComparison.Ordinal) ||
-            name.StartsWith("Callora.", StringComparison.Ordinal))
-        {
-            if (TryResolveFromDefaultContext(name) is not { } hostProvided)
-            {
-                throw new InvalidOperationException(
-                    $"Declared contract '{name}' uses the reserved 'Callora.' prefix but the host does " +
-                    "not provide it. Name a plugin-provided contract outside that prefix so it can be " +
-                    "shared across load contexts.");
-            }
-
-            lock (_syncLock)
-            {
-                _registrationsByName.TryAdd(
-                    name,
-                    new SharedContractRegistration(
-                        name, VersionOf(hostProvided), declaringPluginId, IsHostProvided: true));
-            }
-
-            logger?.LogDebug("Contract declaration '{AssemblyName}' is host-provided; recorded only.", name);
-            return;
-        }
-
+        // Bis 08/2026 entschied hier das Namenspräfix: "Callora." hieß "der Host stellt das",
+        // und eine plugin-mitgebrachte Assembly unter diesem Namen wurde abgewiesen mit der
+        // Auflage, sie umzubenennen. Das Präfix war dafür der falsche Träger — interne Plugins
+        // benutzen es ebenfalls (ADR-025) —, und als Prüfung war es zugleich zu schmal: Für
+        // jeden Namen OHNE das Präfix fand gar keine Host-Prüfung statt. Ein Plugin, das
+        // "Microsoft.Extensions.Logging.Abstractions.dll" unter contracts deklarierte, bekam
+        // seine Kopie in den Default-Kontext geladen, neben die des Hosts.
+        //
+        // Die Frage, die zählt, ist in beiden Fällen dieselbe und hängt nicht am Namen:
+        // Hat der Prozess diese Assembly schon? Dann gehört sie ihm — aufzeichnen, nicht laden.
+        // Die Reihenfolge darunter ist wesentlich: erst was wir selbst teilen (sonst meldete
+        // der zweite Deklarant eines geteilten Vertrags ihn als host-gestellt, weil die
+        // Registry ihn zuvor in den Default-Kontext geladen hat), dann der Host, dann laden.
         lock (_syncLock)
         {
             if (_assembliesByName.TryGetValue(name, out var existing))
@@ -181,6 +165,18 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
                     _registrationsByName[name] = registration with { DeclaringPluginId = declaringPluginId };
                 }
 
+                return;
+            }
+
+            if (TryResolveFromDefaultContext(name) is { } hostProvided)
+            {
+                _registrationsByName.TryAdd(
+                    name,
+                    new SharedContractRegistration(
+                        name, VersionOf(hostProvided), declaringPluginId, IsHostProvided: true));
+
+                logger?.LogDebug(
+                    "Contract declaration '{AssemblyName}' is host-provided; recorded only.", name);
                 return;
             }
 
