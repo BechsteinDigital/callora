@@ -1,4 +1,5 @@
 using Callora.Core.Application.Persistence;
+using Callora.Core.Application.Plugins;
 using Callora.Core.Domain.Plugins;
 
 namespace Callora.Core.Application.Lifecycle;
@@ -6,10 +7,20 @@ namespace Callora.Core.Application.Lifecycle;
 /// <summary>
 /// Persists plugin installation state transitions in the host database.
 /// </summary>
+/// <remarks>
+/// Der einzige Ort, an dem ein Assembly-Pfad in die Datenbank kommt — und damit der Ort, an dem
+/// er portabel gemacht wird (#307). Ohne <paramref name="pathPortability"/> wird gespeichert, was
+/// hereinkommt; das ist das Verhalten von vorher und gilt nur für von Hand zusammengesetzte
+/// Aufbauten, nicht für den Host.
+/// </remarks>
 public sealed class PluginInstallationRecorder(
     IPluginInstallationRepository installationRepository,
-    IHostUnitOfWork unitOfWork)
+    IHostUnitOfWork unitOfWork,
+    IPluginAssemblyPathPortability? pathPortability = null)
 {
+    private string ToStoredPath(string assemblyPath)
+        => pathPortability is null ? assemblyPath : pathPortability.ToStoredPath(assemblyPath);
+
     /// <summary>
     /// Upserts one installation row and applies a state transition callback.
     /// </summary>
@@ -26,7 +37,7 @@ public sealed class PluginInstallationRecorder(
 
         if (installation is null)
         {
-            var safeAssemblyPath = string.IsNullOrWhiteSpace(assemblyPath) ? "unknown" : assemblyPath;
+            var safeAssemblyPath = string.IsNullOrWhiteSpace(assemblyPath) ? "unknown" : ToStoredPath(assemblyPath);
             installation = PluginInstallation.CreateInstalled(
                 pluginId,
                 displayName,
@@ -38,7 +49,7 @@ public sealed class PluginInstallationRecorder(
         }
         else if (!string.IsNullOrWhiteSpace(assemblyPath))
         {
-            installation.ApplyInstallMetadata(displayName, assemblyPath, entryTypeName, now);
+            installation.ApplyInstallMetadata(displayName, ToStoredPath(assemblyPath), entryTypeName, now);
         }
 
         mark(installation, now);
@@ -66,7 +77,7 @@ public sealed class PluginInstallationRecorder(
             installation = PluginInstallation.CreateInstalled(
                 pluginId,
                 displayName,
-                assemblyPath,
+                ToStoredPath(assemblyPath),
                 entryTypeName,
                 now);
 
@@ -74,7 +85,7 @@ public sealed class PluginInstallationRecorder(
         }
         else
         {
-            installation.ApplyInstallMetadata(displayName, assemblyPath, entryTypeName, now);
+            installation.ApplyInstallMetadata(displayName, ToStoredPath(assemblyPath), entryTypeName, now);
         }
 
         installation.SetCapabilities(providedCapabilities, requiredCapabilities, conditionalCapabilities, now);

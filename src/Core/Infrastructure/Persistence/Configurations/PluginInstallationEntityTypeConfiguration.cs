@@ -14,7 +14,14 @@ public sealed class PluginInstallationEntityTypeConfiguration : IEntityTypeConfi
 
         builder.Property(x => x.PluginId).HasMaxLength(200).IsRequired();
         builder.Property(x => x.DisplayName).HasMaxLength(300).IsRequired();
-        builder.Property(x => x.AssemblyPath).HasMaxLength(2048).IsRequired();
+        // Die Spalte heißt weiter AssemblyPath: Was sich mit #307 ändert, ist der Inhalt (ein
+        // Pfad relativ zur Plugin-Wurzel statt eines absoluten), nicht das Schema. Deshalb
+        // braucht der Umbau keine Migration — und Bestand bleibt lesbar.
+        builder.Property(x => x.StoredAssemblyPath).HasColumnName("AssemblyPath").HasMaxLength(2048).IsRequired();
+
+        // Der aufgelöste Pfad gehört dem Prozess, nicht der Zeile. Würde EF ihn mitschreiben,
+        // stünde nach dem ersten Speichern wieder ein absoluter Pfad in der Datenbank.
+        builder.Ignore(x => x.AssemblyPath);
         builder.Property(x => x.EntryTypeName).HasMaxLength(800);
         builder.Property(x => x.State).HasConversion<int>().IsRequired();
         builder.Property(x => x.InstalledAtUtc).IsRequired();

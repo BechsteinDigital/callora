@@ -10,6 +10,7 @@ using Callora.Core.Domain.Security;
 using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Callora.Core.Infrastructure.Persistence;
 
@@ -52,6 +53,14 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<IWorkspaceScopeContext, HttpWorkspaceScopeContext>();
 
+        // Das Repository löst gespeicherte Plugin-Pfade gegen die konfigurierten Wurzeln auf
+        // (#307). Im Host bringt AddCalloraHosting die Übersetzung mit den echten Wurzeln schon
+        // mit — TryAdd greift dann nicht. Wer nur die Persistenz registriert, bekommt hier die
+        // Vorgabewerte, statt an einer fehlenden Registrierung zu scheitern.
+        services.TryAddSingleton<Callora.Core.Application.Plugins.IPluginAssemblyPathPortability>(
+            provider => new Plugins.PluginAssemblyPathPortability(
+                provider.GetService<Callora.Core.Application.Options.CalloraHostingOptions>()
+                ?? new Callora.Core.Application.Options.CalloraHostingOptions()));
         services.AddScoped<IPluginInstallationRepository, EfPluginInstallationRepository>();
         services.AddScoped<IPluginAuditLogRepository, EfPluginAuditLogRepository>();
         services.AddScoped<IHostUnitOfWork, EfHostUnitOfWork>();

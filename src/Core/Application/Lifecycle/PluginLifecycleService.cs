@@ -46,7 +46,8 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
         ILocalPluginInstallSourceResolver? localPluginInstallSourceResolver = null,
         Callora.Core.Application.Plugins.IWorkspacePluginActivationStore? workspaceActivationStore = null,
         Callora.Core.Application.Plugins.IWorkspacePluginActivationReader? workspaceActivationReader = null,
-        Callora.Core.Application.Plugins.PluginDependencyVersionGate? dependencyVersionGate = null)
+        Callora.Core.Application.Plugins.PluginDependencyVersionGate? dependencyVersionGate = null,
+        Callora.Core.Application.Plugins.IPluginAssemblyPathPortability? pathPortability = null)
     {
         _lifecycle = lifecycle;
         _activationPolicy = activationPolicy;
@@ -56,7 +57,7 @@ public sealed class PluginLifecycleService : IPluginLifecycleService
 
         var catalog = pluginCatalog ?? EmptyCalloraPluginCatalog.Instance;
         _reporter = new PluginLifecycleReporter(auditStore, eventPublisher);
-        _recorder = new PluginInstallationRecorder(installationRepository, unitOfWork);
+        _recorder = new PluginInstallationRecorder(installationRepository, unitOfWork, pathPortability);
         _extensionSynchronizer = new PluginExtensionSynchronizer(
             catalog,
             extensionPointRegistryStore,

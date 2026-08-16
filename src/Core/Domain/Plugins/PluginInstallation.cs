@@ -15,7 +15,23 @@ public sealed class PluginInstallation
 
     public string DisplayName { get; private set; } = string.Empty;
 
-    public string AssemblyPath { get; private set; } = string.Empty;
+    /// <summary>
+    /// Der Pfad, wie er in der Datenbank steht — relativ zu einer Plugin-Wurzel, wenn er unter
+    /// einer liegt, sonst absolut. Siehe <c>IPluginAssemblyPathPortability</c>.
+    /// </summary>
+    public string StoredAssemblyPath { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Der Pfad im Dateisystem dieses Prozesses.
+    /// </summary>
+    /// <remarks>
+    /// Aufgelöst wird an der Grenze, an der die Zeile gelesen wird (dem Repository); ohne
+    /// Auflösung gilt der gespeicherte Wert. Der Rückfall ist Absicht: Bestand aus der Zeit vor
+    /// #307 steht dort absolut und funktioniert damit unverändert weiter.
+    /// </remarks>
+    public string AssemblyPath => _resolvedAssemblyPath ?? StoredAssemblyPath;
+
+    private string? _resolvedAssemblyPath;
 
     public string? EntryTypeName { get; private set; }
 
@@ -41,20 +57,20 @@ public sealed class PluginInstallation
     public static PluginInstallation CreateInstalled(
         string pluginId,
         string displayName,
-        string assemblyPath,
+        string storedAssemblyPath,
         string? entryTypeName,
         DateTimeOffset nowUtc)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(assemblyPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(storedAssemblyPath);
 
         return new PluginInstallation
         {
             Id = Guid.NewGuid(),
             PluginId = pluginId,
             DisplayName = displayName,
-            AssemblyPath = assemblyPath,
+            StoredAssemblyPath = storedAssemblyPath,
             EntryTypeName = entryTypeName,
             State = PluginInstallationState.Installed,
             InstalledAtUtc = nowUtc,
@@ -64,18 +80,30 @@ public sealed class PluginInstallation
 
     public void ApplyInstallMetadata(
         string displayName,
-        string assemblyPath,
+        string storedAssemblyPath,
         string? entryTypeName,
         DateTimeOffset nowUtc)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(assemblyPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(storedAssemblyPath);
 
         DisplayName = displayName;
-        AssemblyPath = assemblyPath;
+        StoredAssemblyPath = storedAssemblyPath;
+        _resolvedAssemblyPath = null;
         EntryTypeName = entryTypeName;
         State = PluginInstallationState.Installed;
         UpdatedAtUtc = nowUtc;
+    }
+
+    /// <summary>
+    /// Hinterlegt den Dateipfad, unter dem die Assembly in diesem Prozess liegt. Ändert den
+    /// gespeicherten Wert nicht — die Zeile bleibt damit unverändert, auch wenn sie getrackt ist.
+    /// </summary>
+    public void ResolveAssemblyPath(string fileSystemPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileSystemPath);
+
+        _resolvedAssemblyPath = fileSystemPath;
     }
 
     public void SetCapabilities(
