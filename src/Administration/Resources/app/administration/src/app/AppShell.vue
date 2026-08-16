@@ -7,11 +7,7 @@
     <div class="shell__main">
       <AppTopbar @open-search="searchOpen = true" />
       <main class="shell__content">
-        <RouterView v-slot="{ Component }">
-          <Transition name="shell-view" mode="out-in">
-            <component :is="Component" />
-          </Transition>
-        </RouterView>
+        <AppRouterView />
       </main>
     </div>
 
@@ -23,7 +19,8 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { RouterView, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import AppRouterView from './AppRouterView.vue'
 import AppSidebar from './AppSidebar.vue'
 import AppTopbar from './AppTopbar.vue'
 import AppCommandPalette from './AppCommandPalette.vue'
@@ -117,24 +114,6 @@ onUnmounted(() => {
   inset: 0;
   z-index: var(--cal-z-overlay);
   background: var(--cal-overlay-backdrop);
-}
-
-/* A short cross-fade on route change; long enough to read as continuity,
-   short enough never to feel like waiting. Reduced motion disables it. */
-.shell-view-enter-active,
-.shell-view-leave-active {
-  transition:
-    opacity var(--cal-duration-fast) var(--cal-ease),
-    transform var(--cal-duration-fast) var(--cal-ease);
-}
-
-.shell-view-enter-from {
-  opacity: 0;
-  transform: translateY(4px);
-}
-
-.shell-view-leave-to {
-  opacity: 0;
 }
 
 @media (width <= 900px) {
