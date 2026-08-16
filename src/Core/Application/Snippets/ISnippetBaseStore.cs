@@ -22,4 +22,12 @@ public interface ISnippetBaseStore
 
     /// <summary>Entfernt die Basis eines Pakets — die Abweichungen des Betreibers bleiben stehen.</summary>
     Task ClearForPluginAsync(string pluginId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Die Basis einer Locale mit ihrer Herkunft — für die Verwaltung, die zeigen muss, welches
+    /// Paket einen Text mitgebracht hat und was daneben der Betreiber daraus gemacht hat.
+    /// </summary>
+    Task<IReadOnlyList<SnippetBaseEntry>> ListForLocaleAsync(
+        string locale,
+        CancellationToken cancellationToken = default);
 }

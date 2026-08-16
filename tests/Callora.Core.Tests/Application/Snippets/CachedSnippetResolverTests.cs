@@ -128,6 +128,13 @@ public sealed class CachedSnippetResolverTests
             ]);
         }
 
+
+        public Task<IReadOnlyList<SnippetOverride>> ListForScopeAsync(
+            string scope,
+            string scopeKey,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<SnippetOverride>>([]);
+
         public Task UpsertAsync(SnippetOverride entry, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 

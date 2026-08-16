@@ -17,6 +17,15 @@ public interface ISnippetOverrideStore
         IReadOnlyList<string> locales,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Die Abweichungen genau einer Ebene, über alle Locales — für die Verwaltung, die zeigt, was
+    /// HIER gesetzt ist, und nicht, was von weiter oben durchschlägt.
+    /// </summary>
+    Task<IReadOnlyList<SnippetOverride>> ListForScopeAsync(
+        string scope,
+        string scopeKey,
+        CancellationToken cancellationToken = default);
+
     Task UpsertAsync(SnippetOverride entry, CancellationToken cancellationToken = default);
 
     Task RemoveAsync(

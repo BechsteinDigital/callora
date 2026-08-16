@@ -165,6 +165,13 @@ public sealed class SnippetResolverTests
                         string.Equals(scope.ScopeKey, entry.ScopeKey, StringComparison.Ordinal)) &&
                     locales.Contains(entry.Locale, StringComparer.OrdinalIgnoreCase))]);
 
+
+        public Task<IReadOnlyList<SnippetOverride>> ListForScopeAsync(
+            string scope,
+            string scopeKey,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<SnippetOverride>>([]);
+
         public Task UpsertAsync(SnippetOverride entry, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 

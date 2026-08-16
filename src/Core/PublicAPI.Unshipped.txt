@@ -2983,6 +2983,7 @@ Callora.Core.Application.Snippets.ISnippetBaseSource
 Callora.Core.Application.Snippets.ISnippetBaseSource.GetAsync(string! locale, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>
 Callora.Core.Application.Snippets.ISnippetBaseStore
 Callora.Core.Application.Snippets.ISnippetBaseStore.ClearForPluginAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Snippets.ISnippetBaseStore.ListForLocaleAsync(string! locale, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetBaseEntry!>!>!
 Callora.Core.Application.Snippets.ISnippetBaseStore.ReplaceForPluginAsync(string! pluginId, System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetBaseEntry!>! entries, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Snippets.ISnippetCache
 Callora.Core.Application.Snippets.ISnippetCache.InvalidateAll() -> void
@@ -2994,10 +2995,34 @@ Callora.Core.Application.Snippets.ISnippetCatalog.Locale.get -> string!
 Callora.Core.Application.Snippets.ISnippetCatalog.Snippets.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 Callora.Core.Application.Snippets.ISnippetOverrideStore
 Callora.Core.Application.Snippets.ISnippetOverrideStore.ListAsync(System.Collections.Generic.IReadOnlyList<(string! Scope, string! ScopeKey)>! scopeChain, System.Collections.Generic.IReadOnlyList<string!>! locales, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetOverride!>!>!
+Callora.Core.Application.Snippets.ISnippetOverrideStore.ListForScopeAsync(string! scope, string! scopeKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetOverride!>!>!
 Callora.Core.Application.Snippets.ISnippetOverrideStore.RemoveAsync(string! snippetKey, string! locale, string! scope, string! scopeKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Snippets.ISnippetOverrideStore.UpsertAsync(Callora.Core.Domain.Snippets.SnippetOverride! entry, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Snippets.ISnippetResolver
 Callora.Core.Application.Snippets.ISnippetResolver.ResolveAsync(string? locale, string? tenantKey = null, string? workspaceKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>!
+Callora.Core.Application.Snippets.SnippetAdminEntry
+Callora.Core.Application.Snippets.SnippetAdminEntry.<Clone>$() -> Callora.Core.Application.Snippets.SnippetAdminEntry!
+Callora.Core.Application.Snippets.SnippetAdminEntry.BaseValue.get -> string?
+Callora.Core.Application.Snippets.SnippetAdminEntry.BaseValue.init -> void
+Callora.Core.Application.Snippets.SnippetAdminEntry.Deconstruct(out string! SnippetKey, out string! Locale, out string! PluginId, out string? BaseValue, out string? OverrideValue) -> void
+Callora.Core.Application.Snippets.SnippetAdminEntry.EffectiveValue.get -> string!
+Callora.Core.Application.Snippets.SnippetAdminEntry.Equals(Callora.Core.Application.Snippets.SnippetAdminEntry? other) -> bool
+Callora.Core.Application.Snippets.SnippetAdminEntry.IsOrphaned.get -> bool
+Callora.Core.Application.Snippets.SnippetAdminEntry.IsOverridden.get -> bool
+Callora.Core.Application.Snippets.SnippetAdminEntry.Locale.get -> string!
+Callora.Core.Application.Snippets.SnippetAdminEntry.Locale.init -> void
+Callora.Core.Application.Snippets.SnippetAdminEntry.OverrideValue.get -> string?
+Callora.Core.Application.Snippets.SnippetAdminEntry.OverrideValue.init -> void
+Callora.Core.Application.Snippets.SnippetAdminEntry.PluginId.get -> string!
+Callora.Core.Application.Snippets.SnippetAdminEntry.PluginId.init -> void
+Callora.Core.Application.Snippets.SnippetAdminEntry.SnippetAdminEntry(string! SnippetKey, string! Locale, string! PluginId, string? BaseValue, string? OverrideValue) -> void
+Callora.Core.Application.Snippets.SnippetAdminEntry.SnippetKey.get -> string!
+Callora.Core.Application.Snippets.SnippetAdminEntry.SnippetKey.init -> void
+Callora.Core.Application.Snippets.SnippetAdminService
+Callora.Core.Application.Snippets.SnippetAdminService.ListAsync(string! locale, string! scope, string! scopeKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Snippets.SnippetAdminEntry!>!>!
+Callora.Core.Application.Snippets.SnippetAdminService.ResetAsync(string! snippetKey, string! locale, string! scope, string! scopeKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Snippets.SnippetAdminService.SetAsync(string! snippetKey, string! locale, string! scope, string! scopeKey, string! value, string! updatedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Snippets.SnippetAdminService.SnippetAdminService(Callora.Core.Application.Snippets.ISnippetBaseStore! baseStore, Callora.Core.Application.Snippets.ISnippetOverrideStore! overrideStore, Callora.Core.Application.Snippets.ISnippetCache! cache) -> void
 Callora.Core.Application.Snippets.SnippetCatalog
 Callora.Core.Application.Snippets.SnippetCatalog.LoadAsync(string? locale, string? tenantKey = null, string? workspaceKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Snippets.SnippetCatalog.Locale.get -> string!
@@ -5302,10 +5327,12 @@ Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore
 Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore.ClearForPluginAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore.EfSnippetBaseStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore.GetAsync(string! locale, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>
+Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore.ListForLocaleAsync(string! locale, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetBaseEntry!>!>!
 Callora.Core.Infrastructure.Persistence.EfSnippetBaseStore.ReplaceForPluginAsync(string! pluginId, System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetBaseEntry!>! entries, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfSnippetOverrideStore
 Callora.Core.Infrastructure.Persistence.EfSnippetOverrideStore.EfSnippetOverrideStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Persistence.EfSnippetOverrideStore.ListAsync(System.Collections.Generic.IReadOnlyList<(string! Scope, string! ScopeKey)>! scopeChain, System.Collections.Generic.IReadOnlyList<string!>! locales, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetOverride!>!>!
+Callora.Core.Infrastructure.Persistence.EfSnippetOverrideStore.ListForScopeAsync(string! scope, string! scopeKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Domain.Snippets.SnippetOverride!>!>!
 Callora.Core.Infrastructure.Persistence.EfSnippetOverrideStore.RemoveAsync(string! snippetKey, string! locale, string! scope, string! scopeKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfSnippetOverrideStore.UpsertAsync(Callora.Core.Domain.Snippets.SnippetOverride! entry, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Persistence.EfSurfaceHandoffTicketStore
@@ -5847,6 +5874,8 @@ const Callora.Core.Application.Security.BackendPermissionKeys.PluginExecute = "p
 const Callora.Core.Application.Security.BackendPermissionKeys.PluginRead = "plugin.read" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.RoleRead = "role.read" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.RoleUpdate = "role.update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.SnippetRead = "snippet.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.SnippetUpdate = "snippet.update" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.TenantCreate = "tenant.create" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.TenantDelete = "tenant.delete" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.TenantRead = "tenant.read" -> string!
@@ -6284,6 +6313,9 @@ override Callora.Core.Application.Security.UserDataExportAuditEntry.ToString() -
 override Callora.Core.Application.Security.UserDataExportMembership.Equals(object? obj) -> bool
 override Callora.Core.Application.Security.UserDataExportMembership.GetHashCode() -> int
 override Callora.Core.Application.Security.UserDataExportMembership.ToString() -> string!
+override Callora.Core.Application.Snippets.SnippetAdminEntry.Equals(object? obj) -> bool
+override Callora.Core.Application.Snippets.SnippetAdminEntry.GetHashCode() -> int
+override Callora.Core.Application.Snippets.SnippetAdminEntry.ToString() -> string!
 override Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.<Clone>$() -> Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller!
 override Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.Equals(object? obj) -> bool
 override Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.GetHashCode() -> int
@@ -6853,6 +6885,8 @@ static Callora.Core.Application.Security.UserDataExportMembership.operator ==(Ca
 static Callora.Core.Application.Security.WorkspaceRolePermissions.ForRole(string? workspaceRole) -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Security.WorkspaceScopeEvaluator.HasWorkspaceAccess(System.Security.Claims.ClaimsPrincipal! user, string? requestedWorkspaceKey) -> bool
 static Callora.Core.Application.Security.WorkspaceScopeEvaluator.IsOperator(System.Security.Claims.ClaimsPrincipal! user) -> bool
+static Callora.Core.Application.Snippets.SnippetAdminEntry.operator !=(Callora.Core.Application.Snippets.SnippetAdminEntry? left, Callora.Core.Application.Snippets.SnippetAdminEntry? right) -> bool
+static Callora.Core.Application.Snippets.SnippetAdminEntry.operator ==(Callora.Core.Application.Snippets.SnippetAdminEntry? left, Callora.Core.Application.Snippets.SnippetAdminEntry? right) -> bool
 static Callora.Core.Application.Snippets.SnippetLocaleChain.Build(string? locale, string! defaultLocale = "de") -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.operator !=(Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? left, Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? right) -> bool
 static Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller.operator ==(Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? left, Callora.Core.Application.Surfaces.AuthenticatedSurfaceCaller? right) -> bool

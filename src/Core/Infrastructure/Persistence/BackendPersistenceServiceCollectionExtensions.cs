@@ -72,6 +72,7 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddScoped<Callora.Core.Application.Snippets.ISnippetBaseSource>(
             provider => provider.GetRequiredService<EfSnippetBaseStore>());
         services.AddScoped<Callora.Core.Application.Snippets.SnippetResolver>();
+        services.AddScoped<Callora.Core.Application.Snippets.SnippetAdminService>();
         // Der Cache lebt als Singleton über die Anfragen hinweg und holt sich den inneren
         // Resolver je Auflösung aus einem eigenen Scope — sonst hinge der DbContext an ihm fest.
         services.AddSingleton<Callora.Core.Application.Snippets.CachedSnippetResolver>();
