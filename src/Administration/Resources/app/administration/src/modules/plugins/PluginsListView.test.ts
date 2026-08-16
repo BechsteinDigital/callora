@@ -57,8 +57,8 @@ function ctx(permissions: string[]): AdminContext {
 }
 
 const sample: PluginInstallation[] = [
-  { pluginId: 'acme', displayName: 'Acme', assemblyPath: '', entryTypeName: null, state: 1, isRunning: true, installedAtUtc: '', updatedAtUtc: '' },
-  { pluginId: 'beta', displayName: 'Beta', assemblyPath: '', entryTypeName: null, state: 2, isRunning: true, installedAtUtc: '', updatedAtUtc: '' },
+  { pluginId: 'acme', displayName: 'Acme', assemblyPath: '', entryTypeName: null, state: 1, isRunning: true, assemblyMissing: false, installedAtUtc: '', updatedAtUtc: '' },
+  { pluginId: 'beta', displayName: 'Beta', assemblyPath: '', entryTypeName: null, state: 2, isRunning: true, assemblyMissing: false, installedAtUtc: '', updatedAtUtc: '' },
 ]
 
 function buttonByText(wrapper: VueWrapper, text: string) {
@@ -88,14 +88,43 @@ describe('PluginsListView', () => {
     // der Datenbank aktiv. Die Liste zeigte es als „Aktiv", während es nichts tat, und der Grund
     // stand nur in einer Logzeile beim Start.
     listMock.mockResolvedValue([
-      { pluginId: 'laeuft', displayName: 'Läuft', assemblyPath: '', entryTypeName: null, state: 1, isRunning: true, installedAtUtc: '', updatedAtUtc: '' },
-      { pluginId: 'dunkel', displayName: 'Dunkel', assemblyPath: '', entryTypeName: null, state: 1, isRunning: false, installedAtUtc: '', updatedAtUtc: '' },
+      { pluginId: 'laeuft', displayName: 'Läuft', assemblyPath: '', entryTypeName: null, state: 1, isRunning: true, assemblyMissing: false, installedAtUtc: '', updatedAtUtc: '' },
+      { pluginId: 'dunkel', displayName: 'Dunkel', assemblyPath: '', entryTypeName: null, state: 1, isRunning: false, assemblyMissing: false, installedAtUtc: '', updatedAtUtc: '' },
     ])
 
     const wrapper = mount(PluginsListView)
     await flushPromises()
 
     expect(wrapper.text()).toContain('Aktiv, läuft nicht')
+  })
+
+  it('zeigt ein Plugin, dessen Assembly fehlt, nicht als normal installiert', async () => {
+    // Der Befund aus der Betriebsnacht (#307): Die Datei liegt nicht dort, wo die Zeile sie
+    // vermutet. Sichtbar war das bisher als fehlende Oberfläche — die Liste sagte „Aktiv", und
+    // der Hinweis stand in einer Startwarnung zwischen hunderten Zeilen EF-SQL.
+    listMock.mockResolvedValue([
+      {
+        pluginId: 'videoconference',
+        displayName: 'Videoconference',
+        assemblyPath: '/app/custom/plugins/videoconference/Callora.Plugin.VideoConference.dll',
+        entryTypeName: null,
+        state: 1,
+        isRunning: false,
+        assemblyMissing: true,
+        installedAtUtc: '',
+        updatedAtUtc: '',
+      },
+    ])
+
+    const wrapper = mount(PluginsListView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Datei fehlt')
+    expect(wrapper.text()).not.toContain('Aktiv, läuft nicht')
+    // Der Pfad gehört dazu: Ohne ihn weiß der Betreiber, DASS etwas fehlt, aber nicht wo.
+    expect(wrapper.find('.cal-badge').attributes('title')).toContain(
+      '/app/custom/plugins/videoconference/Callora.Plugin.VideoConference.dll',
+    )
   })
 
   it('renders each plugin with the right status and lifecycle action', async () => {

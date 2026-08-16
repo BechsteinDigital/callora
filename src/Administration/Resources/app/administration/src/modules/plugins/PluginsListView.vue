@@ -40,13 +40,13 @@
       >
         <template #cell-state="{ row }">
           <!--
-            Drei Zustände, nicht zwei: Aktiv UND läuft · aktiv, läuft aber NICHT · inaktiv. Der
-            mittlere ist der, den niemand sah — ein Plugin, dessen Aktivierung beim Start
-            scheiterte, stand als „Aktiv" in der Liste, und der Grund nur in einer Logzeile.
+            Vier Zustände, nicht zwei: Datei fehlt · aktiv UND läuft · aktiv, läuft aber NICHT ·
+            inaktiv. Die beiden mittleren sind die, die niemand sah — ein Plugin, dessen
+            Aktivierung beim Start scheiterte, stand als „Aktiv" in der Liste, und der Grund nur
+            in einer Logzeile. Beim fehlenden Assembly war es dasselbe: Die Liste sagte
+            „installiert", sichtbar wurde es als fehlende Oberfläche.
           -->
-          <CalBadge :tone="toneOf(row)" dot :title="row.state === 1 && !row.isRunning
-            ? 'Als aktiv eingetragen, läuft aber nicht — siehe Startprotokoll.'
-            : undefined">
+          <CalBadge :tone="toneOf(row)" dot :title="stateHintOf(row)">
             {{ labelOf(row) }}
           </CalBadge>
         </template>
@@ -123,7 +123,12 @@ import { Download, Package, Puzzle } from 'lucide-vue-next'
 import { pluginsApi, isPluginActive, type PluginInstallation, type PluginLifecycleResult } from './pluginsApi'
 
 /** Aktiv heißt nicht laufend: Der gewünschte Zustand und der tatsächliche können auseinandergehen. */
-function toneOf(row: PluginInstallation): 'success' | 'warning' | 'neutral' {
+function toneOf(row: PluginInstallation): 'success' | 'warning' | 'neutral' | 'danger' {
+  // Vor allem anderen: Liegt unter dem Pfad nichts, ist jede Aussage über aktiv oder inaktiv
+  // eine über etwas, das gar nicht da ist.
+  if (row.assemblyMissing) {
+    return 'danger'
+  }
   if (!isPluginActive(row.state)) {
     return 'neutral'
   }
@@ -131,10 +136,22 @@ function toneOf(row: PluginInstallation): 'success' | 'warning' | 'neutral' {
 }
 
 function labelOf(row: PluginInstallation): string {
+  if (row.assemblyMissing) {
+    return 'Datei fehlt'
+  }
   if (!isPluginActive(row.state)) {
     return 'Inaktiv'
   }
   return row.isRunning ? 'Aktiv' : 'Aktiv, läuft nicht'
+}
+
+function stateHintOf(row: PluginInstallation): string | undefined {
+  if (row.assemblyMissing) {
+    return `Unter dem gespeicherten Pfad liegt keine Datei: ${row.assemblyPath}`
+  }
+  return isPluginActive(row.state) && !row.isRunning
+    ? 'Als aktiv eingetragen, läuft aber nicht — siehe Startprotokoll.'
+    : undefined
 }
 import { useAuthStore } from '@/core/auth/authStore'
 import { hasPermission } from '@/core/auth/permissions'

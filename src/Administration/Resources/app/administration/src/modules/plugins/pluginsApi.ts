@@ -13,6 +13,10 @@ export interface PluginInstallation {
   // gibt: Ein Plugin, dessen Aktivierung beim Start scheitert, bleibt `Active` — die Liste
   // zeigte es dann als „Aktiv", während es nichts tat.
   isRunning: boolean
+  // Ob unter dem gespeicherten Pfad keine Datei liegt. Vorher meldete das nur eine Warnung beim
+  // Start, und sichtbar wurde es als fehlende Oberfläche — während die Liste das Plugin
+  // unverändert als installiert zeigte.
+  assemblyMissing: boolean
   installedAtUtc: string
   updatedAtUtc: string
 }
