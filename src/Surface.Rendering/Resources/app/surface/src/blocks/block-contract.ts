@@ -61,7 +61,6 @@ export type KnownControlType =
  * still accepting a contributed one — a plain `string` would collapse the union and
  * lose it.
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type ControlType = KnownControlType | (string & {})
 
 /** One option of a `select` control. */

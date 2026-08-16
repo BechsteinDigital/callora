@@ -140,8 +140,9 @@ jobs:
         include:
           - name: Surface Runtime
             path: src/Surface.Rendering/Resources/app/surface
-            gates: test + build
+            gates: lint + test + build
             test: true
+            lint: true
           # Communication und Composer bauen in ihren eigenen Repositories (ADR-020).
           # Was hier bleiben MUSS, ist der Beweis, dass die SDK-Pakete, gegen die sie
           # bauen, gebaut werden können — das leistet der admin-frontend-Job mit
@@ -150,6 +151,7 @@ jobs:
             path: docs-site
             gates: lint + build
             test: false
+            lint: true
     defaults:
       run:
         working-directory: ${{ matrix.path }}
@@ -193,7 +195,7 @@ jobs:
         run: npm run test
 
       - name: Lint
-        if: matrix.name == 'Docs Site'
+        if: matrix.lint
         run: npm run lint
 
       - name: Build
@@ -233,6 +235,12 @@ jobs:
         run: |
           npm run generate:catalog
           git diff --exit-code src/core/extensions/catalog.generated.ts src/core/extensions/catalog.json
+
+      # Vor den Tests, weil ein Linter billiger antwortet als eine Suite — und weil er eine
+      # andere Frage stellt: vue-tsc prüft, ob die Typen stimmen, nicht ob der Code stimmt
+      # (#297).
+      - name: Lint
+        run: npm run lint
 
       # Die Vitest-Suite (Slots/Hooks/Services/Loader + alle Admin-Module) läuft
       # als eigener Gate-Schritt, damit UI-Verhaltensregressionen main nicht

@@ -5,7 +5,7 @@ import { mountSurface } from './mount'
 import { resolveSurfaceContext } from './surface-context'
 import { ensureSurfaceRegistry, loadSurfaceBundles } from './public/bundles'
 import { connectSurfaceContextBridge } from './context-bridge'
-import { installClientErrorReporting, reportClientError } from './client-error-reporting'
+import { installClientErrorReporting } from './client-error-reporting'
 
 declare global {
   interface Window {
