@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { authGuard } from '@/app/routeGuard'
+import { endSession } from '@/core/auth/session'
 import { setUnauthorizedHandler } from '@/core/http'
 
 // Breadcrumb parents, declared once so a section and its detail routes cannot
@@ -126,7 +127,11 @@ router.afterEach((to) => {
   document.title = title ? `${title} · Callora` : 'Callora Administration'
 })
 
-// A 401 from any API call ends the session — send the user back to login.
+// A 401 from any API call ends the session — clear what belonged to it, then send the user back
+// to login. Auch der Bootstrap läuft hier durch: Sein Kontextaufruf antwortet ohne Sitzung mit
+// 401, und dann ist nichts aufzuräumen. Deshalb räumt es hier auf und lädt nicht neu — ein
+// Neuladen an dieser Stelle wäre eine Schleife.
 setUnauthorizedHandler(() => {
+  endSession()
   void router.push('/login')
 })

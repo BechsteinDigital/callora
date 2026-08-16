@@ -67,7 +67,7 @@ export const toast = {
     push('danger', error instanceof Error ? error.message : String(error), description),
 }
 
-/** Clears every toast and its timer — for tests, and on logout. */
+/** Clears every toast and its timer — on logout (via `endSession`), and for tests. */
 export function resetToasts(): void {
   for (const timer of timers.values()) {
     clearTimeout(timer)

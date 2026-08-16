@@ -27,6 +27,7 @@ import AppCommandPalette from './AppCommandPalette.vue'
 import CalConfirmHost from '@/core/feedback/CalConfirmHost.vue'
 import CalToastViewport from '@/core/feedback/CalToastViewport.vue'
 import { useAuthStore } from '@/core/auth/authStore'
+import { endSession } from '@/core/auth/session'
 import { loadPluginNavigation } from '@/core/extensions/pluginNavigation'
 import { useOnboarding, shouldAutoRedirect, markAutoShown } from '@/modules/onboarding/onboarding'
 import { initSidebar, useSidebar } from './sidebarState'
@@ -45,6 +46,7 @@ const searchOpen = ref(false)
 
 async function logout(): Promise<void> {
   await authStore.logout()
+  endSession()
   void router.push('/login')
 }
 

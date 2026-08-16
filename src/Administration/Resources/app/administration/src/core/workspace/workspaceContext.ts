@@ -122,7 +122,9 @@ export function useWorkspaceContext() {
   }
 }
 
-// Resets the module singleton — for tests only.
+// Setzt das Modul-Singleton zurück, samt des gespeicherten Schlüssels: Er überlebt sonst auch das
+// Neuladen und trüge die Auswahl der vorigen Sitzung in die nächste. Aufgerufen aus `endSession`
+// — und aus Tests.
 export function resetWorkspaceContext(): void {
   workspaces.value = []
   selected.value = ''

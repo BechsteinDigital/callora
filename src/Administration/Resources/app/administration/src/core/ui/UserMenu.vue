@@ -38,6 +38,7 @@ import { ChevronDown, LogOut } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import CalIcon from './CalIcon.vue'
 import { useAuthStore } from '@/core/auth/authStore'
+import { endSession } from '@/core/auth/session'
 
 const props = defineProps<{
   label: string
@@ -60,6 +61,7 @@ const initials = computed(() =>
 
 async function onLogout() {
   await useAuthStore().logout()
+  endSession()
   router.push('/login')
 }
 </script>
