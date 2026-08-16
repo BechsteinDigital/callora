@@ -167,6 +167,25 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
                 return navigation;
             });
 
+            // Oberflächentexte (ADR-024 §5). Wie callora_slot liest auch das hier nur, was der
+            // Host bereits aufgelöst hat — ein Template stellt keine Frage an die Datenbank.
+            //
+            // Der zweite Parameter ist der Vorgabewert und der Grund, warum eine Vorlage sich
+            // schrittweise umstellen lässt: Fehlt ein Schlüssel, steht der eingebaute Text da und
+            // nicht der Schlüssel. Ohne Vorgabe erscheint der Schlüssel — sichtbar falsch ist
+            // besser als unsichtbar leer.
+            var snippets = (context && context.snippets) || {};
+            env.addGlobal('callora_t', function (key, fallback) {
+                if (Object.prototype.hasOwnProperty.call(snippets, key)) {
+                    return snippets[key];
+                }
+                return fallback === undefined ? key : fallback;
+            });
+
+            env.addGlobal('callora_has_snippet', function (key) {
+                return Object.prototype.hasOwnProperty.call(snippets, key);
+            });
+
             // The composed layout, already rendered by the composition renderer. Safe because the
             // renderer encoded every attribute it emitted; interpolating it would escape the
             // markup it just produced.
@@ -282,6 +301,7 @@ public sealed class NunjucksSurfaceRenderer : ISurfaceRenderer
             tokens = context.Tokens,
             slots = context.Slots,
             navigation = context.Navigation,
+            snippets = context.Snippets,
             compositionHtml = context.CompositionHtml,
             caller = context.Caller is null
                 ? null

@@ -88,6 +88,8 @@ Callora.Surface.Rendering.SurfaceRenderContext.Path.get -> string!
 Callora.Surface.Rendering.SurfaceRenderContext.Path.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.Slots.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Surfaces.SurfaceSlotView!>!>!
 Callora.Surface.Rendering.SurfaceRenderContext.Slots.init -> void
+Callora.Surface.Rendering.SurfaceRenderContext.Snippets.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Callora.Surface.Rendering.SurfaceRenderContext.Snippets.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.SurfaceKey.get -> string!
 Callora.Surface.Rendering.SurfaceRenderContext.SurfaceKey.init -> void
 Callora.Surface.Rendering.SurfaceRenderContext.SurfaceRenderContext(string! TenantKey, string! WorkspaceKey, string! SurfaceKey, string! SurfaceType, string! Locale, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Tokens) -> void

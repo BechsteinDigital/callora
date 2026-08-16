@@ -417,6 +417,19 @@ public static class SurfaceRenderEndpoints
         // reach a draft from here — on a Public surface such a hole would sit behind no
         // authentication at all (design §7.3).
 
+        // Einmal je Anfrage aufgelöst, und zwar über den Katalog: Damit lesen das Template und
+        // ein Plugin (über IStringLocalizer) dieselbe Quelle — sonst liefen Server-Texte und
+        // Plugin-Texte auseinander, was der ganze Grund für ein gemeinsames Snippet-System ist
+        // (ADR-024 §5).
+        var snippetCatalog = httpContext.RequestServices
+            .GetService<Callora.Core.Application.Snippets.ISnippetCatalog>();
+        if (snippetCatalog is not null)
+        {
+            await snippetCatalog
+                .LoadAsync(locale, surface.TenantKey, surface.WorkspaceKey, httpContext.RequestAborted)
+                .ConfigureAwait(false);
+        }
+
         var context = new SurfaceRenderContext(
             TenantKey: surface.TenantKey,
             WorkspaceKey: surface.WorkspaceKey,
@@ -432,6 +445,7 @@ public static class SurfaceRenderEndpoints
             Slots = compositionSlots.Slots,
             Navigation = compositionSlots.Navigation,
             CompositionHtml = composition,
+            Snippets = snippetCatalog?.Snippets ?? new Dictionary<string, string>(StringComparer.Ordinal),
         };
 
         // Ein Restpfad gehört der Fläche nur, wenn sie ihn BEANSPRUCHT (ADR-022).
