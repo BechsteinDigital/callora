@@ -59,5 +59,24 @@ public static class PluginAssetStaticFiles
             ServeUnknownFileTypes = true,
             DefaultContentType = "application/octet-stream",
         });
+
+        // Was hier noch ankommt, gibt es unter diesem Präfix nicht — die Auslieferung darüber hätte
+        // es sonst geliefert. Ohne diesen Abschluss läuft die Anfrage weiter in UseAuthentication
+        // und bekommt 401 mit leerem Body.
+        //
+        // Das ist keine Feinheit, sondern der Unterschied zwischen einer Diagnose in einer Minute
+        // und einer in einer Stunde: Ein leerer Body hat keinen Content-Type, und der Browser meldet
+        // dann „Refused to execute script … its MIME type ('') is not executable". Genau danach hat
+        // jemand die Auslieferungsoptionen, die CSP und die Content-Type-Zuordnung durchsucht — und
+        // die Ursache war eine Datei, die das Bundle nie mitgebracht hatte (#306). Ein 404 hätte das
+        // sofort gesagt.
+        //
+        // Der Pfad ist reserviert; eine Fläche kann dort nicht liegen. Es gibt also niemanden, an
+        // den weiterzureichen wäre.
+        app.Map("/plugin-assets", missing => missing.Run(context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return Task.CompletedTask;
+        }));
     }
 }
