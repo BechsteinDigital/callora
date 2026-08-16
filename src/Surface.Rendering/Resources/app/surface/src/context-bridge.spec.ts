@@ -96,17 +96,31 @@ describe('surface context bridge', () => {
     const local = channel.providePublisher({ key: KEY, publisherPluginId: 'communication' })
     const { socket } = bridge(channel)
 
-    // Die erste Nachricht wird abgewiesen; danach gibt die Insel den Key frei.
+    // Die erste Nachricht wird abgewiesen; danach gibt die Insel den Key frei — und ab da
+    // gehört er dem Server. Die Ablehnung galt dem Moment, nicht der Lebensdauer der Seite.
     socket().receive({ key: KEY, value: { state: 'zu-früh' } })
     local.dispose()
-
-    // Ein neuer Key, damit die Brücke einen frischen Publisher anfordert.
-    const other = 'crm.lead-selection/v1'
-    socket().receive({ key: other, value: { id: 42 } })
+    socket().receive({ key: KEY, value: { state: 'vom-server' } })
 
     const seen: unknown[] = []
-    channel.subscribe(other, (value) => seen.push(value))
-    expect(seen).toEqual([{ id: 42 }])
+    channel.subscribe(KEY, (value) => seen.push(value))
+    expect(seen).toEqual([{ state: 'vom-server' }])
+  })
+
+  it('fragt nicht bei jeder Nachricht neu an, solange die Insel den Key hält', () => {
+    // Die Gegenprobe zum Vorigen: Würde die Brücke die Ablehnung gar nicht merken, liefe sie
+    // pro Nachricht in eine neue Anfrage — mit einer Konsolenwarnung und einem
+    // Diagnose-Eintrag je Frame. Aus einem Befund würde Rauschen, das ihn zudeckt.
+    const channel = createSurfaceContextChannel('acme', 'agent-desk')
+    channel.providePublisher({ key: KEY, publisherPluginId: 'communication' })
+    const { socket } = bridge(channel)
+
+    socket().receive({ key: KEY, value: { state: 'eins' } })
+    socket().receive({ key: KEY, value: { state: 'zwei' } })
+    socket().receive({ key: KEY, value: { state: 'drei' } })
+
+    const diagnostics = channel.diagnostics().find((entry) => entry.key === KEY)
+    expect(diagnostics?.rejectedPublishers).toEqual(['callora.surface.bridge'])
   })
 
   it('survives a malformed frame', () => {

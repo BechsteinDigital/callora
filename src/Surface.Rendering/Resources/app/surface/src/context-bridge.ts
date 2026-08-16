@@ -58,6 +58,20 @@ export function connectSurfaceContextBridge(
 
   const publish = (message: BridgeMessage): void => {
     let publisher = publishers.get(message.key)
+
+    // Eine Ablehnung gilt dem Moment, nicht der Lebensdauer der Seite. Gibt die Insel den
+    // Schlüssel frei — sie wird unmountet, die Ansicht wechselt —, gehört er wieder dem
+    // Server. Wer die Ablehnung behält, lässt die betroffene Ansicht ab da stumm, ohne dass
+    // irgendetwas fehlschlägt, das jemand sähe.
+    //
+    // Gemerkt wird sie trotzdem: Ohne das liefe jeder Frame in eine neue Anfrage, und jede
+    // schriebe eine Warnung und einen Diagnose-Eintrag. Deshalb die folgenlose Frage an den
+    // Kanal statt eines zweiten Versuchs.
+    if (publisher && !publisher.accepted && !channel.isClaimed(message.key)) {
+      publishers.delete(message.key)
+      publisher = undefined
+    }
+
     if (!publisher) {
       publisher = channel.providePublisher({
         key: message.key,

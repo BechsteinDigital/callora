@@ -54,6 +54,14 @@ export interface SurfaceContextChannel {
   readonly workspaceKey: string
   readonly surfaceKey: string
   providePublisher<T = unknown>(descriptor: SurfaceContextDescriptor): SurfaceContextPublisher<T>
+  /**
+   * Ob den Schlüssel gerade jemand veröffentlicht.
+   *
+   * Für den, der abgewiesen wurde und wissen muss, ob das noch gilt: `providePublisher` erneut
+   * zu rufen wäre die teure Art zu fragen — jeder Versuch schreibt eine Warnung und einen
+   * Diagnose-Eintrag, und aus einem Befund würde Rauschen. Diese Frage bleibt folgenlos.
+   */
+  isClaimed(key: string): boolean
   read<T = unknown>(key: string): T | undefined
   subscribe<T = unknown>(key: string, handler: (value: T | undefined) => void): () => void
   diagnostics(): readonly SurfaceContextKeyDiagnostics[]
@@ -179,6 +187,10 @@ export function createSurfaceContextChannel(
           }
         },
       }
+    },
+
+    isClaimed(key: string): boolean {
+      return (keys.get(key)?.publishers.length ?? 0) > 0
     },
 
     read<T>(key: string): T | undefined {
