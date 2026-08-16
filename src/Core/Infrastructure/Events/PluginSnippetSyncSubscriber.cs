@@ -1,5 +1,6 @@
 using Callora.Core.Application.Events;
 using Callora.Core.Application.Lifecycle;
+using Callora.Core.Application.Snippets;
 using Callora.Core.Infrastructure.Snippets;
 
 namespace Callora.Core.Infrastructure.Events;
@@ -10,6 +11,7 @@ namespace Callora.Core.Infrastructure.Events;
 /// </summary>
 public sealed class PluginSnippetSyncSubscriber(
     RegistrySnippetSyncService syncService,
+    ISnippetCache cache,
     ILogger<PluginSnippetSyncSubscriber> logger) : IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>
 {
     public async Task HandleAsync(PluginLifecycleChangedEvent appEvent, CancellationToken cancellationToken = default)
@@ -43,7 +45,13 @@ public sealed class PluginSnippetSyncSubscriber(
                 case PluginLifecycleActions.Uninstall:
                     await syncService.ClearPluginSnippetsAsync(pluginId, cancellationToken).ConfigureAwait(false);
                     break;
+                default:
+                    return;
             }
+
+            // Die Basis liegt unter jeder Kette: Ein installiertes, aktualisiertes oder entferntes
+            // Paket ändert damit jedes aufgelöste Wörterbuch, nicht nur eines.
+            cache.InvalidateAll();
         }
         catch (Exception ex)
         {

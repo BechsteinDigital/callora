@@ -26,7 +26,9 @@ namespace Callora.Core.Application.Snippets;
 /// </para>
 /// </remarks>
 public sealed class SnippetResolver(ISnippetBaseSource baseSource, ISnippetOverrideStore overrides)
+    : ISnippetResolver
 {
+    /// <inheritdoc />
     public async Task<IReadOnlyDictionary<string, string>> ResolveAsync(
         string? locale,
         string? tenantKey = null,

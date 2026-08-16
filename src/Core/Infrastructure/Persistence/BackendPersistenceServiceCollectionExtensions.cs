@@ -72,6 +72,21 @@ public static class BackendPersistenceServiceCollectionExtensions
         services.AddScoped<Callora.Core.Application.Snippets.ISnippetBaseSource>(
             provider => provider.GetRequiredService<EfSnippetBaseStore>());
         services.AddScoped<Callora.Core.Application.Snippets.SnippetResolver>();
+        // Der Cache lebt als Singleton über die Anfragen hinweg und holt sich den inneren
+        // Resolver je Auflösung aus einem eigenen Scope — sonst hinge der DbContext an ihm fest.
+        services.AddSingleton<Callora.Core.Application.Snippets.CachedSnippetResolver>();
+        services.AddSingleton<Callora.Core.Application.Snippets.ISnippetResolver>(
+            provider => provider.GetRequiredService<Callora.Core.Application.Snippets.CachedSnippetResolver>());
+        services.AddSingleton<Callora.Core.Application.Snippets.ISnippetCache>(
+            provider => provider.GetRequiredService<Callora.Core.Application.Snippets.CachedSnippetResolver>());
+        // Der Katalog gehört der Anfrage: einmal asynchron geladen, danach synchron gelesen.
+        services.AddScoped<Callora.Core.Application.Snippets.ISnippetCatalog,
+            Callora.Core.Application.Snippets.SnippetCatalog>();
+        services.AddScoped<Microsoft.Extensions.Localization.IStringLocalizerFactory,
+            Callora.Core.Application.Snippets.SnippetStringLocalizerFactory>();
+        services.AddScoped<Microsoft.Extensions.Localization.IStringLocalizer>(
+            provider => new Callora.Core.Application.Snippets.SnippetStringLocalizer(
+                provider.GetRequiredService<Callora.Core.Application.Snippets.ISnippetCatalog>()));
         services.AddScoped<IHostUnitOfWork, EfHostUnitOfWork>();
         services.AddScoped<IBackendRbacStore, EfBackendRbacStore>();
         services.AddScoped<IIntegrationCredentialStore, EfIntegrationCredentialStore>();
