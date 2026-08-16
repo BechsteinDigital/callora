@@ -1,12 +1,21 @@
 <template>
   <div class="shell" :class="{ 'is-collapsed': collapsed }">
+    <!--
+      Erstes fokussierbares Element der Seite, sichtbar erst im Fokus. Ohne ihn führt jeder
+      Tastaturweg in eine neue Ansicht zuerst durch die komplette Seitenleiste — die öffentliche
+      Fläche hat den Link seit jeher (base.njk), die Administration hatte ihn nicht.
+    -->
+    <a class="shell__skip" href="#shell-content">Zum Inhalt springen</a>
+
     <AppSidebar />
 
     <div v-if="mobileOpen" class="shell__scrim" @click="closeMobile" />
 
     <div class="shell__main">
       <AppTopbar @open-search="searchOpen = true" />
-      <main class="shell__content">
+      <!-- tabindex="-1", damit der Sprung den Fokus wirklich hierher setzt und die nächste
+           Tab-Taste im Inhalt weitergeht statt wieder oben. -->
+      <main id="shell-content" class="shell__content" tabindex="-1">
         <AppRouterView />
       </main>
     </div>
@@ -109,6 +118,25 @@ onUnmounted(() => {
 .shell__content {
   flex: 1;
   min-width: 0;
+}
+
+/* Außerhalb des Sichtfelds geparkt statt display:none — was nicht gerendert wird, ist auch nicht
+   fokussierbar, und dann gäbe es den Link nur auf dem Papier. */
+.shell__skip {
+  position: absolute;
+  inset-inline-start: -100vw;
+  top: 0;
+  z-index: var(--cal-z-overlay);
+  padding: var(--cal-space-3) var(--cal-space-4);
+  background: var(--cal-surface);
+  color: var(--cal-text);
+  border: 1px solid var(--cal-border);
+  border-radius: var(--cal-radius-sm);
+}
+
+.shell__skip:focus {
+  inset-inline-start: var(--cal-space-3);
+  top: var(--cal-space-3);
 }
 
 .shell__scrim {
