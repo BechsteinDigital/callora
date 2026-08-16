@@ -10,6 +10,7 @@ import {
   Settings,
   ShieldCheck,
   Timer,
+  Type,
   Users,
   Webhook,
   Workflow,
@@ -56,6 +57,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Jobs', to: '/jobs', icon: Timer, permission: 'job.read', group: 'system' },
   { label: 'Webhooks', to: '/webhooks', icon: Webhook, permission: 'webhook.read', group: 'system' },
   { label: 'Konfiguration', to: '/config', icon: Settings, permission: 'config.read', group: 'system' },
+  { label: 'Texte', to: '/snippets', icon: Type, permission: 'snippet.read', group: 'system' },
 ]
 
 /**

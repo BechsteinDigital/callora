@@ -1,0 +1,11 @@
+{
+  "comment": [
+    "Wie viele Oberflächentexte noch fest in den Ansichten stehen (ADR-024 §5, #273).",
+    "Die Zahl darf nur sinken. Wer eine Ansicht umstellt, zieht sie im selben Commit nach — das",
+    "ist der Fortschritt, den man sonst nicht sieht.",
+    "Gezählt wird von hardcoded-texts.test.ts, mit einer Heuristik: Text zwischen den Tags und",
+    "die Attribute, die eine Beschriftung tragen. Sie muss nicht exakt sein, sondern über die",
+    "Zeit vergleichbar."
+  ],
+  "count": 361
+}

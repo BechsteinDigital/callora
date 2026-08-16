@@ -4,13 +4,26 @@
     "Zwei Zahlen, weil die Ausgabe gehasht und auf viele Chunks verteilt ist: die Summe dessen,",
     "was ausgeliefert wird, fängt das stetige Wachsen; der größte einzelne Chunk fängt den einen",
     "Import, der eine Route unbenutzbar macht.",
+    "Angehoben mit #273: vue-i18n kostet 63 KB gesamt und 57 KB im größten Chunk. Genutzt wird",
+    "davon zunächst nur t(key, fallback) — die Bibliothek kommt trotzdem mit, weil ADR-024 §5 sie",
+    "nennt und weil Pluralisierung, Zahlen- und Datumsformate genau dann gebraucht werden, wenn",
+    "die zweite Sprache tatsächlich ausgeliefert wird. Das Budget hat die Frage gestellt, für die",
+    "es da ist; dies ist die Antwort, nicht ihr Umgehen.",
     "Die Zahlen dürfen sinken, nicht steigen. Wer sie anhebt, tut das in einem eigenen Commit mit",
     "einer Begründung; slackPercent erzwingt das Nachziehen nach unten, sobald die Ausgabe",
     "deutlich kleiner geworden ist — sonst wäre die Grenze irgendwann keine mehr."
   ],
   "slackPercent": 15,
   "files": [
-    { "path": "../../../wwwroot/admin/assets", "measure": "directoryTotal", "maxBytes": 555000 },
-    { "path": "../../../wwwroot/admin/assets", "measure": "largestFile", "maxBytes": 180000 }
+    {
+      "path": "../../../wwwroot/admin/assets",
+      "measure": "directoryTotal",
+      "maxBytes": 600000
+    },
+    {
+      "path": "../../../wwwroot/admin/assets",
+      "measure": "largestFile",
+      "maxBytes": 235000
+    }
   ]
 }
