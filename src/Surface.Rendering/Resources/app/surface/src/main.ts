@@ -5,6 +5,7 @@ import { mountSurface } from './mount'
 import { resolveSurfaceContext } from './surface-context'
 import { ensureSurfaceRegistry, loadSurfaceBundles } from './public/bundles'
 import { connectSurfaceContextBridge } from './context-bridge'
+import { installClientErrorReporting, reportClientError } from './client-error-reporting'
 
 declare global {
   interface Window {
@@ -14,6 +15,11 @@ declare global {
     calloraSurface?: SurfaceRegistry
   }
 }
+
+// Zuerst der Melder: Was danach schiefgeht — ein Bundle, das beim Laden wirft, eine Insel, die
+// beim Mounten scheitert —, erreicht sonst niemanden. Der Besucher sieht eine kaputte Seite, und
+// der Betrieb erfährt davon, wenn ein Kunde anruft (#294).
+installClientErrorReporting()
 
 // Re-expose the runtime's Vue so plugin bundles (vue external → CalloraVue global)
 // run components inside this same instance instead of shipping their own.

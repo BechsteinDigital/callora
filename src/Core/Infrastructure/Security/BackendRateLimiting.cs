@@ -13,6 +13,13 @@ public static class BackendRateLimiting
     public const string AuthPolicy = "auth";
     public const string ApiPolicy = "api";
 
+    /// <summary>
+    /// Für die Senke, die Fehler aus fremden Browsern annimmt (#294). Eng, und aus einem anderen
+    /// Grund als beim Login: Dort begrenzt das Fenster einen Angreifer, hier eine kaputte Seite,
+    /// die in einer Schleife meldet — ein Bug im Browser eines Besuchers darf kein Logziel füllen.
+    /// </summary>
+    public const string ClientErrorPolicy = "client-errors";
+
     public static IServiceCollection AddBackendRateLimiting(
         this IServiceCollection services,
         BackendHostOptions options)
@@ -30,6 +37,8 @@ public static class BackendRateLimiting
                 CreateClientWindow(httpContext, options.RateLimitAuthPerMinute));
             limiter.AddPolicy(ApiPolicy, httpContext =>
                 CreateClientWindow(httpContext, options.RateLimitApiPerMinute));
+            limiter.AddPolicy(ClientErrorPolicy, httpContext =>
+                CreateClientWindow(httpContext, options.RateLimitClientErrorsPerMinute));
         });
 
         return services;

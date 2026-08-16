@@ -1,11 +1,20 @@
-import { computed, createApp, defineComponent, h } from 'vue'
+import { computed, createApp, defineComponent, h, type App as VueApp } from 'vue'
 import App from './App.vue'
+import { reportClientError } from './client-error-reporting'
 import { readSurfaceContext, resolveSurfaceContext, type SurfaceContext } from './surface-context'
 import {
   isSurfaceViewVisible,
   type SurfaceRegistry,
   type SurfaceViewParams,
 } from './surface-registry'
+
+// Vue fängt Fehler aus Rendern, Lifecycle und Watchern selbst ab; über window.onerror kommen sie
+// nie. Auf einer Fläche zählt das doppelt: Was hier wirft, ist der Code eines Plugins in der Seite
+// eines Kunden, und ohne diesen Handler bleibt davon eine leere Stelle und sonst nichts (#294).
+function reporting<T>(app: VueApp<T>): VueApp<T> {
+  app.config.errorHandler = (error) => reportClientError(error)
+  return app
+}
 
 /**
  * Mounts the surface runtime in whichever mode the SSR output calls for — both are
@@ -22,7 +31,7 @@ import {
 export function mountSurface(registry: SurfaceRegistry, doc: Document = document): void {
   const appRoot = doc.getElementById('callora-app')
   if (appRoot) {
-    createApp(App, { context: readSurfaceContext(appRoot), registry }).mount(appRoot)
+    reporting(createApp(App, { context: readSurfaceContext(appRoot), registry })).mount(appRoot)
   }
 
   const islands = doc.querySelectorAll<HTMLElement>('[data-callora-island]')
@@ -32,8 +41,8 @@ export function mountSurface(registry: SurfaceRegistry, doc: Document = document
       return
     }
 
-    createApp(
-      islandHost(registry, viewId, resolveSurfaceContext(island), readIslandParams(island)),
+    reporting(
+      createApp(islandHost(registry, viewId, resolveSurfaceContext(island), readIslandParams(island))),
     ).mount(island)
   })
 }

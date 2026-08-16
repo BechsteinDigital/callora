@@ -23,6 +23,16 @@ public sealed class BackendHostOptions
     /// <summary>General API requests allowed per client and minute; 0 disables limiting.</summary>
     public int RateLimitApiPerMinute { get; set; } = 600;
 
+    /// <summary>
+    /// Browser error reports accepted per client and minute; 0 disables limiting.
+    /// </summary>
+    /// <remarks>
+    /// Bewusst klein: Was hier ankommt, ist ein Befund, kein Datenstrom. Eine Seite, die in einer
+    /// Schleife scheitert, meldet sonst mit jeder Runde — und der zwanzigste Eintrag derselben
+    /// Minute sagt nichts, was der erste nicht schon gesagt hätte.
+    /// </remarks>
+    public int RateLimitClientErrorsPerMinute { get; set; } = 20;
+
     /// <summary>Root directory for stored media assets.</summary>
     public string MediaStoragePath { get; set; } =
         Path.Combine(AppContext.BaseDirectory, "media");

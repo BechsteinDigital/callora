@@ -9,6 +9,7 @@ import { initTheme } from '@/core/design/theme'
 import { loadPluginExtensions } from '@/core/extensions/loader'
 import { readStoredWorkspace } from '@/core/workspace/workspaceContext'
 import { useAuthStore } from '@/core/auth/authStore'
+import { installClientErrorReporting, reportClientError } from '@/core/observability/clientErrorReporting'
 
 // Load plugin admin UI (slots/hooks/service overrides register against the global
 // API) before mounting, so a plugin's contributions are present on first render.
@@ -18,6 +19,10 @@ async function bootstrap(): Promise<void> {
   // signal. The inline script in index.html already set the attribute to avoid a
   // flash; this takes over the reactive side.
   initTheme()
+
+  // Vor allem anderen: Was danach schiefgeht, soll den Betrieb erreichen (#294). Ein Fehler
+  // während des Bootstraps ist der, den sonst niemand sieht — die Seite bleibt weiß.
+  installClientErrorReporting()
 
   // Erst die Sitzung, dann die Plugins.
   //
@@ -42,7 +47,11 @@ async function bootstrap(): Promise<void> {
       // Plugin loading must never prevent the shell itself from mounting.
     }
   }
-  createApp(App).use(router).mount('#app')
+  const app = createApp(App)
+  // Der dritte Weg neben window.onerror und unhandledrejection: Vue fängt Fehler aus Rendern,
+  // Lifecycle und Watchern selbst ab, und ohne diesen Handler enden sie in der Konsole.
+  app.config.errorHandler = (error) => reportClientError(error)
+  app.use(router).mount('#app')
 }
 
 void bootstrap()

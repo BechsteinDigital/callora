@@ -13,6 +13,9 @@ Callora.Core.Api.AuthMeApiResponse.Role.get -> string?
 Callora.Core.Api.AuthMeApiResponse.Role.init -> void
 Callora.Core.Api.AuthMeApiResponse.UserId.get -> string!
 Callora.Core.Api.AuthMeApiResponse.UserId.init -> void
+Callora.Core.Api.ClientErrorsController
+Callora.Core.Api.ClientErrorsController.ClientErrorsController() -> void
+Callora.Core.Api.ClientErrorsController.Report(Callora.Core.Application.Monitoring.ClientErrorReport! report, Microsoft.Extensions.Logging.ILoggerFactory! loggerFactory) -> Microsoft.AspNetCore.Mvc.IActionResult!
 Callora.Core.Api.ListPagination
 Callora.Core.Api.LoginApiRequest
 Callora.Core.Api.LoginApiRequest.<Clone>$() -> Callora.Core.Api.LoginApiRequest!
@@ -1437,6 +1440,20 @@ Callora.Core.Application.Migrations.Contracts.IPluginMigration.UpAsync(System.Da
 Callora.Core.Application.Migrations.Contracts.IPluginMigration.Version.get -> int
 Callora.Core.Application.Migrations.Contracts.IPluginMigrationRunner
 Callora.Core.Application.Migrations.Contracts.IPluginMigrationRunner.RunAsync(string! pluginId, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Migrations.Contracts.IPluginMigration!>! migrations, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Monitoring.ClientErrorReport
+Callora.Core.Application.Monitoring.ClientErrorReport.<Clone>$() -> Callora.Core.Application.Monitoring.ClientErrorReport!
+Callora.Core.Application.Monitoring.ClientErrorReport.ClientErrorReport(string! Source, string! Message, string? Stack, string? Url) -> void
+Callora.Core.Application.Monitoring.ClientErrorReport.Deconstruct(out string! Source, out string! Message, out string? Stack, out string? Url) -> void
+Callora.Core.Application.Monitoring.ClientErrorReport.Equals(Callora.Core.Application.Monitoring.ClientErrorReport? other) -> bool
+Callora.Core.Application.Monitoring.ClientErrorReport.Message.get -> string!
+Callora.Core.Application.Monitoring.ClientErrorReport.Message.init -> void
+Callora.Core.Application.Monitoring.ClientErrorReport.Source.get -> string!
+Callora.Core.Application.Monitoring.ClientErrorReport.Source.init -> void
+Callora.Core.Application.Monitoring.ClientErrorReport.Stack.get -> string?
+Callora.Core.Application.Monitoring.ClientErrorReport.Stack.init -> void
+Callora.Core.Application.Monitoring.ClientErrorReport.Url.get -> string?
+Callora.Core.Application.Monitoring.ClientErrorReport.Url.init -> void
+Callora.Core.Application.Monitoring.ClientErrorSanitizer
 Callora.Core.Application.Monitoring.ObservabilityOptions
 Callora.Core.Application.Monitoring.ObservabilityOptions.ObservabilityOptions() -> void
 Callora.Core.Application.Monitoring.ObservabilityOptions.OtlpEndpoint.get -> string?
@@ -1486,6 +1503,19 @@ Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.SloKey.get -> st
 Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.SloKey.init -> void
 Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.ThresholdValue.get -> double
 Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.ThresholdValue.init -> void
+Callora.Core.Application.Monitoring.SanitizedClientError
+Callora.Core.Application.Monitoring.SanitizedClientError.<Clone>$() -> Callora.Core.Application.Monitoring.SanitizedClientError!
+Callora.Core.Application.Monitoring.SanitizedClientError.Deconstruct(out string! Source, out string! Message, out string? Stack, out string? Url) -> void
+Callora.Core.Application.Monitoring.SanitizedClientError.Equals(Callora.Core.Application.Monitoring.SanitizedClientError? other) -> bool
+Callora.Core.Application.Monitoring.SanitizedClientError.Message.get -> string!
+Callora.Core.Application.Monitoring.SanitizedClientError.Message.init -> void
+Callora.Core.Application.Monitoring.SanitizedClientError.SanitizedClientError(string! Source, string! Message, string? Stack, string? Url) -> void
+Callora.Core.Application.Monitoring.SanitizedClientError.Source.get -> string!
+Callora.Core.Application.Monitoring.SanitizedClientError.Source.init -> void
+Callora.Core.Application.Monitoring.SanitizedClientError.Stack.get -> string?
+Callora.Core.Application.Monitoring.SanitizedClientError.Stack.init -> void
+Callora.Core.Application.Monitoring.SanitizedClientError.Url.get -> string?
+Callora.Core.Application.Monitoring.SanitizedClientError.Url.init -> void
 Callora.Core.Application.Notifications.Contracts.INotificationPublisher
 Callora.Core.Application.Notifications.Contracts.INotificationPublisher.PublishAsync(string! title, string! message, string! level = "info", string? workspaceKey = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Application.Notifications.Contracts.NotificationLevels
@@ -2686,6 +2716,8 @@ Callora.Core.Application.Policies.BackendHostOptions.RateLimitApiPerMinute.get -
 Callora.Core.Application.Policies.BackendHostOptions.RateLimitApiPerMinute.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.RateLimitAuthPerMinute.get -> int
 Callora.Core.Application.Policies.BackendHostOptions.RateLimitAuthPerMinute.set -> void
+Callora.Core.Application.Policies.BackendHostOptions.RateLimitClientErrorsPerMinute.get -> int
+Callora.Core.Application.Policies.BackendHostOptions.RateLimitClientErrorsPerMinute.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.RbacRoles.get -> Callora.Core.Application.Policies.BackendRbacRoleOptions![]!
 Callora.Core.Application.Policies.BackendHostOptions.RbacRoles.set -> void
 Callora.Core.Application.Policies.BackendHostOptions.RbacUserAssignments.get -> Callora.Core.Application.Policies.BackendRbacUserAssignmentOptions![]!
@@ -4478,8 +4510,8 @@ Callora.Core.Domain.Plugins.PluginInstallation.MarkDeactivated(System.DateTimeOf
 Callora.Core.Domain.Plugins.PluginInstallation.MarkUninstalled(System.DateTimeOffset nowUtc) -> void
 Callora.Core.Domain.Plugins.PluginInstallation.PluginId.get -> string!
 Callora.Core.Domain.Plugins.PluginInstallation.ProvidedCapabilities.get -> string?
-Callora.Core.Domain.Plugins.PluginInstallation.RequiredCapabilities.get -> string?
 Callora.Core.Domain.Plugins.PluginInstallation.RelocateAssembly(string! storedAssemblyPath, System.DateTimeOffset nowUtc) -> void
+Callora.Core.Domain.Plugins.PluginInstallation.RequiredCapabilities.get -> string?
 Callora.Core.Domain.Plugins.PluginInstallation.ResolveAssemblyPath(string! fileSystemPath) -> void
 Callora.Core.Domain.Plugins.PluginInstallation.SetCapabilities(System.Collections.Generic.IReadOnlyList<string!>? providedCapabilities, System.Collections.Generic.IReadOnlyList<string!>? requiredCapabilities, System.Collections.Generic.IReadOnlyList<string!>? conditionalCapabilities, System.DateTimeOffset nowUtc) -> void
 Callora.Core.Domain.Plugins.PluginInstallation.State.get -> Callora.Core.Domain.Plugins.PluginInstallationState
@@ -5598,6 +5630,8 @@ abstract Callora.Core.Application.Http.Contracts.ApiRequest.RouteValues.get -> S
 abstract Callora.Core.Application.Http.Contracts.ApiRequest.User.get -> System.Security.Claims.ClaimsPrincipal!
 abstract Callora.Core.Application.Http.Contracts.ApiRequest.WorkspaceKey.get -> string?
 abstract Callora.Core.Application.Surfaces.SurfaceCaller.<Clone>$() -> Callora.Core.Application.Surfaces.SurfaceCaller!
+const Callora.Core.Api.ClientErrorsController.LogCategory = "Callora.ClientErrors" -> string!
+const Callora.Core.Api.ClientErrorsController.MaxRequestBodyBytes = 8192 -> int
 const Callora.Core.Api.ListPagination.DefaultLimit = 50 -> int
 const Callora.Core.Api.ListPagination.MaxLimit = 200 -> int
 const Callora.Core.Application.Configuration.SystemConfigFieldTypes.Secret = "secret" -> string!
@@ -5651,6 +5685,9 @@ const Callora.Core.Application.Mail.MailSendJobHandler.JobTypeName = "mail.send"
 const Callora.Core.Application.Media.Events.MediaEventTypes.Deleted = "media.deleted" -> string!
 const Callora.Core.Application.Media.Events.MediaEventTypes.Uploaded = "media.uploaded" -> string!
 const Callora.Core.Application.Media.MediaUploadPolicy.MaxSizeBytes = 26214400 -> long
+const Callora.Core.Application.Monitoring.ClientErrorSanitizer.MaxMessageLength = 300 -> int
+const Callora.Core.Application.Monitoring.ClientErrorSanitizer.MaxStackLength = 4000 -> int
+const Callora.Core.Application.Monitoring.ClientErrorSanitizer.MaxUrlLength = 500 -> int
 const Callora.Core.Application.Monitoring.PluginLifecycleSloTargets.ActivationLatencyP95Ms = 750 -> double
 const Callora.Core.Application.Monitoring.PluginLifecycleSloTargets.ErrorRate = 0.02 -> double
 const Callora.Core.Application.Monitoring.PluginLifecycleSloTargets.EvaluationWindowMinutes = 15 -> int
@@ -5793,6 +5830,7 @@ const Callora.Core.Infrastructure.Mail.SmtpMailSender.ConfigPluginId = "host" ->
 const Callora.Core.Infrastructure.Security.ApiKeyAuthenticationDefaults.Scheme = "ApiKey" -> string!
 const Callora.Core.Infrastructure.Security.BackendRateLimiting.ApiPolicy = "api" -> string!
 const Callora.Core.Infrastructure.Security.BackendRateLimiting.AuthPolicy = "auth" -> string!
+const Callora.Core.Infrastructure.Security.BackendRateLimiting.ClientErrorPolicy = "client-errors" -> string!
 const Callora.Core.Infrastructure.Surfaces.BackendPrincipalSurfaceIdentitySource.WorkspaceClaim = "host.workspace-key" -> string!
 override Callora.Core.Api.AuthMeApiResponse.Equals(object? obj) -> bool
 override Callora.Core.Api.AuthMeApiResponse.GetHashCode() -> int
@@ -5974,6 +6012,9 @@ override Callora.Core.Application.Media.Contracts.MediaAssetInfo.ToString() -> s
 override Callora.Core.Application.Media.MediaItemSnapshot.Equals(object? obj) -> bool
 override Callora.Core.Application.Media.MediaItemSnapshot.GetHashCode() -> int
 override Callora.Core.Application.Media.MediaItemSnapshot.ToString() -> string!
+override Callora.Core.Application.Monitoring.ClientErrorReport.Equals(object? obj) -> bool
+override Callora.Core.Application.Monitoring.ClientErrorReport.GetHashCode() -> int
+override Callora.Core.Application.Monitoring.ClientErrorReport.ToString() -> string!
 override Callora.Core.Application.Monitoring.PluginLifecycleSloEvaluationResult.Equals(object? obj) -> bool
 override Callora.Core.Application.Monitoring.PluginLifecycleSloEvaluationResult.GetHashCode() -> int
 override Callora.Core.Application.Monitoring.PluginLifecycleSloEvaluationResult.ToString() -> string!
@@ -5983,6 +6024,9 @@ override Callora.Core.Application.Monitoring.PluginLifecycleSloSnapshot.ToString
 override Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.Equals(object? obj) -> bool
 override Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.GetHashCode() -> int
 override Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.ToString() -> string!
+override Callora.Core.Application.Monitoring.SanitizedClientError.Equals(object? obj) -> bool
+override Callora.Core.Application.Monitoring.SanitizedClientError.GetHashCode() -> int
+override Callora.Core.Application.Monitoring.SanitizedClientError.ToString() -> string!
 override Callora.Core.Application.Notifications.NotificationSnapshot.Equals(object? obj) -> bool
 override Callora.Core.Application.Notifications.NotificationSnapshot.GetHashCode() -> int
 override Callora.Core.Application.Notifications.NotificationSnapshot.ToString() -> string!
@@ -6533,12 +6577,17 @@ static Callora.Core.Application.Media.MediaItemSnapshot.operator !=(Callora.Core
 static Callora.Core.Application.Media.MediaItemSnapshot.operator ==(Callora.Core.Application.Media.MediaItemSnapshot? left, Callora.Core.Application.Media.MediaItemSnapshot? right) -> bool
 static Callora.Core.Application.Media.MediaUploadPolicy.IsAllowedContentType(string? contentType) -> bool
 static Callora.Core.Application.Media.MediaUploadPolicy.IsAllowedSize(long sizeBytes) -> bool
+static Callora.Core.Application.Monitoring.ClientErrorReport.operator !=(Callora.Core.Application.Monitoring.ClientErrorReport? left, Callora.Core.Application.Monitoring.ClientErrorReport? right) -> bool
+static Callora.Core.Application.Monitoring.ClientErrorReport.operator ==(Callora.Core.Application.Monitoring.ClientErrorReport? left, Callora.Core.Application.Monitoring.ClientErrorReport? right) -> bool
+static Callora.Core.Application.Monitoring.ClientErrorSanitizer.Sanitize(Callora.Core.Application.Monitoring.ClientErrorReport! report) -> Callora.Core.Application.Monitoring.SanitizedClientError!
 static Callora.Core.Application.Monitoring.PluginLifecycleSloEvaluationResult.operator !=(Callora.Core.Application.Monitoring.PluginLifecycleSloEvaluationResult? left, Callora.Core.Application.Monitoring.PluginLifecycleSloEvaluationResult? right) -> bool
 static Callora.Core.Application.Monitoring.PluginLifecycleSloEvaluationResult.operator ==(Callora.Core.Application.Monitoring.PluginLifecycleSloEvaluationResult? left, Callora.Core.Application.Monitoring.PluginLifecycleSloEvaluationResult? right) -> bool
 static Callora.Core.Application.Monitoring.PluginLifecycleSloSnapshot.operator !=(Callora.Core.Application.Monitoring.PluginLifecycleSloSnapshot? left, Callora.Core.Application.Monitoring.PluginLifecycleSloSnapshot? right) -> bool
 static Callora.Core.Application.Monitoring.PluginLifecycleSloSnapshot.operator ==(Callora.Core.Application.Monitoring.PluginLifecycleSloSnapshot? left, Callora.Core.Application.Monitoring.PluginLifecycleSloSnapshot? right) -> bool
 static Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.operator !=(Callora.Core.Application.Monitoring.PluginLifecycleSloViolation? left, Callora.Core.Application.Monitoring.PluginLifecycleSloViolation? right) -> bool
 static Callora.Core.Application.Monitoring.PluginLifecycleSloViolation.operator ==(Callora.Core.Application.Monitoring.PluginLifecycleSloViolation? left, Callora.Core.Application.Monitoring.PluginLifecycleSloViolation? right) -> bool
+static Callora.Core.Application.Monitoring.SanitizedClientError.operator !=(Callora.Core.Application.Monitoring.SanitizedClientError? left, Callora.Core.Application.Monitoring.SanitizedClientError? right) -> bool
+static Callora.Core.Application.Monitoring.SanitizedClientError.operator ==(Callora.Core.Application.Monitoring.SanitizedClientError? left, Callora.Core.Application.Monitoring.SanitizedClientError? right) -> bool
 static Callora.Core.Application.Notifications.NotificationSnapshot.operator !=(Callora.Core.Application.Notifications.NotificationSnapshot? left, Callora.Core.Application.Notifications.NotificationSnapshot? right) -> bool
 static Callora.Core.Application.Notifications.NotificationSnapshot.operator ==(Callora.Core.Application.Notifications.NotificationSnapshot? left, Callora.Core.Application.Notifications.NotificationSnapshot? right) -> bool
 static Callora.Core.Application.Options.CalloraHostingOptionsValidator.Validate(Callora.Core.Application.Options.CalloraHostingOptions! options) -> void

@@ -52,5 +52,12 @@ export function endSession(): void {
  *
  * `resetTheme` — die Farbwahl gehört dem Gerät, nicht der Sitzung. Wer sich abmeldet, will kein
  * anderes Farbschema; das Umschalten beim Abmelden wäre ein Fehler, kein Aufräumen.
+ *
+ * `resetClientErrorReporting` — Zähler und Gedächtnis des Fehlermelders begrenzen, was eine Seite
+ * insgesamt senden darf (#294). Sie am Sitzungsende zu leeren, hieße den Schutz gegen eine
+ * meldende Schleife zurückzusetzen, und zwar an einer Stelle, die mit ihm nichts zu tun hat.
  */
-export const SESSION_RESET_EXEMPTIONS: readonly string[] = ['resetTheme']
+export const SESSION_RESET_EXEMPTIONS: readonly string[] = [
+  'resetTheme',
+  'resetClientErrorReporting',
+]
