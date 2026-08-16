@@ -1,0 +1,16 @@
+{
+  "comment": [
+    "Was die Fläche einem Besucher zumuten darf, in Bytes (#297).",
+    "Das Bundle geht an die Öffentlichkeit und wächst mit jedem Block aus einem fremden",
+    "Plugin-Repository — hier steht die Zahl, die das sichtbar macht, statt einer Warnung im",
+    "Build-Log, die niemand liest.",
+    "Die Zahlen dürfen sinken, nicht steigen. Wer sie anhebt, tut das in einem eigenen Commit",
+    "mit einer Begründung; slackPercent erzwingt das Nachziehen nach unten, sobald ein Bundle",
+    "deutlich kleiner geworden ist — sonst wäre die Grenze irgendwann keine mehr."
+  ],
+  "slackPercent": 15,
+  "files": [
+    { "path": "../../../wwwroot/surface-app/surface.js", "maxBytes": 138000 },
+    { "path": "../../../wwwroot/surface-app/surface.css", "maxBytes": 1650 }
+  ]
+}

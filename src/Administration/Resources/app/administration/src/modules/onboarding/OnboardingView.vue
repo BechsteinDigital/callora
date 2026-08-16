@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ArrowRight, Check } from 'lucide-vue-next'
 import { workspacesApi } from '@/modules/workspaces/workspacesApi'
 import { useOnboarding } from './onboarding'
@@ -14,7 +13,6 @@ import CalPage from '@/core/ui/CalPage.vue'
 import CalPageHeader from '@/core/ui/CalPageHeader.vue'
 import { toast } from '@/core/feedback/toasts'
 
-const router = useRouter()
 const { steps, completedCount, isComplete, loadStatus } = useOnboarding()
 
 const busy = ref(false)
