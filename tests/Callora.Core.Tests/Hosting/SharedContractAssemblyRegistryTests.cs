@@ -133,23 +133,48 @@ public sealed class SharedContractAssemblyRegistryTests
     }
 
     [Fact]
-    public void Register_WithUnprovidedCalloraPrefix_ThrowsInsteadOfSkipping()
+    public void Register_WithPluginProvidedCalloraContract_SharesItInsteadOfRefusingTheName()
     {
-        var contractName = $"Callora.Fake.Contracts.{Guid.NewGuid():N}";
+        // Interne Plugins tragen dasselbe Präfix wie die Plattform (ADR-025). Bis 08/2026 wies
+        // die Registry so eine Deklaration ab und verlangte einen anderen Namen — mit der
+        // Begründung, der Ladekontext schicke Callora-Namen ohnehin in den Default-Kontext.
+        // Seit dieser Frühausstieg weg ist, trägt die Begründung nicht mehr: Was der Host nicht
+        // stellt, ist plugin-eigen und gehört geteilt, unabhängig davon, wie es heißt.
+        var contractName = $"Callora.Plugin.Fake.Abstractions.{Guid.NewGuid():N}";
         using var workspace = new TempWorkspace();
         var plugin = workspace.CreateDirectory("plugin");
         EmitContractAssembly(Path.Combine(plugin, $"{contractName}.dll"), contractName, new Version(1, 0, 0, 0));
 
         var registry = new SharedContractAssemblyRegistry();
+        registry.RegisterContracts(plugin, [$"{contractName}.dll"], "acme");
 
-        // The prefix means "the host provides this", and the plugin load context delegates those
-        // names to the default context. A plugin-provided contract carrying it would be skipped
-        // here AND absent there, so it would fail to load at plugin start. Fail-closed instead.
-        var error = Assert.Throws<InvalidOperationException>(
-            () => registry.RegisterContracts(plugin, [$"{contractName}.dll"], "acme"));
+        var registration = Assert.Single(registry.ListRegistrations());
+        Assert.Equal(contractName, registration.AssemblyName);
+        Assert.False(registration.IsHostProvided);
+        Assert.NotNull(registry.TryResolve(new AssemblyName(contractName)));
+    }
 
-        Assert.Contains("reserved 'Callora.' prefix", error.Message, StringComparison.Ordinal);
-        Assert.Empty(registry.ListRegistrations());
+    [Fact]
+    public void Register_WithHostProvidedContractOutsideThePrefix_IsRecordedNotLoaded()
+    {
+        // Die Gegenrichtung derselben Änderung, und die Lücke, die das Präfix offenließ: Vor
+        // 08/2026 fand für Namen OHNE "Callora." gar keine Host-Prüfung statt. Ein Plugin, das
+        // eine Framework-Assembly unter contracts deklarierte, bekam seine Kopie in den
+        // Default-Kontext geladen — neben die des Hosts, mit doppelter Typidentität.
+        using var workspace = new TempWorkspace();
+        var plugin = workspace.CreateDirectory("plugin");
+        var hostAssembly = typeof(Microsoft.Extensions.Logging.ILogger).Assembly;
+        var fileName = Path.GetFileName(hostAssembly.Location);
+        File.Copy(hostAssembly.Location, Path.Combine(plugin, fileName));
+
+        var registry = new SharedContractAssemblyRegistry();
+        registry.RegisterContracts(plugin, [fileName], "acme");
+
+        var registration = Assert.Single(registry.ListRegistrations());
+        Assert.True(registration.IsHostProvided);
+        // Aufgezeichnet, aber nicht geteilt: Der Ladekontext fällt danach auf den
+        // Default-Kontext und damit auf die Kopie des Hosts.
+        Assert.Null(registry.TryResolve(new AssemblyName(registration.AssemblyName)));
     }
 
     [Fact]
@@ -187,6 +212,59 @@ public sealed class SharedContractAssemblyRegistryTests
         Assert.Equal("2.1.0.0", registration.Version);
         Assert.Equal("acme.chat", registration.DeclaringPluginId);
         Assert.False(registration.IsHostProvided);
+    }
+
+    [Fact]
+    public void PluginLoadContext_StillResolvesAHostProvidedCalloraAssemblyToTheHostCopy()
+    {
+        // Die Zusage, an der ADR-012 hängt und die der entfernte Frühausstieg getragen hat:
+        // Host und Plugin sehen für Plattformtypen dieselbe Assembly. Sie ruht jetzt auf dem
+        // Default-Fallback statt auf dem Namen — dieser Test ist der Beleg, dass sie hält.
+        var contractName = UniqueName();
+        using var workspace = new TempWorkspace();
+        var plugin = workspace.CreateDirectory("plugin");
+        var anchorPath = Path.Combine(plugin, $"{contractName}.dll");
+        EmitContractAssembly(anchorPath, contractName, new Version(1, 0, 0, 0));
+
+        var context = new PluginAssemblyLoadContext(anchorPath, new SharedContractAssemblyRegistry());
+        try
+        {
+            var resolved = context.LoadFromAssemblyName(new AssemblyName("Callora.Core"));
+
+            Assert.Same(typeof(SharedContractAssemblyRegistry).Assembly, resolved);
+        }
+        finally
+        {
+            context.Unload();
+        }
+    }
+
+    [Fact]
+    public void PluginLoadContext_ResolvesAPluginProvidedCalloraContractInsteadOfFailing()
+    {
+        // Der Fall, der vorher in einer FileNotFoundException endete: Der Kontext schickte den
+        // Namen wegen des Präfix in den Default-Kontext, und dort lag nichts.
+        var contractName = $"Callora.Plugin.Fake.Abstractions.{Guid.NewGuid():N}";
+        using var workspace = new TempWorkspace();
+        var plugin = workspace.CreateDirectory("plugin");
+        var contractPath = Path.Combine(plugin, $"{contractName}.dll");
+        EmitContractAssembly(contractPath, contractName, new Version(1, 0, 0, 0));
+
+        var registry = new SharedContractAssemblyRegistry();
+        registry.RegisterContracts(plugin, [$"{contractName}.dll"], "acme");
+
+        var context = new PluginAssemblyLoadContext(contractPath, registry);
+        try
+        {
+            var resolved = context.LoadFromAssemblyName(new AssemblyName(contractName));
+
+            Assert.NotNull(resolved);
+            Assert.Same(registry.TryResolve(new AssemblyName(contractName)), resolved);
+        }
+        finally
+        {
+            context.Unload();
+        }
     }
 
     private static string UniqueName() => $"Acme.Fake.Contracts.{Guid.NewGuid():N}";
