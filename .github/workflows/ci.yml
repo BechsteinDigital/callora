@@ -1,5 +1,31 @@
 name: CI
 
+# Was bei jedem Pull Request und auf main laufen muss. Alles, was an einem Tag hängt,
+# steht in release.yml und npm-publish.yml; die Doku hat einen eigenen Lauf, weil sie
+# einen Deploy anhängt und von Codeänderungen nur selten betroffen ist.
+#
+# Drei Jobs:
+#
+#   dotnet        Karte, Build, ALLE Tests samt Abdeckung
+#   frontends     Die drei npm-Arbeitsbereiche DIESES Repositories
+#   contracts     Der Weg eines fremden Plugin-Autors, von außen
+#
+# Die Docker-Stufe hatte kurzzeitig einen eigenen Job, für schnellere Rückmeldung. Das
+# war eine Trennung ohne Messung: Seit alle Integrationstests sich EIN Postgres teilen
+# (PostgresFixture), kostet die gesamte Stufe sechzehn Sekunden. Ein zweiter Job kostet
+# dagegen einen eigenen Checkout, einen eigenen Restore und einen eigenen Frontend-Bau —
+# und brachte zwei Fehler mit, die es vorher nicht gab: Die Stylesheet-Tests lesen
+# wwwroot/, das der Vite-Build erzeugt, und die Testsuite lief zweimal.
+#
+# Sie hängen bewusst nicht voneinander ab: Ein rotes Frontend soll nichts über den
+# Zustand der Tests verschweigen, und wer wartet, wartet auf den langsamsten Job und
+# nicht auf eine Kette.
+#
+# NICHT hier: alles unter custom/. Diese Verzeichnisse sind Installationsziele und
+# gitignoriert (ADR-020) — auf einem Runner sind sie leer, auf einer Entwicklermaschine
+# liegen dort Klone fremder Repositories. Ein Gate, das den Zustand einer fremden
+# Arbeitskopie prüft, wird ignoriert statt erfüllt.
+
 on:
   push:
     branches: [main]
@@ -28,11 +54,19 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Kürzt die Ausgabe jedes dotnet-Aufrufs. Das Protokoll eines grünen Laufs soll man
+  # überfliegen können; ein roter Lauf ist ohnehin laut genug (eine fehlgeschlagene
+  # DI-Prüfung allein schreibt über zweihundert Zeilen Stacktrace).
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+
 jobs:
-  build-test:
+  dotnet:
     name: Build & Test
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -49,76 +83,35 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      # Die Landkarte ist der Einstieg für jeden, der das Repository nicht kennt —
-      # und für jeden Agenten. Eine veraltete Karte ist schlimmer als keine: Sie
-      # klingt plausibel und wird geglaubt. Das Skript scheitert außerdem von
-      # selbst, wenn es auf ein Verzeichnis zeigt, das es nicht mehr gibt (genau
-      # das war bei der Vorgängerfassung über Monate der Fall).
+      # Zuerst, weil es eine Sekunde dauert und einen ganzen Lauf spart: Eine veraltete
+      # Karte ist schlimmer als keine — sie klingt plausibel und wird geglaubt.
       - name: Landkarte aktuell?
         run: |
           bash scripts/build-repo-map.sh
           git diff --exit-code docs/REPO_MAP.md
 
-      - name: Restore
-        run: dotnet restore Callora.Host.sln
-
       - name: Build
-        run: dotnet build Callora.Host.sln --no-restore --configuration Release
+        run: |
+          dotnet restore Callora.Host.sln --verbosity quiet
+          dotnet build Callora.Host.sln --no-restore --configuration Release --verbosity minimal
 
-      # Läuft komplett ohne externe Dienste (InMemory-Stores); enthält auch die
-      # Architektur-Tests (keine partial/nested types, ein Typ pro Datei, DDD-Layering).
-      # Ein Retry bei Fehlschlag: die Suite parallelisiert; unter CI-Last können sehr seltene
-      # Timing-Races einzelne Tests kippen (23 lokale Full-Runs → 0 Repro, daher nicht punktgenau
-      # isolierbar). Ein ECHTER (deterministischer) Fehler scheitert BEIDE Versuche → Step bleibt
-      # rot; ein Flaky besteht den Retry → grün, wird aber als ::warning:: sichtbar geloggt (kein
-      # stilles Übertünchen). Extra-Kosten fallen nur beim seltenen Fehlschlag an, nicht im Happy
-      # Path — bewusst statt globalem Parallelitäts-Drosseln, das jeden Lauf verlangsamen würde.
-      # Vor dem Retry wird ./test-results geleert, damit das Coverage-Gate nur den erfolgreichen
-      # Lauf sieht (sonst könnte find|head-1 die Teilabdeckung des Fehlversuchs greifen).
+      # ALLE Tests, ohne Filter. Testcontainers startet EIN Postgres für die
+      # Integrationsstufe (PostgresFixture) und isoliert über eine Datenbank je Test;
+      # vorher baute jede der elf Testklassen ihren eigenen Container. Ohne Docker
+      # überspringen sich diese Tests selbst, statt rot zu werden.
+      #
+      # Kein Skip der Frontends: Drei Surface-Tests lesen die Stylesheets aus wwwroot/,
+      # die der Vite-Build erzeugt. Mit -p:SkipSurfaceFrontend=true sind sie nicht da,
+      # und die Tests scheitern an etwas, das nichts mit ihrem Gegenstand zu tun hat.
       - name: Test
         run: |
-          run_tests() {
-            dotnet test Callora.Host.sln --no-build --configuration Release \
-              --logger "console;verbosity=normal" \
-              --collect:"XPlat Code Coverage" --results-directory ./test-results
-          }
-          if ! run_tests; then
-            echo "::warning::Test-Lauf fehlgeschlagen — ein Retry wegen seltener Parallel-Timing-Flakiness (ein echter Fehler scheitert beide Male)."
-            rm -rf ./test-results
-            run_tests
-          fi
+          rm -rf ./test-results
+          dotnet test Callora.Host.sln --no-build --configuration Release \
+            --collect:"XPlat Code Coverage" --results-directory ./test-results \
+            --logger "console;verbosity=minimal"
 
-      # Ratchet-Gate (PLAT-220): Baseline am 2026-07-13 lag bei 28,3 % Line-
-      # Coverage; das Gate hält 25 % und wird mit wachsender Abdeckung angehoben.
-      #
-      # Über ALLE Berichte gerechnet, nicht über den ersten. Der Lauf erzeugt zwei —
-      # Callora.Core.Tests (~84.000 Zeilen) und Callora.Analyzers.Tests (~280) — und
-      # `find | head -1` griff, je nach Dateisystem-Reihenfolge, den kleinen: 93,6 %
-      # gemeldet, 33,6 % tatsächlich. Ein Gate, das den Analyzer-Bericht misst, hätte
-      # auch eine auf null eingebrochene Kern-Abdeckung durchgewinkt.
-      - name: Enforce coverage threshold
-        run: |
-          python3 - <<'EOF'
-          import glob
-          import sys
-          import xml.etree.ElementTree as ET
-
-          threshold = 0.25
-          reports = glob.glob("./test-results/**/coverage.cobertura.xml", recursive=True)
-          if not reports:
-              sys.exit("No coverage report found.")
-
-          covered = valid = 0
-          for report in reports:
-              root = ET.parse(report).getroot()
-              covered += int(root.get("lines-covered"))
-              valid += int(root.get("lines-valid"))
-              print(f"  {float(root.get('line-rate')):6.1%}  {root.get('lines-valid'):>7} lines  {report}")
-
-          rate = covered / valid if valid else 0.0
-          print(f"line coverage: {rate:.1%} over {valid} lines (threshold {threshold:.0%})")
-          sys.exit(0 if rate >= threshold else 1)
-          EOF
+      - name: Abdeckung über der Schwelle?
+        run: python3 scripts/coverage-gate.py --threshold 0.25
 
       - name: Upload coverage
         if: always()
@@ -129,29 +122,34 @@ jobs:
           if-no-files-found: warn
 
   frontends:
-    name: ${{ matrix.name }} (${{ matrix.gates }})
+    # Der Name ist eine Schnittstelle, keine Beschriftung: Branch-Protection verlangt
+    # Checks als Zeichenkette. Vorher hieß dieser Job
+    # `${{ matrix.name }} (${{ matrix.gates }})`, also änderte sich der Check-Name, sobald
+    # jemand einen Gate hinzunahm — und die Regel wartete anschließend ewig auf einen
+    # Status, den niemand mehr meldet. In der Protection stand deshalb noch
+    # "Surface Runtime (test + build)", eine Variante, die es seit zwei Umbenennungen
+    # nicht gab. Wer hier umbenennt, zieht die Regel mit.
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
-      # No fail-fast: one workspace breaking should not hide the state of the others,
-      # which is the whole point of gating them separately.
+      # Kein fail-fast: Ein kaputter Arbeitsbereich soll den Zustand der anderen nicht
+      # verdecken — genau dafür sind sie getrennt.
       fail-fast: false
       matrix:
         include:
+          - name: Admin Shell
+            path: src/Administration/Resources/app/administration
+            test: true
+            catalog: true
           - name: Surface Runtime
             path: src/Surface.Rendering/Resources/app/surface
-            gates: lint + test + build
             test: true
-            lint: true
-          # Communication und Composer bauen in ihren eigenen Repositories (ADR-020).
-          # Was hier bleiben MUSS, ist der Beweis, dass die SDK-Pakete, gegen die sie
-          # bauen, gebaut werden können — das leistet der admin-frontend-Job mit
-          # `npm run build:lib` plus dem Paketvertrag-Schritt.
+            catalog: false
           - name: Docs Site
             path: docs-site
-            gates: lint + build
             test: false
-            lint: true
+            catalog: false
     defaults:
       run:
         working-directory: ${{ matrix.path }}
@@ -166,96 +164,66 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ matrix.path }}/package-lock.json
 
-      # A file: dependency links the source directory, not a published tarball, and the
-      # library output is gitignored. So the dependency resolves, the install succeeds,
-      # and the build then fails on ERR_MODULE_NOT_FOUND for the preset — which is how
-      # this job failed on every run before it built its dependency first.
-      - name: Build local package dependencies
-        if: matrix.sdkPaths
-        working-directory: .
-        run: |
-          for sdk in ${{ matrix.sdkPaths }}; do
-            ( cd "$sdk" && npm ci && npm run build:lib )
-          done
-
       - name: Install
-        run: npm ci
+        run: npm ci --no-fund --no-audit
 
-      # Shipped dependencies are the gate. A vulnerable test runner is worth knowing about and
-      # worth fixing, but it never reaches a customer — blocking on it would train everyone to
-      # ignore the signal that does.
-      - name: Audit (shipped dependencies)
+      # Ausgelieferte Abhängigkeiten sind das Gate. Ein verwundbarer Testrunner ist
+      # wissenswert und behebenswert, erreicht aber keinen Kunden — darauf zu blockieren
+      # erzieht dazu, auch das Signal zu ignorieren, das ihn erreicht.
+      - name: Audit (ausgelieferte Abhängigkeiten)
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Audit (all dependencies, advisory)
+      - name: Audit (alle, nur zur Kenntnis)
         run: npm audit --audit-level=high || true
+
+      - name: Lint
+        run: npm run lint
 
       - name: Test
         if: matrix.test
         run: npm run test
 
-      - name: Lint
-        if: matrix.lint
-        run: npm run lint
-
       - name: Build
         run: npm run build
 
-  admin-frontend:
-    name: Admin Shell (Vitest + Build)
+      # Der Katalog der Erweiterungspunkte wird aus den Quellen erzeugt. Weicht das
+      # Ergebnis ab, verspricht @callora/admin einen Slot, den es nicht mehr gibt — oder
+      # verschweigt einen neuen, gegen den dann niemand kompilieren kann.
+      - name: Erweiterungspunkt-Katalog aktuell?
+        if: matrix.catalog
+        run: |
+          npm run generate:catalog
+          git diff --exit-code src/core/extensions/
+
+      # Nur die Admin-Shell und die Surface-Runtime sind npm-Pakete; die Docs-Site ist
+      # eine Website. `files` entscheidet, was ein Plugin-Autor wirklich bekommt.
+      - name: Paket baut und enthält, was es verspricht
+        if: matrix.test
+        run: |
+          npm run build:lib
+          npm pack --dry-run
+
+  contracts:
+    name: Golden Path (Plugin von außen)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: src/Administration/Resources/app/administration
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - name: Setup .NET (global.json)
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: src/Administration/Resources/app/administration/package-lock.json
+          global-json-file: global.json
 
-      - name: Install
-        run: npm ci
-
-      - name: Audit (shipped dependencies)
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Audit (all dependencies, advisory)
-        run: npm audit --audit-level=high || true
-
-      # Der Extension-Point-Katalog wird aus der Shell generiert. Wanderte ein Slot,
-      # ohne dass jemand neu generiert, verspräche @callora/admin einen Punkt, den es
-      # nicht mehr gibt — und der Typfehler träfe den Plugin-Autor statt uns.
-      - name: Katalog aktuell?
-        run: |
-          npm run generate:catalog
-          git diff --exit-code src/core/extensions/catalog.generated.ts src/core/extensions/catalog.json
-
-      # Vor den Tests, weil ein Linter billiger antwortet als eine Suite — und weil er eine
-      # andere Frage stellt: vue-tsc prüft, ob die Typen stimmen, nicht ob der Code stimmt
-      # (#297).
-      - name: Lint
-        run: npm run lint
-
-      # Die Vitest-Suite (Slots/Hooks/Services/Loader + alle Admin-Module) läuft
-      # als eigener Gate-Schritt, damit UI-Verhaltensregressionen main nicht
-      # erreichen; der Build (vue-tsc + vite) folgt als Typ-/Bundle-Check.
-      - name: Test
-        run: npm run test
-
-      - name: Build
-        run: npm run build
-
-      - name: Build library
-        run: npm run build:lib
-
-      # Nach dem Bibliotheks-Build, weil beide Tests gegen dist-lib prüfen: dass jeder
-      # Export auf eine gebaute Datei zeigt, und dass die Scope-Ids der Bibliothek im
-      # Anwendungs-Build vorkommen. Bräche das, blieben Plugin-Seiten ungestylt.
-      - name: Paketvertrag prüfen
-        run: npx vitest run src/public/exports.test.ts src/public/scoped-styles.test.ts
+      # Die Kette, die ein fremder Plugin-Autor durchläuft: packen → Werkzeug
+      # installieren → plugin new → publish → test-contract → sign, plus der Gegenbeweis,
+      # dass CAL0001 den Build eines Plugins bricht, das nur das SDK-Paket referenziert.
+      #
+      # Es existiert, weil kein Test INNERHALB dieses Repositories die Paketgrenze
+      # überquert. Der erste Lauf fand vier Probleme, die die Suite nie hätte finden
+      # können — eine Sicherheitsfestlegung, die nie im nuspec ankam, ein SDK, das seine
+      # Analyzer stillschweigend zurückhielt, einen Publish-Filter, der nur zur Bauzeit
+      # wirkte, und einen, der die eigene Assembly des Plugins löschte.
+      - name: Golden Path
+        run: ./scripts/golden-path.sh

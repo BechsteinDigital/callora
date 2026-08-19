@@ -1,6 +1,5 @@
 using Callora.Core.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Callora.Core.Tests.Integration;
@@ -30,39 +29,26 @@ namespace Callora.Core.Tests.Integration;
 /// </para>
 /// </remarks>
 [Trait("Category", "Slow")]
-public sealed class HostMigrationsRunOnAFreshDatabaseTests : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public sealed class HostMigrationsRunOnAFreshDatabaseTests(PostgresFixture postgres)
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine").Build();
-    private bool _started;
 
-    public async Task InitializeAsync()
-    {
-        try
-        {
-            await _postgres.StartAsync();
-            _started = true;
-        }
-        catch (Exception)
-        {
-            _started = false;
-        }
-    }
+    // Eine Datenbank je TEST, nicht je Aufruf: xUnit erzeugt die Klasse für jede
+    // Testmethode neu, also ist dieses Feld pro Test frisch. Ohne das bekäme jeder
+    // Kontext innerhalb eines Tests eine eigene Datenbank — was ein Test, der zwei
+    // gleichzeitige Verbindungen gegeneinander laufen lässt, sofort bemerkt: Der
+    // Schreiber landet in der einen, die Leser suchen in der anderen.
+    private string? _database;
 
-    public async Task DisposeAsync()
-    {
-        if (_started)
-        {
-            await _postgres.DisposeAsync();
-        }
-    }
-
+    private async Task<string> DatabaseAsync() =>
+        _database ??= await postgres.CreateDatabaseAsync();
     [SkippableFact]
     public async Task EveryMigrationAppliesToAnEmptyDatabase()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
 
         var options = new DbContextOptionsBuilder<HostPersistenceDbContext>()
-            .UseNpgsql(_postgres.GetConnectionString())
+            .UseNpgsql(await DatabaseAsync())
             .Options;
 
         await using var context = new HostPersistenceDbContext(options);
@@ -77,10 +63,10 @@ public sealed class HostMigrationsRunOnAFreshDatabaseTests : IAsyncLifetime
     [SkippableFact]
     public async Task TheMigratedSchemaMatchesTheModel()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
 
         var options = new DbContextOptionsBuilder<HostPersistenceDbContext>()
-            .UseNpgsql(_postgres.GetConnectionString())
+            .UseNpgsql(await DatabaseAsync())
             .Options;
 
         await using var context = new HostPersistenceDbContext(options);

@@ -1,7 +1,6 @@
 using Callora.Core.Application.Surfaces;
 using Callora.Core.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Callora.Core.Tests.Integration;
@@ -12,38 +11,25 @@ namespace Callora.Core.Tests.Integration;
 /// revocation and purge paths are the ones that must actually work.
 /// </summary>
 [Trait("Category", "Slow")]
-public sealed class SurfaceSessionStoreIntegrationTests : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public sealed class SurfaceSessionStoreIntegrationTests(PostgresFixture postgres)
 {
+
+    // Eine Datenbank je TEST, nicht je Aufruf: xUnit erzeugt die Klasse für jede
+    // Testmethode neu, also ist dieses Feld pro Test frisch. Ohne das bekäme jeder
+    // Kontext innerhalb eines Tests eine eigene Datenbank — was ein Test, der zwei
+    // gleichzeitige Verbindungen gegeneinander laufen lässt, sofort bemerkt: Der
+    // Schreiber landet in der einen, die Leser suchen in der anderen.
+    private string? _database;
+
+    private async Task<string> DatabaseAsync() =>
+        _database ??= await postgres.CreateDatabaseAsync();
     private static readonly DateTimeOffset Now = new(2026, 8, 5, 12, 0, 0, TimeSpan.Zero);
-
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine").Build();
-    private bool _started;
-
-    public async Task InitializeAsync()
-    {
-        try
-        {
-            await _postgres.StartAsync();
-            _started = true;
-        }
-        catch (Exception)
-        {
-            _started = false;
-        }
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (_started)
-        {
-            await _postgres.DisposeAsync();
-        }
-    }
 
     [SkippableFact]
     public async Task Session_RoundTripsWithItsClaims()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await ContextAsync();
         var store = new EfSurfaceSessionStore(context);
         var session = Session(claims: new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
@@ -63,7 +49,7 @@ public sealed class SurfaceSessionStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task Touching_RecordsUseWithoutExtendingTheExpiry()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await ContextAsync();
         var store = new EfSurfaceSessionStore(context);
         var session = Session();
@@ -78,7 +64,7 @@ public sealed class SurfaceSessionStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task RevokingBySurface_EndsExactlyThatSurfacesSessions()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await ContextAsync();
         var store = new EfSurfaceSessionStore(context);
         var portal = Session(surfaceKey: "portal");
@@ -96,7 +82,7 @@ public sealed class SurfaceSessionStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task PurgingDropsExpiredSessionsOnly()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await ContextAsync();
         var store = new EfSurfaceSessionStore(context);
         var live = Session(expiresAtUtc: Now.AddHours(2));
@@ -115,7 +101,7 @@ public sealed class SurfaceSessionStoreIntegrationTests : IAsyncLifetime
     {
         var context = new HostPersistenceDbContext(
             new DbContextOptionsBuilder<HostPersistenceDbContext>()
-                .UseNpgsql(_postgres.GetConnectionString())
+                .UseNpgsql(await DatabaseAsync())
                 .Options);
         await context.Database.EnsureCreatedAsync();
         return context;

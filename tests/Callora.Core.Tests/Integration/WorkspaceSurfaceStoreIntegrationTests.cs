@@ -4,7 +4,6 @@ using Callora.Core.Domain.Workspaces;
 using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Tests.Support;
 using Microsoft.EntityFrameworkCore;
-using Testcontainers.PostgreSql;
 using Xunit;
 using WorkspaceEntity = Callora.Core.Domain.Workspaces.Workspace;
 
@@ -15,37 +14,24 @@ namespace Callora.Core.Tests.Integration;
 /// Postgres (ADR-014 §5). Requires Docker; skipped automatically when unavailable.
 /// </summary>
 [Trait("Category", "Slow")]
-public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public sealed class WorkspaceSurfaceStoreIntegrationTests(PostgresFixture postgres)
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine").Build();
-    private bool _started;
 
-    public async Task InitializeAsync()
-    {
-        try
-        {
-            await _postgres.StartAsync();
-            _started = true;
-        }
-        catch (Exception)
-        {
-            _started = false;
-        }
-    }
+    // Eine Datenbank je TEST, nicht je Aufruf: xUnit erzeugt die Klasse für jede
+    // Testmethode neu, also ist dieses Feld pro Test frisch. Ohne das bekäme jeder
+    // Kontext innerhalb eines Tests eine eigene Datenbank — was ein Test, der zwei
+    // gleichzeitige Verbindungen gegeneinander laufen lässt, sofort bemerkt: Der
+    // Schreiber landet in der einen, die Leser suchen in der anderen.
+    private string? _database;
 
-    public async Task DisposeAsync()
-    {
-        if (_started)
-        {
-            await _postgres.DisposeAsync();
-        }
-    }
-
+    private async Task<string> DatabaseAsync() =>
+        _database ??= await postgres.CreateDatabaseAsync();
     [SkippableFact]
     public async Task Store_UpsertGetListDelete_RoundTrips()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
-        var options = Options();
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
+        var options = await OptionsAsync();
 
         await using var context = new HostPersistenceDbContext(options);
         await context.Database.EnsureCreatedAsync();
@@ -91,8 +77,8 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task IdentityAssignment_RoundTripsAndSurvivesASurfaceEdit()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
-        var options = Options();
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
+        var options = await OptionsAsync();
 
         await using var context = new HostPersistenceDbContext(options);
         await context.Database.EnsureCreatedAsync();
@@ -128,8 +114,8 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task ClearingTheIdentityProvider_DropsProvenanceButKeepsTheBoundary()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
-        var options = Options();
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
+        var options = await OptionsAsync();
 
         await using var context = new HostPersistenceDbContext(options);
         await context.Database.EnsureCreatedAsync();
@@ -156,8 +142,8 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task AssignIdentityProvider_ForUnknownSurface_ReturnsNull()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
-        var options = Options();
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
+        var options = await OptionsAsync();
 
         await using var context = new HostPersistenceDbContext(options);
         await context.Database.EnsureCreatedAsync();
@@ -170,8 +156,8 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task Upsert_ForUnknownWorkspace_ReturnsNull()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
-        var options = Options();
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
+        var options = await OptionsAsync();
 
         await using var context = new HostPersistenceDbContext(options);
         await context.Database.EnsureCreatedAsync();
@@ -190,9 +176,9 @@ public sealed class WorkspaceSurfaceStoreIntegrationTests : IAsyncLifetime
     // runs correctly for old databases at its own schema version; asserting it against
     // the current schema would test a state that cannot occur.
 
-    private DbContextOptions<HostPersistenceDbContext> Options() =>
+    private async Task<DbContextOptions<HostPersistenceDbContext>> OptionsAsync() =>
         new DbContextOptionsBuilder<HostPersistenceDbContext>()
-            .UseNpgsql(_postgres.GetConnectionString())
+            .UseNpgsql(await DatabaseAsync())
             .Options;
 
     private static async Task SeedWorkspaceAsync(

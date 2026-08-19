@@ -67,6 +67,8 @@ PATHS=(
   "ops"
   "scripts"
   ".github/workflows"
+  ".config"
+  "docfx"
 )
 
 purpose_for() {
@@ -98,32 +100,22 @@ purpose_for() {
     "docs-site")                  echo "Die konzeptuelle Dokumentation (VitePress, Diátaxis)." ;;
     "ops")                        echo "Betrieb: Runbooks, Frontdoor-Konfiguration, npm-Ausnahmen." ;;
     "scripts")                    echo "Build-, Prüf- und Release-Automatisierung." ;;
-    ".github/workflows")          echo "CI, Golden Path, Docs, Release, npm-Publish." ;;
+    ".github/workflows")          echo "CI (Build, Integration, Frontends, Golden Path), Docs, Release, npm-Publish." ;;
+    ".config")                    echo "Das dotnet-tools-Manifest: die gepinnten lokalen Werkzeuge (docfx, CycloneDX)." ;;
+    "docfx")                      echo "Konfiguration der generierten .NET-API-Referenz, die unter /api/ neben der docs-site liegt." ;;
     *)                            echo "(nicht beschrieben — bitte in scripts/build-repo-map.sh ergänzen)" ;;
   esac
 }
 
-# Gezählt wird, was IM REPOSITORY liegt, nicht was auf der Platte liegt.
+# Keine Dateizahlen mehr. Die Spalte gab es seit der ersten Fassung, und sie hat drei
+# rote Läufe an einem Tag verursacht: Jede neue Datei irgendwo ändert eine Zahl, das Gate
+# schlägt zu, und es braucht einen Commit, der nichts erklärt. Gelesen hat sie nie jemand
+# — ob `scripts` zwölf oder dreizehn Dateien enthält, ändert für niemanden etwas; es sah
+# nur nach Information aus.
 #
-# Vorher lief hier ein `find` mit einer Ausschlussliste für node_modules, bin, obj und
-# dist. Die traf nicht, was sie treffen musste: `custom/plugins` und
-# `custom/static-plugins` sind gitignoriert und in einer Entwicklungsumgebung voller
-# geklonter Plugin-Repositories. Die Karte meldete dort 594 und 966 Dateien neben ihren
-# eigenen Beschreibungen „Im Repository absichtlich leer" und „Leer" — eine Zeile, die
-# sich selbst widerspricht.
-#
-# Schlimmer ist die Folge fürs Gate. `ci.yml` erzeugt die Karte neu und prüft sie mit
-# `git diff --exit-code`. Auf einem Runner ohne die Klone kommen 2 und 2 heraus, auf
-# jeder Maschine mit dem Dev-Stack etwas anderes — das Gate war also für jeden lokal
-# rot, aus einem Grund, der mit seiner Arbeit nichts zu tun hat. Solche Gates werden
-# gelöscht statt erfüllt.
-#
-# `git ls-files` beantwortet beide Punkte auf einmal und braucht keine Ausschlussliste,
-# die beim nächsten Werkzeug wieder nachgezogen werden müsste: Was ignoriert ist, zählt
-# nicht, und zwar überall gleich.
-count_files() {
-  git ls-files -- "$1" | wc -l | tr -d ' '
-}
+# Ohne sie ändert sich die Karte genau dann, wenn ein Verzeichnis DAZUKOMMT oder
+# VERSCHWINDET — also genau dann, wenn jemand etwas beschreiben muss. Das ist der Zweck
+# des Gates, und er bleibt vollständig erhalten.
 
 missing=()
 for path in "${PATHS[@]}"; do
@@ -144,23 +136,33 @@ while IFS= read -r dir; do
     [[ "$path" == "$dir"* ]] && { covered="true"; break; }
   done
   [[ "$covered" == "true" ]] || uncovered+=("$dir")
-done < <(find . -maxdepth 1 -mindepth 1 -type d \
-  -not -name '.git' -not -name 'node_modules' -not -name 'graphify-out' \
-  -not -name '.config' -not -name 'docfx' -not -name 'bin' -not -name 'obj' \
-  -not -name '.claude' \
-  | sed 's|^\./||' | sort)
+# Auch hier das Repository und nicht die Platte — aus demselben Grund, aus dem
+# count_files schon darauf umgestellt wurde: `find` sah `artifacts/` und
+# `test-results/`, weil sie nach einem Build lokal herumliegen. Auf einem Runner
+# gibt es sie nicht. Die Karte bekam damit einen Abschnitt, den die CI wieder
+# entfernte, und `git diff --exit-code` schlug zu — für jeden PR, aus einem Grund,
+# der mit seiner Änderung nichts zu tun hatte.
+#
+# Die Ausschlussliste entfällt mit: Was gitignoriert ist, steht nicht in
+# git ls-files, und zwar überall gleich. Sie verbarg allerdings auch `.config` und
+# `docfx`, die schlicht unbeschrieben waren — beide stehen jetzt in PATHS, was der
+# Zweck dieses Abschnitts ist.
+#
+# `grep /` behält nur Pfade MIT Verzeichnisanteil: Die Dateien im Wurzelverzeichnis
+# (README, CLAUDE.md, …) sind keine Verzeichnisse.
+done < <(git ls-files | grep / | cut -d/ -f1 | sort -u)
 
 {
   echo "# Repository Map"
   echo
   echo "Erzeugt von \`scripts/build-repo-map.sh\`; CI prüft, dass sie aktuell ist."
-  echo "Bedeutung ist kuratiert; Struktur und Größe kommen aus dem, was Git verfolgt —"
-  echo "nicht aus dem Dateisystem, damit die Karte auf jeder Maschine dieselbe ist."
+  echo "Welche Verzeichnisse es gibt, kommt aus dem, was Git verfolgt; wofür sie da sind,"
+  echo "ist kuratiert und steht in scripts/build-repo-map.sh."
   echo
-  echo "| Pfad | Dateien | Wofür |"
-  echo "|---|---:|---|"
+  echo "| Pfad | Wofür |"
+  echo "|---|---|"
   for path in "${PATHS[@]}"; do
-    echo "| \`${path}\` | $(count_files "$path") | $(purpose_for "$path") |"
+    echo "| \`${path}\` | $(purpose_for "$path") |"
   done
   if (( ${#uncovered[@]} > 0 )); then
     echo

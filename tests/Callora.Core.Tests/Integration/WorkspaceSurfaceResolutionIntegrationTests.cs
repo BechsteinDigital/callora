@@ -4,7 +4,6 @@ using Callora.Core.Domain.Workspaces;
 using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Tests.Support;
 using Microsoft.EntityFrameworkCore;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Callora.Core.Tests.Integration;
@@ -14,36 +13,23 @@ namespace Callora.Core.Tests.Integration;
 /// (ADR-014 §5/§14) against a real Postgres. Requires Docker; skipped when unavailable.
 /// </summary>
 [Trait("Category", "Slow")]
-public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public sealed class WorkspaceSurfaceResolutionIntegrationTests(PostgresFixture postgres)
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine").Build();
-    private bool _started;
 
-    public async Task InitializeAsync()
-    {
-        try
-        {
-            await _postgres.StartAsync();
-            _started = true;
-        }
-        catch (Exception)
-        {
-            _started = false;
-        }
-    }
+    // Eine Datenbank je TEST, nicht je Aufruf: xUnit erzeugt die Klasse für jede
+    // Testmethode neu, also ist dieses Feld pro Test frisch. Ohne das bekäme jeder
+    // Kontext innerhalb eines Tests eine eigene Datenbank — was ein Test, der zwei
+    // gleichzeitige Verbindungen gegeneinander laufen lässt, sofort bemerkt: Der
+    // Schreiber landet in der einen, die Leser suchen in der anderen.
+    private string? _database;
 
-    public async Task DisposeAsync()
-    {
-        if (_started)
-        {
-            await _postgres.DisposeAsync();
-        }
-    }
-
+    private async Task<string> DatabaseAsync() =>
+        _database ??= await postgres.CreateDatabaseAsync();
     [SkippableFact]
     public async Task Upsert_WritesThroughDefaultSurface_AndResolutionGoesThroughSurfaces()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
         var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
@@ -69,7 +55,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task SecondSurface_OnSameWorkspace_RoutesToThatWorkspace()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
         var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
         var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
@@ -103,7 +89,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task ResolveSurface_ReturnsMatchedSurface_WithAuthenticationKeyLocaleAndTenant()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
         var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
         var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
@@ -146,7 +132,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         // Guards the security-relevant assumption the render endpoint now relies on:
         // it dropped its own IsActive re-check and trusts the store's match loop to filter
         // inactive surfaces. This proves that filter directly against real Postgres.
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
         var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
         var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
@@ -181,7 +167,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
         // hat trotzdem eine eigene URL. Ohne diese Prüfung nahm das Deaktivieren nur den
         // Elternknoten vom Netz, während die Navigation den ganzen Teilbaum längst ausblendete —
         // der Betreiber sah eine abgeschaltete Gliederung und bekam den Knoten darunter serviert.
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
         var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
         var surfaceStore = new EfWorkspaceSurfaceStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
@@ -249,7 +235,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task ResolveByPublicRoute_BehaviourUnchanged_AlongsideResolveSurface()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
         var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
@@ -270,7 +256,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task RepeatedUpsert_UpdatesDefaultSurfaceInPlace_WithoutDuplicating()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await FreshContextWithTenantAsync();
         var workspaceStore = new EfWorkspaceManagementStore(context, new PassThroughSurfaceRouteTable(context), new CountingThemeResolutionCache());
 
@@ -291,7 +277,7 @@ public sealed class WorkspaceSurfaceResolutionIntegrationTests : IAsyncLifetime
     private async Task<HostPersistenceDbContext> FreshContextWithTenantAsync()
     {
         var options = new DbContextOptionsBuilder<HostPersistenceDbContext>()
-            .UseNpgsql(_postgres.GetConnectionString())
+            .UseNpgsql(await DatabaseAsync())
             .Options;
         var context = new HostPersistenceDbContext(options);
         await context.Database.EnsureCreatedAsync();

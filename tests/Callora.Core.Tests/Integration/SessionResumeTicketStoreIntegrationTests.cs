@@ -2,7 +2,6 @@ using Callora.Core.Application.Security;
 using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Callora.Core.Tests.Integration;
@@ -13,38 +12,25 @@ namespace Callora.Core.Tests.Integration;
 /// delete-and-return actually races correctly.
 /// </summary>
 [Trait("Category", "Slow")]
-public sealed class SessionResumeTicketStoreIntegrationTests : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public sealed class SessionResumeTicketStoreIntegrationTests(PostgresFixture postgres)
 {
+
+    // Eine Datenbank je TEST, nicht je Aufruf: xUnit erzeugt die Klasse für jede
+    // Testmethode neu, also ist dieses Feld pro Test frisch. Ohne das bekäme jeder
+    // Kontext innerhalb eines Tests eine eigene Datenbank — was ein Test, der zwei
+    // gleichzeitige Verbindungen gegeneinander laufen lässt, sofort bemerkt: Der
+    // Schreiber landet in der einen, die Leser suchen in der anderen.
+    private string? _database;
+
+    private async Task<string> DatabaseAsync() =>
+        _database ??= await postgres.CreateDatabaseAsync();
     private static readonly DateTimeOffset Now = new(2026, 8, 6, 12, 0, 0, TimeSpan.Zero);
-
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine").Build();
-    private bool _started;
-
-    public async Task InitializeAsync()
-    {
-        try
-        {
-            await _postgres.StartAsync();
-            _started = true;
-        }
-        catch (Exception)
-        {
-            _started = false;
-        }
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (_started)
-        {
-            await _postgres.DisposeAsync();
-        }
-    }
 
     [SkippableFact]
     public async Task ATicketRoundTripsWithItsPayload()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await ContextAsync();
         var store = new EfSessionResumeTicketStore(context);
         var secret = SingleUseSecret.Create();
@@ -60,7 +46,7 @@ public sealed class SessionResumeTicketStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task ConsumingTwiceYieldsTheTicketOnlyOnce()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await ContextAsync();
         var store = new EfSessionResumeTicketStore(context);
         var secret = SingleUseSecret.Create();
@@ -73,7 +59,7 @@ public sealed class SessionResumeTicketStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task TwoConcurrentConnectionsCannotBothWalkAwayWithIt()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var writer = await ContextAsync();
         var secret = SingleUseSecret.Create();
         await new EfSessionResumeTicketStore(writer).CreateAsync(Ticket(secret));
@@ -96,7 +82,7 @@ public sealed class SessionResumeTicketStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task AForeignPluginNeitherReadsNorConsumesIt()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await ContextAsync();
         var store = new EfSessionResumeTicketStore(context);
         var secret = SingleUseSecret.Create();
@@ -112,7 +98,7 @@ public sealed class SessionResumeTicketStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task TheSecretItselfIsNeverStored()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await ContextAsync();
         var store = new EfSessionResumeTicketStore(context);
         var secret = SingleUseSecret.Create();
@@ -127,7 +113,7 @@ public sealed class SessionResumeTicketStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task PurgingDropsExpiredTicketsOnly()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         await using var context = await ContextAsync();
         var store = new EfSessionResumeTicketStore(context);
         var live = SingleUseSecret.Create();
@@ -143,7 +129,7 @@ public sealed class SessionResumeTicketStoreIntegrationTests : IAsyncLifetime
     {
         var context = new HostPersistenceDbContext(
             new DbContextOptionsBuilder<HostPersistenceDbContext>()
-                .UseNpgsql(_postgres.GetConnectionString())
+                .UseNpgsql(await DatabaseAsync())
                 .Options);
         await context.Database.EnsureCreatedAsync();
         return context;

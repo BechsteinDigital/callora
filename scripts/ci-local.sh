@@ -104,34 +104,28 @@ build_lib() {
 
 # ── dotnet ────────────────────────────────────────────────────────────────────
 if wanted dotnet; then
-  step "dotnet — Build & Test (ci.yml: build-test)"
+  step "dotnet — Landkarte, Build, alle Tests, Abdeckung (ci.yml: dotnet)"
   (
     set -e
-    dotnet restore Callora.Host.sln
-    dotnet build Callora.Host.sln --no-restore --configuration Release
+    # Eine Sekunde, und sie hätte zwei rote Läufe erspart: ci.yml prüft die Karte als
+    # ERSTEN Schritt, dieses Skript tat es überhaupt nicht — obwohl sein Kopf verspricht,
+    # ci.yml Schritt für Schritt zu spiegeln.
+    bash scripts/build-repo-map.sh
+    git diff --exit-code docs/REPO_MAP.md
+
+    dotnet restore Callora.Host.sln --verbosity quiet
+    dotnet build Callora.Host.sln --no-restore --configuration Release --verbosity minimal
+    rm -rf ./test-results
+    # Ohne die Docker-Stufe, wie ci.yml sie trennt — die läuft im Gate `integration`.
+    # ALLE Tests, ohne Filter — auch die Docker-Stufe. Sie kostet sechzehn Sekunden,
+    # seit sich alle Integrationstests EIN Postgres teilen; ein eigener Job dafür kostete
+    # mehr als er einbrachte. Und kein Skip der Frontends: Drei Surface-Tests lesen die
+    # Stylesheets aus wwwroot/, die erst der Vite-Build erzeugt.
     rm -rf ./test-results
     dotnet test Callora.Host.sln --no-build --configuration Release \
-      --collect:"XPlat Code Coverage" --results-directory ./test-results
-    # Über ALLE Berichte, nicht über den ersten — derselbe Fehler wie in ci.yml:
-    # der Lauf erzeugt zwei, und der kleine (Analyzer-Tests) meldet 93,6 % statt 33,6 %.
-    python3 - <<'PY'
-import glob, sys, xml.etree.ElementTree as ET
-
-threshold = 0.25
-reports = glob.glob("./test-results/**/coverage.cobertura.xml", recursive=True)
-if not reports:
-    sys.exit("Kein Coverage-Report gefunden.")
-
-covered = valid = 0
-for report in reports:
-    root = ET.parse(report).getroot()
-    covered += int(root.get("lines-covered"))
-    valid += int(root.get("lines-valid"))
-
-rate = covered / valid if valid else 0.0
-print(f"line coverage: {rate:.1%} über {valid} Zeilen (threshold {threshold:.0%})")
-sys.exit(0 if rate >= threshold else 1)
-PY
+      --collect:"XPlat Code Coverage" --results-directory ./test-results \
+      --logger "console;verbosity=minimal"
+    python3 scripts/coverage-gate.py --threshold 0.25
   )
   record dotnet $?
 fi
@@ -174,25 +168,11 @@ if wanted frontends; then
   ( set -e; cd "$SURFACE"; npm ci; audit; npm run test; npm run build )
   record "frontends:surface" $?
 
-  step "frontends — Communication Admin (build)"
-  (
-    set -e
-    build_lib "$ADMIN"
-    build_lib "$SURFACE"
-    cd custom/static-plugins/Communication
-    npm ci; audit; npm run build
-  )
-  record "frontends:communication" $?
-
-  step "frontends — Composer Admin (test + build)"
-  (
-    set -e
-    build_lib "$ADMIN"
-    build_lib "$SURFACE"
-    cd custom/static-plugins/Composer
-    npm ci; audit; npm run test; npm run build
-  )
-  record "frontends:composer" $?
+  # Communication und Composer bauen in IHREN Repositories (ADR-020). Sie standen hier,
+  # weil sie in einer Entwicklungsumgebung unter custom/ liegen — und machten diesen Lauf
+  # für jeden lokal rot, dessen Klone einen anderen Stand haben. Ein Gate, das den Zustand
+  # einer fremden Arbeitskopie prüft, wird ignoriert statt erfüllt. ci.yml kennt sie
+  # ebenfalls nicht: custom/ ist gitignoriert und auf einem Runner leer.
 fi
 
 # ── docs ──────────────────────────────────────────────────────────────────────
