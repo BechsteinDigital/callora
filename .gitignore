@@ -113,6 +113,9 @@ docfx/api/*.yml
 docfx/api/.manifest
 *.md
 !README.md
+# Die deutsche Fassung. Ohne diese Zeile fällt sie unter *.md und fehlt still im
+# Klon — genau der Fall, den der Hinweis am Ende dieses Blocks beschreibt.
+!README.de.md
 # Betriebsrunbooks sind Teil des Repos (PLAT-235).
 !ops/**/*.md
 # GitHub community health files (security policy etc.) belong in the repo.
