@@ -110,7 +110,6 @@ dev_plugins_pack_platform() {
 # ein Plugin ohne Oberfläche fällt niemandem auf.
 dev_plugins_build_frontend() {
     local repo_root="$1"
-    local link="$repo_root/scripts/link-callora-npm.sh"
 
     if [ "${DEV_PLUGINS_NO_FRONTEND:-0}" = "1" ]; then
         return 0
@@ -123,22 +122,37 @@ dev_plugins_build_frontend() {
         return 1
     fi
 
-    if [ ! -d "$repo_root/node_modules" ] || [ "${DEV_PLUGINS_REPACK:-0}" = "1" ]; then
-        if [ -f "$link" ]; then
-            # @callora/admin und @callora/surface liegen noch nicht auf npm; das
-            # Repo-Skript baut sie aus dem Checkout und installiert sie als
-            # Tarball MIT dem restlichen Abhängigkeitsbaum. Danach darf kein
-            # `npm ci` mehr laufen — es würde node_modules leeren und die per
-            # --no-save eingespielten Tarballs wieder entfernen.
-            dev_plugins_step "npm-Pakete aus dem Checkout einspielen (link-callora-npm.sh)"
-            bash "$link" "$DEV_PLUGINS_ROOT_DIR" || return 1
-        elif [ -f "$repo_root/package-lock.json" ]; then
-            dev_plugins_step "npm ci"
-            (cd "$repo_root" && npm ci --no-audit --no-fund) || return 1
-        else
-            dev_plugins_step "npm install"
-            (cd "$repo_root" && npm install --no-audit --no-fund) || return 1
-        fi
+    # `npm ci` bei JEDEM Lauf, nicht nur wenn node_modules fehlt.
+    #
+    # Vorher lief hier link-callora-npm.sh, weil @callora/admin und @callora/surface
+    # nicht auf npm lagen: Es packte sie aus einem Checkout und spielte sie als Tarball
+    # ein. Seit beide als 0.9.0 in der Registry liegen, ist das Skript nicht nur
+    # überflüssig, sondern schädlich — es packte aus einem Geschwister-Checkout, der
+    # tagealt sein durfte.
+    #
+    # Die alte Bedingung "nur wenn node_modules fehlt" war der zweite Teil desselben
+    # Fehlers und muss mit weg: Der Composer baute vier Tage lang gegen einen
+    # @callora/surface-Stand ohne bundle-readiness, weil sein node_modules existierte
+    # und deshalb niemand mehr nachsah. `npm ci` ist Lock-treu und kostet zwei Sekunden
+    # — billiger als ein Bundle, das gegen den falschen Vertrag gebaut ist und beim
+    # Laden nichts sagt.
+    if [ -f "$repo_root/package-lock.json" ]; then
+        dev_plugins_step "npm ci"
+        (cd "$repo_root" && npm ci --no-audit --no-fund) || return 1
+    else
+        # Ohne Lockfile auch bei jedem Lauf, und das ist keine Symmetrie um ihrer selbst
+        # willen: Der Composer ist genau dieser Fall, und er ist das Repo, dem der Fehler
+        # oben passiert ist. Hätte die Bedingung "nur wenn node_modules fehlt" hier
+        # überlebt, wäre sie für das einzige Repo stehengeblieben, für das sie geschrieben
+        # wurde.
+        #
+        # `npm install` ist nicht Lock-treu — es löst den Bereich aus package.json neu auf
+        # und kann bei jedem Lauf etwas anderes einspielen. Das wird gesagt statt
+        # weggelassen: Ein Bundle, dessen Abhängigkeiten niemand festgehalten hat, ist
+        # nicht reproduzierbar, und der Weg dahin ist ein eingecheckter Lockfile.
+        dev_plugins_warn "kein package-lock.json in ${repo_root##*/} — npm install löst neu auf statt lock-treu zu installieren"
+        dev_plugins_step "npm install"
+        (cd "$repo_root" && npm install --no-audit --no-fund) || return 1
     fi
 
     dev_plugins_step "npm run build"

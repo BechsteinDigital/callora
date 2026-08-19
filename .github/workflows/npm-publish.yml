@@ -50,6 +50,15 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ matrix.path }}/package-lock.json
 
+      # Trusted Publishing verlangt npm 11.5.1 oder neuer. Node 22 bringt 10.9.x mit,
+      # und mit dem scheitert der Publish nicht etwa mit einem Hinweis auf die Version,
+      # sondern mit einem gewöhnlichen 401 — die CLI kennt den OIDC-Weg schlicht nicht
+      # und schickt den Token, den es nicht gibt.
+      - name: npm auf eine Version mit Trusted Publishing heben
+        run: |
+          npm install -g npm@latest
+          npm --version
+
       - name: Install
         run: npm ci
 
@@ -78,8 +87,38 @@ jobs:
       - name: Paketinhalt zeigen
         run: npm pack --dry-run
 
+      # Die Version kann bereits draußen sein: 0.9.0 wurde von Hand veröffentlicht,
+      # bevor dieser Weg je gelaufen ist. npm lehnt ein zweites Publish derselben
+      # Version ab — zu Recht, aber der Lauf wird davon rot, obwohl nichts fehlt und
+      # niemand etwas tun kann. NuGet hat dafür --skip-duplicate, npm hat kein
+      # Gegenstück, also wird vorher gefragt.
+      - name: Version schon veröffentlicht?
+        id: published
+        run: |
+          PKG="$(node -p "require('./package.json').name")"
+          VER="$(node -p "require('./package.json').version")"
+          if npm view "$PKG@$VER" version > /dev/null 2>&1; then
+            echo "::notice::$PKG@$VER liegt bereits auf npm — Publish wird übersprungen."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Kein NODE_AUTH_TOKEN: Die Anmeldung läuft über Trusted Publishing, also über den
+      # OIDC-Token, den `permissions: id-token: write` weiter oben erlaubt. npm tauscht
+      # ihn gegen ein kurzlebiges Recht auf genau dieses Paket — es gibt kein Geheimnis
+      # mehr, das gestohlen, geteilt oder vergessen werden kann. Der Grund, dass es hier
+      # überhaupt eines gab: Der Account ist per Passkey gesichert, `--otp=` hat also
+      # nichts anzubieten, und der Ausweg war ein granulares Token mit 2FA-Bypass — ein
+      # dauerhafter Schlüssel, der genau die Prüfung umgeht, für die er ausgestellt wurde.
+      #
+      # Einzurichten pro Paket unter npmjs.com/package/<name>/access, Abschnitt
+      # "Trusted Publisher": dieses Repository und der Dateiname dieses Workflows
+      # (npm-publish.yml). Beides muss stimmen, sonst lehnt die Registry ab.
+      #
+      # --provenance bleibt stehen. Die Dokumentation sagt, es geschehe bei Trusted
+      # Publishing von selbst; in der Praxis ist es das nicht, und ein Paket ohne
+      # Provenance fällt niemandem auf, der nicht danach sucht.
       - name: Publish
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && steps.published.outputs.skip == 'false'
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

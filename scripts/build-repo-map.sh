@@ -10,7 +10,7 @@ set -euo pipefail
 # welche Dateien es gibt, benutzt `find`; wer eine Karte braucht, will wissen,
 # WOFÜR ein Verzeichnis da ist. Das kann keine Heuristik beantworten, deshalb
 # steht die Bedeutung unten kuratiert und nur Struktur und Größe kommen aus dem
-# Dateisystem.
+# Repository.
 #
 # Zwei Eigenschaften machen die Karte gate-fähig (siehe ci.yml):
 #   1. Kein Zeitstempel in der Ausgabe. Sonst änderte sich die Datei bei jedem
@@ -103,11 +103,26 @@ purpose_for() {
   esac
 }
 
+# Gezählt wird, was IM REPOSITORY liegt, nicht was auf der Platte liegt.
+#
+# Vorher lief hier ein `find` mit einer Ausschlussliste für node_modules, bin, obj und
+# dist. Die traf nicht, was sie treffen musste: `custom/plugins` und
+# `custom/static-plugins` sind gitignoriert und in einer Entwicklungsumgebung voller
+# geklonter Plugin-Repositories. Die Karte meldete dort 594 und 966 Dateien neben ihren
+# eigenen Beschreibungen „Im Repository absichtlich leer" und „Leer" — eine Zeile, die
+# sich selbst widerspricht.
+#
+# Schlimmer ist die Folge fürs Gate. `ci.yml` erzeugt die Karte neu und prüft sie mit
+# `git diff --exit-code`. Auf einem Runner ohne die Klone kommen 2 und 2 heraus, auf
+# jeder Maschine mit dem Dev-Stack etwas anderes — das Gate war also für jeden lokal
+# rot, aus einem Grund, der mit seiner Arbeit nichts zu tun hat. Solche Gates werden
+# gelöscht statt erfüllt.
+#
+# `git ls-files` beantwortet beide Punkte auf einmal und braucht keine Ausschlussliste,
+# die beim nächsten Werkzeug wieder nachgezogen werden müsste: Was ignoriert ist, zählt
+# nicht, und zwar überall gleich.
 count_files() {
-  find "$1" -type f \
-    -not -path '*/node_modules/*' -not -path '*/bin/*' -not -path '*/obj/*' \
-    -not -path '*/dist/*' -not -path '*/dist-lib/*' -not -path '*/.vitepress/cache/*' \
-    2>/dev/null | wc -l | tr -d ' '
+  git ls-files -- "$1" | wc -l | tr -d ' '
 }
 
 missing=()
@@ -139,7 +154,8 @@ done < <(find . -maxdepth 1 -mindepth 1 -type d \
   echo "# Repository Map"
   echo
   echo "Erzeugt von \`scripts/build-repo-map.sh\`; CI prüft, dass sie aktuell ist."
-  echo "Bedeutung ist kuratiert, Struktur und Größe kommen aus dem Dateisystem."
+  echo "Bedeutung ist kuratiert; Struktur und Größe kommen aus dem, was Git verfolgt —"
+  echo "nicht aus dem Dateisystem, damit die Karte auf jeder Maschine dieselbe ist."
   echo
   echo "| Pfad | Dateien | Wofür |"
   echo "|---|---:|---|"
