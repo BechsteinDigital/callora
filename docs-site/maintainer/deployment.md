@@ -32,8 +32,34 @@ resolved from `Host + Path`.
 
 | File | Brings up | Use |
 |---|---|---|
-| `docker-compose.yml` | `callora-backend` (SDK image, `dotnet watch` on `src/Host/Dev`, port `5000`), `postgres:16`, and `coturn` for a real ICE relay. | Local dev, hot reload. |
+| `docker-compose.yml` | `callora-backend` (built from the `dev` stage, `dotnet watch` on `src/Host/Dev`, port `5000`), `postgres:16`, and `coturn` for a real ICE relay. Repo mounted. | Working on it. |
+| `docker-compose.standalone.yml` | The same host, but built **into** the image — host, both frontends and every cloned plugin — plus `postgres:16`. No mount, no `dotnet watch`. | Looking at it: clone and run, nothing installed but Docker. |
 | `docker-compose.frontdoor.yml` | Overlay adding a `caddy:2.8` frontdoor on port `8080` over the dev stack (single-origin path routing). | Layer with `-f docker-compose.yml -f docker-compose.frontdoor.yml`. |
+
+Both backends build from the repository `Dockerfile`, which carries .NET **and** Node —
+the two Vue suites hang off their project's MSBuild target and call `npm`, so a full build
+in a container without Node ends in `npm: not found`.
+
+The standalone stack is the shortest path from nothing to a running system:
+
+```bash
+git clone https://github.com/BechsteinDigital/callora.git
+cd callora
+docker compose -f docker-compose.standalone.yml up --build
+```
+
+Plugins cloned into `custom/plugins/` or `custom/static-plugins/` are built and loaded
+without being listed anywhere — the build finds every `registry.json`, the same search the
+host performs at startup.
+
+::: warning MinVer must be set at build time, not at start
+Without a Git tag MinVer falls back to `0.1.0-preview.0.<height>`, and the host then
+rejects every plugin it finds: *"Plugin dependency 'Callora.Core' requires '>=0.9.0-0',
+but the host provides 0.1.0-preview.0"*. The standalone stack passes `CALLORA_VERSION` as
+a **build argument** for that reason. Supplied as a runtime environment variable it
+arrives too late — the build stays green and the only evidence is a handful of rejections
+in the startup log.
+:::
 
 There was a second stack here, `docker-compose.prod-like.yml`, built from
 `src/Core/Dockerfile`. Both are gone. The Dockerfile set

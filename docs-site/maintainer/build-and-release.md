@@ -61,6 +61,26 @@ Build or test a single project directly, e.g. the surface layer without its SPA:
 dotnet build src/Surface.Rendering/Callora.Surface.Rendering.csproj -p:SkipSurfaceFrontend=true
 ```
 
+### One target at a time
+
+A full run builds both Vue suites and every plugin cloned under `custom/`. When you are
+working on one of them, `scripts/dev-build.sh` takes a target:
+
+```bash
+scripts/dev-build.sh --only admin        # the admin shell
+scripts/dev-build.sh --only surface      # the surface runtime and SSR
+scripts/dev-build.sh --only host         # the solution, both frontends off
+scripts/dev-build.sh --plugins composer  # one plugin: C# plus its bundles
+```
+
+Roughly what that saves, measured on one machine: 31s for `host`, 15s for `surface`, 4s
+for an incremental `admin`.
+
+The targets are not a second way to build. `admin` and `surface` are a `dotnet build` on
+that one project, and the frontend is produced by the project's own MSBuild target — the
+script never states how a frontend is built, so there is nothing here that can drift from
+the table above.
+
 ## Running tests
 
 ### Fast (default, no external services)
@@ -136,9 +156,14 @@ only worked at build time, and one that deleted the plugin's own assembly.
 
 ### `.github/workflows/docs.yml`
 
-Builds the DocFX site on changes to `docfx/**`, `src/**`, `README.md`, or the
-workflow itself. The .NET API reference covers the platform packages only — plugins
-document their own surface in their own repositories.
+Three jobs on any change under `docs-site/**`, `docfx/**`, `src/**` or `README.md`:
+**lint** (markdownlint + cspell), **assertions** (below), and **build** — which
+produces the VitePress site and the DocFX .NET API reference, assembles them into
+one artifact (the reference under `/api/`) and uploads it for Pages. The VitePress
+build **fails on any internal dead link**, so a renamed page cannot merge silently.
+
+The .NET API reference covers the platform packages only — plugins document their
+own surface in their own repositories.
 
 It also runs the **documentation assertions** — xUnit tests that read the docs, such as
 "an entry type quoted for a shipped plugin matches its manifest". Those used to live only
@@ -174,6 +199,32 @@ It used to publish `src/Core` as `callora-host.tar.gz`. Core has been
 and could not start. The runnable composition belongs to a distribution
 (`callora-production`), which assembles these packages.
 :::
+
+### `.github/workflows/npm-publish.yml`
+
+Publishes `@callora/surface` and `@callora/admin` on the same `v*` tag that drives
+`release.yml`. Both halves come out of one release because they are two halves of one
+contract: `@callora/surface` is the client half whose server half is
+`Callora.Surface.Rendering`. If they drift apart, nobody notices except a customer.
+
+Authentication is **trusted publishing** — npm exchanges the OIDC token granted by
+`permissions: id-token: write` for a short-lived right to that one package. There is no
+stored secret. It replaced a granular access token with 2FA bypass, which was needed
+because the account is secured by a passkey and `--otp=` has nothing to offer there: a
+permanent key that deliberately skips the check it was issued for.
+
+Two things the workflow does that are easy to miss:
+
+- **npm is upgraded to `@latest` first.** Trusted publishing needs 11.5.1 or newer, Node
+  22 ships 10.9.x, and that version does not fail with a hint about itself — it fails with
+  an ordinary 401, because the CLI does not know the OIDC path.
+- **A version already in the registry is skipped.** npm rightly refuses to publish over an
+  existing version, which would turn a release run red with nothing for anyone to fix.
+  NuGet has `--skip-duplicate` for this; npm has no counterpart, so the workflow asks
+  first.
+
+Setup is per package on `npmjs.com/package/<name>/access` under **Trusted Publisher**:
+this repository plus this workflow's filename. Both must match or the registry refuses.
 
 ## Versioning and releases
 
