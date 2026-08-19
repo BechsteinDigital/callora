@@ -168,3 +168,19 @@ custom/static-plugins/*
 !custom/plugins/README.md
 !custom/static-plugins/.gitkeep
 !custom/static-plugins/README.md
+
+# Lokale Werkzeuge, die auf dieser Maschine liegen und nicht ins Repository gehören.
+#
+# Namentlich und nicht als Muster: `scripts/` ist ein verfolgtes Verzeichnis, und eine
+# Regel wie `scripts/*-local.sh` würde irgendwann ein Skript verschlucken, das jemand
+# bewusst einchecken wollte — still, weil ein ignoriertes `git add` nichts sagt. Wer
+# eines dieser drei künftig doch mitliefern will, streicht seine Zeile hier.
+#
+# `sync-packages.sh` beschreibt einen Ablauf, den es so nicht mehr gibt (ein
+# `local-packages/`, das in diesem Repository nirgends existiert); `bundle-plugins.sh`
+# erwartet die Plugin-Repos als GESCHWISTER dieses Checkouts, während sie hier unter
+# custom/ liegen. Beide sind Reste, kein laufender Weg — der laufende ist
+# scripts/dev-build.sh.
+.mcp-gh-tooling.json
+scripts/bundle-plugins.sh
+scripts/sync-packages.sh
