@@ -115,6 +115,16 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
 
+  // GitHub Pages serves a project site under /<repo>/, and every asset link is built
+  // from this value. Without it the pages loaded — with `href="/assets/style.css"`,
+  // which resolves to the domain root and 404s. The result looks worse than a broken
+  // deployment: HTML arrives, so the site "works", it just has no styling and no
+  // JavaScript, and nothing in the build log says so.
+  //
+  // Overridable for a future custom domain, where the base is `/` again:
+  //   DOCS_BASE=/ npm run build
+  base: process.env.DOCS_BASE ?? '/callora/',
+
   // /api/ is the DocFX-generated .NET reference, served alongside this site — a valid
   // runtime path but not a VitePress page, so it must not fail the dead-link check.
   ignoreDeadLinks: [/^\/api\//],
