@@ -83,11 +83,28 @@ public static class BackendPersistenceServiceCollectionExtensions
         // Der Katalog gehört der Anfrage: einmal asynchron geladen, danach synchron gelesen.
         services.AddScoped<Callora.Core.Application.Snippets.ISnippetCatalog,
             Callora.Core.Application.Snippets.SnippetCatalog>();
-        services.AddScoped<Microsoft.Extensions.Localization.IStringLocalizerFactory,
-            Callora.Core.Application.Snippets.SnippetStringLocalizerFactory>();
+        // Die Factory als SINGLETON, obwohl der Katalog scoped ist. ASP.NET löst sie beim
+        // Aufbau der MvcOptions aus der Wurzel des Containers auf; scoped registriert nahm sie
+        // den ganzen Host mit — "Cannot consume scoped service 'ISnippetCatalog' from singleton
+        // 'IOptions<MvcOptions>'", Ende mit Code 134, bevor ein Port offen war. Drei Tage lang
+        // unbemerkt, weil dotnet watch den Absturz auffängt und der Container weiter "Up" meldet.
+        //
+        // Den Katalog liefert ein Delegat, der ihn aus den Diensten DER LAUFENDEN ANFRAGE holt.
+        // Nicht aus einem eigenen Scope: Der Katalog wird einmal je Anfrage geladen und danach
+        // synchron gelesen — ein zweiter Scope wäre ein zweiter Ladevorgang und könnte andere
+        // Texte liefern als der Rest derselben Anfrage sieht.
+        services.AddSingleton<Microsoft.Extensions.Localization.IStringLocalizerFactory>(provider =>
+        {
+            var accessor = provider.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>();
+            return new Callora.Core.Application.Snippets.SnippetStringLocalizerFactory(
+                () => accessor.HttpContext?.RequestServices
+                    .GetService<Callora.Core.Application.Snippets.ISnippetCatalog>());
+        });
+        // Direkt injizierbar bleibt der Localizer scoped: Wer ihn so bezieht, steht bereits in
+        // einer Anfrage und bekommt deren Katalog ohne Umweg über den Accessor.
         services.AddScoped<Microsoft.Extensions.Localization.IStringLocalizer>(
             provider => new Callora.Core.Application.Snippets.SnippetStringLocalizer(
-                provider.GetRequiredService<Callora.Core.Application.Snippets.ISnippetCatalog>()));
+                provider.GetRequiredService<Callora.Core.Application.Snippets.ISnippetCatalog>));
         services.AddScoped<IHostUnitOfWork, EfHostUnitOfWork>();
         services.AddScoped<IBackendRbacStore, EfBackendRbacStore>();
         services.AddScoped<IIntegrationCredentialStore, EfIntegrationCredentialStore>();

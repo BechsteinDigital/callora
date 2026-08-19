@@ -10,7 +10,7 @@ by the separate `callora-production` distribution (one app container plus
 Postgres). For local work the repository ships Docker Compose files:
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d
+docker compose up -d
 ```
 
 The backend then answers a liveness probe at `http://localhost:5000/health`.

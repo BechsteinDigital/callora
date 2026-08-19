@@ -6,11 +6,10 @@ on docker-compose or a single VPS. This page covers the operational shape;
 the composition itself (image build, package assembly) lives in the separate
 `callora-production` repository.
 
-> **Status:** This repository provides the framework libraries and the dev/prod-like
-> compose files below. The production composition (`callora-production`), the
-> production container image, and the production NuGet feed are designed but live
-> outside this repo. Treat the prod-like compose file as the reference shape, not
-> a shipped production artifact.
+> **Status:** This repository provides the framework libraries and the dev compose
+> stack below. The production composition (`callora-production`), the production
+> container image, and the production NuGet feed live outside this repo. Nothing
+> here is a shipped production artifact.
 
 ## Topology
 
@@ -33,16 +32,22 @@ resolved from `Host + Path`.
 
 | File | Brings up | Use |
 |---|---|---|
-| `docker-compose.yml` | `callora-backend` (SDK image, `dotnet watch` on `src/Core`, port `5000`) + `postgres:16` (port `5432`). Two services. | Local dev, hot reload. |
+| `docker-compose.yml` | `callora-backend` (SDK image, `dotnet watch` on `src/Host/Dev`, port `5000`), `postgres:16`, and `coturn` for a real ICE relay. | Local dev, hot reload. |
 | `docker-compose.frontdoor.yml` | Overlay adding a `caddy:2.8` frontdoor on port `8080` over the dev stack (single-origin path routing). | Layer with `-f docker-compose.yml -f docker-compose.frontdoor.yml`. |
-| `docker-compose.prod-like.yml` | Built self-contained images: `callora-backend` (from `src/Core/Dockerfile`), `callora-admin-shell`, `callora-workspace-shell`, a `caddy:2.8` frontdoor on `8080`, and `postgres:16`. Five services, no source mount, no `dotnet watch`. | Rehearse the production shape locally. |
+
+There was a second stack here, `docker-compose.prod-like.yml`, built from
+`src/Core/Dockerfile`. Both are gone. The Dockerfile set
+`ENTRYPOINT ["dotnet", "Callora.Core.dll"]`, and Core has been
+`OutputType=Library` since the module split — the image it produced had no entry
+point and could not start. Rehearsing the production shape means building the
+`callora-production` distribution, which is where the runnable host actually lives.
 
 Start the dev stack:
 
 ```bash
 cp .env.example .env    # edit at least the DB connection + API key
 set -a; source .env; set +a
-docker compose -f docker-compose.yml up -d
+docker compose up -d
 curl http://localhost:5000/health
 ```
 

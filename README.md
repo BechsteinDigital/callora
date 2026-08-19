@@ -61,22 +61,55 @@ den das Kundenportal sieht — über einen deklarierten, feldweise sichtbaren Ka
 
 ## Schnellstart
 
+Nichts installiert außer Docker? Dann dieser Weg — er baut Host, beide
+Oberflächen und jedes geklonte Plugin im Image:
+
 ```bash
 git clone https://github.com/BechsteinDigital/callora.git
 cd callora
+
+# Plugins, die dabei sein sollen — optional, der Host läuft auch ohne
+git clone <communication> custom/static-plugins/Communication
+git clone <videoconference> custom/plugins/videoconference
+
+docker compose -f docker-compose.standalone.yml up --build
+```
+
+Admin unter `http://localhost:5000/admin`. Aufgezählt wird hier nichts: Gebaut
+und geladen wird, was unter `custom/` eine `registry.json` hat — dieselbe Suche
+für Build und Discovery.
+
+### Daran entwickeln
+
+```bash
+scripts/dev-build.sh                 # Host + alle geklonten Plugins
+docker compose up -d                 # Stack mit dotnet watch, Postgres, TURN
+```
+
+`dotnet watch` baut den **Host** neu, nicht die Plugins. Nach einer
+Plugin-Änderung `scripts/dev-build.sh --plugins <name>`.
+
+### Einzeln bauen
+
+Ein voller Lauf baut beide Vue-Suiten über ihre MSBuild-Targets und jedes
+Plugin. Wer an einer Stelle arbeitet, braucht nur diese:
+
+```bash
+scripts/dev-build.sh --only admin        # Vue-Shell unter /admin
+scripts/dev-build.sh --only surface      # Flächen-Runtime + SSR
+scripts/dev-build.sh --only host         # nur .NET, ohne Node
+scripts/dev-build.sh --plugins composer  # ein Plugin (C# + Bundles)
+```
+
+### Ohne Docker
+
+```bash
 dotnet restore Callora.Host.sln
-dotnet build Callora.Host.sln        # baut die Admin-SPA mit (vue-tsc + vite)
+dotnet build Callora.Host.sln        # baut beide Oberflächen mit (vue-tsc + vite)
 dotnet test Callora.Host.sln
 ```
 
-Ohne Node bauen: `dotnet build -p:SkipAdminFrontend=true`
-
-Laufende Entwicklungsumgebung:
-
-```bash
-docker compose up -d                 # Postgres
-dotnet run --project src/Host/Dev    # Admin unter /admin
-```
+Ohne Node: `dotnet build -p:SkipAdminFrontend=true -p:SkipSurfaceFrontend=true`
 
 Die Vitest-Suiten der Frontends laufen eigenständig:
 

@@ -32,7 +32,14 @@ for dir in "${targets[@]}"; do
     log=$(mktemp)
     # Der Build MUSS scheitern dürfen: RS0016/RS0017 sind als Fehler konfiguriert, und
     # genau diese Fehler sind die Eingabe. `|| true` statt Abbruch.
-    dotnet build "$project" --nologo -v quiet >"$log" 2>&1 || true
+    #
+    # DOTNET_CLI_UI_LANGUAGE: Der Auswerter unten liest den Symbolnamen aus dem
+    # Meldungstext, und der ist lokalisiert. Auf einer deutschen Maschine steht dort
+    # „Das Symbol … ist nicht Teil der deklarierten öffentlichen API", das Muster greift
+    # nicht, und das Skript meldete „unverändert" — also Erfolg für eine Grundlinie, die
+    # es nie angefasst hat. Wer sich darauf verließ, committete eine Fläche ohne ihren
+    # Vertragseintrag und sah es erst am roten Build.
+    DOTNET_CLI_UI_LANGUAGE=en dotnet build "$project" --nologo -v quiet >"$log" 2>&1 || true
 
     python3 - "$baseline" "$log" <<'PY'
 import pathlib

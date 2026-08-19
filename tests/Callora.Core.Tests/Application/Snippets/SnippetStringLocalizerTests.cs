@@ -11,7 +11,7 @@ public sealed class SnippetStringLocalizerTests
     [Fact]
     public void AKnownKey_ReturnsItsText()
     {
-        var localizer = new SnippetStringLocalizer(Catalog(("composer.editor.save", "Speichern")));
+        var localizer = new SnippetStringLocalizer(() => Catalog(("composer.editor.save", "Speichern")));
 
         var localized = localizer["composer.editor.save"];
 
@@ -25,7 +25,7 @@ public sealed class SnippetStringLocalizerTests
     [Fact]
     public void AnUnknownKey_ReturnsTheNameAndSaysSo()
     {
-        var localizer = new SnippetStringLocalizer(Catalog());
+        var localizer = new SnippetStringLocalizer(() => Catalog());
 
         var localized = localizer["gibt.es.nicht"];
 
@@ -36,7 +36,7 @@ public sealed class SnippetStringLocalizerTests
     [Fact]
     public void AKeyWithArguments_IsFormatted()
     {
-        var localizer = new SnippetStringLocalizer(Catalog(("cart.count", "{0} Artikel im Warenkorb")));
+        var localizer = new SnippetStringLocalizer(() => Catalog(("cart.count", "{0} Artikel im Warenkorb")));
 
         Assert.Equal("3 Artikel im Warenkorb", localizer["cart.count", 3].Value);
     }
@@ -46,7 +46,7 @@ public sealed class SnippetStringLocalizerTests
     [Fact]
     public void AnEmptyCatalog_IsNotAnError()
     {
-        var localizer = new SnippetStringLocalizer(new SnippetCatalog(new EmptyResolver()));
+        var localizer = new SnippetStringLocalizer(() => new SnippetCatalog(new EmptyResolver()));
 
         Assert.True(localizer["irgendwas"].ResourceNotFound);
         Assert.Empty(localizer.GetAllStrings(includeParentCultures: true));
