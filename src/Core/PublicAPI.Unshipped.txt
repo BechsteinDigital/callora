@@ -3034,13 +3034,13 @@ Callora.Core.Application.Snippets.SnippetResolver.ResolveAsync(string? locale, s
 Callora.Core.Application.Snippets.SnippetResolver.SnippetResolver(Callora.Core.Application.Snippets.ISnippetBaseSource! baseSource, Callora.Core.Application.Snippets.ISnippetOverrideStore! overrides) -> void
 Callora.Core.Application.Snippets.SnippetStringLocalizer
 Callora.Core.Application.Snippets.SnippetStringLocalizer.GetAllStrings(bool includeParentCultures) -> System.Collections.Generic.IEnumerable<Microsoft.Extensions.Localization.LocalizedString!>!
-Callora.Core.Application.Snippets.SnippetStringLocalizer.SnippetStringLocalizer(Callora.Core.Application.Snippets.ISnippetCatalog! catalog) -> void
+Callora.Core.Application.Snippets.SnippetStringLocalizer.SnippetStringLocalizer(System.Func<Callora.Core.Application.Snippets.ISnippetCatalog?>! catalog) -> void
 Callora.Core.Application.Snippets.SnippetStringLocalizer.this[string! name, params object![]! arguments].get -> Microsoft.Extensions.Localization.LocalizedString!
 Callora.Core.Application.Snippets.SnippetStringLocalizer.this[string! name].get -> Microsoft.Extensions.Localization.LocalizedString!
 Callora.Core.Application.Snippets.SnippetStringLocalizerFactory
 Callora.Core.Application.Snippets.SnippetStringLocalizerFactory.Create(System.Type! resourceSource) -> Microsoft.Extensions.Localization.IStringLocalizer!
 Callora.Core.Application.Snippets.SnippetStringLocalizerFactory.Create(string! baseName, string! location) -> Microsoft.Extensions.Localization.IStringLocalizer!
-Callora.Core.Application.Snippets.SnippetStringLocalizerFactory.SnippetStringLocalizerFactory(Callora.Core.Application.Snippets.ISnippetCatalog! catalog) -> void
+Callora.Core.Application.Snippets.SnippetStringLocalizerFactory.SnippetStringLocalizerFactory(System.Func<Callora.Core.Application.Snippets.ISnippetCatalog?>! catalog) -> void
 Callora.Core.Application.Startup.CalloraHostStartup
 Callora.Core.Application.Startup.CalloraHostStartup.CalloraHostStartup(Callora.Core.Application.Options.CalloraHostingOptions! options, Callora.Core.Application.Plugins.ICalloraPluginRuntime? pluginRuntime = null) -> void
 Callora.Core.Application.Startup.CalloraHostStartup.StartAsync(System.IServiceProvider! services, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

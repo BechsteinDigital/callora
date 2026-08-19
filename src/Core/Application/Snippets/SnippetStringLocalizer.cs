@@ -18,7 +18,16 @@ namespace Callora.Core.Application.Snippets;
 /// schrittweisen Migration der Oberflächen.
 /// </para>
 /// </remarks>
-public sealed class SnippetStringLocalizer(ISnippetCatalog catalog) : IStringLocalizer
+/// <remarks>
+/// <para>
+/// Der Katalog kommt als Delegat, nicht als Wert: Ein Localizer wird von der Factory erzeugt und
+/// von MVC über Anfragen hinweg gehalten. Bekäme er den Katalog im Konstruktor, hinge er am
+/// DbContext der ERSTEN Anfrage — sichtbar erst, wenn ein zweiter Mandant andere Texte sieht als
+/// er sollte. Der Delegat kann <c>null</c> liefern; außerhalb einer Anfrage gibt es keinen
+/// Katalog, und dann greift derselbe Rückfall wie bei einem unbekannten Schlüssel.
+/// </para>
+/// </remarks>
+public sealed class SnippetStringLocalizer(Func<ISnippetCatalog?> catalog) : IStringLocalizer
 {
     public LocalizedString this[string name] => Lookup(name);
 
@@ -35,13 +44,15 @@ public sealed class SnippetStringLocalizer(ISnippetCatalog catalog) : IStringLoc
     }
 
     public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) =>
-        catalog.Snippets.Select(entry => new LocalizedString(entry.Key, entry.Value, resourceNotFound: false));
+        catalog() is { } resolved
+            ? resolved.Snippets.Select(entry => new LocalizedString(entry.Key, entry.Value, resourceNotFound: false))
+            : [];
 
     private LocalizedString Lookup(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        return catalog.Snippets.TryGetValue(name, out var value)
+        return catalog() is { } resolved && resolved.Snippets.TryGetValue(name, out var value)
             ? new LocalizedString(name, value, resourceNotFound: false)
             : new LocalizedString(name, name, resourceNotFound: true);
     }
