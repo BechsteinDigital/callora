@@ -36,7 +36,7 @@ The core manifest is parsed into `PluginRegistryJsonDto`
 
 | Field | Required | Purpose |
 | --- | --- | --- |
-| `contractVersion` | **Yes** | Host↔plugin contract generation (e.g. `"v1"`). Validated against `PluginContractVersionPolicy`; an unsupported or removed version rejects the plugin, a deprecated one warns. |
+| `contractVersion` | **Yes** | Host↔plugin contract generation. Use `"v2"` — validated against `PluginContractVersionPolicy`, where `v2` is supported, `v1` deprecated (installs with a warning) and `v0` removed (rejected). |
 | `schemaVersion` | **Yes** | Version of the `registry.json` schema itself (e.g. `"1.0"`). |
 | `name` | **Yes** | Human-readable display name for tooling and the marketplace. |
 | `pluginId` | **Yes** | Stable machine identifier. Must equal the entry class's `PluginId`. Also derives your DB schema and asset root — see below. |
@@ -106,7 +106,9 @@ stored data.
 ## A complete example
 
 Here is the Communication plugin's manifest,
-`custom/static-plugins/Communication/registry.json`, verbatim:
+`custom/static-plugins/Communication/registry.json`, verbatim — including its
+`contractVersion` of `v1`, which is the *deprecated* tier. It installs, with a warning. A new
+plugin should declare `v2`; this one is quoted as it stands, not as a template.
 
 ```json
 {
@@ -156,7 +158,7 @@ provides, and provides none of its own:
 
 ```json
 {
-  "contractVersion": "v1",
+  "contractVersion": "v2",
   "schemaVersion": "1.0",
   "name": "Acme Dialer",
   "pluginId": "acme-dialer",

@@ -48,21 +48,23 @@ manifest and injects it before the app mounts.
 
 Inside your plugin, create the admin source tree:
 
+The bundle's build config (`package.json` + `vite.config.ts`) sits at the **plugin root**,
+next to your `.csproj` — the same place the surface bundle uses. Both the preset's `entry`
+and its `outDir` are resolved from there, so a config nested under `Resources/app/admin/`
+would look for `src/Resources/app/admin/src/main.ts` *beneath itself* and not find it.
+
 ```text
 my-plugin/
+├── package.json                  # the admin bundle's build config
+├── vite.config.ts
 └── src/
     └── Resources/
-        ├── app/
-        │   └── admin/                # source (stays with the vendor)
-        │       ├── package.json
-        │       ├── vite.config.ts
-        │       └── src/
-        │           └── main.ts
-        └── public/
-            └── admin/                # build output — the only thing that ships
+        ├── app/admin/src/        # source (stays with the vendor)
+        │   └── main.ts
+        └── public/admin/         # build output — the only thing that ships
 ```
 
-`package.json` for the bundle:
+`package.json` for the bundle (at the plugin root):
 
 ```json
 {
@@ -73,12 +75,18 @@ my-plugin/
     "build": "vite build",
     "dev": "vite build --watch"
   },
+  "dependencies": {
+    "@callora/admin": "^0.9.0"
+  },
   "devDependencies": {
     "vite": "^6.0.0",
     "vue": "^3.5.0"
   }
 }
 ```
+
+`@callora/admin` is a real dependency, not a dev one: `vite.config.ts` below imports
+`@callora/admin/vite-preset` from it, and your module imports its types.
 
 ::: info Vue is a dev dependency, not a runtime one
 You need Vue's types to build against the shared `defineComponent` / `h` primitives, but the

@@ -111,12 +111,15 @@ Related registry error/warning codes (`PluginRegistryErrorCodes`):
 - `PLUGIN_CONTRACT_VERSION_DEPRECATED` — installable, warning emitted (currently `v1`)
 - `PLUGIN_CONTRACT_VERSION_REMOVED` — installation blocked (currently `v0`)
 
-::: warning
-`callora plugin new` scaffolds `"contractVersion": "v1"`, and `callora plugin test-contract`
-validates against **`v1`** as the current target. The runtime installer's support matrix already lists `v2` as the *supported* tier
-and `v1` as *deprecated-but-installable*. In practice: set `v1` today (it installs and
-passes `test-contract`), and expect `v2` to become the target as the contract surface
-advances. Watch the deprecation warning as your signal to migrate.
+::: tip Set `v2`
+`callora plugin new` scaffolds `"contractVersion": "v2"`, and `callora plugin test-contract`
+reads the same support matrix the runtime installer uses — so the three tiers mean the same
+thing in the tool and on the host: `v2` passes, `v1` passes **with a warning**, `v0` fails.
+
+Until August 2026 those were two separate answers: the CLI hard-coded `v1` as the only
+accepted value while the installer already listed `v2` as supported. The advice here was to
+set `v1` because that is what the scaffolder wrote — which made the deprecated tier the
+default path for every new plugin.
 :::
 
 ## The live support & compatibility matrix
@@ -166,8 +169,8 @@ capability:
 }
 ```
 
-**Expected behavior:** the plugin installs on a host at `contractVersion` `v1` (with the
-deprecation warning), provided the host's `Callora.Core` satisfies `>=0.9.0` — the
+**Expected behavior:** the plugin installs on a host at `contractVersion` `v1` — with a
+deprecation warning, since `v2` is the supported tier — provided the host's `Callora.Core` satisfies `>=0.9.0` — the
 dependency gate checks that before anything else happens. At activation it can resolve
 `ICommunicationChannelRegistry` from the Communication plugin — the same type both sides
 compiled against, thanks to the shared assembly registry — but only if a plugin providing

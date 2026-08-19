@@ -11,8 +11,15 @@ dedicated parser and executed by a dedicated worker (`PluginScaffolder`,
 
 ## Invocation
 
-There is no packaged global tool yet. Inside this repository, invoke the CLI
-through the project:
+The CLI ships as a .NET global tool (`PackageId` `Callora.Cli`, command `callora`):
+
+```bash
+dotnet tool install -g Callora.Cli
+callora <command> [options]
+```
+
+Inside this repository, where the tool would be the released version rather than your working
+copy, run it through the project instead:
 
 ```bash
 dotnet run --project src/Host/Cli/Callora.Host.Cli.csproj -- <command> [options]
@@ -78,14 +85,19 @@ a `.csproj`, an `Application/<Name>Plugin.cs` entry class implementing
   current directory, where `<segment>` strips the name down to letters, digits,
   `-`, and `_`. Without `--force`, scaffolding refuses a directory that exists
   and is non-empty (`Output directory is not empty: …`).
-- **Contract reference.** When run inside the repository (a `Callora.Host.sln` is
-  found by walking up from the current directory), the generated `.csproj`
-  references `src/Core/Callora.Core.csproj` as a `ProjectReference` with
-  `Private="false" ExcludeAssets="runtime"`. Outside the repository it emits a
-  `PackageReference` to `Callora.Core` version `0.1.0` with
-  `ExcludeAssets="runtime"`. In both cases Core is compiled against but **not
-  shipped** with the plugin — the host provides it and the plugin's assembly
-  load context shares its type identity (REV2 §10.1A).
+- **Contract reference.** Outside the repository the generated `.csproj` carries a
+  single `PackageReference` to **`Callora.Plugin.Sdk`**, at the CLI's own version — so
+  a tool never scaffolds against an SDK release that does not exist. The SDK brings the
+  contract surface, the governance analyzers, and the build rule that keeps platform
+  assemblies out of the output folder; that rule used to be a hand-written
+  `ExcludeAssets="runtime"`, which a plugin author could remove while restructuring with
+  nothing failing until load time.
+
+  Inside the repository (a `Callora.Host.sln` is found by walking up from the current
+  directory) there are no packages to reference, so it emits `ProjectReference`s to the
+  same pieces with `Private="false"`. Either way the platform is compiled against but
+  **not shipped** — the host provides it, and the plugin's load context shares its type
+  identity (REV2 §10.1A).
 
 ### Generated files
 
@@ -94,9 +106,9 @@ PascalCase):
 
 | Path | Contents |
 | --- | --- |
-| `Callora.Plugins.AcmeVoice.csproj` | `net10.0` SDK project, `ImplicitUsings`/`Nullable` enabled, `GenerateDocumentationFile=true` (with `NoWarn=$(NoWarn);1591`), the Core reference above, and `registry.json` copied to output (`PreserveNewest`). |
-| `Application/AcmeVoicePlugin.cs` | `public sealed class AcmeVoicePlugin : IHostManagedPlugin` with `PluginId`, `DisplayName`, and no-op `StartAsync`/`StopAsync`. |
-| `registry.json` | `contractVersion: v1`, `schemaVersion: 1.0`, `name`, `pluginId`, `version: 0.1.0`, `assemblyFileName`, `entryTypeName`, `capabilities: ["workspace.navigation"]`, one `extensions` entry (`extensionPointId: workspace.navigation.main`, `surface: workspace`), and `dependencies: { "Callora.Core": ">=0.1.0" }`. |
+| `Callora.Plugins.AcmeVoice.csproj` | `net10.0` SDK project, `ImplicitUsings`/`Nullable` enabled, `GenerateDocumentationFile=true` (with `NoWarn=$(NoWarn);1591`), `EnableDefaultCompileItems=false` (only `src/**/*.cs` is compiled, so a front-end bundle at the plugin root stays out of the .NET compilation), the SDK reference above, and `registry.json` copied to output (`PreserveNewest`). |
+| `src/AcmeVoicePlugin.cs` | `public sealed class AcmeVoicePlugin : IHostManagedPlugin` with `PluginId`, `DisplayName`, and no-op `StartAsync`/`StopAsync`. |
+| `registry.json` | `contractVersion: v2`, `schemaVersion: 1.0`, `name`, `pluginId`, `version: 0.1.0`, `assemblyFileName`, `entryTypeName`, `capabilities: ["workspace.navigation"]`, one `extensions` entry (`extensionPointId: workspace.navigation.main`, `surface: surface`), and `dependencies: { "Callora.Core": ">=0.1.0" }`. |
 
 ### Example
 
@@ -146,7 +158,8 @@ at once)
 | Failure code | Fires when |
 | --- | --- |
 | `MANIFEST_CONTRACT_VERSION_MISSING` | `contractVersion` is absent/blank. |
-| `MANIFEST_CONTRACT_VERSION_UNSUPPORTED` | `contractVersion` is present but not `v1` (case-insensitive). |
+| `MANIFEST_CONTRACT_VERSION_UNSUPPORTED` | `contractVersion` is present but unknown to `PluginContractVersionPolicy`, or listed there as *removed* (currently `v0`). Case-insensitive. |
+| `MANIFEST_CONTRACT_VERSION_DEPRECATED` | `contractVersion` is a *deprecated* tier (currently `v1`). Reported as a **warning**: the run still exits `0`, because the host installs such a plugin too. |
 | `MANIFEST_SCHEMA_VERSION_MISSING` | `schemaVersion` is absent/blank. |
 | `MANIFEST_NAME_MISSING` | `name` is absent/blank. |
 | `MANIFEST_PLUGIN_ID_MISSING` | `pluginId` is absent/blank. |

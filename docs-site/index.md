@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Callora
   text: The domain-neutral plugin platform for .NET
-  tagline: A pure platform kernel — auth & RBAC, plugin runtime, business-event bus — with everything domain-specific built as plugins. Our own Shopware/Symfony, for .NET.
+  tagline: A pure platform kernel — auth & RBAC, plugin runtime, business-event bus — with everything domain-specific built as plugins.
   actions:
     - theme: brand
       text: Get Started

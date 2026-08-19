@@ -57,17 +57,22 @@ public static class CalloraCliApplication
 
             var tester = new PluginContractTester();
             var testResult = await tester.TestAsync(testParseResult.Request, cancellationToken).ConfigureAwait(false);
+            // Warnungen erscheinen in beiden Fällen. Ein bestandener Lauf, der einen
+            // Deprecation-Hinweis verschluckt, nimmt dem Plugin-Autor genau das Signal, an dem
+            // er die Migration festmachen soll.
+            foreach (var issue in testResult.Issues)
+            {
+                var target = issue.IsWarning ? standardOutput : standardError;
+                var label = issue.IsWarning ? "warning" : "error";
+                await target
+                    .WriteLineAsync($"[{issue.Code}] {label}: {issue.Message} Fix: {issue.Remediation}")
+                    .ConfigureAwait(false);
+            }
+
             if (testResult.IsSuccess)
             {
                 await standardOutput.WriteLineAsync("All contract checks passed.").ConfigureAwait(false);
                 return 0;
-            }
-
-            foreach (var issue in testResult.Issues)
-            {
-                await standardError
-                    .WriteLineAsync($"[{issue.Code}] {issue.Message} Fix: {issue.Remediation}")
-                    .ConfigureAwait(false);
             }
 
             return 1;
