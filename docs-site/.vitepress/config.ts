@@ -129,11 +129,30 @@ export default defineConfig({
   // runtime path but not a VitePress page, so it must not fail the dead-link check.
   ignoreDeadLinks: [/^\/api\//],
 
-  // The surface docs quote Nunjucks/Twig templates, which use `{{ }}`. Move Vue's own
-  // interpolation delimiters out of the way so those examples render literally instead
-  // of being parsed as Vue expressions (we never use `{{ }}` for real interpolation).
-  vue: {
-    template: { compilerOptions: { delimiters: ['{[', ']}'] } },
+  // Code stays code. VitePress renders Markdown to HTML and then compiles that HTML as a
+  // Vue template — and a fenced code block is not exempt: `{{ … }}` inside one is still
+  // parsed as an expression. For a site quoting Nunjucks and Twig that is a real problem,
+  // because `{{ workspace.key }}` would silently render as empty text. Silently, except in
+  // one spot: `{{ super() }}` in the SSR template guide is not valid JavaScript, so it fails
+  // the build instead of quietly emptying — the one example loud enough to reveal the rest.
+  //
+  // This used to be handled with `vue: { template: { compilerOptions: { delimiters: ['{[', ']}'] } } }`
+  // on the assumption that the site never interpolates. It does: the default theme renders its
+  // own labels through `{{ }}`, so the published site showed `{{ site.title }}`, `{{ text }}`
+  // and `{{ linkText }}` as literal text on every page — the fix for the code samples broke
+  // the chrome around them.
+  //
+  // `v-pre` is the narrow version of the same intent: it exempts exactly the code, and leaves
+  // interpolation working everywhere else.
+  markdown: {
+    config(md) {
+      for (const rule of ['fence', 'code_block', 'code_inline']) {
+        const base = md.renderer.rules[rule]
+        if (!base) continue
+        md.renderer.rules[rule] = (...args) =>
+          base(...args).replace(/^<(pre|code)(?![^>]*\bv-pre\b)/, '<$1 v-pre')
+      }
+    },
   },
 
   themeConfig: {
