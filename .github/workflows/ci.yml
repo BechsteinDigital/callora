@@ -4,13 +4,18 @@ name: CI
 # steht in release.yml und npm-publish.yml; die Doku hat einen eigenen Lauf, weil sie
 # einen Deploy anhängt und von Codeänderungen nur selten betroffen ist.
 #
-# Vier Jobs, nach Rückmeldezeit sortiert statt nach Technologie:
+# Drei Jobs:
 #
-#   dotnet        Karte, Build, schnelle Tests — die Antwort, die man zuerst will
-#   integration   Der vollständige Lauf gegen ein echtes Postgres, samt Abdeckung
-#                 (ein Container, nicht elf)
+#   dotnet        Karte, Build, ALLE Tests samt Abdeckung
 #   frontends     Die drei npm-Arbeitsbereiche DIESES Repositories
 #   contracts     Der Weg eines fremden Plugin-Autors, von außen
+#
+# Die Docker-Stufe hatte kurzzeitig einen eigenen Job, für schnellere Rückmeldung. Das
+# war eine Trennung ohne Messung: Seit alle Integrationstests sich EIN Postgres teilen
+# (PostgresFixture), kostet die gesamte Stufe sechzehn Sekunden. Ein zweiter Job kostet
+# dagegen einen eigenen Checkout, einen eigenen Restore und einen eigenen Frontend-Bau —
+# und brachte zwei Fehler mit, die es vorher nicht gab: Die Stylesheet-Tests lesen
+# wwwroot/, das der Vite-Build erzeugt, und die Testsuite lief zweimal.
 #
 # Sie hängen bewusst nicht voneinander ab: Ein rotes Frontend soll nichts über den
 # Zustand der Tests verschweigen, und wer wartet, wartet auf den langsamsten Job und
@@ -61,7 +66,7 @@ jobs:
   dotnet:
     name: Build & Test
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -90,51 +95,20 @@ jobs:
           dotnet restore Callora.Host.sln --verbosity quiet
           dotnet build Callora.Host.sln --no-restore --configuration Release --verbosity minimal
 
-      # Ohne die Docker-Stufe: Die läuft im integration-Job und braucht dort zwei Minuten
-      # länger. Wer eine Zeile Code ändert, soll nicht darauf warten, um zu erfahren, dass
-      # die Suite grün ist.
-      - name: Test (schnelle Stufe)
-        run: |
-          dotnet test Callora.Host.sln --no-build --configuration Release \
-            --filter "Category!=Slow" \
-            --logger "console;verbosity=minimal"
-
-  integration:
-    name: Integration (Postgres)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-
-      - name: Setup .NET (global.json)
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
-        with:
-          global-json-file: global.json
-
-      - name: Cache NuGet packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
-          restore-keys: nuget-${{ runner.os }}-
-
-      # Testcontainers startet EIN Postgres für die gesamte Stufe (PostgresFixture);
-      # isoliert wird über eine eigene Datenbank je Test. Vorher baute jede der elf
-      # Testklassen ihren eigenen Container.
+      # ALLE Tests, ohne Filter. Testcontainers startet EIN Postgres für die
+      # Integrationsstufe (PostgresFixture) und isoliert über eine Datenbank je Test;
+      # vorher baute jede der elf Testklassen ihren eigenen Container. Ohne Docker
+      # überspringen sich diese Tests selbst, statt rot zu werden.
       #
-      # Hier laufen ALLE Tests, nicht nur die Docker-Stufe, weil die Abdeckung hier
-      # gemessen wird: Beim Trennen fiel sie von 25 % auf 23,7 %, weil die
-      # Integrationstests Code abdecken, den sonst niemand anfasst. Die Schwelle
-      # deshalb zu senken hieße, sich das Ergebnis zurechtzulegen. Der dotnet-Job
-      # bleibt die schnelle Rückmeldung, dieser ist der vollständige Lauf.
-      - name: Test (vollständig, mit Abdeckung)
+      # Kein Skip der Frontends: Drei Surface-Tests lesen die Stylesheets aus wwwroot/,
+      # die der Vite-Build erzeugt. Mit -p:SkipSurfaceFrontend=true sind sie nicht da,
+      # und die Tests scheitern an etwas, das nichts mit ihrem Gegenstand zu tun hat.
+      - name: Test
         run: |
           rm -rf ./test-results
-          dotnet test Callora.Host.sln --configuration Release \
+          dotnet test Callora.Host.sln --no-build --configuration Release \
             --collect:"XPlat Code Coverage" --results-directory ./test-results \
-            --logger "console;verbosity=minimal" \
-            -p:SkipAdminFrontend=true -p:SkipSurfaceFrontend=true
+            --logger "console;verbosity=minimal"
 
       - name: Abdeckung über der Schwelle?
         run: python3 scripts/coverage-gate.py --threshold 0.25

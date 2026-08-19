@@ -32,7 +32,7 @@ set -uo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-ALL_GATES=(dotnet integration golden admin frontends docs)
+ALL_GATES=(dotnet golden admin frontends docs)
 RUN_AUDIT="true"
 SELECTED=""
 SKIPPED=""
@@ -104,7 +104,7 @@ build_lib() {
 
 # ── dotnet ────────────────────────────────────────────────────────────────────
 if wanted dotnet; then
-  step "dotnet — Landkarte, Build & Test (ci.yml: dotnet)"
+  step "dotnet — Landkarte, Build, alle Tests, Abdeckung (ci.yml: dotnet)"
   (
     set -e
     # Eine Sekunde, und sie hätte zwei rote Läufe erspart: ci.yml prüft die Karte als
@@ -117,31 +117,17 @@ if wanted dotnet; then
     dotnet build Callora.Host.sln --no-restore --configuration Release --verbosity minimal
     rm -rf ./test-results
     # Ohne die Docker-Stufe, wie ci.yml sie trennt — die läuft im Gate `integration`.
-    dotnet test Callora.Host.sln --no-build --configuration Release \
-      --filter "Category!=Slow" \
-      --logger "console;verbosity=minimal"
-  )
-  record dotnet $?
-fi
-
-# ── integration ───────────────────────────────────────────────────────────────
-if wanted integration; then
-  step "integration — Postgres-Stufe (ci.yml: integration)"
-  # EIN Container für alle Klassen (PostgresFixture), isoliert über eine Datenbank je
-  # Test. Ohne Docker überspringen sich die Tests selbst, statt rot zu werden.
-  (
-    set -e
-    # ALLE Tests, nicht nur die Docker-Stufe: Die Abdeckung wird hier gemessen, und sie
-    # wäre ohne die schnellen Tests genauso schief wie ohne die langsamen. Der dotnet-Job
-    # bleibt die schnelle Rückmeldung; dieser hier ist der vollständige Lauf.
+    # ALLE Tests, ohne Filter — auch die Docker-Stufe. Sie kostet sechzehn Sekunden,
+    # seit sich alle Integrationstests EIN Postgres teilen; ein eigener Job dafür kostete
+    # mehr als er einbrachte. Und kein Skip der Frontends: Drei Surface-Tests lesen die
+    # Stylesheets aus wwwroot/, die erst der Vite-Build erzeugt.
     rm -rf ./test-results
-    dotnet test Callora.Host.sln --configuration Release \
+    dotnet test Callora.Host.sln --no-build --configuration Release \
       --collect:"XPlat Code Coverage" --results-directory ./test-results \
-      --logger "console;verbosity=minimal" \
-      -p:SkipAdminFrontend=true -p:SkipSurfaceFrontend=true
+      --logger "console;verbosity=minimal"
     python3 scripts/coverage-gate.py --threshold 0.25
   )
-  record integration $?
+  record dotnet $?
 fi
 
 # ── golden ────────────────────────────────────────────────────────────────────
