@@ -67,6 +67,8 @@ PATHS=(
   "ops"
   "scripts"
   ".github/workflows"
+  ".config"
+  "docfx"
 )
 
 purpose_for() {
@@ -99,6 +101,8 @@ purpose_for() {
     "ops")                        echo "Betrieb: Runbooks, Frontdoor-Konfiguration, npm-Ausnahmen." ;;
     "scripts")                    echo "Build-, Prüf- und Release-Automatisierung." ;;
     ".github/workflows")          echo "CI, Golden Path, Docs, Release, npm-Publish." ;;
+    ".config")                    echo "Das dotnet-tools-Manifest: die gepinnten lokalen Werkzeuge (docfx, CycloneDX)." ;;
+    "docfx")                      echo "Konfiguration der generierten .NET-API-Referenz, die unter /api/ neben der docs-site liegt." ;;
     *)                            echo "(nicht beschrieben — bitte in scripts/build-repo-map.sh ergänzen)" ;;
   esac
 }
@@ -144,11 +148,21 @@ while IFS= read -r dir; do
     [[ "$path" == "$dir"* ]] && { covered="true"; break; }
   done
   [[ "$covered" == "true" ]] || uncovered+=("$dir")
-done < <(find . -maxdepth 1 -mindepth 1 -type d \
-  -not -name '.git' -not -name 'node_modules' -not -name 'graphify-out' \
-  -not -name '.config' -not -name 'docfx' -not -name 'bin' -not -name 'obj' \
-  -not -name '.claude' \
-  | sed 's|^\./||' | sort)
+# Auch hier das Repository und nicht die Platte — aus demselben Grund, aus dem
+# count_files schon darauf umgestellt wurde: `find` sah `artifacts/` und
+# `test-results/`, weil sie nach einem Build lokal herumliegen. Auf einem Runner
+# gibt es sie nicht. Die Karte bekam damit einen Abschnitt, den die CI wieder
+# entfernte, und `git diff --exit-code` schlug zu — für jeden PR, aus einem Grund,
+# der mit seiner Änderung nichts zu tun hatte.
+#
+# Die Ausschlussliste entfällt mit: Was gitignoriert ist, steht nicht in
+# git ls-files, und zwar überall gleich. Sie verbarg allerdings auch `.config` und
+# `docfx`, die schlicht unbeschrieben waren — beide stehen jetzt in PATHS, was der
+# Zweck dieses Abschnitts ist.
+#
+# `grep /` behält nur Pfade MIT Verzeichnisanteil: Die Dateien im Wurzelverzeichnis
+# (README, CLAUDE.md, …) sind keine Verzeichnisse.
+done < <(git ls-files | grep / | cut -d/ -f1 | sort -u)
 
 {
   echo "# Repository Map"
