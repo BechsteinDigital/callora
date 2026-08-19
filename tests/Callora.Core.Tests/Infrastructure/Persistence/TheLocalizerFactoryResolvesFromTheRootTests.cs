@@ -19,31 +19,35 @@ namespace Callora.Core.Tests.Infrastructure.Persistence;
 public sealed class TheLocalizerFactoryResolvesFromTheRootTests
 {
     /// <summary>
-    /// Der Fall, der den Host wirklich tötet. Die beiden Tests darunter prüfen einzelne
-    /// Registrierungen; erst zusammen mit MVC entsteht die Kette, die beim Start scheitert:
-    /// <c>AddControllers</c> bringt Konfiguratoren für <c>MvcOptions</c> mit, die den Localizer
-    /// aus einem Singleton ziehen. Ein Test ohne sie ist grün, während der Prozess nicht startet
-    /// — genau so ist der Fehler drei Tage lang durchgerutscht.
+    /// Die Zusage, die verletzt war: Diese Registrierung MUSS ein Singleton sein.
     /// </summary>
+    /// <remarks>
+    /// Geprüft wird der Deskriptor, nicht ein vollständig aufgebauter Container. Ein Versuch,
+    /// hier <c>AddControllers()</c> mitzuregistrieren und <c>ValidateOnBuild</c> laufen zu
+    /// lassen, scheitert an Diensten, die erst der WebApplicationBuilder mitbringt
+    /// (<c>IWebHostEnvironment</c>, <c>IMemoryCache</c>) — der Test wäre dann rot, ohne dass
+    /// etwas kaputt ist, und das ist schlimmer als kein Test.
+    ///
+    /// Den echten Startfall deckt der Smoke-Job in release.yml ab: Er startet den Host gegen
+    /// eine echte Datenbank und wartet auf /ready. Dieser Schutz existierte bereits, als der
+    /// Fehler entstand — er lief nur nie, weil das Repository keine Tags hatte und der Job
+    /// an einem v*-Tag hängt.
+    /// </remarks>
     [Fact]
-    public void WithMvc_TheWholeContainerValidates()
+    public void TheFactoryIsRegisteredAsASingleton()
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddControllers();
         services.AddBackendPersistence(new BackendHostOptions
         {
             DatabaseConnectionString = "Host=localhost;Database=x;Username=u;Password=p"
         });
 
-        // ValidateOnBuild ist, was ASP.NET in Development beim Start tut.
-        using var provider = services.BuildServiceProvider(new ServiceProviderOptions
-        {
-            ValidateScopes = true,
-            ValidateOnBuild = true
-        });
+        var descriptor = Assert.Single(
+            services,
+            service => service.ServiceType == typeof(IStringLocalizerFactory));
 
-        Assert.NotNull(provider);
+        Assert.Equal(ServiceLifetime.Singleton, descriptor.Lifetime);
     }
 
     [Fact]
