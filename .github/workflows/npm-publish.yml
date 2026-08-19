@@ -78,8 +78,25 @@ jobs:
       - name: Paketinhalt zeigen
         run: npm pack --dry-run
 
+      # Die Version kann bereits draußen sein: 0.9.0 wurde von Hand veröffentlicht,
+      # bevor dieser Weg je gelaufen ist. npm lehnt ein zweites Publish derselben
+      # Version ab — zu Recht, aber der Lauf wird davon rot, obwohl nichts fehlt und
+      # niemand etwas tun kann. NuGet hat dafür --skip-duplicate, npm hat kein
+      # Gegenstück, also wird vorher gefragt.
+      - name: Version schon veröffentlicht?
+        id: published
+        run: |
+          PKG="$(node -p "require('./package.json').name")"
+          VER="$(node -p "require('./package.json').version")"
+          if npm view "$PKG@$VER" version > /dev/null 2>&1; then
+            echo "::notice::$PKG@$VER liegt bereits auf npm — Publish wird übersprungen."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && steps.published.outputs.skip == 'false'
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
