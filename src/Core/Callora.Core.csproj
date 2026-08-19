@@ -9,7 +9,23 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn>
+    <!-- NU5104: Ein stabiles Paket soll keine Vorabversion fordern. Callora.Core tut es,
+         und zwar unvermeidbar: OpenTelemetry.Instrumentation.EntityFrameworkCore hat nie
+         eine stabile Fassung gehabt — 1.17.0-beta.1 ist zugleich die neueste und die
+         einzige Art Version, die es gibt. Es ist die einzige Vorabversion im ganzen
+         Repository (Directory.Packages.props).
+
+         Die Alternativen taugen nicht. PrivateAssets="all" würde das Paket aus dem nuspec
+         nehmen, aber CalloraObservabilityExtensions ruft
+         AddEntityFrameworkCoreInstrumentation() zur Laufzeit auf — ein Konsument bekäme
+         statt einer Warnung beim Wiederherstellen eine FileNotFoundException beim Starten.
+         Und die Instrumentierung zu streichen hieße, EF-Abfragen aus der Telemetrie zu
+         verlieren, wegen einer Versionsnummer.
+
+         Was das für Konsumenten heißt, offen gesagt: Wer Callora.Core installiert, zieht
+         dieses Beta-Paket transitiv mit. Sobald OpenTelemetry stabil ausliefert, gehört
+         diese Zeile gestrichen. -->
+    <NoWarn>$(NoWarn);1591;NU5104</NoWarn>
     <!-- Core declares and legitimately consumes the [CalloraInternal] surface. -->
     <CalloraFrameworkAssembly>true</CalloraFrameworkAssembly>
     <!-- Baustein 1: als NuGet-Paket in den lokalen Feed. -->

@@ -2,133 +2,135 @@
 
 # Callora
 
-**Die offene Plattform für Kommunikationsprodukte.**
+**The open platform for communication products.**
 
-Ein domänenneutraler .NET-Kern, ein echtes Plugin-Modell und ein visueller Editor, mit dem
-Arbeitsplätze und Portale gebaut werden — nicht programmiert.
+A domain-neutral .NET core, a real plugin model, and a visual editor that assembles
+workspaces and portals instead of programming them.
 
-[Dokumentation](docs-site/) · [Architektur](docs/adr/) · [Erweiterungspunkte](docs-site/developers/extension-points.md)
+[Documentation](https://bechsteindigital.github.io/callora/) · [Architecture](docs/adr/) · [Extension points](docs-site/developers/extension-points.md)
+
+🇩🇪 [Diese Seite auf Deutsch](README.de.md)
 
 </div>
 
 ---
 
-## Was Callora ist
+## What Callora is
 
-Eine Plattform, kein Produkt. Der Kern weiß nichts von Telefonie, Terminen oder Kunden — er
-weiß, wie **Plugins** geladen, isoliert, versorgt und ausgeliefert werden. Alles Fachliche kommt
-aus Plugins, auch das, was wir selbst mitliefern.
+A platform, not a product. The core knows nothing about telephony, appointments or
+customers — it knows how **plugins** are loaded, isolated, supplied and delivered.
+Everything domain-specific arrives as a plugin, including what we ship ourselves.
 
-Das ist dieselbe Wette wie bei Shopware oder Odoo, nur für einen anderen Markt: Wer ein
-Contact Center, ein Kundenportal oder einen Agenten-Arbeitsplatz braucht, soll ihn
-**zusammensetzen** statt ihn bauen zu lassen.
+That is the same bet Shopware and Odoo made, for a different market: whoever needs a
+contact centre, a customer portal or an agent desktop should **assemble** it rather
+than commission it.
 
-### Die drei Ebenen, die das tragen
+### The three layers underneath
 
 ```
-Workspace          — die Daten (ein Mandant, ein Datenbestand)
- └─ Surface        — der Zugang (Domain, Anmeldung, Design)
-     └─ Surface    — die Struktur (Seiten, beliebig tief, vom Kunden gebaut)
-         └─ Layout — was der Composer daraus macht
+Workspace          — the data (one tenant, one body of records)
+ └─ Surface        — the way in (domain, sign-in, design)
+     └─ Surface    — the structure (pages, nested freely, built by the customer)
+         └─ Layout — what the composer makes of it
 ```
 
-Ein Workspace kann mehrere Zugänge auf denselben Daten haben — eine öffentliche Website, ein
-Agenten-Desktop, ein Dialer. Jeder davon ist ein Baum aus Seiten, und jede Seite kann eine
-Erlebniswelt tragen ([ADR-019](docs/adr/ADR-019-surfaces-als-baum.md)).
+One workspace can have several ways in on the same data — a public website, an agent
+desktop, a dialer. Each is a tree of pages, and each page can carry a composed layout
+([ADR-019](docs/adr/ADR-019-surfaces-als-baum.md)).
 
-## Was es besonders macht
+## What makes it different
 
-**Plugins laufen im Prozess, nicht daneben.** Jedes bekommt seinen eigenen
-`AssemblyLoadContext` und sein eigenes Datenbankschema (`plugin_<id>`), teilt aber die
-Typidentität mit dem Host. Ein Plugin exportiert Verträge, die andere Plugins konsumieren —
-ohne HTTP dazwischen ([ADR-013](docs/adr/ADR-013-trust-model-trusted-in-process.md)).
+**Plugins run in-process, not beside it.** Each gets its own `AssemblyLoadContext` and
+its own database schema (`plugin_<id>`), while sharing type identity with the host. A
+plugin exports contracts that other plugins consume — with no HTTP in between
+([ADR-013](docs/adr/ADR-013-trust-model-trusted-in-process.md)).
 
-**Die Vertragsfläche wird vom Compiler bewacht.** `[CalloraInternal]`, CAL0001–0003 und
-PublicApiAnalyzers sorgen dafür, dass „öffentliche API" keine Absichtserklärung ist: Wer die
-Grenze überschreitet, sieht es beim Bauen, nicht beim Kunden.
+**The contract surface is guarded by the compiler.** `[CalloraInternal]`, CAL0001–0004
+and PublicApiAnalyzers make "public API" something other than an intention: crossing the
+boundary fails the build, not the customer.
 
-**Der Editor rendert die echten Komponenten.** Kein iframe, kein zweiter Renderpfad, keine
-Vorschau, die driftet: Der Canvas lädt dieselben Vue-Komponenten und dasselbe Stylesheet wie die
-Fläche, nur gescoped. Was im Editor steht, steht auch live.
+**The editor renders the real components.** No iframe, no second render path, no preview
+that drifts. The canvas loads the same Vue components and the same stylesheet as the live
+surface, only scoped. What you see in the editor is what ships.
 
-**Gestaltung hat Leitplanken.** Das Konfigurationspanel eines Blocks wird aus seinem Vertrag
-generiert, und die Erscheinungs-Controls wählen aus `--cal-*`-Rollen — kein freier Farbwähler,
-keine Pixelfelder. Eine zusammengesetzte Seite sieht deshalb weiterhin nach dem Produkt aus.
+**Design has guardrails.** A block's configuration panel is generated from its contract,
+and appearance controls pick from `--cal-*` roles — no free colour picker, no pixel
+fields. A page a customer assembled still looks like the product.
 
-**Kontext überquert Flächengrenzen.** Ein Anruf, den der Agenten-Desktop annimmt, ist derselbe,
-den das Kundenportal sieht — über einen deklarierten, feldweise sichtbaren Kanal
+**Context crosses surface boundaries.** A call answered on the agent desktop is the same
+call the customer portal sees, over a declared channel with field-level visibility
 ([ADR-017](docs/adr/ADR-017-surface-identitaet-und-session-transport.md)).
 
-## Schnellstart
+## Quick start
 
-Nichts installiert außer Docker? Dann dieser Weg — er baut Host, beide
-Oberflächen und jedes geklonte Plugin im Image:
+Nothing installed but Docker? This path builds the host, both front-ends and every cloned
+plugin into the image:
 
 ```bash
 git clone https://github.com/BechsteinDigital/callora.git
 cd callora
 
-# Plugins, die dabei sein sollen — optional, der Host läuft auch ohne
+# Plugins you want along — optional, the host runs without them
 git clone <communication> custom/static-plugins/Communication
 git clone <videoconference> custom/plugins/videoconference
 
 docker compose -f docker-compose.standalone.yml up --build
 ```
 
-Admin unter `http://localhost:5000/admin`. Aufgezählt wird hier nichts: Gebaut
-und geladen wird, was unter `custom/` eine `registry.json` hat — dieselbe Suche
-für Build und Discovery.
+Admin at `http://localhost:5000/admin`. Nothing is enumerated anywhere: what gets built
+and loaded is whatever has a `registry.json` under `custom/` — the same search for the
+build and for discovery.
 
-### Daran entwickeln
-
-```bash
-scripts/dev-build.sh                 # Host + alle geklonten Plugins
-docker compose up -d                 # Stack mit dotnet watch, Postgres, TURN
-```
-
-`dotnet watch` baut den **Host** neu, nicht die Plugins. Nach einer
-Plugin-Änderung `scripts/dev-build.sh --plugins <name>`.
-
-### Einzeln bauen
-
-Ein voller Lauf baut beide Vue-Suiten über ihre MSBuild-Targets und jedes
-Plugin. Wer an einer Stelle arbeitet, braucht nur diese:
+### Working on it
 
 ```bash
-scripts/dev-build.sh --only admin        # Vue-Shell unter /admin
-scripts/dev-build.sh --only surface      # Flächen-Runtime + SSR
-scripts/dev-build.sh --only host         # nur .NET, ohne Node
-scripts/dev-build.sh --plugins composer  # ein Plugin (C# + Bundles)
+scripts/dev-build.sh                 # host + every cloned plugin
+docker compose up -d                 # stack with dotnet watch, Postgres, TURN
 ```
 
-### Ohne Docker
+`dotnet watch` rebuilds the **host**, not the plugins. After changing a plugin, run
+`scripts/dev-build.sh --plugins <name>`.
+
+### One target at a time
+
+A full run builds both Vue suites through their MSBuild targets, plus every plugin.
+Working on one of them needs only that one:
+
+```bash
+scripts/dev-build.sh --only admin        # the Vue shell under /admin
+scripts/dev-build.sh --only surface      # surface runtime + SSR
+scripts/dev-build.sh --only host         # .NET only, no Node needed
+scripts/dev-build.sh --plugins composer  # one plugin (C# + bundles)
+```
+
+### Without Docker
 
 ```bash
 dotnet restore Callora.Host.sln
-dotnet build Callora.Host.sln        # baut beide Oberflächen mit (vue-tsc + vite)
+dotnet build Callora.Host.sln        # builds both front-ends too (vue-tsc + vite)
 dotnet test Callora.Host.sln
 ```
 
-Ohne Node: `dotnet build -p:SkipAdminFrontend=true -p:SkipSurfaceFrontend=true`
+Without Node: `dotnet build -p:SkipAdminFrontend=true -p:SkipSurfaceFrontend=true`
 
-Die Vitest-Suiten der Frontends laufen eigenständig:
+The front-end Vitest suites run on their own:
 
 ```bash
 cd src/Administration/Resources/app/administration && npm ci && npm run test
 cd src/Surface.Rendering/Resources/app/surface     && npm ci && npm run test
 ```
 
-## Ein Plugin bauen
+## Building a plugin
 
 ```csharp
 public sealed class MyPlugin : IHostManagedPlugin
 {
     public string PluginId => "my-plugin";
-    public string DisplayName => "Mein Plugin";
+    public string DisplayName => "My Plugin";
 
     public ValueTask StartAsync(IHostPluginContext context, CancellationToken ct = default)
     {
-        // Verträge exportieren, die andere Plugins konsumieren
+        // Export contracts other plugins consume
         context.Export<IMyContract>(new MyImplementation());
         return ValueTask.CompletedTask;
     }
@@ -137,67 +139,79 @@ public sealed class MyPlugin : IHostManagedPlugin
 }
 ```
 
-Dazu ein `registry.json`, optional ein eigenes Datenbankschema, eine Admin-UI als IIFE-Bundle
-und Blöcke für den Editor. Der Weg dahin steht in
-[Build your first Callora plugin](docs-site/guides/getting-started/) und
+Plus a `registry.json`, optionally its own database schema, an admin UI as an IIFE bundle,
+and blocks for the editor. The way there is in
+[Build your first Callora plugin](docs-site/guides/getting-started/) and
 [Building a surface plugin](docs-site/guides/surface/building-a-surface-plugin.md).
 
-## Aufbau des Repositories
+The client half of the contract is on npm:
 
-| Pfad | Was |
+```bash
+npm install @callora/surface @callora/admin
+```
+
+## Repository layout
+
+| Path | What |
 |---|---|
-| `src/Core` | Der domänenneutrale Kern (`Callora.Core`) |
-| `src/Administration` | Admin-Modul samt colocated Vue-3-Shell |
-| `src/Workspace` | Workspaces, Surfaces, öffentliches Routing |
-| `src/Surface.Rendering` | Flächen-Rendering (Nunjucks-SSR) und `@callora/surface` |
-| `src/Analyzers` | Roslyn-Analyzer, die die Vertragsfläche bewachen |
-| `src/Plugin.Sdk` | `Callora.Plugin.Sdk` — eine Referenz, gegen die ein Plugin baut |
-| `src/Host/Cli` | Die `callora`-CLI |
-| `src/Host/Dev` | Die lauffähige Zusammenstellung dieses Repos — kein Produkt |
-| `custom/static-plugins/*` | Mitgelieferte System-Plugins (Communication, Composer) |
-| `custom/plugins/` | Installationsziel für dynamische Plugins — im Repository leer |
-| `docs-site/` | Die Dokumentation (VitePress) |
-| `docs/adr/` | Architekturentscheidungen |
+| `src/Core` | The domain-neutral core (`Callora.Core`) |
+| `src/Administration` | Admin module with its colocated Vue 3 shell |
+| `src/Workspace` | Workspaces, surfaces, public routing |
+| `src/Surface.Rendering` | Surface rendering (Nunjucks SSR) and `@callora/surface` |
+| `src/Analyzers` | Roslyn analyzers guarding the contract surface |
+| `src/Plugin.Sdk` | `Callora.Plugin.Sdk` — one reference a plugin builds against |
+| `src/Host/Cli` | The `callora` CLI |
+| `src/Host/Dev` | This repository's runnable composition — not a product |
+| `custom/static-plugins/*` | Bundled system plugins (Communication, Composer) |
+| `custom/plugins/` | Install target for dynamic plugins — empty in the repository |
+| `docs-site/` | The documentation (VitePress) |
+| `docs/adr/` | Architecture decisions |
 
-Dieses Repository ist das **Framework** — ein Satz paketierbarer Bibliotheken. Der lauffähige
-Prozess und die Zusammenstellung einer Distribution liegen im separaten Repository
-`callora-production`; dasselbe Framework kann mehrere Distributionen tragen.
+This repository is the **framework** — a set of packable libraries. The runnable process
+and the assembly of a distribution live in the separate `callora-production` repository;
+the same framework can carry several distributions.
 
-Die Plugins unter `custom/static-plugins` ziehen in eigene, private Repositories und werden
-als Pakete bezogen; ihre **Verträge** bleiben öffentlich, damit ein Dritter dagegen bauen
-kann, ohne die Implementierung zu sehen ([ADR-020](docs/adr/ADR-020-repo-schnitt-und-paketgrenzen.md)).
+The plugins under `custom/static-plugins` are moving into their own repositories and are
+consumed as packages; their **contracts** stay public, so a third party can build against
+them without seeing the implementation
+([ADR-020](docs/adr/ADR-020-repo-schnitt-und-paketgrenzen.md)).
 
-## Dokumentation
+## Documentation
+
+Published at **[bechsteindigital.github.io/callora](https://bechsteindigital.github.io/callora/)**,
+with the .NET API reference under [`/api/`](https://bechsteindigital.github.io/callora/api/).
+
+Locally:
 
 ```bash
 cd docs-site && npm ci && npm run dev
 ```
 
-- **[Nutzer](docs-site/users/)** — Workspaces, Surfaces, Administration
-- **[Entwickler](docs-site/developers/)** — Verträge, Erweiterungspunkte, Plugin-Bau
-- **[Referenz](docs-site/reference/)** — APIs, Manifeste, Analyzer-Regeln, Berechtigungen
-- **[Betrieb](docs-site/maintainer/)** — Deployment, Migrationen, Sicherheit
+- **[Users](docs-site/users/)** — workspaces, surfaces, administration
+- **[Developers](docs-site/developers/)** — contracts, extension points, building plugins
+- **[Reference](docs-site/reference/)** — APIs, manifests, analyzer rules, permissions
+- **[Operations](docs-site/maintainer/)** — deployment, migrations, security
 
-## Mitmachen
+## Contributing
 
-Fehlerberichte, Vorschläge und Pull Requests sind willkommen. Was du vorher wissen solltest,
-steht in **[CONTRIBUTING.md](CONTRIBUTING.md)** — vor allem, was das Repository beim Bauen
-erzwingt: API-Baselines, Governance-Analyzer und Architektur-Tests schlagen zu, bevor ein Review
-es täte.
+Bug reports, proposals and pull requests are welcome. What to know first is in
+**[CONTRIBUTING.md](CONTRIBUTING.md)** — above all what the repository enforces at build
+time: API baselines, governance analyzers and architecture tests strike before a review
+would.
 
-Beiträge laufen über den **Developer Certificate of Origin**: eine Zeile im Commit
-(`git commit -s`), kein Vertrag, keine Rechteabtretung. Warum das reicht und warum es kein CLA
-gibt, steht dort ebenfalls.
+Contributions run on the **Developer Certificate of Origin**: one line in the commit
+(`git commit -s`), no contract, no assignment of rights. Why that is enough and why there
+is no CLA is explained there too.
 
-## Lizenz
+## Licence
 
-Callora steht unter der **[Apache-Lizenz 2.0](LICENSE)**.
+Callora is licensed under the **[Apache License 2.0](LICENSE)**.
 
-Das gilt für alles in diesem Repository, einschließlich der Pakete `@callora/surface` und
-`@callora/admin`, gegen die ein Plugin kompiliert. **Ein Plugin darf beliebig lizenziert sein,
-auch proprietär** — Apache-2.0 verlangt davon nichts.
+That covers everything in this repository, including the `@callora/surface` and
+`@callora/admin` packages a plugin compiles against. **A plugin may be licensed however
+you like, including proprietary** — Apache-2.0 asks nothing of it.
 
-Apache und nicht MIT wegen der ausdrücklichen **Patentklausel**: Bei Codecs, SIP und Echo
-Cancellation ist Patentrecht real, und MIT adressiert es nicht.
+Apache rather than MIT for the explicit **patent grant**: with codecs, SIP and echo
+cancellation, patent law is real, and MIT does not address it.
 
 © 2026 Bechstein.Digital Ecommerce UG (haftungsbeschränkt)
