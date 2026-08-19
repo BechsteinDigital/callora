@@ -1,49 +1,194 @@
+# Die lokale Entwicklungsplattform: Host + Postgres + TURN, mit den Plugin-Klonen
+# aus custom/ als lebende Quelle.
+#
+#   scripts/dev-build.sh                   # Host + alle Plugins bauen
+#   docker compose up                      # Stack starten
+#
+# Es gab hier zwei Dateien, und die falsche trug den naheliegenden Namen. Die alte
+# docker-compose.yml mountete das Repo nach /workspace und lief als root — beides
+# Fehler, die diese Datei ausdrücklich behebt (siehe working_dir und user weiter
+# unten): unterschiedliche Pfade auf beiden Seiten lassen jeden Restore den
+# anderen überschreiben (NETSDK1064), und root-eigene bin/-Dateien machen den
+# nächsten Build auf dem Host unmöglich. Wer `docker compose up` tippte, bekam
+# genau diese Fehler und keinen Hinweis, dass eine reparierte Fassung danebenlag.
+#
+# dotnet watch baut den HOST neu, nicht die Plugins. Nach einer Plugin-Änderung
+# also scripts/dev-build.sh --plugins <name> laufen lassen — die Discovery nimmt
+# die neue Assembly beim nächsten Start auf.
+name: callora-devstack
+
 services:
   callora-backend:
     image: mcr.microsoft.com/dotnet/sdk:10.0
-    container_name: ${DEV_CALLORA_CONTAINER_NAME:-callora-backend-dev}
     restart: unless-stopped
-    working_dir: /workspace
+    # Pfad-IDENTITÄT zwischen Host und Container, nicht /workspace. Der Grund ist
+    # obj/project.assets.json: darin stehen ABSOLUTE Pfade auf den NuGet-Cache und
+    # alle Projekte. Das Repo ist gemountet, also teilen beide Seiten dasselbe
+    # obj/ — mit unterschiedlichen Wurzeln überschreibt jeder Restore den des
+    # anderen, und der nächste Build der Gegenseite bricht mit NETSDK1064
+    # ("Paket wurde nicht gefunden") an einem Paket ab, das sehr wohl im Cache
+    # liegt, nur unter einem anderen Pfad. In einer Dev-Umgebung bauen beide
+    # Seiten (Frontends brauchen npm, das dieses Image nicht hat), also müssen
+    # die Pfade übereinstimmen statt sich abzuwechseln.
+    working_dir: ${CALLORA_DEV_ROOT:-${PWD}}
+    # Als der eigene Benutzer, nicht als root: sonst gehören die von dotnet watch
+    # erzeugten bin/- und obj/-Dateien root, und der nächste Build auf dem Host
+    # scheitert an den Rechten in seinem eigenen Arbeitsverzeichnis.
+    user: "${CALLORA_DEV_UID:-1000}:${CALLORA_DEV_GID:-1000}"
     depends_on:
       postgres:
         condition: service_healthy
+      coturn:
+        condition: service_started
     ports:
       - "${DEV_CALLORA_PORT:-5000}:5000"
+    extra_hosts:
+      # Coturn läuft im Host-Netz; über diesen Namen erreicht der serverseitige
+      # ICE-Agent es aus dem Container. Der Browser nutzt dagegen DEV_TURN_IP.
+      - "host.docker.internal:host-gateway"
     environment:
+      # Muss gesetzt sein. Der Host prüft beim Start, ob unsichere Dev-Defaults
+      # außerhalb von Development aktiv sind, und bricht fail-closed ab —
+      # AllowUnsignedPlugins weiter unten ist genau so ein Default. Ohne diese
+      # Zeile gilt der ASP.NET-Default Production und der Stack startet nicht.
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://0.0.0.0:5000
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
+      # Derselbe Cache-Pfad wie auf dem Host — die Hälfte der Pfad-Identität;
+      # die andere ist der Mount weiter unten.
+      HOME: ${HOME}
+      NUGET_PACKAGES: ${HOME}/.nuget/packages
+      # Das CLI legt Zustand unter $HOME/.dotnet ab. Von $HOME ist nur .nuget/packages
+      # gemountet, der Rest gehört root — als eigener Benutzer wäre er nicht
+      # beschreibbar, und das CLI bricht schon vor dem Build ab.
+      DOTNET_CLI_HOME: /tmp/callora-dotnet-cli
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      # Ohne diese Zeile findet der Host die Plugins und lehnt dann JEDES ab:
+      # "Plugin dependency 'Callora.Core' requires '>=0.9.0-0', but the host
+      # provides 0.1.0-preview.0". Der Grund ist MinVer — dieses Repository hat
+      # keine Release-Tags, also greift der dokumentierte Rückfall auf
+      # 0.1.0-preview.0.<höhe>, während die Plugin-Repos gegen 0.9.0-rc.22 pinnen
+      # (ihre Directory.Packages.props) und pack-callora.sh die Pakete genau so
+      # baut. MSBuild liest Umgebungsvariablen als Properties, also trägt der
+      # Host-Prozess hier dieselbe Version wie die Pakete, gegen die gebaut wurde.
+      # Beim Anheben der Plugin-Pins diesen Wert mitziehen.
+      MinVerVersionOverride: ${CALLORA_DEV_VERSION:-0.9.0-rc.22}
+      # dotnet watch spritzt ein Browser-Refresh-Skript ein, das eine WebSocket zu
+      # einem containerinternen Port aufbaut (ws://localhost:44261). Der ist nicht
+      # veröffentlicht, also scheitert die Verbindung in jeder Browser-Konsole —
+      # ohne Folge für die App, aber es verdeckt echte Fehler.
+      DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH: "1"
+
+      # --- Plugin-Discovery -------------------------------------------------
       CalloraHosting__AutoBootstrapModules: ${CalloraHosting__AutoBootstrapModules:-true}
       CalloraHosting__AutoLoadPlugins: ${CalloraHosting__AutoLoadPlugins:-true}
-      CalloraHosting__PluginDirectory: ${CalloraHosting__PluginDirectory:-custom/plugins}
-      CalloraHosting__PluginRegistryFilePath: ${CalloraHosting__PluginRegistryFilePath:-custom/plugins/registry.json}
       CalloraHosting__AutoActivateInstalledPlugins: ${CalloraHosting__AutoActivateInstalledPlugins:-true}
+      CalloraHosting__PluginDirectory: ${CalloraHosting__PluginDirectory:-custom/plugins}
+      # Ohne diese Zeile greift der Default AppContext.BaseDirectory/custom/static-plugins,
+      # also src/Host/Dev/bin/…/custom/static-plugins. Das Verzeichnis existiert nicht, die
+      # Discovery filtert den Scan-Root weg — und Communication und Composer werden nie
+      # gefunden. Der Host meldet dabei nichts; es fehlen einfach zwei Plugins.
+      CalloraHosting__StaticPluginDirectory: ${CalloraHosting__StaticPluginDirectory:-custom/static-plugins}
+      CalloraHosting__PluginRegistryFilePath: ${CalloraHosting__PluginRegistryFilePath:-custom/plugins/registry.json}
+
+      # --- Host -------------------------------------------------------------
       BackendHost__DatabaseConnectionString: Host=postgres;Port=5432;Database=${DEV_POSTGRES_DB:-callora_host};Username=${DEV_POSTGRES_USER:-callora};Password=${DEV_POSTGRES_PASSWORD:-callora}
       BackendHost__EnableTenantManagementApi: ${BackendHost__EnableTenantManagementApi:-false}
       BackendHost__DefaultTenantKey: ${BackendHost__DefaultTenantKey:-default}
       BackendHost__DefaultTenantDisplayName: ${BackendHost__DefaultTenantDisplayName:-Default Tenant}
       BackendHost__AuditFilePath: ${BackendHost__AuditFilePath:-plugins/audit-log.jsonl}
+      # Erstzugang für die Entwicklung. Seedet EINMAL auf einer leeren Datenbank und rührt
+      # danach nichts mehr an — ein im Admin geändertes Passwort überlebt also jeden Neustart.
+      # Vorher tat das ein DemoAdminUser, der bei JEDEM Start neu gesetzt wurde: Wer sein
+      # Passwort änderte, hatte es nach dem nächsten Deployment still wieder verloren.
+      BackendHost__InitialOperator__Enabled: ${BackendHost__InitialOperator__Enabled:-true}
+      BackendHost__InitialOperator__ExternalId: ${BackendHost__InitialOperator__ExternalId:-admin}
+      BackendHost__InitialOperator__Email: ${BackendHost__InitialOperator__Email:-admin@callora.local}
+      BackendHost__InitialOperator__DisplayName: ${BackendHost__InitialOperator__DisplayName:-Callora Admin}
+      BackendHost__InitialOperator__Password: ${BackendHost__InitialOperator__Password:-callora-demo-admin!}
       BackendHost__AdminShellBaseUrl: ${BackendHost__AdminShellBaseUrl:-/admin/}
       BackendHost__WorkspaceShellBaseUrl: ${BackendHost__WorkspaceShellBaseUrl:-/}
       BackendHost__PluginAssetBaseUrl: ${BackendHost__PluginAssetBaseUrl:-/plugin-assets}
       BackendHost__PluginManifestUrl: ${BackendHost__PluginManifestUrl:-/manifests/plugin-ui-assets.manifest.json}
-      BackendHost__RequireAllowlistForActivation: ${BackendHost__RequireAllowlistForActivation:-false}
-      BackendHost__ActivationAllowlistPluginIds__0: ${BackendHost__ActivationAllowlistPluginIds__0:-communication}
-      BackendHost__ActivationEntitledPluginIds__0: ${BackendHost__ActivationEntitledPluginIds__0:-communication}
-      BackendHost__DefaultActivationRolloutRing: ${BackendHost__DefaultActivationRolloutRing:-Stable}
-      BackendHost__EntitlementFailureFallbackMode: ${BackendHost__EntitlementFailureFallbackMode:-DenyActivation}
+      # Hier liegen unsignierte Arbeitsstände aus den Plugin-Klonen — in Dev ist das
+      # der Punkt der Übung. Signaturprüfung gehört in die Distribution.
       BackendHost__AllowUnsignedPlugins: ${BackendHost__AllowUnsignedPlugins:-true}
+      # Bewusst OHNE Allowlist: mit RequireAllowlistForActivation=false ist jedes
+      # entdeckte Plugin aktivierbar. Eine gepflegte Liste hier wäre eine zweite
+      # Wahrheit neben custom/ und müsste bei jedem neuen Plugin nachgezogen werden.
+      BackendHost__RequireAllowlistForActivation: ${BackendHost__RequireAllowlistForActivation:-false}
+      BackendHost__EntitlementFailureFallbackMode: ${BackendHost__EntitlementFailureFallbackMode:-DenyActivation}
+      BackendHost__DefaultActivationRolloutRing: ${BackendHost__DefaultActivationRolloutRing:-Stable}
       BackendHost__RequireApiKeyAuthentication: ${BackendHost__RequireApiKeyAuthentication:-true}
       BackendHost__ApiKeyHeaderName: ${BackendHost__ApiKeyHeaderName:-X-Callora-Api-Key}
       BackendHost__ApiKeys__0: ${BackendHost__ApiKeys__0:-callora-local-dev-key-change-me}
+
+      # --- Communication: Transporte scharf schalten ------------------------
+      # WebRtc exportiert IConferenceService — den SFU-Transport, den
+      # VideoConference als Konsument braucht. Ohne Voice bleibt jedes
+      # aktivierte SIP-Konto dunkel.
+      Communication__WebRtc__Enabled: ${Communication__WebRtc__Enabled:-true}
+      Communication__Voice__Enabled: ${Communication__Voice__Enabled:-true}
+
+      # --- ICE: derselbe Relay, zwei Agenten --------------------------------
+      Communication__WebRtc__IceServers__0__Host: host.docker.internal
+      Communication__WebRtc__IceServers__0__Port: "${DEV_TURN_PORT:-3478}"
+      Communication__WebRtc__IceServers__0__Type: Turn
+      Communication__WebRtc__IceServers__0__Transport: Udp
+      Communication__WebRtc__IceServers__0__Username: ${DEV_TURN_USERNAME:-callora}
+      Communication__WebRtc__IceServers__0__Password: ${DEV_TURN_PASSWORD:-callora-dev-turn}
+      # Der SDK-Default 127.0.0.1:0 bindet den Mediensocket an das Container-Loopback
+      # und verhindert damit jede TURN-Allocation.
+      Communication__WebRtc__LocalEndPoint: "0.0.0.0:0"
+      # Dem Browser wird ausschließlich die vom Host erreichbare Adresse ausgeliefert.
+      VideoConference__BrowserIceServers__0__Urls__0: stun:${DEV_TURN_IP:-172.17.0.1}:${DEV_TURN_PORT:-3478}
+      VideoConference__BrowserIceServers__1__Urls__0: turn:${DEV_TURN_IP:-172.17.0.1}:${DEV_TURN_PORT:-3478}?transport=udp
+      VideoConference__BrowserIceServers__1__Urls__1: turn:${DEV_TURN_IP:-172.17.0.1}:${DEV_TURN_PORT:-3478}?transport=tcp
+      VideoConference__BrowserIceServers__1__Username: ${DEV_TURN_USERNAME:-callora}
+      VideoConference__BrowserIceServers__1__Credential: ${DEV_TURN_PASSWORD:-callora-dev-turn}
+
+      # WebRTC-Fehler degradieren sonst still zu Host-only-ICE: die Konferenz
+      # "läuft", nur ohne Medien. Diese drei Namespaces sagen, woran es lag.
+      Logging__LogLevel__CalloraVoipSdk: ${DEV_LOGLEVEL_SDK:-Debug}
+      Logging__LogLevel__Callora.Plugin.Communication: ${DEV_LOGLEVEL_COMMUNICATION:-Debug}
+      Logging__LogLevel__Callora.Plugin.VideoConference: ${DEV_LOGLEVEL_VIDEOCONFERENCE:-Debug}
     volumes:
-      - ./:/workspace
-      - callora-nuget-cache-dev:/root/.nuget/packages
+      # Gleicher Pfad innen wie außen (siehe working_dir).
+      - ${CALLORA_DEV_ROOT:-${PWD}}:${CALLORA_DEV_ROOT:-${PWD}}
+      # Und derselbe NuGet-Cache unter demselben Pfad — ein eigenes Volume unter
+      # /root/.nuget hätte genau die Pfad-Divergenz erzeugt, die oben beschrieben ist.
+      - ${HOME}/.nuget/packages:${HOME}/.nuget/packages
     command: >
       dotnet watch --project src/Host/Dev/Callora.Host.Dev.csproj run --no-launch-profile
 
+  # Host-Networking, damit der Medienportbereich nicht durch Docker-NAT muss —
+  # dieselbe Entscheidung wie in der Distribution, aus demselben Grund. Auf
+  # Linux ist DEV_TURN_IP deshalb die Docker-Bridge-Adresse: sie ist aus dem
+  # Container UND vom Browser auf diesem Rechner erreichbar. Für einen Test von
+  # einem zweiten Gerät aus die LAN-IP dieses Rechners setzen.
+  coturn:
+    image: coturn/coturn:4.16.0-r0
+    network_mode: host
+    restart: unless-stopped
+    command:
+      - -c
+      - /dev/null
+      - --log-file=stdout
+      - --no-tls
+      - --no-dtls
+      - --fingerprint
+      - --lt-cred-mech
+      - --no-multicast-peers
+      - --realm=${DEV_TURN_REALM:-callora.local}
+      - --user=${DEV_TURN_USERNAME:-callora}:${DEV_TURN_PASSWORD:-callora-dev-turn}
+      - --listening-port=${DEV_TURN_PORT:-3478}
+      - --relay-ip=${DEV_TURN_IP:-172.17.0.1}
+      - --external-ip=${DEV_TURN_IP:-172.17.0.1}
+      - --min-port=49160
+      - --max-port=49200
+
   postgres:
     image: postgres:16
-    container_name: ${DEV_POSTGRES_CONTAINER_NAME:-callora-postgres-dev}
     restart: unless-stopped
     ports:
       - "${DEV_POSTGRES_PORT:-5432}:5432"
@@ -57,8 +202,7 @@ services:
       timeout: 5s
       retries: 20
     volumes:
-      - callora-postgres-data-dev:/var/lib/postgresql/data
+      - callora-postgres-data:/var/lib/postgresql/data
 
 volumes:
-  callora-nuget-cache-dev:
-  callora-postgres-data-dev:
+  callora-postgres-data:

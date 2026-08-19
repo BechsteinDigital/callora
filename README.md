@@ -71,12 +71,16 @@ dotnet test Callora.Host.sln
 
 Ohne Node bauen: `dotnet build -p:SkipAdminFrontend=true`
 
-Laufende Entwicklungsumgebung:
+Laufende Entwicklungsumgebung — Host, Postgres und ein echtes ICE-Relay, mit den
+Plugin-Klonen aus `custom/` als lebender Quelle:
 
 ```bash
-docker compose up -d                 # Postgres
-dotnet run --project src/Host/Dev    # Admin unter /admin
+scripts/dev-build.sh                 # Host + alle geklonten Plugins bauen
+docker compose up -d                 # Stack starten, Admin unter /admin
 ```
+
+`dotnet watch` im Stack baut den **Host** neu, nicht die Plugins. Nach einer
+Plugin-Änderung `scripts/dev-build.sh --plugins <name>` laufen lassen.
 
 Die Vitest-Suiten der Frontends laufen eigenständig:
 
