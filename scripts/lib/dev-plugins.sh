@@ -139,8 +139,19 @@ dev_plugins_build_frontend() {
     if [ -f "$repo_root/package-lock.json" ]; then
         dev_plugins_step "npm ci"
         (cd "$repo_root" && npm ci --no-audit --no-fund) || return 1
-    elif [ ! -d "$repo_root/node_modules" ] || [ "${DEV_PLUGINS_REPACK:-0}" = "1" ]; then
-        dev_plugins_step "npm install (kein package-lock.json)"
+    else
+        # Ohne Lockfile auch bei jedem Lauf, und das ist keine Symmetrie um ihrer selbst
+        # willen: Der Composer ist genau dieser Fall, und er ist das Repo, dem der Fehler
+        # oben passiert ist. Hätte die Bedingung "nur wenn node_modules fehlt" hier
+        # überlebt, wäre sie für das einzige Repo stehengeblieben, für das sie geschrieben
+        # wurde.
+        #
+        # `npm install` ist nicht Lock-treu — es löst den Bereich aus package.json neu auf
+        # und kann bei jedem Lauf etwas anderes einspielen. Das wird gesagt statt
+        # weggelassen: Ein Bundle, dessen Abhängigkeiten niemand festgehalten hat, ist
+        # nicht reproduzierbar, und der Weg dahin ist ein eingecheckter Lockfile.
+        dev_plugins_warn "kein package-lock.json in ${repo_root##*/} — npm install löst neu auf statt lock-treu zu installieren"
+        dev_plugins_step "npm install"
         (cd "$repo_root" && npm install --no-audit --no-fund) || return 1
     fi
 
