@@ -32,7 +32,7 @@ set -uo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-ALL_GATES=(dotnet golden admin frontends docs)
+ALL_GATES=(dotnet integration golden admin frontends docs)
 RUN_AUDIT="true"
 SELECTED=""
 SKIPPED=""
@@ -104,36 +104,41 @@ build_lib() {
 
 # ── dotnet ────────────────────────────────────────────────────────────────────
 if wanted dotnet; then
-  step "dotnet — Build & Test (ci.yml: build-test)"
+  step "dotnet — Landkarte, Build & Test (ci.yml: dotnet)"
   (
     set -e
-    dotnet restore Callora.Host.sln
-    dotnet build Callora.Host.sln --no-restore --configuration Release
+    # Eine Sekunde, und sie hätte zwei rote Läufe erspart: ci.yml prüft die Karte als
+    # ERSTEN Schritt, dieses Skript tat es überhaupt nicht — obwohl sein Kopf verspricht,
+    # ci.yml Schritt für Schritt zu spiegeln.
+    bash scripts/build-repo-map.sh
+    git diff --exit-code docs/REPO_MAP.md
+
+    dotnet restore Callora.Host.sln --verbosity quiet
+    dotnet build Callora.Host.sln --no-restore --configuration Release --verbosity minimal
     rm -rf ./test-results
+    # Ohne die Docker-Stufe, wie ci.yml sie trennt — die läuft im Gate `integration`.
     dotnet test Callora.Host.sln --no-build --configuration Release \
-      --collect:"XPlat Code Coverage" --results-directory ./test-results
-    # Über ALLE Berichte, nicht über den ersten — derselbe Fehler wie in ci.yml:
-    # der Lauf erzeugt zwei, und der kleine (Analyzer-Tests) meldet 93,6 % statt 33,6 %.
-    python3 - <<'PY'
-import glob, sys, xml.etree.ElementTree as ET
-
-threshold = 0.25
-reports = glob.glob("./test-results/**/coverage.cobertura.xml", recursive=True)
-if not reports:
-    sys.exit("Kein Coverage-Report gefunden.")
-
-covered = valid = 0
-for report in reports:
-    root = ET.parse(report).getroot()
-    covered += int(root.get("lines-covered"))
-    valid += int(root.get("lines-valid"))
-
-rate = covered / valid if valid else 0.0
-print(f"line coverage: {rate:.1%} über {valid} Zeilen (threshold {threshold:.0%})")
-sys.exit(0 if rate >= threshold else 1)
-PY
+      --filter "Category!=Slow" \
+      --collect:"XPlat Code Coverage" --results-directory ./test-results \
+      --logger "console;verbosity=minimal"
+    python3 scripts/coverage-gate.py --threshold 0.25
   )
   record dotnet $?
+fi
+
+# ── integration ───────────────────────────────────────────────────────────────
+if wanted integration; then
+  step "integration — Postgres-Stufe (ci.yml: integration)"
+  # EIN Container für alle Klassen (PostgresFixture), isoliert über eine Datenbank je
+  # Test. Ohne Docker überspringen sich die Tests selbst, statt rot zu werden.
+  (
+    set -e
+    dotnet test Callora.Host.sln --configuration Release \
+      --filter "Category=Slow" \
+      --logger "console;verbosity=minimal" \
+      -p:SkipAdminFrontend=true -p:SkipSurfaceFrontend=true
+  )
+  record integration $?
 fi
 
 # ── golden ────────────────────────────────────────────────────────────────────
