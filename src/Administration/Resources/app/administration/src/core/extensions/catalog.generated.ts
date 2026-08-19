@@ -21,6 +21,7 @@ export type AdminSlot =
   | 'plugins.list.toolbar'
   | 'roles.detail.fields'
   | 'roles.list.toolbar'
+  | 'snippets.toolbar'
   | 'surfaces.detail.access'
   | 'surfaces.detail.fields'
   | 'surfaces.detail.layout'

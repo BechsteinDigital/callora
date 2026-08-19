@@ -2,6 +2,12 @@
 # Build artifacts
 # ------------------------------
 [Bb]in/
+# Ausnahme: Das ist kein MSBuild-Ausgabeordner, sondern das bin/ eines npm-Pakets —
+# dort liegt der Generator des Erweiterungspunkt-Katalogs. Von `[Bb]in/` verschluckt
+# war er nie im Repository, während ci.yml ihn aufruft: `npm run generate:catalog`
+# scheiterte mit MODULE_NOT_FOUND, und der Gate, der einen verschobenen Slot fangen
+# soll, konnte seit seinem ersten Tag nicht laufen.
+!src/Administration/Resources/app/administration/bin/
 [Oo]bj/
 out/
 build/
