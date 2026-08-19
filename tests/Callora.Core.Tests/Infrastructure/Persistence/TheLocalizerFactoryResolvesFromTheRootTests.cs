@@ -18,6 +18,34 @@ namespace Callora.Core.Tests.Infrastructure.Persistence;
 /// </summary>
 public sealed class TheLocalizerFactoryResolvesFromTheRootTests
 {
+    /// <summary>
+    /// Der Fall, der den Host wirklich tötet. Die beiden Tests darunter prüfen einzelne
+    /// Registrierungen; erst zusammen mit MVC entsteht die Kette, die beim Start scheitert:
+    /// <c>AddControllers</c> bringt Konfiguratoren für <c>MvcOptions</c> mit, die den Localizer
+    /// aus einem Singleton ziehen. Ein Test ohne sie ist grün, während der Prozess nicht startet
+    /// — genau so ist der Fehler drei Tage lang durchgerutscht.
+    /// </summary>
+    [Fact]
+    public void WithMvc_TheWholeContainerValidates()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddControllers();
+        services.AddBackendPersistence(new BackendHostOptions
+        {
+            DatabaseConnectionString = "Host=localhost;Database=x;Username=u;Password=p"
+        });
+
+        // ValidateOnBuild ist, was ASP.NET in Development beim Start tut.
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateScopes = true,
+            ValidateOnBuild = true
+        });
+
+        Assert.NotNull(provider);
+    }
+
     [Fact]
     public void StringLocalizerFactory_ResolvesWithoutAScope()
     {

@@ -38,6 +38,12 @@ services:
     build:
       context: .
       target: standalone
+      args:
+        # Als BUILD-Argument, nicht als Umgebungsvariable weiter unten: MinVer wirkt
+        # beim Kompilieren. Zur Laufzeit gesetzt käme der Wert zu spät, der Host trüge
+        # weiter 0.1.0-preview.0 und lehnte jedes Plugin ab — sichtbar nur als
+        # "requires '>=0.9.0-0', but the host provides …" im Startprotokoll.
+        CALLORA_VERSION: ${CALLORA_VERSION:-0.9.0}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -52,14 +58,6 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://0.0.0.0:5000
 
-      # Ohne das lehnt der Host JEDES Plugin ab: "Plugin dependency
-      # 'Callora.Core' requires '>=0.9.0-0', but the host provides
-      # 0.1.0-preview.0". MinVer fällt ohne Release-Tag auf 0.1.0-preview.0.<höhe>
-      # zurück, während die Plugin-Repos gegen 0.9.0-rc.25 pinnen. MSBuild liest
-      # Umgebungsvariablen als Properties, also trägt der Host hier dieselbe
-      # Version wie die Pakete, gegen die gebaut wurde. Beim Anheben der
-      # Plugin-Pins mitziehen.
-      MinVerVersionOverride: ${CALLORA_VERSION:-0.9.0-rc.25}
 
       CalloraHosting__AutoBootstrapModules: "true"
       CalloraHosting__AutoLoadPlugins: "true"

@@ -74,17 +74,19 @@ services:
       # "Plugin dependency 'Callora.Core' requires '>=0.9.0-0', but the host
       # provides 0.1.0-preview.0". Der Grund ist MinVer — dieses Repository hat
       # keine Release-Tags, also greift der dokumentierte Rückfall auf
-      # 0.1.0-preview.0.<höhe>, während die Plugin-Repos gegen 0.9.0-rc.25 pinnen
-      # (ihre Directory.Packages.props) und pack-callora.sh die Pakete genau so
-      # baut. MSBuild liest Umgebungsvariablen als Properties, also trägt der
-      # Host-Prozess hier dieselbe Version wie die Pakete, gegen die gebaut wurde.
+      # 0.1.0-preview.0.<höhe>. MSBuild liest Umgebungsvariablen als Properties,
+      # also trägt der Host-Prozess hier die Version, gegen die auch gebaut wurde.
       #
-      # Beim Anheben der Plugin-Pins diesen Wert mitziehen — was zwischen rc.22
-      # und rc.25 nicht geschah: Der Wert stand auf rc.22, alle drei Plugin-Repos
-      # längst auf rc.25. Es fiel nur deshalb nicht auf, weil beide denselben
-      # Bereich `>=0.9.0-0` erfüllen. Bei einem Pin mit Untergrenze wäre der
+      # 0.9.0 ist die Release-Version, die als Tag v0.9.0 auf GitHub liegt. Die
+      # Plugin-Repos pinnen in ihrer Directory.Packages.props noch auf 0.9.0-rc.25;
+      # das trägt, weil sie `>=0.9.0-0` fordern und 0.9.0 darüber liegt.
+      #
+      # Beim Anheben der Plugin-Pins diesen Wert mitziehen — was zwischen rc.22 und
+      # rc.25 nicht geschah: Der Wert stand monatelang auf rc.22, alle drei
+      # Plugin-Repos längst auf rc.25. Es fiel nur deshalb nicht auf, weil beide
+      # denselben Bereich erfüllen. Bei einem Pin mit echter Untergrenze wäre der
       # Stack mit "requires … but the host provides …" nicht mehr gestartet.
-      MinVerVersionOverride: ${CALLORA_DEV_VERSION:-0.9.0-rc.25}
+      MinVerVersionOverride: ${CALLORA_DEV_VERSION:-0.9.0}
       # dotnet watch spritzt ein Browser-Refresh-Skript ein, das eine WebSocket zu
       # einem containerinternen Port aufbaut (ws://localhost:44261). Der ist nicht
       # veröffentlicht, also scheitert die Verbindung in jeder Browser-Konsole —

@@ -44,6 +44,21 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
 FROM dev AS standalone
 WORKDIR /src
 
+# MinVer leitet die Version aus Git-Tags ab. Im Image gibt es kein .git (siehe
+# .dockerignore), und ohne Tag greift der Rückfall auf 0.1.0-preview.0.<höhe> —
+# woraufhin der Host jedes gefundene Plugin ablehnt: "Plugin dependency
+# 'Callora.Core' requires '>=0.9.0-0', but the host provides 0.1.0-preview.0".
+# 0.9.0 ist die Release-Version, die als Tag v0.9.0 auf GitHub liegt. Die Plugin-Repos
+# pinnen in ihrer Directory.Packages.props noch auf 0.9.0-rc.25; das trägt, weil sie
+# `>=0.9.0-0` fordern und 0.9.0 darüber liegt. Beim Nachziehen der Pins hier mitgehen.
+#
+# Das MUSS beim Bauen gesetzt sein, nicht beim Starten: MSBuild liest die Variable
+# als Property, und die Version ist danach in der Assembly. Als Laufzeit-Umgebung
+# in der compose käme sie zu spät und der Host stünde wieder ohne Plugins da —
+# ohne Fehler beim Bauen, nur mit sechs Ablehnungen im Startprotokoll.
+ARG CALLORA_VERSION=0.9.0
+ENV MinVerVersionOverride=${CALLORA_VERSION}
+
 COPY . .
 
 # Ein Aufruf, kein nachgebauter Ablauf. dev-build.sh baut die Solution (und damit
