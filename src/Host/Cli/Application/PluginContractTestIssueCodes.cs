@@ -7,6 +7,9 @@ internal static class PluginContractTestIssueCodes
     public const string ManifestParseError = "MANIFEST_PARSE_ERROR";
     public const string ManifestContractVersionMissing = "MANIFEST_CONTRACT_VERSION_MISSING";
     public const string ManifestContractVersionUnsupported = "MANIFEST_CONTRACT_VERSION_UNSUPPORTED";
+
+    /// <summary>Installierbar, aber auf einer Fassung, von der die Plattform wegführt.</summary>
+    public const string ManifestContractVersionDeprecated = "MANIFEST_CONTRACT_VERSION_DEPRECATED";
     public const string ManifestSchemaVersionMissing = "MANIFEST_SCHEMA_VERSION_MISSING";
     public const string ManifestNameMissing = "MANIFEST_NAME_MISSING";
     public const string ManifestPluginIdMissing = "MANIFEST_PLUGIN_ID_MISSING";

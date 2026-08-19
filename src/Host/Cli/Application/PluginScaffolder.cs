@@ -190,7 +190,12 @@ public sealed class {className} : IHostManagedPlugin
     {
         var model = new
         {
-            contractVersion = "v1",
+            // v2, nicht v1: PluginContractVersionPolicy führt v2 als Supported und v1 als
+            // Deprecated — ein hier erzeugtes Plugin installierte also mit einer
+            // Verfallswarnung, die aus dem Gerüst selbst stammte und nicht aus etwas, das
+            // der Entwickler getan hat. Der Weg, den ein Erstnutzer geht, endete damit
+            // ausgerechnet auf der Fassung, von der die Plattform wegführen will.
+            contractVersion = "v2",
             schemaVersion = "1.0",
             name = displayName,
             pluginId,

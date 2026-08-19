@@ -1,3 +1,4 @@
+using Callora.Core.Application.Plugins;
 using Callora.Core.Domain.Plugins.Contracts;
 using System.Reflection;
 using System.Text.Json;
@@ -46,8 +47,10 @@ internal sealed class PluginContractTester
         ValidateManifestRequiredFields(manifest, assemblyPath, issues);
         ValidateAssemblyContracts(assemblyPath, request.EntryTypeName, manifest.EntryTypeName, issues);
 
-        return issues.Count == 0
-            ? PluginContractTestResult.Success()
+        // Warnungen kippen das Ergebnis nicht — sonst wäre das Werkzeug strenger als der Host,
+        // der dasselbe Plugin installiert. Ausgegeben werden sie trotzdem (CalloraCliApplication).
+        return issues.All(static x => x.IsWarning)
+            ? PluginContractTestResult.Success(issues)
             : PluginContractTestResult.Failure(issues);
     }
 
@@ -97,19 +100,43 @@ internal sealed class PluginContractTester
         string assemblyPath,
         ICollection<PluginContractTestIssue> issues)
     {
+        // Die unterstützte Fassung kommt aus PluginContractVersionPolicy, nicht aus einer
+        // Zeichenkette hier. Vorher stand an dieser Stelle hartkodiert "v1", während die
+        // Policy längst v2 als Supported und v1 als Deprecated führte — zwei Wahrheiten über
+        // dieselbe Frage, in einem Prozess, der beide kennt. Was daran teuer war: Das Werkzeug
+        // hätte ein Plugin erzeugt, das seine eigene Prüfung nicht besteht, sobald eine der
+        // beiden Seiten nachzieht. Genau das passierte beim Anheben des Gerüsts auf v2.
+        var supported = PluginContractVersionPolicy.GetAll()
+            .Where(x => x.Status == PluginContractSupportStatus.Supported)
+            .Select(x => x.ContractVersion)
+            .ToArray();
+        var supportedHint = string.Join("' or '", supported);
+
         if (string.IsNullOrWhiteSpace(manifest.ContractVersion))
         {
             issues.Add(new PluginContractTestIssue(
                 PluginContractTestIssueCodes.ManifestContractVersionMissing,
                 "registry.json field 'contractVersion' is required.",
-                "Set 'contractVersion' to 'v1'."));
+                $"Set 'contractVersion' to '{supportedHint}'."));
         }
-        else if (!string.Equals(manifest.ContractVersion.Trim(), "v1", StringComparison.OrdinalIgnoreCase))
+        else if (!PluginContractVersionPolicy.TryGet(manifest.ContractVersion.Trim(), out var support)
+                 || support.Status == PluginContractSupportStatus.Removed)
         {
             issues.Add(new PluginContractTestIssue(
                 PluginContractTestIssueCodes.ManifestContractVersionUnsupported,
                 $"registry.json contractVersion '{manifest.ContractVersion}' is not supported.",
-                "Use supported contractVersion 'v1'."));
+                $"Use supported contractVersion '{supportedHint}'."));
+        }
+        else if (support.Status == PluginContractSupportStatus.Deprecated)
+        {
+            // Eine Warnung, kein Fehler — dieselbe Antwort, die der Installer zur Laufzeit
+            // gibt (PLUGIN_CONTRACT_VERSION_DEPRECATED). Ein Werkzeug, das hier härter urteilt
+            // als der Host, würde Plugins zurückweisen, die sich installieren lassen.
+            issues.Add(new PluginContractTestIssue(
+                PluginContractTestIssueCodes.ManifestContractVersionDeprecated,
+                $"registry.json contractVersion '{manifest.ContractVersion}' is deprecated. {support.Message}",
+                $"Migrate to contractVersion '{supportedHint}'.",
+                IsWarning: true));
         }
 
         if (string.IsNullOrWhiteSpace(manifest.SchemaVersion))
