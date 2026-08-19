@@ -29,13 +29,15 @@ You'll need:
   scaffold one first with **[Build your first Callora plugin](/guides/getting-started/your-first-plugin)**.
 - **A running Callora host** in development, so you can install/activate the plugin and
   open its surface.
-- **The `@callora/surface` package** (`src/Surface.Rendering/Resources/app/surface/`,
-  Apache-2.0) — the typed contract plus the Vite preset you compile against. It is the
-  surface **runtime itself**: the contract is not restated in a second package, so there
-  is nothing that can drift from what actually runs. Its library output builds to
-  `dist-lib/` with `npm run build:lib`; today you consume it as a `file:` dependency from
-  the Callora repo, and as `@callora/surface` from your registry once it is published
-  there.
+- **The `@callora/surface` package** (Apache-2.0) — the typed contract plus the Vite
+  preset you compile against. It is the surface **runtime itself**: the contract is not
+  restated in a second package, so there is nothing that can drift from what actually
+  runs. Install it from npm:
+
+  ```bash
+  npm install @callora/surface
+  ```
+
 :::
 
 ## The mental model
@@ -81,7 +83,7 @@ my-plugin/                       # plugin root — also holds registry.json / .c
     "build": "vite build"
   },
   "dependencies": {
-    "@callora/surface": "file:../../../src/Surface.Rendering/Resources/app/surface"
+    "@callora/surface": "^0.9.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.0",
@@ -97,16 +99,18 @@ bundled. At runtime the component's `import ... from 'vue'` resolves to
 `window.CalloraVue`.
 :::
 
-::: warning Build the package first
-The `file:` path is relative to this `package.json` — from `custom/plugins/my-plugin/` it
-climbs three levels to the repository root and back down to the runtime. It resolves to
-the package's built `dist-lib/`, which is gitignored, so run `npm run build:lib` in
-`src/Surface.Rendering/Resources/app/surface/` once before installing your plugin.
+::: info Working inside the Callora repository
+The published package ships `dist-lib/` prebuilt, so nothing has to be built first.
 
-Skipping it does not fail the install — a `file:` dependency links the source directory,
-so `npm install` succeeds and the *build* then fails with `ERR_MODULE_NOT_FOUND` for the
-preset. A published `@callora/surface` (`"^0.1.0"`) ships `dist-lib/` prebuilt and needs
-no path, so this step disappears once it is on a registry.
+If you are developing *against a checkout* rather than a release — changing the runtime
+and the plugin together — a `file:` dependency links the source directory instead. That
+path resolves to `dist-lib/`, which is gitignored, so run `npm run build:lib` in
+`src/Surface.Rendering/Resources/app/surface/` first. Skipping it does not fail the
+install: npm links the directory happily, and the *build* then fails with
+`ERR_MODULE_NOT_FOUND` for the preset.
+
+Prefer the published package where you can. A linked directory exposes files the `files`
+list would never ship, and that difference surfaces after you publish, not before.
 :::
 
 ## Step 2 — Configure the build

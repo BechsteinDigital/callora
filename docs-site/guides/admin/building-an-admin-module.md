@@ -88,49 +88,53 @@ shell hands you on `window.CalloraAdmin.vue`.
 
 ## Step 2 — Configure the build
 
-The admin bundle is an **IIFE** with Vue external. Unlike the surface side (which ships a
-blessed `@callora/surface-sdk/vite-preset`), the admin shell has no published preset today —
-you configure Vite directly:
+The admin bundle is an **IIFE** with Vue external. Both sides ship a blessed Vite preset —
+`@callora/admin/vite-preset` here, `@callora/surface/vite-preset` on the surface — so the
+configuration is two lines:
 
 `vite.config.ts`:
 
 ```ts
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
+import { calloraAdminPlugin } from '@callora/admin/vite-preset'
 
-export default defineConfig({
-  plugins: [vue()],
-  build: {
-    outDir: 'src/Resources/public/admin', // only this path is published
-    emptyOutDir: true,
-    lib: {
-      entry: 'src/main.ts',
-      formats: ['iife'],
-      name: 'MyPluginAdmin',              // unique IIFE global per plugin
-      fileName: () => 'main.js',
-    },
-    rollupOptions: {
-      external: ['vue'],                  // Vue is resolved from the shell, not bundled
-      output: {
-        assetFileNames: (info) =>
-          info.name?.endsWith('.css') ? 'main.css' : (info.name ?? '[name][extname]'),
-      },
-    },
-  },
+export default calloraAdminPlugin({
+  entry: 'src/Resources/app/admin/src/main.ts',
+  name: 'MyPluginAdminUi', // unique IIFE global per plugin
 })
 ```
+
+The preset sets every option an admin bundle needs: Vue external and resolved from the
+shell's global, a single IIFE with the fixed names `main.js` and `main.css`, CSS not code
+split, and output to `src/Resources/public/admin`. Its options
+(`src/Administration/Resources/app/administration/src/public/vite-preset.ts`):
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `entry` | — | Entry module of the bundle (required) |
+| `name` | — | Global name of the IIFE bundle; unique per plugin (required) |
+| `outDir` | `src/Resources/public/admin` | Build output directory |
+
+Before the preset existed, every plugin copied twenty-eight lines of Vite configuration
+and had to keep them in step with the shell by hand.
 
 ::: warning Keep the output directory
 Only `src/Resources/public/admin` is published. If you point `outDir` elsewhere, the
 publisher won't pick your bundle up and nothing loads at `/admin`.
 :::
 
-> **Status:** There is currently **no** `window.CalloraVue`-style global for the admin shell
-> and no published admin build preset (both exist on the surface side). The supported way to
-> build admin components today is with the shell's `CalloraAdmin.vue.defineComponent` / `h`
-> primitives (render functions), as shown below. A blessed admin Vite preset and a shared-Vue
-> global that would let you author single-file `.vue` templates against the shell's Vue are
-> planned; until then, mark `vue` external and use the render-function primitives.
+::: tip Vue is shared, so single-file components work
+The shell publishes its own Vue instance as `window.CalloraVue` before it loads any plugin
+(`core/extensions/loader.ts`), and the preset marks `vue` external against exactly that
+global. Your bundle therefore runs inside the **same** Vue instance as the shell, and you
+can author ordinary `.vue` single-file components instead of render functions.
+
+That matters beyond convenience: a plugin that bundled its own Vue would run a second
+runtime, and reactivity and component instancing break across that boundary — in ways that
+show up as "my component renders but never updates".
+
+The render-function primitives (`CalloraAdmin.vue.defineComponent` / `h`) still work and
+are shown below, because a small extension often needs nothing more than one function.
+:::
 
 ## Step 3 — Write the entry module
 

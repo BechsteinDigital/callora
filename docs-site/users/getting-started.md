@@ -7,9 +7,14 @@ at the admin shell.
 
 Callora is a framework of packable libraries; the runnable process is assembled
 by the separate `callora-production` distribution (one app container plus
-Postgres). For local work the repository ships Docker Compose files:
+Postgres). For local work the repository ships two Docker Compose files, and
+which one you want depends on what you are doing:
 
 ```bash
+# Just look at it — everything is built into the image, nothing installed but Docker
+docker compose -f docker-compose.standalone.yml up --build
+
+# Work on it — repo mounted, dotnet watch rebuilds the host on every change
 docker compose up -d
 ```
 
