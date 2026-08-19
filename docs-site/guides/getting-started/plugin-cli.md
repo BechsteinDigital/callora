@@ -101,7 +101,7 @@ callora plugin test-contract --assembly <path-to-dll> [--registry <path-to-regis
 `contractVersion`, `schemaVersion`, `name`, `pluginId`, `version`, `assemblyFileName`, and
 `entryTypeName`. Beyond presence:
 
-- `contractVersion` must be the supported value `v1`.
+- `contractVersion` must be the supported value `v2`. (`v1` is deprecated: it still installs, with a warning. `v0` is removed and blocks installation.)
 - `assemblyFileName` must match the actual built DLL's file name.
 
 **Contract compatibility** — the assembly must reference `Callora.Core`, and its major
@@ -121,7 +121,7 @@ All contract checks passed.
 On failure the process exits non-zero and prints one line per issue, e.g.:
 
 ```text
-[manifest.contractVersion.missing] registry.json field 'contractVersion' is required. Fix: Set 'contractVersion' to 'v1'.
+[manifest.contractVersion.missing] registry.json field 'contractVersion' is required. Fix: Set 'contractVersion' to 'v2'.
 ```
 
 ## `plugin sign` {#plugin-sign}

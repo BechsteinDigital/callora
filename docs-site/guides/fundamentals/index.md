@@ -51,21 +51,15 @@ Read these in order. Each builds on the last.
 4. **[Exporting extensions](/guides/fundamentals/exporting-extensions)** — the export
    mechanism in depth: controllers, event listeners, flow actions, and how the host
    resolves them back through `ICalloraPluginCatalog`.
-   > **Status:** page planned — see [Backend Extensions](/guides/backend-extensions) for the
-   > current coverage of export-based extension points.
 5. **[Plugin configuration](/guides/fundamentals/plugin-configuration)** — reading typed
    settings and secrets via `IPluginConfigReader` and `ISecretStore`.
-   > **Status:** page planned.
 6. **[Plugin dependencies](/guides/fundamentals/plugin-dependencies)** — the `dependencies`
    and `requiresCapabilities` fields, and cross-plugin contract packages.
-   > **Status:** page planned.
 7. **[Compliance metadata](/guides/fundamentals/compliance-metadata)** —
    `sensitiveFields`, `databaseSchema`, and how the host uses them for data minimization and
    cleanup.
-   > **Status:** page planned.
-8. **Best practices** — putting it together: small classes, deterministic startup, clean
+8. **[Best practices](/guides/fundamentals/best-practices)** — putting it together: small classes, deterministic startup, clean
    teardown.
-   > **Status:** page planned.
 
 ## How this differs from a plain .NET host
 

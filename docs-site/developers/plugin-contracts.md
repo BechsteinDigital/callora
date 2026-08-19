@@ -31,14 +31,30 @@ or ASP.NET into a consumer is not a contract.
 </Project>
 ```
 
-::: danger The `Callora.` prefix is reserved
-Do not name your contract assembly `Callora.something`. That prefix means "the host provides this":
-the plugin load context delegates those names to the default context instead of loading them
-locally, which only works for assemblies the host application actually references.
+::: info How the name of your contract assembly is treated
+It isn't. Name it whatever fits your product — including `Callora.something`, which the
+first-party plugins themselves use ([ADR-025](https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-025-interne-plugins-im-callora-namensraum.md)).
 
-A plugin-provided contract carrying the prefix would be refused by the shared registry and absent
-from the default context, so it would fail to load the moment your plugin touched one of its types.
-The host rejects such a declaration at install time rather than letting it reach that point.
+Until August 2026 the `Callora.` prefix *was* reserved: any assembly whose name began with it was
+delegated straight to the default context. The prefix turned out to be the wrong carrier for that
+decision, and wrong in both directions — too broad, because an internal plugin shipping
+`Callora.Plugin.Chat.Abstractions` had it sent to a context that did not have it, failing on first
+use of any of its types; and too narrow, because a plugin declaring
+`Microsoft.Extensions.Logging.Abstractions` under `contracts` got its own copy loaded next to the
+host's, with no check at all.
+
+Resolution now asks the question the prefix was standing in for, and asks it of every name alike:
+
+1. **The shared contract registry** — a contract another plugin already declared. This comes first
+   so the second plugin to declare a shared contract does not mistake it for host-provided; the
+   registry is also the only step that enforces major-version compatibility.
+2. **What the host actually provides** — if the process already has the assembly, it owns it: the
+   registry records the name and does not load a second copy. This is what keeps `Callora.Core`
+   resolving to the host's copy, without a maintained list of names.
+3. **Plugin-local** — everything else, loaded into your isolated context.
+
+So a contract only you ship stays yours, and one the host provides stays the host's, whatever
+either is called.
 :::
 
 Ship the contract's DLL inside your plugin bundle and declare it in `registry.json`:

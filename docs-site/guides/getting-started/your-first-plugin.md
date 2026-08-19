@@ -62,10 +62,10 @@ You now have three files:
 
 ```text
 custom/plugins/Hello/
-├─ Callora.Plugins.Hello.csproj   # net10.0 project, references Callora.Core (contracts only)
-├─ Application/
+├─ Callora.Plugins.Hello.csproj   # net10.0 project, one reference: Callora.Plugin.Sdk
+├─ src/
 │  └─ HelloPlugin.cs              # the IHostManagedPlugin entry point
-└─ registry.json                 # the manifest the host reads at install time
+└─ registry.json                  # the manifest the host reads at install time
 ```
 
 The scaffolded `registry.json` looks like this — it's the plugin's identity card
@@ -73,13 +73,13 @@ The scaffolded `registry.json` looks like this — it's the plugin's identity ca
 
 ```json
 {
-  "contractVersion": "v1",
+  "contractVersion": "v2",
   "schemaVersion": "1.0",
   "name": "Hello",
   "pluginId": "hello",
   "version": "0.1.0",
   "assemblyFileName": "Callora.Plugins.Hello.dll",
-  "entryTypeName": "Callora.Plugins.Hello.Application.HelloPlugin",
+  "entryTypeName": "Callora.Plugins.Hello.HelloPlugin",
   "capabilities": ["workspace.navigation"],
   "extensions": [
     { "extensionPointId": "workspace.navigation.main", "surface": "surface" }
@@ -88,13 +88,25 @@ The scaffolded `registry.json` looks like this — it's the plugin's identity ca
 }
 ```
 
-::: info Why `Callora.Core` is referenced but not shipped
-The generated `.csproj` references `Callora.Core` with `ExcludeAssets="runtime"` (or, inside
-this repo, a `ProjectReference` with `Private="false"`). You compile **against** the host's
-contracts, but you don't ship a copy of Core — the host provides it at load time, and the
-plugin's isolated load context shares Core's type identity. Do **not** add
-`CalloraFrameworkAssembly` to your `.csproj`: leaving it at its default is exactly what
-turns on the `CAL0001`–`CAL0004` analyzers that keep your plugin on the supported contract.
+::: info One reference, and why it is `Callora.Plugin.Sdk`
+The generated `.csproj` carries a single `PackageReference` to **`Callora.Plugin.Sdk`**, at the
+same version as the CLI that scaffolded it. The SDK brings the contract surface, the
+`CAL0001`–`CAL0004` governance analyzers, and the build rule that keeps platform assemblies out
+of your output folder.
+
+That last part used to be a hand-written `ExcludeAssets="runtime"` on a `Callora.Core`
+reference — one line that a plugin author removes while restructuring without anything
+failing. Nothing does fail, until load time: your copy of Core shadows the host's, the two
+stop sharing type identity, and the cast that should work throws. The SDK owns that rule now,
+so it cannot be edited away by accident.
+
+You compile **against** the host's contracts and ship none of them. Do **not** add
+`CalloraFrameworkAssembly` to your `.csproj` — leaving it at its default is what keeps the
+analyzers on.
+
+Inside this repository there are no packages to reference, so the scaffolder emits
+`ProjectReference`s to the same pieces with `Private="false"` instead. Same result, different
+source.
 :::
 
 ---
@@ -106,11 +118,11 @@ calls `StartAsync` on activation (register your exports here) and `StopAsync` on
 deactivation. The scaffold gives you an empty one:
 
 ```csharp
-// custom/plugins/Hello/Application/HelloPlugin.cs
+// custom/plugins/Hello/src/HelloPlugin.cs
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
 
-namespace Callora.Plugins.Hello.Application;
+namespace Callora.Plugins.Hello;
 
 public sealed class HelloPlugin : IHostManagedPlugin
 {
@@ -156,7 +168,7 @@ Create `custom/plugins/Hello/Application/HelloController.cs`:
 // custom/plugins/Hello/Application/HelloController.cs
 using Callora.Core.Application.Http.Contracts;
 
-namespace Callora.Plugins.Hello.Application;
+namespace Callora.Plugins.Hello;
 
 public sealed class HelloController : AdminApiController
 {
@@ -181,15 +193,15 @@ for the full list.
 :::
 
 Now wire the controller up in `StartAsync` by exporting it under the `IApiController`
-contract. Edit `Application/HelloPlugin.cs`:
+contract. Edit `src/HelloPlugin.cs`:
 
 ```csharp
-// custom/plugins/Hello/Application/HelloPlugin.cs
+// custom/plugins/Hello/src/HelloPlugin.cs
 using Callora.Core.Application.Http.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
 
-namespace Callora.Plugins.Hello.Application;
+namespace Callora.Plugins.Hello;
 
 public sealed class HelloPlugin : IHostManagedPlugin
 {

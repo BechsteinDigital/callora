@@ -60,10 +60,20 @@ Every plugin loads into its own **collectible** `AssemblyLoadContext` (ALC), so 
 unloaded and hot-swapped without restarting the host.
 
 - **`PluginAssemblyLoadContext`** (`src/Core/Application/Plugins/PluginAssemblyLoadContext.cs`)
-  extends `AssemblyLoadContext` with `isCollectible: true`. Its `Load` override does two
-  things that matter: any assembly named `Callora` or `Callora.*` returns `null` so it
-  resolves from the host's default context (shared type identity), and everything else is
-  resolved plugin-locally via `AssemblyDependencyResolver`.
+  extends `AssemblyLoadContext` with `isCollectible: true`. Its `Load` override resolves in
+  three steps: the **shared contract registry** first (a contract another plugin declared —
+  first, because it is the only step that enforces major-version compatibility), then
+  **whatever the host process already provides** (it owns that assembly; the plugin gets the
+  host's copy, which is how `Callora.Core` keeps its shared type identity), and only then
+  **plugin-local** via `AssemblyDependencyResolver`.
+
+  Until August 2026 the first step was a name check instead: `Callora` and `Callora.*`
+  returned `null` and came from the default context. That was right about *platform*
+  assemblies and wrong about the *namespace* — internal plugins carry the prefix too
+  ([ADR-025](https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-025-interne-plugins-im-callora-namensraum.md)),
+  so a contract assembly such a plugin brought along was sent to a context that did not have
+  it, and the first access to one of its types threw. Asking the process is the same question
+  without a name list to maintain.
 - **`RuntimePluginHost`** (`ICalloraPluginRuntime`, in
   `src/Core/Application/Plugins/RuntimePluginHost.cs`) owns install / activate / deactivate
   / uninstall, guarding mutations with a `SemaphoreSlim`.

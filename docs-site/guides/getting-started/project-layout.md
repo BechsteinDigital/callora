@@ -64,7 +64,7 @@ the entry type, and the plugin's capabilities:
 
 ```json
 {
-  "contractVersion": "v1",
+  "contractVersion": "v2",
   "schemaVersion": "1.0",
   "name": "Acme Dialer",
   "pluginId": "acme-dialer",
@@ -80,7 +80,7 @@ the entry type, and the plugin's capabilities:
 }
 ```
 
-Key fields: `contractVersion` (must be `v1`), `schemaVersion`, `name`, `pluginId`,
+Key fields: `contractVersion` (`v2` is the supported version; `v1` still installs but warns, `v0` is refused), `schemaVersion`, `name`, `pluginId`,
 `version`, `assemblyFileName` (must match the built DLL), and `entryTypeName` (the full
 .NET type name of your `IHostManagedPlugin`). Validate a manifest against the host contract
 with [`callora plugin test-contract`](/guides/getting-started/plugin-cli#plugin-test-contract).
@@ -134,11 +134,15 @@ assemblies out of your output.
 
 ### Why the third one matters
 
-At runtime the plugin load context routes every assembly named `Callora` or `Callora.*`
-to the host's default context, so host and plugin share one identity for the contract
-types. If a copy of `Callora.Core.dll` sits next to your plugin, the same type can end up
-loaded twice — and that fails **when the plugin loads**, not when it builds, with an error
-that reads like the host is at fault.
+At runtime the plugin load context resolves an assembly by asking whether the process
+already has it — not by looking at its name (that used to be a `Callora.*` prefix rule; it
+was removed in August 2026, because internal plugins carry the prefix too). Since the host
+references `Callora.Core`, the host's copy wins and both sides share one identity for the
+contract types.
+
+If a copy of `Callora.Core.dll` sits in your plugin's output folder, the same type can end
+up loaded twice — and that fails **when the plugin loads**, not when it builds, with an
+error that reads like the host is at fault.
 
 Before the SDK existed, every plugin guarded against this by hand:
 
