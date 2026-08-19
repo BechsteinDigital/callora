@@ -174,13 +174,16 @@ custom/static-plugins/*
 # Namentlich und nicht als Muster: `scripts/` ist ein verfolgtes Verzeichnis, und eine
 # Regel wie `scripts/*-local.sh` würde irgendwann ein Skript verschlucken, das jemand
 # bewusst einchecken wollte — still, weil ein ignoriertes `git add` nichts sagt. Wer
-# eines dieser drei künftig doch mitliefern will, streicht seine Zeile hier.
+# eines dieser künftig doch mitliefern will, streicht seine Zeile hier.
 #
-# `sync-packages.sh` beschreibt einen Ablauf, den es so nicht mehr gibt (ein
-# `local-packages/`, das in diesem Repository nirgends existiert); `bundle-plugins.sh`
-# erwartet die Plugin-Repos als GESCHWISTER dieses Checkouts, während sie hier unter
-# custom/ liegen. Beide sind Reste, kein laufender Weg — der laufende ist
-# scripts/dev-build.sh.
+# `sync-packages.sh` beschreibt einen Ablauf, den es so nicht mehr gibt: einen In-Repo-Feed
+# `local-packages/`, den es hier nirgends gibt und auf den nichts verweist. Der laufende Weg
+# ist scripts/pack-local.sh in den repo-eigenen local-feed jedes Plugins.
+#
+# `scripts/bundle-plugins.sh` steht hier ABSICHTLICH NICHT: Es ist der einzige Weg, der die
+# First-Party-Plugins baut, signiert und nach custom/ legt — für Composer und Communication
+# der einzige überhaupt, weil die beiden kein eigenes package.sh haben. Dass seine
+# Vorgabepfade auf Geschwister-Checkouts zeigen, macht es nicht zum Rest; es macht es zu
+# einem Skript, dessen Vorgaben zu diesem Layout nicht passen.
 .mcp-gh-tooling.json
-scripts/bundle-plugins.sh
 scripts/sync-packages.sh
