@@ -1,0 +1,99 @@
+# Klonen und starten. Für den ersten Blick auf das System — kein .NET SDK, kein
+# Node, keine Vorbereitung auf dem Rechner.
+#
+#   git clone <callora>
+#   cd callora
+#   git clone <plugin> custom/static-plugins/<name>     # optional, siehe unten
+#   docker compose -f docker-compose.standalone.yml up --build
+#
+# Admin unter http://localhost:5000/admin
+#
+# Der Unterschied zu docker-compose.yml in einem Satz: Dort liegt das Repo im
+# Mount und dotnet watch baut bei jeder Änderung neu; hier wird einmal alles ins
+# Image gebaut. Wer entwickelt, will die andere Datei — eine Änderung an der
+# Quelle erreicht diesen Stack erst nach `up --build`.
+#
+# GEKLONTE PLUGINS werden mitgebaut, ohne dass sie hier aufgezählt wären. Das
+# Dockerfile ruft scripts/dev-build.sh, und das findet jede registry.json unter
+# custom/ — dieselbe Suche, die auch der Host beim Start macht. Beide Ordner
+# werden gescannt:
+#
+#   custom/static-plugins/   mitgelieferte Plugins (Communication, Composer)
+#   custom/plugins/          installierte / zugekaufte (VideoConference)
+#
+# Die Ladereihenfolge hängt NICHT am Ordner. Sie entsteht aus einer topologischen
+# Sortierung über Capabilities (PluginActivationPlanner): Wer eine Capability
+# per `requiresCapabilities` fordert, startet nach dem, der sie unter
+# `capabilities` bereitstellt. Ein Foundation-Plugin funktioniert deshalb auch
+# unter custom/plugins/. Der Tier aus dem Ordner ist nur ein Tie-Breaker unter
+# Plugins, die die Topologie ohnehin gleichzeitig erlaubt.
+#
+# Kein Coturn hier, anders als im Dev-Stack: Ein echtes ICE-Relay braucht eine
+# öffentlich erreichbare Adresse und die Entscheidung, welche das ist. Wer
+# VideoConference mit echtem TURN ausprobieren will, nimmt docker-compose.yml.
+name: callora-standalone
+
+services:
+  callora-backend:
+    build:
+      context: .
+      target: standalone
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${CALLORA_PORT:-5000}:5000"
+    environment:
+      # Muss gesetzt sein. Der Host prüft beim Start, ob unsichere Dev-Defaults
+      # außerhalb von Development aktiv sind, und bricht fail-closed ab —
+      # AllowUnsignedPlugins weiter unten ist genau so einer. Ohne diese Zeile
+      # gilt der ASP.NET-Default Production und der Stack startet nicht.
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://0.0.0.0:5000
+
+      # Ohne das lehnt der Host JEDES Plugin ab: "Plugin dependency
+      # 'Callora.Core' requires '>=0.9.0-0', but the host provides
+      # 0.1.0-preview.0". MinVer fällt ohne Release-Tag auf 0.1.0-preview.0.<höhe>
+      # zurück, während die Plugin-Repos gegen 0.9.0-rc.25 pinnen. MSBuild liest
+      # Umgebungsvariablen als Properties, also trägt der Host hier dieselbe
+      # Version wie die Pakete, gegen die gebaut wurde. Beim Anheben der
+      # Plugin-Pins mitziehen.
+      MinVerVersionOverride: ${CALLORA_VERSION:-0.9.0-rc.25}
+
+      CalloraHosting__AutoBootstrapModules: "true"
+      CalloraHosting__AutoLoadPlugins: "true"
+      CalloraHosting__AutoActivateInstalledPlugins: "true"
+      CalloraHosting__StaticPluginDirectory: custom/static-plugins
+      CalloraHosting__PluginDirectory: custom/plugins
+
+      BackendHost__DatabaseConnectionString: Host=postgres;Port=5432;Database=${POSTGRES_DB:-callora_host};Username=${POSTGRES_USER:-callora};Password=${POSTGRES_PASSWORD:-callora}
+      # Lokal ohne Signatur: Die geklonten Plugins sind frisch gebaut und nicht
+      # signiert. In einer Distribution ist dieser Wert false und jedes Plugin
+      # muss von einem vertrauten Schlüssel signiert sein.
+      BackendHost__AllowUnsignedPlugins: "true"
+      BackendHost__RequireApiKeyAuthentication: "true"
+      BackendHost__ApiKeys__0: ${CALLORA_API_KEY:-callora-local-dev-key-change-me}
+      BackendHost__AdminShellBaseUrl: /admin/
+      BackendHost__WorkspaceShellBaseUrl: /
+      BackendHost__PluginAssetBaseUrl: /plugin-assets
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-callora_host}
+      POSTGRES_USER: ${POSTGRES_USER:-callora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-callora}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-callora} -d ${POSTGRES_DB:-callora_host}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - callora-standalone-data:/var/lib/postgresql/data
+
+volumes:
+  callora-standalone-data:
