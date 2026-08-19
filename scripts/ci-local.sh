@@ -119,9 +119,7 @@ if wanted dotnet; then
     # Ohne die Docker-Stufe, wie ci.yml sie trennt — die läuft im Gate `integration`.
     dotnet test Callora.Host.sln --no-build --configuration Release \
       --filter "Category!=Slow" \
-      --collect:"XPlat Code Coverage" --results-directory ./test-results \
       --logger "console;verbosity=minimal"
-    python3 scripts/coverage-gate.py --threshold 0.25
   )
   record dotnet $?
 fi
@@ -133,10 +131,15 @@ if wanted integration; then
   # Test. Ohne Docker überspringen sich die Tests selbst, statt rot zu werden.
   (
     set -e
+    # ALLE Tests, nicht nur die Docker-Stufe: Die Abdeckung wird hier gemessen, und sie
+    # wäre ohne die schnellen Tests genauso schief wie ohne die langsamen. Der dotnet-Job
+    # bleibt die schnelle Rückmeldung; dieser hier ist der vollständige Lauf.
+    rm -rf ./test-results
     dotnet test Callora.Host.sln --configuration Release \
-      --filter "Category=Slow" \
+      --collect:"XPlat Code Coverage" --results-directory ./test-results \
       --logger "console;verbosity=minimal" \
       -p:SkipAdminFrontend=true -p:SkipSurfaceFrontend=true
+    python3 scripts/coverage-gate.py --threshold 0.25
   )
   record integration $?
 fi
@@ -179,25 +182,11 @@ if wanted frontends; then
   ( set -e; cd "$SURFACE"; npm ci; audit; npm run test; npm run build )
   record "frontends:surface" $?
 
-  step "frontends — Communication Admin (build)"
-  (
-    set -e
-    build_lib "$ADMIN"
-    build_lib "$SURFACE"
-    cd custom/static-plugins/Communication
-    npm ci; audit; npm run build
-  )
-  record "frontends:communication" $?
-
-  step "frontends — Composer Admin (test + build)"
-  (
-    set -e
-    build_lib "$ADMIN"
-    build_lib "$SURFACE"
-    cd custom/static-plugins/Composer
-    npm ci; audit; npm run test; npm run build
-  )
-  record "frontends:composer" $?
+  # Communication und Composer bauen in IHREN Repositories (ADR-020). Sie standen hier,
+  # weil sie in einer Entwicklungsumgebung unter custom/ liegen — und machten diesen Lauf
+  # für jeden lokal rot, dessen Klone einen anderen Stand haben. Ein Gate, das den Zustand
+  # einer fremden Arbeitskopie prüft, wird ignoriert statt erfüllt. ci.yml kennt sie
+  # ebenfalls nicht: custom/ ist gitignoriert und auf einem Runner leer.
 fi
 
 # ── docs ──────────────────────────────────────────────────────────────────────

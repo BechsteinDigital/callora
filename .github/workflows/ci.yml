@@ -7,7 +7,8 @@ name: CI
 # Vier Jobs, nach Rückmeldezeit sortiert statt nach Technologie:
 #
 #   dotnet        Karte, Build, schnelle Tests — die Antwort, die man zuerst will
-#   integration   Was ein echtes Postgres braucht (ein Container, nicht elf)
+#   integration   Der vollständige Lauf gegen ein echtes Postgres, samt Abdeckung
+#                 (ein Container, nicht elf)
 #   frontends     Die drei npm-Arbeitsbereiche DIESES Repositories
 #   contracts     Der Weg eines fremden Plugin-Autors, von außen
 #
@@ -94,22 +95,9 @@ jobs:
       # die Suite grün ist.
       - name: Test (schnelle Stufe)
         run: |
-          rm -rf ./test-results
           dotnet test Callora.Host.sln --no-build --configuration Release \
             --filter "Category!=Slow" \
-            --collect:"XPlat Code Coverage" --results-directory ./test-results \
             --logger "console;verbosity=minimal"
-
-      - name: Abdeckung über der Schwelle?
-        run: python3 scripts/coverage-gate.py --threshold 0.25
-
-      - name: Upload coverage
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: test-coverage
-          path: ./test-results/**/coverage.cobertura.xml
-          if-no-files-found: warn
 
   integration:
     name: Integration (Postgres)
@@ -134,12 +122,30 @@ jobs:
       # Testcontainers startet EIN Postgres für die gesamte Stufe (PostgresFixture);
       # isoliert wird über eine eigene Datenbank je Test. Vorher baute jede der elf
       # Testklassen ihren eigenen Container.
-      - name: Test (Docker-Stufe)
+      #
+      # Hier laufen ALLE Tests, nicht nur die Docker-Stufe, weil die Abdeckung hier
+      # gemessen wird: Beim Trennen fiel sie von 25 % auf 23,7 %, weil die
+      # Integrationstests Code abdecken, den sonst niemand anfasst. Die Schwelle
+      # deshalb zu senken hieße, sich das Ergebnis zurechtzulegen. Der dotnet-Job
+      # bleibt die schnelle Rückmeldung, dieser ist der vollständige Lauf.
+      - name: Test (vollständig, mit Abdeckung)
         run: |
+          rm -rf ./test-results
           dotnet test Callora.Host.sln --configuration Release \
-            --filter "Category=Slow" \
+            --collect:"XPlat Code Coverage" --results-directory ./test-results \
             --logger "console;verbosity=minimal" \
             -p:SkipAdminFrontend=true -p:SkipSurfaceFrontend=true
+
+      - name: Abdeckung über der Schwelle?
+        run: python3 scripts/coverage-gate.py --threshold 0.25
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: test-coverage
+          path: ./test-results/**/coverage.cobertura.xml
+          if-no-files-found: warn
 
   frontends:
     name: ${{ matrix.name }}
