@@ -122,6 +122,13 @@ jobs:
           if-no-files-found: warn
 
   frontends:
+    # Der Name ist eine Schnittstelle, keine Beschriftung: Branch-Protection verlangt
+    # Checks als Zeichenkette. Vorher hieß dieser Job
+    # `${{ matrix.name }} (${{ matrix.gates }})`, also änderte sich der Check-Name, sobald
+    # jemand einen Gate hinzunahm — und die Regel wartete anschließend ewig auf einen
+    # Status, den niemand mehr meldet. In der Protection stand deshalb noch
+    # "Surface Runtime (test + build)", eine Variante, die es seit zwei Umbenennungen
+    # nicht gab. Wer hier umbenennt, zieht die Regel mit.
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
