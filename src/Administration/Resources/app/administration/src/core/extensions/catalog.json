@@ -72,6 +72,11 @@
     },
     {
       "kind": "slot",
+      "name": "snippets.toolbar",
+      "file": "modules/snippets/SnippetsListView.vue"
+    },
+    {
+      "kind": "slot",
       "name": "surfaces.detail.fields",
       "file": "modules/surfaces/SurfaceDetail.vue"
     },
