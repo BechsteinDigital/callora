@@ -1,7 +1,6 @@
 using Callora.Core.Application.Policies;
 using Callora.Core.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Callora.Core.Tests.Integration;
@@ -13,38 +12,25 @@ namespace Callora.Core.Tests.Integration;
 /// unavailable.
 /// </summary>
 [Trait("Category", "Slow")]
-public sealed class EfPluginEntitlementStoreIntegrationTests : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public sealed class EfPluginEntitlementStoreIntegrationTests(PostgresFixture postgres)
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine").Build();
-    private bool _started;
 
-    public async Task InitializeAsync()
-    {
-        try
-        {
-            await _postgres.StartAsync();
-            _started = true;
-        }
-        catch (Exception)
-        {
-            _started = false;
-        }
-    }
+    // Eine Datenbank je TEST, nicht je Aufruf: xUnit erzeugt die Klasse für jede
+    // Testmethode neu, also ist dieses Feld pro Test frisch. Ohne das bekäme jeder
+    // Kontext innerhalb eines Tests eine eigene Datenbank — was ein Test, der zwei
+    // gleichzeitige Verbindungen gegeneinander laufen lässt, sofort bemerkt: Der
+    // Schreiber landet in der einen, die Leser suchen in der anderen.
+    private string? _database;
 
-    public async Task DisposeAsync()
-    {
-        if (_started)
-        {
-            await _postgres.DisposeAsync();
-        }
-    }
-
+    private async Task<string> DatabaseAsync() =>
+        _database ??= await postgres.CreateDatabaseAsync();
     [SkippableFact]
     public async Task ListAsync_ReturnsRowsAcrossScopes_IncludingRevoked()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
 
-        await using var context = new HostPersistenceDbContext(Options());
+        await using var context = new HostPersistenceDbContext(await OptionsAsync());
         await context.Database.EnsureCreatedAsync();
         var store = new EfPluginEntitlementStore(context, new BackendHostOptions());
 
@@ -64,9 +50,9 @@ public sealed class EfPluginEntitlementStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task SetEntitled_UpdatesProvenance_LastWriterWins()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
 
-        await using var context = new HostPersistenceDbContext(Options());
+        await using var context = new HostPersistenceDbContext(await OptionsAsync());
         await context.Database.EnsureCreatedAsync();
         var store = new EfPluginEntitlementStore(context, new BackendHostOptions());
 
@@ -82,17 +68,17 @@ public sealed class EfPluginEntitlementStoreIntegrationTests : IAsyncLifetime
     [SkippableFact]
     public async Task ListAsync_EmptyStore_ReturnsNothing()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
 
-        await using var context = new HostPersistenceDbContext(Options());
+        await using var context = new HostPersistenceDbContext(await OptionsAsync());
         await context.Database.EnsureCreatedAsync();
         var store = new EfPluginEntitlementStore(context, new BackendHostOptions());
 
         Assert.Empty(await store.ListAsync());
     }
 
-    private DbContextOptions<HostPersistenceDbContext> Options() =>
+    private async Task<DbContextOptions<HostPersistenceDbContext>> OptionsAsync() =>
         new DbContextOptionsBuilder<HostPersistenceDbContext>()
-            .UseNpgsql(_postgres.GetConnectionString())
+            .UseNpgsql(await DatabaseAsync())
             .Options;
 }

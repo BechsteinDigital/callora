@@ -5,8 +5,8 @@ using Callora.Core.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Callora.Core.Tests.Integration;
 using Npgsql;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Callora.Core.Tests.Infrastructure.Persistence;
@@ -17,56 +17,30 @@ namespace Callora.Core.Tests.Infrastructure.Persistence;
 /// Postgres; skipped automatically when Docker is unavailable.
 /// </summary>
 [Trait("Category", "Slow")]
-public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public sealed class BackendRbacDatabaseSeederTests(PostgresFixture postgres)
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine").Build();
-    private bool _started;
 
-    public async Task InitializeAsync()
-    {
-        try
-        {
-            await _postgres.StartAsync();
-            _started = true;
-        }
-        catch (Exception)
-        {
-            _started = false;
-        }
-    }
+    // Eine Datenbank je TEST, nicht je Aufruf: xUnit erzeugt die Klasse für jede
+    // Testmethode neu, also ist dieses Feld pro Test frisch. Ohne das bekäme jeder
+    // Kontext innerhalb eines Tests eine eigene Datenbank — was ein Test, der zwei
+    // gleichzeitige Verbindungen gegeneinander laufen lässt, sofort bemerkt: Der
+    // Schreiber landet in der einen, die Leser suchen in der anderen.
+    private string? _database;
 
-    public async Task DisposeAsync()
-    {
-        if (_started)
-        {
-            await _postgres.DisposeAsync();
-        }
-    }
-
+    private async Task<string> DatabaseAsync() =>
+        _database ??= await postgres.CreateDatabaseAsync();
     private static BackendRbacDatabaseSeeder Seeder(BackendHostOptions options) =>
         new(options, new PasswordHasher<BackendUser>(), NullLogger<BackendRbacDatabaseSeeder>.Instance);
 
-    // A fresh, isolated database per test — creating a new one avoids dropping the
-    // container's currently-open database (Postgres 55006) and keeps tests
-    // order-independent.
+    // Eine frische, isolierte Datenbank je Test. Das Anlegen liegt jetzt im Fixture:
+    // Es war hier schon richtig gelöst — inklusive des Grundes, keine offene Datenbank
+    // zu ersetzen (Postgres 55006) — nur galt es für diese eine Klasse, während zehn
+    // andere stattdessen einen eigenen Container hochfuhren.
     private async Task<DbContextOptions<HostPersistenceDbContext>> FreshDbAsync()
     {
-        var dbName = "seed_" + Guid.NewGuid().ToString("N");
-        await using (var admin = new NpgsqlConnection(_postgres.GetConnectionString()))
-        {
-            await admin.OpenAsync();
-            await using var cmd = admin.CreateCommand();
-            cmd.CommandText = $"CREATE DATABASE \"{dbName}\"";
-            await cmd.ExecuteNonQueryAsync();
-        }
-
-        var connectionString = new NpgsqlConnectionStringBuilder(_postgres.GetConnectionString())
-        {
-            Database = dbName,
-        }.ConnectionString;
-
         var options = new DbContextOptionsBuilder<HostPersistenceDbContext>()
-            .UseNpgsql(connectionString)
+            .UseNpgsql(await DatabaseAsync())
             .Options;
 
         await using var ctx = new HostPersistenceDbContext(options);
@@ -77,7 +51,7 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
     [SkippableFact]
     public async Task InitialOperator_SeedsSuperAdminUser_OnEmptyInstall()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         var options = await FreshDbAsync();
 
         var hostOptions = new BackendHostOptions
@@ -114,7 +88,7 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
     [SkippableFact]
     public async Task AChangedPasswordSurvivesTheNextSeedRun()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         var options = await FreshDbAsync();
 
         var hostOptions = new BackendHostOptions
@@ -151,7 +125,7 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
     [SkippableFact]
     public async Task InitialOperator_DoesNotSeed_WhenAUserAlreadyExists()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         var options = await FreshDbAsync();
 
         await using (var pre = new HostPersistenceDbContext(options))
@@ -183,7 +157,7 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
     [SkippableFact]
     public async Task InitialOperator_SeedsUser_WhenPasswordExactlyMinimumLength()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         var options = await FreshDbAsync();
 
         var hostOptions = new BackendHostOptions
@@ -204,7 +178,7 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
     [SkippableFact]
     public async Task InitialOperator_Disabled_SeedsNoUser()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         var options = await FreshDbAsync();
 
         var hostOptions = new BackendHostOptions
@@ -224,7 +198,7 @@ public sealed class BackendRbacDatabaseSeederTests : IAsyncLifetime
     [SkippableFact]
     public async Task InitialOperator_SeedsNoUser_WhenPasswordBelowMinimumLength()
     {
-        Skip.IfNot(_started, "Docker/Postgres container not available.");
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
         var options = await FreshDbAsync();
 
         var hostOptions = new BackendHostOptions
