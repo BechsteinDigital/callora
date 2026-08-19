@@ -100,7 +100,7 @@ purpose_for() {
     "docs-site")                  echo "Die konzeptuelle Dokumentation (VitePress, Diátaxis)." ;;
     "ops")                        echo "Betrieb: Runbooks, Frontdoor-Konfiguration, npm-Ausnahmen." ;;
     "scripts")                    echo "Build-, Prüf- und Release-Automatisierung." ;;
-    ".github/workflows")          echo "CI, Golden Path, Docs, Release, npm-Publish." ;;
+    ".github/workflows")          echo "CI (Build, Integration, Frontends, Golden Path), Docs, Release, npm-Publish." ;;
     ".config")                    echo "Das dotnet-tools-Manifest: die gepinnten lokalen Werkzeuge (docfx, CycloneDX)." ;;
     "docfx")                      echo "Konfiguration der generierten .NET-API-Referenz, die unter /api/ neben der docs-site liegt." ;;
     *)                            echo "(nicht beschrieben — bitte in scripts/build-repo-map.sh ergänzen)" ;;
