@@ -5,7 +5,7 @@ namespace Callora.Core.Application.Plugins;
 /// <summary>
 /// Derives whether a plugin is effectively available in a workspace (REV2 §3.2).
 /// Serving paths depend on this abstraction so the single canonical derivation
-/// (<see cref="PluginAvailability.From"/>) is reused at runtime, never
+/// (<see cref="PluginAvailability.From(PluginPlatformInputs, PluginWorkspaceInputs)"/>) is reused at runtime, never
 /// re-implemented per consumer.
 /// </summary>
 [CalloraInternal("Availability enforcement gate — not a plugin contract (REV2 §7.2)")]
@@ -27,7 +27,7 @@ public interface IPluginAvailabilityEvaluator
     /// so oft geholt, wie es Plugins gibt, und das mitten im Aufbau einer Seite.
     /// </para>
     /// <para>
-    /// Die Ableitung bleibt dieselbe (<see cref="PluginAvailability.From"/>). Was sich ändert,
+    /// Die Ableitung bleibt dieselbe (<see cref="PluginAvailability.From(PluginPlatformInputs, PluginWorkspaceInputs)"/>). Was sich ändert,
     /// ist allein, wie oft ihre Eingaben beschafft werden.
     /// </para>
     /// </remarks>

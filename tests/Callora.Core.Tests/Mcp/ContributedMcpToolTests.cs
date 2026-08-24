@@ -206,24 +206,28 @@ public sealed class ContributedMcpToolTests
     }
 
     private static PluginAvailability Available() =>
-        PluginAvailability.From(new PluginAvailabilityInputs(
-            BundledOrInstalled: true,
-            RuntimeHealthy: true,
-            Entitled: true,
-            WorkspaceEnabled: true,
-            TenantActive: true,
-            WorkspaceActive: true,
-            RequiredCapabilitiesAvailable: true));
+        PluginAvailability.From(
+            new PluginPlatformInputs(
+                BundledOrInstalled: true,
+                RuntimeHealthy: true,
+                Entitled: true),
+            new PluginWorkspaceInputs(
+                WorkspaceEnabled: true,
+                TenantActive: true,
+                WorkspaceActive: true,
+                RequiredCapabilitiesAvailable: true));
 
     private static PluginAvailability Unavailable() =>
-        PluginAvailability.From(new PluginAvailabilityInputs(
-            BundledOrInstalled: true,
-            RuntimeHealthy: true,
-            Entitled: false,
-            WorkspaceEnabled: true,
-            TenantActive: true,
-            WorkspaceActive: true,
-            RequiredCapabilitiesAvailable: true));
+        PluginAvailability.From(
+            new PluginPlatformInputs(
+                BundledOrInstalled: true,
+                RuntimeHealthy: true,
+                Entitled: false),
+            new PluginWorkspaceInputs(
+                WorkspaceEnabled: true,
+                TenantActive: true,
+                WorkspaceActive: true,
+                RequiredCapabilitiesAvailable: true));
 
     private static JsonElement Args(string json) => JsonDocument.Parse(json).RootElement;
 

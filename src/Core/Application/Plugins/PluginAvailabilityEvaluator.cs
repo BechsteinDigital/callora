@@ -10,7 +10,7 @@ namespace Callora.Core.Application.Plugins;
 /// <summary>
 /// The single place that derives whether a plugin is effectively available in a
 /// workspace (REV2 §3.2). Gathers each factor from its owning store and combines
-/// them via <see cref="PluginAvailability.From"/>; runtime consumers ask this
+/// them via <see cref="PluginAvailability.From(PluginPlatformInputs, PluginWorkspaceInputs)"/>; runtime consumers ask this
 /// instead of re-checking entitlement or activation on their own.
 /// </summary>
 public sealed class PluginAvailabilityEvaluator(
@@ -60,15 +60,17 @@ public sealed class PluginAvailabilityEvaluator(
             .CheckActivationAsync(pluginId, workspaceKey, cancellationToken)
             .ConfigureAwait(false);
 
-        return PluginAvailability.From(new PluginAvailabilityInputs(
-            BundledOrInstalled: bundledOrInstalled,
-            RuntimeHealthy: runtimeHealthy,
-            Entitled: entitled,
-            WorkspaceEnabled: workspaceEnabled,
-            TenantActive: tenantActive,
-            WorkspaceActive: workspaceActive,
-            RequiredCapabilitiesAvailable: capability.IsAllowed,
-            WithinFaultBudget: faultRegistry?.IsWithinBudget(pluginId) ?? true));
+        return PluginAvailability.From(
+            new PluginPlatformInputs(
+                BundledOrInstalled: bundledOrInstalled,
+                RuntimeHealthy: runtimeHealthy,
+                Entitled: entitled,
+                WithinFaultBudget: faultRegistry?.IsWithinBudget(pluginId) ?? true),
+            new PluginWorkspaceInputs(
+                WorkspaceEnabled: workspaceEnabled,
+                TenantActive: tenantActive,
+                WorkspaceActive: workspaceActive,
+                RequiredCapabilitiesAvailable: capability.IsAllowed));
     }
 
     /// <inheritdoc />
@@ -132,16 +134,18 @@ public sealed class PluginAvailabilityEvaluator(
                 ? CapabilityCheckResult.Allowed
                 : capabilityGuard.CheckActivation(installation, installations, workspaceKey, activePluginIds);
 
-            result[pluginId] = PluginAvailability.From(new PluginAvailabilityInputs(
-                BundledOrInstalled: installation is not null &&
-                    installation.State != PluginInstallationState.Uninstalled,
-                RuntimeHealthy: healthyPluginIds.Contains(pluginId),
-                Entitled: entitled,
-                WorkspaceEnabled: activePluginIds.Contains(pluginId),
-                TenantActive: tenantActive,
-                WorkspaceActive: workspaceActive,
-                RequiredCapabilitiesAvailable: capability.IsAllowed,
-                WithinFaultBudget: faultRegistry?.IsWithinBudget(pluginId) ?? true));
+            result[pluginId] = PluginAvailability.From(
+                new PluginPlatformInputs(
+                    BundledOrInstalled: installation is not null &&
+                        installation.State != PluginInstallationState.Uninstalled,
+                    RuntimeHealthy: healthyPluginIds.Contains(pluginId),
+                    Entitled: entitled,
+                    WithinFaultBudget: faultRegistry?.IsWithinBudget(pluginId) ?? true),
+                new PluginWorkspaceInputs(
+                    WorkspaceEnabled: activePluginIds.Contains(pluginId),
+                    TenantActive: tenantActive,
+                    WorkspaceActive: workspaceActive,
+                    RequiredCapabilitiesAvailable: capability.IsAllowed));
         }
 
         return result;
