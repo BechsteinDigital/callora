@@ -100,6 +100,36 @@ public sealed class NoJobOfAnUnavailablePluginRunsTests
         Assert.Single(handler.Executions);
     }
 
+    [Fact]
+    public async Task A_platform_wide_job_is_judged_on_the_platform_verdict()
+    {
+        // Was ungated until the platform verdict existed. A job carrying no workspace key
+        // asks "may this plugin work on this host at all", which is answerable — installed,
+        // healthy, entitled on the default tenant, within budget.
+        var handler = new RecordingBackgroundJobHandler("plugin.job");
+        var (processor, store) = CreateProcessor(handler, unavailable: "billed-plugin");
+        var job = BackgroundJob.Create("plugin.job", "{}", DateTimeOffset.UtcNow, 3, workspaceKey: null, DateTimeOffset.UtcNow);
+        await store.AddAsync(job);
+
+        Assert.True(await processor.ProcessNextAsync(CancellationToken.None));
+
+        Assert.Empty(handler.Executions);
+        Assert.Equal(BackgroundJobStatus.Pending, job.Status);
+        Assert.Equal(0, job.AttemptCount);
+    }
+
+    [Fact]
+    public async Task A_platform_wide_job_of_an_available_plugin_runs()
+    {
+        var handler = new RecordingBackgroundJobHandler("plugin.job");
+        var (processor, store) = CreateProcessor(handler, unavailable: "some-other-plugin");
+        await store.AddAsync(BackgroundJob.Create("plugin.job", "{}", DateTimeOffset.UtcNow, 3, workspaceKey: null, DateTimeOffset.UtcNow));
+
+        Assert.True(await processor.ProcessNextAsync(CancellationToken.None));
+
+        Assert.Single(handler.Executions);
+    }
+
     private static (BackgroundJobProcessor Processor, InMemoryBackgroundJobStore Store) CreateProcessor(
         RecordingBackgroundJobHandler handler,
         string unavailable)

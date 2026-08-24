@@ -189,6 +189,38 @@ public sealed class PluginApiEndpointDataSourceTests
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
     }
 
+    [Fact]
+    public async Task PluginWideRoute_OfAnUnavailablePlugin_IsRefused()
+    {
+        // A route that names no workspace was the last hole in the gate: it served normally
+        // however dark the plugin was. It now answers the platform question — may this
+        // plugin do any work on this host at all.
+        await using var app = await CreateAppAsync(
+            availability: new StaticPluginAvailabilityEvaluator("test-plugin"));
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "test.read");
+
+        var response = await client.GetAsync("/api/test-plugin/ping");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+    }
+
+    [Fact]
+    public async Task PluginWideRoute_OfAnAvailablePlugin_IsServed()
+    {
+        await using var app = await CreateAppAsync(
+            availability: new StaticPluginAvailabilityEvaluator("some-other-plugin"));
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "test.read");
+
+        var response = await client.GetAsync("/api/test-plugin/ping");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private static async Task<WebApplication> CreateAppAsync(
         PluginApiEndpointDataSource? dataSource = null,
         IPluginAvailabilityEvaluator? availability = null,

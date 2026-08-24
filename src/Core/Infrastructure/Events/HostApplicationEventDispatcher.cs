@@ -39,17 +39,33 @@ public sealed class HostApplicationEventDispatcher(
         // gefehlt hat nur die Frage, ob der Eigentümer noch gilt. Ein Event ohne Workspace
         // bleibt ungeprüft: Verfügbarkeit wird je Workspace abgeleitet, und ein Event, das
         // keinen nennt, stellt die Frage nicht.
-        if (availability is not null && pluginHandlers.Length > 0 &&
-            appEvent is IBusinessEvent { WorkspaceKey: { } workspaceKey } &&
-            !string.IsNullOrWhiteSpace(workspaceKey))
+        if (availability is not null && pluginHandlers.Length > 0)
         {
+            var workspaceKey = appEvent is IBusinessEvent businessEvent ? businessEvent.WorkspaceKey : null;
             var pluginIds = pluginHandlers
                 .Select(static x => x.PluginId)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
-            var verdicts = await availability
-                .EvaluateManyAsync(pluginIds, workspaceKey, cancellationToken)
-                .ConfigureAwait(false);
+
+            var verdicts = new Dictionary<string, PluginAvailability>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(workspaceKey))
+            {
+                foreach (var pluginId in pluginIds)
+                {
+                    verdicts[pluginId] = await availability
+                        .EvaluatePlatformAsync(pluginId, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                foreach (var pair in await availability
+                             .EvaluateManyAsync(pluginIds, workspaceKey, cancellationToken)
+                             .ConfigureAwait(false))
+                {
+                    verdicts[pair.Key] = pair.Value;
+                }
+            }
 
             pluginHandlers = pluginHandlers
                 .Where(x => !verdicts.TryGetValue(x.PluginId, out var verdict) || verdict.IsAvailable)
