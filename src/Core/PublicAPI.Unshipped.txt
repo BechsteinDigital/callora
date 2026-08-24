@@ -2261,6 +2261,15 @@ Callora.Core.Application.Plugins.PluginContractVersionSupport.Message.init -> vo
 Callora.Core.Application.Plugins.PluginContractVersionSupport.PluginContractVersionSupport(string! ContractVersion, Callora.Core.Application.Plugins.PluginContractSupportStatus Status, string! Message) -> void
 Callora.Core.Application.Plugins.PluginContractVersionSupport.Status.get -> Callora.Core.Application.Plugins.PluginContractSupportStatus
 Callora.Core.Application.Plugins.PluginContractVersionSupport.Status.init -> void
+Callora.Core.Application.Plugins.PluginDeclaredPermission
+Callora.Core.Application.Plugins.PluginDeclaredPermission.<Clone>$() -> Callora.Core.Application.Plugins.PluginDeclaredPermission!
+Callora.Core.Application.Plugins.PluginDeclaredPermission.Deconstruct(out string! Key, out string? Description) -> void
+Callora.Core.Application.Plugins.PluginDeclaredPermission.Description.get -> string?
+Callora.Core.Application.Plugins.PluginDeclaredPermission.Description.init -> void
+Callora.Core.Application.Plugins.PluginDeclaredPermission.Equals(Callora.Core.Application.Plugins.PluginDeclaredPermission? other) -> bool
+Callora.Core.Application.Plugins.PluginDeclaredPermission.Key.get -> string!
+Callora.Core.Application.Plugins.PluginDeclaredPermission.Key.init -> void
+Callora.Core.Application.Plugins.PluginDeclaredPermission.PluginDeclaredPermission(string! Key, string? Description = null) -> void
 Callora.Core.Application.Plugins.PluginDependencyVersionGate
 Callora.Core.Application.Plugins.PluginDependencyVersionGate.PluginDependencyVersionGate(Callora.Core.Application.Plugins.IProvidedContractVersionProvider! versionProvider, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.PluginDependencyVersionGate!>? logger = null) -> void
 Callora.Core.Application.Plugins.PluginDependencyVersionGate.TryValidate(System.Collections.Generic.IReadOnlyDictionary<string!, string!>? dependencies, out string? error) -> bool
@@ -2322,7 +2331,10 @@ Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ConditionalCapabi
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ConditionalCapabilities.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ContractVersion.get -> string!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.ContractVersion.init -> void
-Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Deconstruct(out string! ContractVersion, out string! SchemaVersion, out string! Name, out string! PluginId, out string! Version, out string! AssemblyFileName, out string! EntryTypeName, out System.Collections.Generic.IReadOnlyList<string!>! Capabilities, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations, out System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities, out System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities, out string? Tier) -> void
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.DeclaredPermissions.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginDeclaredPermission!>!
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.DeclaredPermissionsOrNull.get -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginDeclaredPermission!>?
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.DeclaredPermissionsOrNull.init -> void
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Deconstruct(out string! ContractVersion, out string! SchemaVersion, out string! Name, out string! PluginId, out string! Version, out string! AssemblyFileName, out string! EntryTypeName, out System.Collections.Generic.IReadOnlyList<string!>! Capabilities, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations, out System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities, out System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities, out string? Tier, out System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginDeclaredPermission!>? DeclaredPermissionsOrNull) -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Dependencies.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Dependencies.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.EntryTypeName.get -> string!
@@ -2334,7 +2346,7 @@ Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Name.get -> strin
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.Name.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginId.get -> string!
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginId.init -> void
-Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginPackageRegistryMetadata(string! ContractVersion, string! SchemaVersion, string! Name, string! PluginId, string! Version, string! AssemblyFileName, string! EntryTypeName, System.Collections.Generic.IReadOnlyList<string!>! Capabilities, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations = null, System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities = null, System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities = null, string? Tier = null) -> void
+Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.PluginPackageRegistryMetadata(string! ContractVersion, string! SchemaVersion, string! Name, string! PluginId, string! Version, string! AssemblyFileName, string! EntryTypeName, System.Collections.Generic.IReadOnlyList<string!>! Capabilities, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Dependencies, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginPackageExtensionRegistration!>? ExtensionRegistrations = null, System.Collections.Generic.IReadOnlyList<string!>? RequiredCapabilities = null, System.Collections.Generic.IReadOnlyList<string!>? ConditionalCapabilities = null, string? Tier = null, System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginDeclaredPermission!>? DeclaredPermissionsOrNull = null) -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.RequiredCapabilities.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.RequiredCapabilities.init -> void
 Callora.Core.Application.Plugins.PluginPackageRegistryMetadata.SchemaVersion.get -> string!
@@ -2928,6 +2940,7 @@ Callora.Core.Application.Security.IUserDataSubjectService.ExportAsync(string! ex
 Callora.Core.Application.Security.IWorkspaceScopeContext
 Callora.Core.Application.Security.IWorkspaceScopeContext.IsWorkspaceScoped.get -> bool
 Callora.Core.Application.Security.IWorkspaceScopeContext.WorkspaceKey.get -> string?
+Callora.Core.Application.Security.PluginPermissionKeyPolicy
 Callora.Core.Application.Security.ReservedMembershipRoles
 Callora.Core.Application.Security.SessionRevocationPurgeJobHandler
 Callora.Core.Application.Security.SessionRevocationPurgeJobHandler.ExecuteAsync(Callora.Core.Application.Jobs.Contracts.BackgroundJobExecutionContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
@@ -5553,6 +5566,8 @@ Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.Extensions.get -> Call
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.Extensions.set -> void
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.Name.get -> string?
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.Name.set -> void
+Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.Permissions.get -> Callora.Core.Infrastructure.Plugins.PluginRegistryPermissionJsonDto![]?
+Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.Permissions.set -> void
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.PluginId.get -> string?
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.PluginId.set -> void
 Callora.Core.Infrastructure.Plugins.PluginRegistryJsonDto.PluginRegistryJsonDto() -> void
@@ -5573,6 +5588,12 @@ Callora.Core.Infrastructure.Plugins.PluginRegistryMatch.Registry.get -> Callora.
 Callora.Core.Infrastructure.Plugins.PluginRegistryMatch.Registry.init -> void
 Callora.Core.Infrastructure.Plugins.PluginRegistryMatch.RegistryPath.get -> string!
 Callora.Core.Infrastructure.Plugins.PluginRegistryMatch.RegistryPath.init -> void
+Callora.Core.Infrastructure.Plugins.PluginRegistryPermissionJsonDto
+Callora.Core.Infrastructure.Plugins.PluginRegistryPermissionJsonDto.Description.get -> string?
+Callora.Core.Infrastructure.Plugins.PluginRegistryPermissionJsonDto.Description.set -> void
+Callora.Core.Infrastructure.Plugins.PluginRegistryPermissionJsonDto.Key.get -> string?
+Callora.Core.Infrastructure.Plugins.PluginRegistryPermissionJsonDto.Key.set -> void
+Callora.Core.Infrastructure.Plugins.PluginRegistryPermissionJsonDto.PluginRegistryPermissionJsonDto() -> void
 Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry
 Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry.<Clone>$() -> Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry!
 Callora.Core.Infrastructure.Plugins.PluginUiAssetManifestEntry.ContentHash.get -> string?
@@ -5838,6 +5859,7 @@ const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ContractVersionU
 const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ExtensionPointIdMissing = "PLUGIN_EXTENSION_POINT_ID_MISSING" -> string!
 const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ExtensionSurfaceInvalid = "PLUGIN_EXTENSION_SURFACE_INVALID" -> string!
 const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ExtensionSurfaceMissing = "PLUGIN_EXTENSION_SURFACE_MISSING" -> string!
+const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.PermissionNotDeclarable = "PLUGIN_PERMISSION_NOT_DECLARABLE" -> string!
 const Callora.Core.Application.Plugins.PluginSignatureStates.ContentHashMismatch = "content-hash-mismatch" -> string!
 const Callora.Core.Application.Plugins.PluginSignatureStates.Invalid = "invalid" -> string!
 const Callora.Core.Application.Plugins.PluginSignatureStates.NotSigned = "unsigned" -> string!
@@ -6264,6 +6286,9 @@ override Callora.Core.Application.Plugins.PluginAvailability.ToString() -> strin
 override Callora.Core.Application.Plugins.PluginContractVersionSupport.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.PluginContractVersionSupport.GetHashCode() -> int
 override Callora.Core.Application.Plugins.PluginContractVersionSupport.ToString() -> string!
+override Callora.Core.Application.Plugins.PluginDeclaredPermission.Equals(object? obj) -> bool
+override Callora.Core.Application.Plugins.PluginDeclaredPermission.GetHashCode() -> int
+override Callora.Core.Application.Plugins.PluginDeclaredPermission.ToString() -> string!
 override Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.GetHashCode() -> int
 override Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.ToString() -> string!
@@ -6817,6 +6842,8 @@ static Callora.Core.Application.Plugins.PluginContractVersionPolicy.GetAll() -> 
 static Callora.Core.Application.Plugins.PluginContractVersionPolicy.TryGet(string! contractVersion, out Callora.Core.Application.Plugins.PluginContractVersionSupport! support) -> bool
 static Callora.Core.Application.Plugins.PluginContractVersionSupport.operator !=(Callora.Core.Application.Plugins.PluginContractVersionSupport? left, Callora.Core.Application.Plugins.PluginContractVersionSupport? right) -> bool
 static Callora.Core.Application.Plugins.PluginContractVersionSupport.operator ==(Callora.Core.Application.Plugins.PluginContractVersionSupport? left, Callora.Core.Application.Plugins.PluginContractVersionSupport? right) -> bool
+static Callora.Core.Application.Plugins.PluginDeclaredPermission.operator !=(Callora.Core.Application.Plugins.PluginDeclaredPermission? left, Callora.Core.Application.Plugins.PluginDeclaredPermission? right) -> bool
+static Callora.Core.Application.Plugins.PluginDeclaredPermission.operator ==(Callora.Core.Application.Plugins.PluginDeclaredPermission? left, Callora.Core.Application.Plugins.PluginDeclaredPermission? right) -> bool
 static Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.Empty.get -> Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult!
 static Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.operator !=(Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult? left, Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult? right) -> bool
 static Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult.operator ==(Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult? left, Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult? right) -> bool
@@ -6893,6 +6920,7 @@ static Callora.Core.Application.Security.BackendUserException.PasswordRequired()
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Created(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Deleted(string! externalId) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Updated(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
+static Callora.Core.Application.Security.PluginPermissionKeyPolicy.IsDeclarable(string! pluginId, string! permissionKey, out string! reason) -> bool
 static Callora.Core.Application.Security.ReservedMembershipRoles.IsReserved(string? role, Callora.Core.Application.Policies.BackendHostOptions! options) -> bool
 static Callora.Core.Application.Security.SingleUseSecret.Create() -> string!
 static Callora.Core.Application.Security.SingleUseSecret.Hash(string! secret) -> string!
