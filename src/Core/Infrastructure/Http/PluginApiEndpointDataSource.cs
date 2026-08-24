@@ -2,6 +2,7 @@ using Callora.Core.Api;
 using Callora.Core.Application.Http.Contracts;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Security;
+using Callora.Core.Infrastructure.Security;
 using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
@@ -192,12 +193,17 @@ public sealed class PluginApiEndpointDataSource(
                 return;
             }
 
+            // Über denselben Prüfer wie die Host-Endpunkte, nicht über einen eigenen Vergleich.
+            // Hier stand die Regel ein zweites Mal und lautete anders: nur Permission-Claim,
+            // ohne die SuperAdmin-ROLLE und ohne den Scope-Claim. Sichtbar wurde es nie, weil
+            // der Seeder der Rolle ein "*"-Permission-Claim mitgibt — die beiden Fassungen
+            // stimmten also aus Zufall der aktuellen Bestückung überein, nicht von Bauart.
             if (!string.IsNullOrWhiteSpace(route.Permission) &&
-                !httpContext.User.HasClaim(BackendClaimTypes.Permission, route.Permission) &&
-                !httpContext.User.HasClaim(BackendClaimTypes.Permission, "*"))
+                !EndpointAuthorizationExtensions.UserHasPermission(httpContext.User, route.Permission))
             {
                 await WriteProblemAsync(httpContext, StatusCodes.Status403Forbidden,
-                    "Forbidden", $"The permission '{route.Permission}' is required.").ConfigureAwait(false);
+                    "Forbidden", $"The permission '{route.Permission}' is required.",
+                    missingPermission: route.Permission).ConfigureAwait(false);
                 return;
             }
 
@@ -316,7 +322,12 @@ public sealed class PluginApiEndpointDataSource(
     private static Exception Unwrap(Exception exception) =>
         exception is TargetInvocationException { InnerException: { } inner } ? inner : exception;
 
-    private static async Task WriteProblemAsync(HttpContext httpContext, int status, string title, string? detail)
+    private static async Task WriteProblemAsync(
+        HttpContext httpContext,
+        int status,
+        string title,
+        string? detail,
+        string? missingPermission = null)
     {
         if (httpContext.Response.HasStarted)
         {
@@ -326,14 +337,16 @@ public sealed class PluginApiEndpointDataSource(
         httpContext.Response.StatusCode = status;
         httpContext.Response.ContentType = "application/problem+json";
         var slug = title.ToLowerInvariant().Replace(' ', '-');
+        // Der fehlende Schlüssel gehört in die Antwort, nicht nur in den Fließtext: Wer eine
+        // Rollenvergabe debuggt, halbiert sonst den 37-Schlüssel-Katalog von Hand. Verraten
+        // wird dabei nichts — der Aufrufer kennt den Endpunkt, den er gerufen hat, und der
+        // Katalog steht in docs-site/reference/permissions.md.
         await httpContext.Response.WriteAsync(
-            JsonSerializer.Serialize(new
-            {
-                type = ApiProblems.TypeBaseUri + slug,
-                title,
-                status,
-                detail
-            }, JsonOptions),
+            JsonSerializer.Serialize(
+                missingPermission is null
+                    ? new { type = ApiProblems.TypeBaseUri + slug, title, status, detail }
+                    : (object)new { type = ApiProblems.TypeBaseUri + slug, title, status, detail, missingPermission },
+                JsonOptions),
             httpContext.RequestAborted).ConfigureAwait(false);
     }
 

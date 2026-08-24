@@ -64,6 +64,31 @@ The seeder also assigns the demo admin user and the one-time bootstrap operator
 (`InitialOperator`) to the `superadmin` role. Non-SuperAdmin roles derive their permissions
 from `BackendHostOptions.RbacRoles` via `BackendRbacPermissionCatalog`.
 
+### One evaluator, three call sites
+
+All three enforcement paths — the minimal-API `RequirePermission(...)`, the MVC
+`[CalloraPermission(...)]` attribute, and plugin routes declaring
+`CalloraRouteAttribute.Permission` — ask `UserHasPermission` and nothing else. A test fails
+the build if a fourth site compares permission claims on its own.
+
+### What a refusal says
+
+A `403` from any of the three is a problem document naming the key that was missing:
+
+```json
+{
+  "type": "https://callora.dev/problems/forbidden",
+  "title": "Forbidden",
+  "status": 403,
+  "detail": "The permission 'plugin.execute' is required.",
+  "missingPermission": "plugin.execute"
+}
+```
+
+The key is deliberately disclosed. The caller already knows which endpoint it called, this
+page publishes every key, and without it an operator debugging a role grant bisects the
+catalogue by hand.
+
 ## The permission-key catalogue
 
 All keys are defined as `public const string` in
@@ -137,11 +162,15 @@ RFC 9457 problem response. An empty `Permission` means authenticated-only.
 public Task<IResult> StartCampaign(...) { ... }
 ```
 
-::: warning Plugin-route bypass differs
-Plugin-route permission enforcement checks the `permission` claim (or `*`) directly.
-Unlike the host's `RequirePermission(...)` extension, it does **not** special-case the
-SuperAdmin role — a SuperAdmin passes because the seeded `*` grant is stamped as a
-permission claim, not because of a role short-circuit.
+::: info Plugin routes use the same evaluator
+Plugin-route enforcement calls `EndpointAuthorizationExtensions.UserHasPermission` — the same
+decision as `RequirePermission(...)` and `[CalloraPermission(...)]`, including the SuperAdmin
+role short-circuit and the `scope` claim.
+
+It once compared permission claims inline and did neither. That never surfaced as a bug,
+because the seeded `*` grant is stamped as a permission claim, so a SuperAdmin passed the
+inline rule too — the two rules agreed by coincidence of the current seeding rather than by
+construction.
 :::
 
 ## See also
