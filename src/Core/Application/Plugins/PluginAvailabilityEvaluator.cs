@@ -10,7 +10,7 @@ namespace Callora.Core.Application.Plugins;
 /// <summary>
 /// The single place that derives whether a plugin is effectively available in a
 /// workspace (REV2 §3.2). Gathers each factor from its owning store and combines
-/// them via <see cref="PluginAvailability.From"/>; runtime consumers ask this
+/// them via <see cref="PluginAvailability.From(PluginPlatformInputs, PluginWorkspaceInputs)"/>; runtime consumers ask this
 /// instead of re-checking entitlement or activation on their own.
 /// </summary>
 public sealed class PluginAvailabilityEvaluator(
@@ -23,7 +23,11 @@ public sealed class PluginAvailabilityEvaluator(
     // Optional: Ein Host ohne Fehlerbudget wertet den Faktor als erfüllt. Das hält minimale
     // Kompositionen lauffähig und macht das Budget zu einer Ergänzung, nicht zu einer
     // Voraussetzung der Verfügbarkeitsableitung.
-    PluginFaultRegistry? faultRegistry = null) : IPluginAvailabilityEvaluator
+    PluginFaultRegistry? faultRegistry = null,
+    // Optional: Ohne Vorgabe-Mandant fragt das Plattform-Urteil den Anspruch ohne Mandant und
+    // fällt damit auf die Plattform-Zeile bzw. den konfigurierten Vorgabewert zurück.
+    Callora.Core.Application.Policies.BackendHostOptions? hostOptions = null)
+    : IPluginAvailabilityEvaluator
 {
     public async Task<PluginAvailability> EvaluateAsync(
         string pluginId,
@@ -60,14 +64,48 @@ public sealed class PluginAvailabilityEvaluator(
             .CheckActivationAsync(pluginId, workspaceKey, cancellationToken)
             .ConfigureAwait(false);
 
-        return PluginAvailability.From(new PluginAvailabilityInputs(
-            BundledOrInstalled: bundledOrInstalled,
-            RuntimeHealthy: runtimeHealthy,
+        return PluginAvailability.From(
+            new PluginPlatformInputs(
+                BundledOrInstalled: bundledOrInstalled,
+                RuntimeHealthy: runtimeHealthy,
+                Entitled: entitled,
+                WithinFaultBudget: faultRegistry?.IsWithinBudget(pluginId) ?? true),
+            new PluginWorkspaceInputs(
+                WorkspaceEnabled: workspaceEnabled,
+                TenantActive: tenantActive,
+                WorkspaceActive: workspaceActive,
+                RequiredCapabilitiesAvailable: capability.IsAllowed));
+    }
+
+    /// <inheritdoc />
+    public async Task<PluginAvailability> EvaluatePlatformAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default)
+    {
+        var installation = await installationRepository
+            .GetByPluginIdAsync(pluginId, cancellationToken)
+            .ConfigureAwait(false);
+
+        // Der Anspruch wird auf MANDANTEN-Ebene gefragt, nicht ohne Mandant. Der Grund steht
+        // im MarketplaceEntitlementApplier: Ein Grant ohne Workspace schreibt eine
+        // Mandanten-Zeile, nie eine Plattform-Zeile. Mit tenantKey: null überspringt die
+        // Präzedenzkette des Stores genau diese Zeile und fällt auf
+        // DefaultPluginEntitlement — bei einer Marketplace-Installation (PLAT-253 setzt den
+        // Vorgabewert dort auf false) stünde ein bezahltes Plugin still.
+        var tenantKey = string.IsNullOrWhiteSpace(hostOptions?.DefaultTenantKey)
+            ? null
+            : hostOptions.DefaultTenantKey;
+        var entitled = await entitlementStore
+            .IsEntitledAsync(pluginId, workspaceKey: null, tenantKey, cancellationToken)
+            .ConfigureAwait(false);
+
+        return PluginAvailability.From(new PluginPlatformInputs(
+            BundledOrInstalled: installation is not null &&
+                installation.State != PluginInstallationState.Uninstalled,
+            RuntimeHealthy: lifecycle.Plugins.Any(descriptor =>
+                string.Equals(descriptor.PluginId, pluginId, StringComparison.OrdinalIgnoreCase) &&
+                descriptor.State is not (HostPluginState.Faulted or HostPluginState.UnloadFailed)),
             Entitled: entitled,
-            WorkspaceEnabled: workspaceEnabled,
-            TenantActive: tenantActive,
-            WorkspaceActive: workspaceActive,
-            RequiredCapabilitiesAvailable: capability.IsAllowed,
             WithinFaultBudget: faultRegistry?.IsWithinBudget(pluginId) ?? true));
     }
 
@@ -132,16 +170,18 @@ public sealed class PluginAvailabilityEvaluator(
                 ? CapabilityCheckResult.Allowed
                 : capabilityGuard.CheckActivation(installation, installations, workspaceKey, activePluginIds);
 
-            result[pluginId] = PluginAvailability.From(new PluginAvailabilityInputs(
-                BundledOrInstalled: installation is not null &&
-                    installation.State != PluginInstallationState.Uninstalled,
-                RuntimeHealthy: healthyPluginIds.Contains(pluginId),
-                Entitled: entitled,
-                WorkspaceEnabled: activePluginIds.Contains(pluginId),
-                TenantActive: tenantActive,
-                WorkspaceActive: workspaceActive,
-                RequiredCapabilitiesAvailable: capability.IsAllowed,
-                WithinFaultBudget: faultRegistry?.IsWithinBudget(pluginId) ?? true));
+            result[pluginId] = PluginAvailability.From(
+                new PluginPlatformInputs(
+                    BundledOrInstalled: installation is not null &&
+                        installation.State != PluginInstallationState.Uninstalled,
+                    RuntimeHealthy: healthyPluginIds.Contains(pluginId),
+                    Entitled: entitled,
+                    WithinFaultBudget: faultRegistry?.IsWithinBudget(pluginId) ?? true),
+                new PluginWorkspaceInputs(
+                    WorkspaceEnabled: activePluginIds.Contains(pluginId),
+                    TenantActive: tenantActive,
+                    WorkspaceActive: workspaceActive,
+                    RequiredCapabilitiesAvailable: capability.IsAllowed));
         }
 
         return result;

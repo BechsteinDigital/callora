@@ -37,8 +37,7 @@ public sealed class BusinessEventBus(
         // operation, so a plugin the workspace no longer holds kept the power to block
         // business operations — for a customer who could not see why they failed. An
         // unavailable plugin is not consulted, so it cannot cancel and cannot stop the fan-out.
-        if (scopeFactory is not null && pluginListeners.Length > 0 &&
-            !string.IsNullOrWhiteSpace(businessEvent.WorkspaceKey))
+        if (scopeFactory is not null && pluginListeners.Length > 0)
         {
             using var scope = scopeFactory.CreateScope();
             var availability = scope.ServiceProvider.GetService<IPluginAvailabilityEvaluator>();
@@ -74,16 +73,17 @@ public sealed class BusinessEventBus(
         IPluginAvailabilityEvaluator availability,
         (string PluginId, IBusinessEventListener Listener)[] pluginListeners,
         string eventName,
-        string workspaceKey,
+        string? workspaceKey,
         CancellationToken cancellationToken)
     {
         var pluginIds = pluginListeners
             .Select(static x => x.PluginId)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-        var verdicts = await availability
-            .EvaluateManyAsync(pluginIds, workspaceKey, cancellationToken)
-            .ConfigureAwait(false);
+        // Ohne Workspace ist es plattformweite Zustellung — dieselbe Grenze, andere Frage.
+        var verdicts = string.IsNullOrWhiteSpace(workspaceKey)
+            ? await EvaluatePlatformManyAsync(availability, pluginIds, cancellationToken).ConfigureAwait(false)
+            : await availability.EvaluateManyAsync(pluginIds, workspaceKey, cancellationToken).ConfigureAwait(false);
 
         foreach (var pluginId in pluginIds)
         {
@@ -93,7 +93,7 @@ public sealed class BusinessEventBus(
                     "Business event {EventName} withheld from plugin {PluginId}: unavailable in workspace {WorkspaceKey} ({UnmetFactors}).",
                     eventName,
                     pluginId,
-                    workspaceKey,
+                    workspaceKey ?? "<platform>",
                     string.Join(", ", verdict.UnmetFactors));
             }
         }
@@ -101,6 +101,22 @@ public sealed class BusinessEventBus(
         return pluginListeners
             .Where(x => !verdicts.TryGetValue(x.PluginId, out var verdict) || verdict.IsAvailable)
             .ToArray();
+    }
+
+    private static async Task<IReadOnlyDictionary<string, PluginAvailability>> EvaluatePlatformManyAsync(
+        IPluginAvailabilityEvaluator availability,
+        IReadOnlyCollection<string> pluginIds,
+        CancellationToken cancellationToken)
+    {
+        var verdicts = new Dictionary<string, PluginAvailability>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pluginId in pluginIds)
+        {
+            verdicts[pluginId] = await availability
+                .EvaluatePlatformAsync(pluginId, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return verdicts;
     }
 
     private async Task FanOutAsync(

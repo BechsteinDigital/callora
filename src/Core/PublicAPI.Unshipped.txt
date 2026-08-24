@@ -2132,6 +2132,7 @@ Callora.Core.Application.Plugins.IPluginAssemblyPathPortability.TryLocateInRoots
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator.EvaluateAsync(string! pluginId, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.PluginAvailability!>!
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator.EvaluateManyAsync(System.Collections.Generic.IReadOnlyCollection<string!>! pluginIds, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Plugins.PluginAvailability!>!>!
+Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator.EvaluatePlatformAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.PluginAvailability!>!
 Callora.Core.Application.Plugins.IPluginDbContextProvider
 Callora.Core.Application.Plugins.IPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.Reflection.Assembly! migrationsAssembly) -> void
 Callora.Core.Application.Plugins.IPluginDbContextProvider.GetMigrationLockKey(string! pluginId) -> long
@@ -2232,7 +2233,8 @@ Callora.Core.Application.Plugins.PluginAvailability.UnmetFactors.init -> void
 Callora.Core.Application.Plugins.PluginAvailabilityEvaluator
 Callora.Core.Application.Plugins.PluginAvailabilityEvaluator.EvaluateAsync(string! pluginId, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.PluginAvailability!>!
 Callora.Core.Application.Plugins.PluginAvailabilityEvaluator.EvaluateManyAsync(System.Collections.Generic.IReadOnlyCollection<string!>! pluginIds, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Plugins.PluginAvailability!>!>!
-Callora.Core.Application.Plugins.PluginAvailabilityEvaluator.PluginAvailabilityEvaluator(Callora.Core.Application.Persistence.IPluginInstallationRepository! installationRepository, Callora.Core.Application.Plugins.Contracts.IHostPluginLifecycle! lifecycle, Callora.Core.Application.Entitlements.IPluginEntitlementStore! entitlementStore, Callora.Core.Application.Plugins.IWorkspacePluginActivationReader! activationReader, Callora.Core.Application.Workspaces.IWorkspaceManagementStore! workspaceStore, Callora.Core.Application.Lifecycle.PluginCapabilityGuard! capabilityGuard, Callora.Core.Application.Plugins.PluginFaultRegistry? faultRegistry = null) -> void
+Callora.Core.Application.Plugins.PluginAvailabilityEvaluator.EvaluatePlatformAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.PluginAvailability!>!
+Callora.Core.Application.Plugins.PluginAvailabilityEvaluator.PluginAvailabilityEvaluator(Callora.Core.Application.Persistence.IPluginInstallationRepository! installationRepository, Callora.Core.Application.Plugins.Contracts.IHostPluginLifecycle! lifecycle, Callora.Core.Application.Entitlements.IPluginEntitlementStore! entitlementStore, Callora.Core.Application.Plugins.IWorkspacePluginActivationReader! activationReader, Callora.Core.Application.Workspaces.IWorkspaceManagementStore! workspaceStore, Callora.Core.Application.Lifecycle.PluginCapabilityGuard! capabilityGuard, Callora.Core.Application.Plugins.PluginFaultRegistry? faultRegistry = null, Callora.Core.Application.Policies.BackendHostOptions? hostOptions = null) -> void
 Callora.Core.Application.Plugins.PluginAvailabilityFactor
 Callora.Core.Application.Plugins.PluginAvailabilityFactor.BundledOrInstalled = 0 -> Callora.Core.Application.Plugins.PluginAvailabilityFactor
 Callora.Core.Application.Plugins.PluginAvailabilityFactor.Entitled = 2 -> Callora.Core.Application.Plugins.PluginAvailabilityFactor
@@ -2242,27 +2244,6 @@ Callora.Core.Application.Plugins.PluginAvailabilityFactor.TenantActive = 4 -> Ca
 Callora.Core.Application.Plugins.PluginAvailabilityFactor.WithinFaultBudget = 7 -> Callora.Core.Application.Plugins.PluginAvailabilityFactor
 Callora.Core.Application.Plugins.PluginAvailabilityFactor.WorkspaceActive = 5 -> Callora.Core.Application.Plugins.PluginAvailabilityFactor
 Callora.Core.Application.Plugins.PluginAvailabilityFactor.WorkspaceEnabled = 3 -> Callora.Core.Application.Plugins.PluginAvailabilityFactor
-Callora.Core.Application.Plugins.PluginAvailabilityInputs
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.BundledOrInstalled.get -> bool
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.BundledOrInstalled.init -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.Deconstruct(out bool BundledOrInstalled, out bool RuntimeHealthy, out bool Entitled, out bool WorkspaceEnabled, out bool TenantActive, out bool WorkspaceActive, out bool RequiredCapabilitiesAvailable, out bool WithinFaultBudget) -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.Entitled.get -> bool
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.Entitled.init -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.Equals(Callora.Core.Application.Plugins.PluginAvailabilityInputs other) -> bool
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.PluginAvailabilityInputs() -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.PluginAvailabilityInputs(bool BundledOrInstalled, bool RuntimeHealthy, bool Entitled, bool WorkspaceEnabled, bool TenantActive, bool WorkspaceActive, bool RequiredCapabilitiesAvailable, bool WithinFaultBudget = true) -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.RequiredCapabilitiesAvailable.get -> bool
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.RequiredCapabilitiesAvailable.init -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.RuntimeHealthy.get -> bool
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.RuntimeHealthy.init -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.TenantActive.get -> bool
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.TenantActive.init -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.WithinFaultBudget.get -> bool
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.WithinFaultBudget.init -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.WorkspaceActive.get -> bool
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.WorkspaceActive.init -> void
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.WorkspaceEnabled.get -> bool
-Callora.Core.Application.Plugins.PluginAvailabilityInputs.WorkspaceEnabled.init -> void
 Callora.Core.Application.Plugins.PluginContractBreakDiagnostics
 Callora.Core.Application.Plugins.PluginContractSupportStatus
 Callora.Core.Application.Plugins.PluginContractSupportStatus.Deprecated = 1 -> Callora.Core.Application.Plugins.PluginContractSupportStatus
@@ -2397,6 +2378,19 @@ Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult.IsVali
 Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult.PluginPackageSignatureVerificationResult(bool IsValid, string? ErrorMessage = null, string? ErrorCode = null, string? SignerThumbprint = null) -> void
 Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult.SignerThumbprint.get -> string?
 Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult.SignerThumbprint.init -> void
+Callora.Core.Application.Plugins.PluginPlatformInputs
+Callora.Core.Application.Plugins.PluginPlatformInputs.BundledOrInstalled.get -> bool
+Callora.Core.Application.Plugins.PluginPlatformInputs.BundledOrInstalled.init -> void
+Callora.Core.Application.Plugins.PluginPlatformInputs.Deconstruct(out bool BundledOrInstalled, out bool RuntimeHealthy, out bool Entitled, out bool WithinFaultBudget) -> void
+Callora.Core.Application.Plugins.PluginPlatformInputs.Entitled.get -> bool
+Callora.Core.Application.Plugins.PluginPlatformInputs.Entitled.init -> void
+Callora.Core.Application.Plugins.PluginPlatformInputs.Equals(Callora.Core.Application.Plugins.PluginPlatformInputs other) -> bool
+Callora.Core.Application.Plugins.PluginPlatformInputs.PluginPlatformInputs() -> void
+Callora.Core.Application.Plugins.PluginPlatformInputs.PluginPlatformInputs(bool BundledOrInstalled, bool RuntimeHealthy, bool Entitled, bool WithinFaultBudget = true) -> void
+Callora.Core.Application.Plugins.PluginPlatformInputs.RuntimeHealthy.get -> bool
+Callora.Core.Application.Plugins.PluginPlatformInputs.RuntimeHealthy.init -> void
+Callora.Core.Application.Plugins.PluginPlatformInputs.WithinFaultBudget.get -> bool
+Callora.Core.Application.Plugins.PluginPlatformInputs.WithinFaultBudget.init -> void
 Callora.Core.Application.Plugins.PluginRegistryErrorCodes
 Callora.Core.Application.Plugins.PluginServiceDecoration
 Callora.Core.Application.Plugins.PluginSignatureStateMapper
@@ -2405,6 +2399,19 @@ Callora.Core.Application.Plugins.PluginTier
 Callora.Core.Application.Plugins.PluginTier.Application = 0 -> Callora.Core.Application.Plugins.PluginTier
 Callora.Core.Application.Plugins.PluginTier.System = 1 -> Callora.Core.Application.Plugins.PluginTier
 Callora.Core.Application.Plugins.PluginTierResolver
+Callora.Core.Application.Plugins.PluginWorkspaceInputs
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.Deconstruct(out bool WorkspaceEnabled, out bool TenantActive, out bool WorkspaceActive, out bool RequiredCapabilitiesAvailable) -> void
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.Equals(Callora.Core.Application.Plugins.PluginWorkspaceInputs other) -> bool
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.PluginWorkspaceInputs() -> void
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.PluginWorkspaceInputs(bool WorkspaceEnabled, bool TenantActive, bool WorkspaceActive, bool RequiredCapabilitiesAvailable) -> void
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.RequiredCapabilitiesAvailable.get -> bool
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.RequiredCapabilitiesAvailable.init -> void
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.TenantActive.get -> bool
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.TenantActive.init -> void
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.WorkspaceActive.get -> bool
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.WorkspaceActive.init -> void
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.WorkspaceEnabled.get -> bool
+Callora.Core.Application.Plugins.PluginWorkspaceInputs.WorkspaceEnabled.init -> void
 Callora.Core.Application.Plugins.RuntimeCapabilityFlip
 Callora.Core.Application.Plugins.RuntimeCapabilityFlip.<Clone>$() -> Callora.Core.Application.Plugins.RuntimeCapabilityFlip!
 Callora.Core.Application.Plugins.RuntimeCapabilityFlip.Capability.get -> string!
@@ -6248,7 +6255,6 @@ override Callora.Core.Application.Plugins.PluginActivationDecision.GetHashCode()
 override Callora.Core.Application.Plugins.PluginAvailability.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.PluginAvailability.GetHashCode() -> int
 override Callora.Core.Application.Plugins.PluginAvailability.ToString() -> string!
-override Callora.Core.Application.Plugins.PluginAvailabilityInputs.GetHashCode() -> int
 override Callora.Core.Application.Plugins.PluginContractVersionSupport.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.PluginContractVersionSupport.GetHashCode() -> int
 override Callora.Core.Application.Plugins.PluginContractVersionSupport.ToString() -> string!
@@ -6270,6 +6276,8 @@ override Callora.Core.Application.Plugins.PluginPackageRegistryReadResult.ToStri
 override Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult.GetHashCode() -> int
 override Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult.ToString() -> string!
+override Callora.Core.Application.Plugins.PluginPlatformInputs.GetHashCode() -> int
+override Callora.Core.Application.Plugins.PluginWorkspaceInputs.GetHashCode() -> int
 override Callora.Core.Application.Plugins.RuntimeCapabilityFlip.Equals(object? obj) -> bool
 override Callora.Core.Application.Plugins.RuntimeCapabilityFlip.GetHashCode() -> int
 override Callora.Core.Application.Plugins.RuntimeCapabilityFlip.ToString() -> string!
@@ -6793,11 +6801,10 @@ static Callora.Core.Application.Plugins.PluginActivationDecision.Allow() -> Call
 static Callora.Core.Application.Plugins.PluginActivationDecision.Deny(string! reason) -> Callora.Core.Application.Plugins.PluginActivationDecision
 static Callora.Core.Application.Plugins.PluginActivationDecision.operator !=(Callora.Core.Application.Plugins.PluginActivationDecision left, Callora.Core.Application.Plugins.PluginActivationDecision right) -> bool
 static Callora.Core.Application.Plugins.PluginActivationDecision.operator ==(Callora.Core.Application.Plugins.PluginActivationDecision left, Callora.Core.Application.Plugins.PluginActivationDecision right) -> bool
-static Callora.Core.Application.Plugins.PluginAvailability.From(Callora.Core.Application.Plugins.PluginAvailabilityInputs inputs) -> Callora.Core.Application.Plugins.PluginAvailability!
+static Callora.Core.Application.Plugins.PluginAvailability.From(Callora.Core.Application.Plugins.PluginPlatformInputs platform) -> Callora.Core.Application.Plugins.PluginAvailability!
+static Callora.Core.Application.Plugins.PluginAvailability.From(Callora.Core.Application.Plugins.PluginPlatformInputs platform, Callora.Core.Application.Plugins.PluginWorkspaceInputs workspace) -> Callora.Core.Application.Plugins.PluginAvailability!
 static Callora.Core.Application.Plugins.PluginAvailability.operator !=(Callora.Core.Application.Plugins.PluginAvailability? left, Callora.Core.Application.Plugins.PluginAvailability? right) -> bool
 static Callora.Core.Application.Plugins.PluginAvailability.operator ==(Callora.Core.Application.Plugins.PluginAvailability? left, Callora.Core.Application.Plugins.PluginAvailability? right) -> bool
-static Callora.Core.Application.Plugins.PluginAvailabilityInputs.operator !=(Callora.Core.Application.Plugins.PluginAvailabilityInputs left, Callora.Core.Application.Plugins.PluginAvailabilityInputs right) -> bool
-static Callora.Core.Application.Plugins.PluginAvailabilityInputs.operator ==(Callora.Core.Application.Plugins.PluginAvailabilityInputs left, Callora.Core.Application.Plugins.PluginAvailabilityInputs right) -> bool
 static Callora.Core.Application.Plugins.PluginContractBreakDiagnostics.Describe(System.Reflection.Assembly! pluginAssembly) -> string?
 static Callora.Core.Application.Plugins.PluginContractBreakDiagnostics.Describe(System.Reflection.ReflectionTypeLoadException! exception, string? assemblyName) -> string!
 static Callora.Core.Application.Plugins.PluginContractVersionPolicy.GetAll() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.PluginContractVersionSupport!>!
@@ -6818,9 +6825,13 @@ static Callora.Core.Application.Plugins.PluginPackageRegistryReadResult.operator
 static Callora.Core.Application.Plugins.PluginPackageRegistryReadResult.operator ==(Callora.Core.Application.Plugins.PluginPackageRegistryReadResult? left, Callora.Core.Application.Plugins.PluginPackageRegistryReadResult? right) -> bool
 static Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult.operator !=(Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult? left, Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult? right) -> bool
 static Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult.operator ==(Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult? left, Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult? right) -> bool
+static Callora.Core.Application.Plugins.PluginPlatformInputs.operator !=(Callora.Core.Application.Plugins.PluginPlatformInputs left, Callora.Core.Application.Plugins.PluginPlatformInputs right) -> bool
+static Callora.Core.Application.Plugins.PluginPlatformInputs.operator ==(Callora.Core.Application.Plugins.PluginPlatformInputs left, Callora.Core.Application.Plugins.PluginPlatformInputs right) -> bool
 static Callora.Core.Application.Plugins.PluginServiceDecoration.Decorate<TService>(TService! baseService, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog) -> TService!
 static Callora.Core.Application.Plugins.PluginSignatureStateMapper.Map(Callora.Core.Application.Plugins.PluginPackageSignatureVerificationResult! result) -> string!
 static Callora.Core.Application.Plugins.PluginTierResolver.Resolve(string? declaredTier, Callora.Core.Application.Plugins.PluginTier directoryDefault) -> Callora.Core.Application.Plugins.PluginTier
+static Callora.Core.Application.Plugins.PluginWorkspaceInputs.operator !=(Callora.Core.Application.Plugins.PluginWorkspaceInputs left, Callora.Core.Application.Plugins.PluginWorkspaceInputs right) -> bool
+static Callora.Core.Application.Plugins.PluginWorkspaceInputs.operator ==(Callora.Core.Application.Plugins.PluginWorkspaceInputs left, Callora.Core.Application.Plugins.PluginWorkspaceInputs right) -> bool
 static Callora.Core.Application.Plugins.RuntimeCapabilityFlip.operator !=(Callora.Core.Application.Plugins.RuntimeCapabilityFlip? left, Callora.Core.Application.Plugins.RuntimeCapabilityFlip? right) -> bool
 static Callora.Core.Application.Plugins.RuntimeCapabilityFlip.operator ==(Callora.Core.Application.Plugins.RuntimeCapabilityFlip? left, Callora.Core.Application.Plugins.RuntimeCapabilityFlip? right) -> bool
 static Callora.Core.Application.Plugins.RuntimePluginActivateResult.operator !=(Callora.Core.Application.Plugins.RuntimePluginActivateResult? left, Callora.Core.Application.Plugins.RuntimePluginActivateResult? right) -> bool
@@ -7134,7 +7145,9 @@ virtual Callora.Core.Application.Surfaces.SurfaceCaller.Equals(Callora.Core.Appl
 virtual Callora.Core.Application.Surfaces.SurfaceCaller.PrintMembers(System.Text.StringBuilder! builder) -> bool
 ~override Callora.Core.Application.Plugins.PluginActivationDecision.Equals(object obj) -> bool
 ~override Callora.Core.Application.Plugins.PluginActivationDecision.ToString() -> string
-~override Callora.Core.Application.Plugins.PluginAvailabilityInputs.Equals(object obj) -> bool
-~override Callora.Core.Application.Plugins.PluginAvailabilityInputs.ToString() -> string
+~override Callora.Core.Application.Plugins.PluginPlatformInputs.Equals(object obj) -> bool
+~override Callora.Core.Application.Plugins.PluginPlatformInputs.ToString() -> string
+~override Callora.Core.Application.Plugins.PluginWorkspaceInputs.Equals(object obj) -> bool
+~override Callora.Core.Application.Plugins.PluginWorkspaceInputs.ToString() -> string
 ~override Callora.Core.Application.Security.BackendPermissionKey.Equals(object obj) -> bool
 ~override Callora.Core.Application.Security.BackendPermissionKey.ToString() -> string

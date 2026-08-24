@@ -214,7 +214,6 @@ public sealed class PluginApiEndpointDataSource(
             // available in that workspace (REV2 §13): an entitlement lapse, missing
             // capability, unhealthy runtime or inactive workspace returns 403 rather
             // than letting the request reach a plugin that should be dark.
-            if (requiresWorkspaceScope && !string.IsNullOrWhiteSpace(request.WorkspaceKey))
             {
                 // Fails closed when the evaluator is missing. It used to fail open, on the
                 // reasoning that availability is an extra layer over the always-enforced
@@ -236,13 +235,25 @@ public sealed class PluginApiEndpointDataSource(
                     return;
                 }
 
-                var availability = await availabilityEvaluator
-                    .EvaluateAsync(pluginId, request.WorkspaceKey, httpContext.RequestAborted)
-                    .ConfigureAwait(false);
+                // Eine Route ohne Workspace stellt die plattformweite Frage — darf dieses
+                // Plugin auf diesem Host überhaupt arbeiten. Sie war die letzte Lücke im
+                // Tor: plugin-weite Routen bedienten unverändert weiter, egal wie dunkel
+                // das Plugin war.
+                var servesWorkspace = requiresWorkspaceScope && !string.IsNullOrWhiteSpace(request.WorkspaceKey);
+                var availability = servesWorkspace
+                    ? await availabilityEvaluator
+                        .EvaluateAsync(pluginId, request.WorkspaceKey!, httpContext.RequestAborted)
+                        .ConfigureAwait(false)
+                    : await availabilityEvaluator
+                        .EvaluatePlatformAsync(pluginId, httpContext.RequestAborted)
+                        .ConfigureAwait(false);
                 if (!availability.IsAvailable)
                 {
                     await WriteProblemAsync(httpContext, StatusCodes.Status403Forbidden,
-                        "Forbidden", $"The plugin '{pluginId}' is not available in this workspace.").ConfigureAwait(false);
+                        "Forbidden",
+                        servesWorkspace
+                            ? $"The plugin '{pluginId}' is not available in this workspace."
+                            : $"The plugin '{pluginId}' is not available on this host.").ConfigureAwait(false);
                     return;
                 }
             }

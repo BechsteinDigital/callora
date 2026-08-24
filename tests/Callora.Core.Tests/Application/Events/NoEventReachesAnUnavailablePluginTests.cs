@@ -79,15 +79,28 @@ public sealed class NoEventReachesAnUnavailablePluginTests
     }
 
     [Fact]
-    public async Task A_platform_wide_event_carries_no_workspace_and_stays_ungated()
+    public async Task A_platform_wide_event_is_judged_on_the_platform_verdict()
     {
-        // Pins a deliberate gap rather than an achievement. Availability is derived per
-        // workspace; an event that names none asks a question the derivation cannot answer.
-        // Failing closed here would silence platform-wide plugin listeners entirely.
+        // This pinned a gap until the platform verdict existed: an event naming no workspace
+        // was said to ask a question the derivation could not answer. It can — the four
+        // host-wide factors are exactly the ones that must hold everywhere.
         var appEvent = new TestCreatingBusinessEvent(null);
         var bus = Bus(
             pluginListener: new MutableBusinessCallbackListener(0, e => e.Calls.Add("plugin")),
             unavailable: "billed-plugin");
+
+        await bus.PublishAsync(appEvent);
+
+        Assert.Empty(appEvent.Calls);
+    }
+
+    [Fact]
+    public async Task A_platform_wide_event_still_reaches_an_available_plugin()
+    {
+        var appEvent = new TestCreatingBusinessEvent(null);
+        var bus = Bus(
+            pluginListener: new MutableBusinessCallbackListener(0, e => e.Calls.Add("plugin")),
+            unavailable: "some-other-plugin");
 
         await bus.PublishAsync(appEvent);
 
@@ -146,12 +159,21 @@ public sealed class NoHostEventReachesAnUnavailablePluginTests
     }
 
     [Fact]
-    public async Task A_host_event_without_a_workspace_stays_ungated()
+    public async Task A_host_event_without_a_workspace_is_judged_on_the_platform_verdict()
     {
-        // Same deliberate gap as on the bus: a plain IHostEvent names no workspace, and
-        // availability is only derived per workspace.
         var calls = new List<string>();
         var dispatcher = Dispatcher(new RecordingHostEventSubscriber(calls), unavailable: "billed-plugin");
+
+        await dispatcher.DispatchAsync(new WorkspaceScopedHostEvent(null));
+
+        Assert.Empty(calls);
+    }
+
+    [Fact]
+    public async Task A_host_event_without_a_workspace_still_reaches_an_available_plugin()
+    {
+        var calls = new List<string>();
+        var dispatcher = Dispatcher(new RecordingHostEventSubscriber(calls), unavailable: "some-other-plugin");
 
         await dispatcher.DispatchAsync(new WorkspaceScopedHostEvent(null));
 

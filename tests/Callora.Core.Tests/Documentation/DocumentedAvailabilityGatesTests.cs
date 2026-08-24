@@ -48,14 +48,29 @@ public sealed class DocumentedAvailabilityGatesTests
     }
 
     [Fact]
-    public void TheDeliberateGapsAreNamed()
+    public void BothQuestionsAreDistinguished()
     {
         var reference = File.ReadAllText(ReferencePath);
 
-        // The gaps are the reason the page exists; a rewrite that drops them turns a
-        // statement of limits back into a claim of completeness.
-        Assert.Contains("does not enforce", reference, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("HostAdminApiRouteScope.Global", reference, StringComparison.Ordinal);
+        // The page's whole point. A reader who takes the platform verdict for a relaxed
+        // workspace verdict will expect workspace activation to matter platform-wide, and
+        // be wrong about the one place where the two genuinely differ.
+        Assert.Contains("EvaluatePlatformAsync", reference, StringComparison.Ordinal);
+        Assert.Contains("precondition", reference, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("PluginPlatformInputs", reference, StringComparison.Ordinal);
+        Assert.Contains("PluginWorkspaceInputs", reference, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheDefaultTenantDecisionIsRecorded()
+    {
+        var reference = File.ReadAllText(ReferencePath);
+
+        // Asking on the default tenant rather than on no tenant is the one semantic choice
+        // in the platform verdict, and it is invisible from the signature. An operator
+        // debugging "the grant exists but the plugin is idle" needs this paragraph.
+        Assert.Contains("DefaultTenantKey", reference, StringComparison.Ordinal);
+        Assert.Contains("MarketplaceEntitlementApplier", reference, StringComparison.Ordinal);
     }
 
     [Fact]

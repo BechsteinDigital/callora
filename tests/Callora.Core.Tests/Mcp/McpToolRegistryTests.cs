@@ -180,10 +180,12 @@ public sealed class McpToolRegistryTests
         {
             SeenPluginIds.Add(pluginId);
             var available = availableByPluginId.TryGetValue(pluginId, out var value) && value;
-            return Task.FromResult(PluginAvailability.From(new PluginAvailabilityInputs(
+            return Task.FromResult(PluginAvailability.From(
+            new PluginPlatformInputs(
                 BundledOrInstalled: true,
                 RuntimeHealthy: true,
-                Entitled: available,
+                Entitled: available),
+            new PluginWorkspaceInputs(
                 WorkspaceEnabled: true,
                 TenantActive: true,
                 WorkspaceActive: true,

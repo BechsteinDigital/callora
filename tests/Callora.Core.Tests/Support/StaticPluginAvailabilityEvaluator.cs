@@ -24,4 +24,17 @@ public sealed class StaticPluginAvailabilityEvaluator(params string[] unavailabl
             : [PluginAvailabilityFactor.Entitled];
         return Task.FromResult(new PluginAvailability(available, unmet));
     }
+
+    public Task<PluginAvailability> EvaluatePlatformAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default)
+    {
+        // Same verdict as the workspace form: these doubles model "this plugin lost its
+        // entitlement", which is a platform-layer fact and therefore holds either way.
+        var available = !_unavailable.Contains(pluginId);
+        IReadOnlyList<PluginAvailabilityFactor> unmet = available
+            ? Array.Empty<PluginAvailabilityFactor>()
+            : [PluginAvailabilityFactor.Entitled];
+        return Task.FromResult(new PluginAvailability(available, unmet));
+    }
 }

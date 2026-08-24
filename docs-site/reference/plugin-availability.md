@@ -5,27 +5,69 @@ capability it requires disappears, its runtime turns unhealthy, the workspace is
 Callora calls the combination **effective availability**, derives it in one place, and every
 serving path asks that one derivation rather than re-deciding for itself.
 
-This page lists **which entry points enforce it**, which deliberately do not, and what an
-unavailable plugin's callers actually see.
+## Two questions, one derivation
 
-## The derivation
+Availability answers two different questions, and the difference is not a technicality:
 
-`PluginAvailability.From` (`src/Core/Application/Plugins/`) combines eight factors. A plugin is
-available in a workspace exactly when **none** is unmet:
+- **Workspace availability** — *may this plugin serve workspace W?* Asked by requests,
+  surfaces, MCP tools and workspace-scoped jobs and events.
+- **Platform availability** — *may this plugin do any work on this host at all?* Asked where
+  no workspace is named: platform-wide jobs and events, plugin-wide routes.
+
+The second is not a relaxed version of the first. It is its **precondition**: the factors it
+combines are exactly the ones that must hold in *every* workspace. A plugin that is
+uninstalled, faulted, unentitled or over its fault budget is available nowhere. A plugin
+activated in no workspace at all may still legitimately do platform-wide work.
+
+## The factors
+
+`PluginAvailability.From` combines them; a plugin is available exactly when **none** is unmet.
+
+**Platform layer** (`PluginPlatformInputs`) — holds host-wide, and is the whole of a platform
+verdict:
 
 | Factor | Unmet when |
 | --- | --- |
 | `BundledOrInstalled` | The plugin is not installed on this host |
 | `RuntimeHealthy` | Its runtime is faulted |
-| `Entitled` | No entitlement covers it for this workspace or tenant |
+| `Entitled` | No entitlement covers it — see the precedence below |
+| `WithinFaultBudget` | It exceeded its fault budget (`PluginFaultRegistry`) |
+
+**Workspace layer** (`PluginWorkspaceInputs`) — only exists relative to one workspace, and is
+added on top for a workspace verdict:
+
+| Factor | Unmet when |
+| --- | --- |
 | `WorkspaceEnabled` | The workspace has not activated it |
 | `TenantActive` | The owning tenant is suspended |
 | `WorkspaceActive` | The workspace is suspended |
-| `RequiredCapabilitiesAvailable` | A capability it declares in `requiresCapabilities` is not provided |
-| `WithinFaultBudget` | It exceeded its fault budget (see `PluginFaultRegistry`) |
+| `RequiredCapabilitiesAvailable` | A capability from `requiresCapabilities` is not provided there |
 
-Consumers reach it through `IPluginAvailabilityEvaluator` — never by re-implementing the
-combination.
+The layers are separate types on purpose. A platform verdict that claims `WorkspaceEnabled` is
+not merely discouraged — it is unconstructible, because the field does not exist on its input
+type. `UnmetFactors` therefore stays exact: a platform verdict names only factors it observed.
+
+Consumers reach both through `IPluginAvailabilityEvaluator` (`EvaluateAsync`,
+`EvaluatePlatformAsync`) — never by re-implementing the combination.
+
+### How entitlement resolves
+
+`EfPluginEntitlementStore` uses a fixed precedence:
+
+**workspace row → tenant row → platform row → `BackendHost:DefaultPluginEntitlement`**
+
+A platform row carries neither `WorkspaceKey` nor `TenantKey`. The configured default is
+policy: `true` suits self-hosted installs where every installed plugin is usable, `false`
+suits cloud and marketplace deployments where every grant is explicit.
+
+::: warning The platform verdict asks on the default tenant
+`EvaluatePlatformAsync` queries with `tenantKey = BackendHost:DefaultTenantKey`, not with no
+tenant at all. `MarketplaceEntitlementApplier` writes a **tenant** row for a workspace-less
+grant, never a platform row; asking without a tenant would skip that row by the precedence
+above and fall through to the default. On a marketplace deployment that default is `false`,
+so a paid plugin would sit idle. Without a configured `DefaultTenantKey` the query falls back
+to the platform row and then the default.
+:::
 
 ::: info Entitlement is derived, not written
 A lapse does **not** deactivate the plugin. `MarketplaceEntitlementApplier` records the event
@@ -36,21 +78,23 @@ no reconfiguration.
 
 ## What enforces it
 
-| Entry point | Where | Workspace comes from |
+| Entry point | Where | Question asked |
 | --- | --- | --- |
-| Plugin HTTP routes (workspace-scoped) | `PluginApiEndpointDataSource` | The request |
-| Plugin Admin-API extension routes | `PluginAdminExtensionEndpoints` | The request |
-| Plugin surface API routes | `PluginSurfaceApiEndpoints` | The request |
-| MCP tools contributed by plugins | `ContributedMcpTool` | The call scope |
-| Surface slots and the UI chain | `SurfaceSlotResolver`, `WorkspaceUiChainResolver` | The surface |
-| Surface identity | `SurfaceIdentityResolver`, `SurfaceIdentityAssignmentService` | The surface |
-| **Background jobs** | `BackgroundJobProcessor` | `BackgroundJob.WorkspaceKey` |
-| **Business events** | `BusinessEventBus` | `IBusinessEvent.WorkspaceKey` |
-| **Host events** | `HostApplicationEventDispatcher` | `IBusinessEvent.WorkspaceKey` |
+| Plugin HTTP routes, workspace-scoped | `PluginApiEndpointDataSource` | Workspace |
+| Plugin HTTP routes, plugin-wide | `PluginApiEndpointDataSource` | Platform |
+| Plugin Admin-API extension routes | `PluginAdminExtensionEndpoints` | Workspace |
+| Plugin surface API routes | `PluginSurfaceApiEndpoints` | Workspace |
+| MCP tools contributed by plugins | `ContributedMcpTool` | Workspace |
+| Surface slots and the UI chain | `SurfaceSlotResolver`, `WorkspaceUiChainResolver` | Workspace |
+| Surface identity | `SurfaceIdentityResolver`, `SurfaceIdentityAssignmentService` | Workspace |
+| Background jobs | `BackgroundJobProcessor` | Workspace, or platform when the job carries no `WorkspaceKey` |
+| Business events | `BusinessEventBus` | Workspace, or platform when the event carries no `WorkspaceKey` |
+| Host events | `HostApplicationEventDispatcher` | Workspace, or platform when the event carries no `WorkspaceKey` |
 
 ### What callers see
 
-- **HTTP routes** answer `403` with a problem document naming the plugin.
+- **HTTP routes** answer `403` with a problem document naming the plugin, and saying whether
+  it is unavailable *in this workspace* or *on this host*.
 - **Background jobs** are **parked**, not failed: the attempt is given back and the job is
   rescheduled after `BackgroundJobs:UnavailableRetryDelay`. Failing them would let a billing
   outage burn the retry budget and destroy the work.
@@ -60,20 +104,14 @@ no reconfiguration.
   blocking operations.
 - **Surfaces and slots** render without the plugin's contribution.
 
-## What deliberately does not enforce it
-
-Availability is derived **per workspace**. An entry point that names no workspace is not
-asking a question the derivation can answer, and these therefore stay ungated:
+## What does not enforce it
 
 | Not gated | Why |
 | --- | --- |
-| Background jobs with no `WorkspaceKey` | Platform-wide work; failing them closed would break every platform-wide plugin job |
-| Business and host events with no `WorkspaceKey` | Platform-wide events; the same |
-| Plugin routes declared `HostAdminApiRouteScope.Global` | An explicit opt-out for plugin-wide status and metadata |
 | Host-owned handlers, listeners and subscribers | They have no owning plugin, so no entitlement can lapse for them |
 
-Closing these means deciding what a platform-wide entitlement is, which is a larger question
-than the gate itself. Until then the boundary is stated here rather than left implicit.
+That is the whole list, and it is a definition rather than a gap: the gate keys on the export's
+owning plugin, and host rails have none.
 
 ## When the gate is missing
 
@@ -82,3 +120,8 @@ hand without it is a broken host, not a minimal one — workspace-scoped plugin 
 **`503 Service Unavailable`**, not `403`. The distinction is deliberate: the host cannot
 answer the question, which is a different fact from the caller not being allowed, and a `403`
 would send an operator hunting an entitlement problem that does not exist.
+
+For the same reason `IPluginAvailabilityEvaluator.EvaluatePlatformAsync` has a default
+implementation that **refuses**. An evaluator that has not implemented the platform question
+must not answer it with a workspace answer, and returning "available" would open exactly the
+gate the abstraction exists to close.

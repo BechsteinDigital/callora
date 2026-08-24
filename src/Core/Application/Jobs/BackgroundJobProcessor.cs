@@ -51,25 +51,30 @@ public sealed class BackgroundJobProcessor(
         // workspace that no longer holds the plugin. The gate belongs here too — and it
         // parks rather than fails, so a billing outage cannot burn the retry budget.
         if (availability is not null &&
-            !string.IsNullOrWhiteSpace(job.WorkspaceKey) &&
             handlerResolver.ResolveOwner(job.JobType) is { } owningPlugin)
         {
-            var verdict = await availability
-                .EvaluateAsync(owningPlugin, job.WorkspaceKey, cancellationToken)
-                .ConfigureAwait(false);
+            // Ein Job ohne Workspace ist plattformweite Arbeit, und die Frage dazu lautet
+            // anders: nicht "darf dieses Plugin in Workspace W arbeiten", sondern "darf es
+            // auf diesem Host überhaupt arbeiten". Beides ist beantwortbar, also wird auch
+            // beides gefragt.
+            var verdict = string.IsNullOrWhiteSpace(job.WorkspaceKey)
+                ? await availability.EvaluatePlatformAsync(owningPlugin, cancellationToken).ConfigureAwait(false)
+                : await availability.EvaluateAsync(owningPlugin, job.WorkspaceKey, cancellationToken).ConfigureAwait(false);
             if (!verdict.IsAvailable)
             {
                 job.Defer(
-                    $"Plugin '{owningPlugin}' is not available in workspace '{job.WorkspaceKey}'.",
+                    string.IsNullOrWhiteSpace(job.WorkspaceKey)
+                        ? $"Plugin '{owningPlugin}' is not available on this host."
+                        : $"Plugin '{owningPlugin}' is not available in workspace '{job.WorkspaceKey}'.",
                     options.UnavailableRetryDelay,
                     DateTimeOffset.UtcNow);
                 await jobStore.SaveAsync(job, cancellationToken).ConfigureAwait(false);
                 logger.LogInformation(
-                    "Job {JobId} ({JobType}) parked: plugin {PluginId} is unavailable in workspace {WorkspaceKey} ({UnmetFactors}).",
+                    "Job {JobId} ({JobType}) parked: plugin {PluginId} is unavailable in scope {WorkspaceKey} ({UnmetFactors}).",
                     job.Id,
                     job.JobType,
                     owningPlugin,
-                    job.WorkspaceKey,
+                    job.WorkspaceKey ?? "<platform>",
                     string.Join(", ", verdict.UnmetFactors));
                 return true;
             }
