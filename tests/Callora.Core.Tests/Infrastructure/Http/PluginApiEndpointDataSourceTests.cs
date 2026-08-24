@@ -164,12 +164,19 @@ public sealed class PluginApiEndpointDataSourceTests
     }
 
     [Fact]
-    public async Task WorkspaceRoute_WithoutAvailabilityEvaluator_IsServed()
+    public async Task WorkspaceRoute_WithoutAvailabilityEvaluator_IsRefusedAsUnconfigured()
     {
-        // Contract: the availability gate is an additional layer on top of the
-        // always-enforced auth/permission/workspace-scope checks. When no
-        // evaluator is registered it fails open, so a host that has not wired
-        // availability still serves its workspace routes.
+        // This used to fail open, on the reasoning that the availability gate is an extra
+        // layer over the always-enforced auth/permission/scope checks. That reasoning holds
+        // for a permission check and breaks for this one: availability carries the
+        // ENTITLEMENT factor, so failing open serves a plugin the workspace stopped paying
+        // for, silently, and only when the composition is already broken — the one moment
+        // nobody is looking. AddCalloraHost always registers the evaluator, so its absence
+        // is a broken host rather than a supported minimal one.
+        //
+        // The answer is 503, not 403: the host cannot answer the question, which is a
+        // different fact from "you may not". A 403 here would send an operator hunting an
+        // entitlement problem that does not exist.
         await using var app = await CreateAppAsync(registerAvailability: false);
 
         var client = app.GetTestClient();
@@ -178,7 +185,8 @@ public sealed class PluginApiEndpointDataSourceTests
 
         var response = await client.GetAsync("/api/test-plugin/items?workspaceKey=workspace-a");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
     }
 
     private static async Task<WebApplication> CreateAppAsync(

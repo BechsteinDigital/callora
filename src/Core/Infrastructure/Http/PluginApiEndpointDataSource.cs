@@ -214,9 +214,28 @@ public sealed class PluginApiEndpointDataSource(
             // available in that workspace (REV2 §13): an entitlement lapse, missing
             // capability, unhealthy runtime or inactive workspace returns 403 rather
             // than letting the request reach a plugin that should be dark.
-            if (requiresWorkspaceScope && !string.IsNullOrWhiteSpace(request.WorkspaceKey) &&
-                httpContext.RequestServices.GetService<IPluginAvailabilityEvaluator>() is { } availabilityEvaluator)
+            if (requiresWorkspaceScope && !string.IsNullOrWhiteSpace(request.WorkspaceKey))
             {
+                // Fails closed when the evaluator is missing. It used to fail open, on the
+                // reasoning that availability is an extra layer over the always-enforced
+                // auth/permission/scope checks — true of a permission, false of this one:
+                // availability carries the ENTITLEMENT factor, so failing open serves a
+                // plugin the workspace stopped paying for, and does it exactly when the
+                // composition is already broken. AddCalloraHost always registers the
+                // evaluator, so its absence is a broken host, not a minimal one.
+                var availabilityEvaluator =
+                    httpContext.RequestServices.GetService<IPluginAvailabilityEvaluator>();
+                if (availabilityEvaluator is null)
+                {
+                    // 503, not 403: the host cannot answer the question, which is a different
+                    // fact from "you may not" — and a 403 would send an operator hunting an
+                    // entitlement problem that does not exist.
+                    await WriteProblemAsync(httpContext, StatusCodes.Status503ServiceUnavailable,
+                        "Service Unavailable",
+                        "The plugin availability gate is not configured on this host.").ConfigureAwait(false);
+                    return;
+                }
+
                 var availability = await availabilityEvaluator
                     .EvaluateAsync(pluginId, request.WorkspaceKey, httpContext.RequestAborted)
                     .ConfigureAwait(false);
