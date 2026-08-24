@@ -264,6 +264,11 @@ public sealed class PluginApiEndpointDataSource(
                 }
             }
 
+            // Ab hier läuft Plugin-Code. Die Markierung sitzt so spät wie möglich: Was der
+            // Host davor tut — Authentifizierung, Berechtigung, Verfügbarkeit — ist seine
+            // eigene Arbeit und gehört nicht dem Plugin zugerechnet.
+            using var attribution = Callora.Core.Application.Diagnostics.PluginExecutionScope.Enter(pluginId);
+
             if (isStream)
             {
                 httpContext.Response.Headers.ContentType = "text/event-stream";

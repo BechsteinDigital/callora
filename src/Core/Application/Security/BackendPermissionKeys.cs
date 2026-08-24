@@ -25,6 +25,13 @@ public static class BackendPermissionKeys
     public const string FlowRead = "flow.read";
     public const string FlowManage = "flow.manage";
     public const string JobRead = "job.read";
+
+    /// <summary>
+    /// Enables the plugin execution recorder and reads what it captured. Separate from
+    /// <see cref="JobRead"/> and the rest: recordings contain SQL command text, which is a
+    /// wider disclosure than any other monitoring endpoint makes.
+    /// </summary>
+    public const string DiagnosticsRecord = "diagnostics.record";
     public const string ExtensionRead = "extension.read";
     public const string ExtensionUpdate = "extension.update";
     public const string RoleRead = "role.read";

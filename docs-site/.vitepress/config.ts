@@ -194,6 +194,7 @@ export default defineConfig({
             { text: 'Migration & Rollback', link: '/maintainer/migration-and-rollback' },
             { text: 'Security', link: '/maintainer/security' },
             { text: 'Runbooks', link: '/maintainer/runbooks' },
+      { text: 'Recording a request', link: '/maintainer/recording-a-request' },
           ],
         },
       ],

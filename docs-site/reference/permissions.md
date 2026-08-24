@@ -1,7 +1,7 @@
 # Permissions
 
 The Callora host authorizes every operator/admin API call against a fixed set of
-RBAC permission keys. This page catalogues **all 37 permission keys** — the key
+RBAC permission keys. This page catalogues **all 38 permission keys** — the key
 string, its C# constant, and the endpoints that require it — and explains how the
 RBAC model, the `callora_scope` claim, and the SuperAdmin bypass fit together.
 
@@ -97,6 +97,13 @@ its constant, and the endpoint(s) that enforce it — via the minimal-API
 `RequirePermission(...)` filter or the equivalent `[CalloraPermission(...)]` attribute on
 MVC controllers.
 
+::: warning `diagnostics.record` discloses more than the other monitoring keys
+A recording contains **SQL command text**, including literals EF Core inlines. That is a
+wider disclosure than any other monitoring endpoint makes, which is why it is a key of its
+own rather than folded into `job.read`. Grant it to the people who debug the platform, not
+to everyone who may watch it.
+:::
+
 | Permission key | C# constant | Authorizes (endpoints) |
 | --- | --- | --- |
 | `tenant.create` | `TenantCreate` | `POST /api/tenants` |
@@ -119,6 +126,7 @@ MVC controllers.
 | `flow.read` | `FlowRead` | `GET /api/flows`; `GET /api/events/catalog` |
 | `flow.manage` | `FlowManage` | `POST /api/flows`, `PUT /api/flows/{id}`, `DELETE /api/flows/{id}` |
 | `job.read` | `JobRead` | `GET /api/jobs` |
+| `diagnostics.record` | `DiagnosticsRecord` | `POST /api/diagnostics/recorder/start`, `POST /api/diagnostics/recorder/stop`, `GET /api/diagnostics/recorder` |
 | `extension.read` | `ExtensionRead` | `GET /api/themes/definitions`, `/workspaces/{wk}`, `/workspaces/{wk}/effective`, `/workspaces/{wk}/settings`; `GET /workspace/themes/effective` |
 | `extension.update` | `ExtensionUpdate` | `PUT /api/themes/definitions/{templateKey}/plugins/{pluginId}/versions/{version}` (and its `/activation`), `PUT /api/themes/workspaces/{wk}`, `DELETE /api/themes/workspaces/{wk}`, `PUT /api/themes/workspaces/{wk}/settings` |
 | `role.read` | `RoleRead` | `GET /api/rbac/roles`, `/permissions`, `/users` |

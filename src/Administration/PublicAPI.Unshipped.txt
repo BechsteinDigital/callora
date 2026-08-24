@@ -1,4 +1,44 @@
 #nullable enable
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.<Clone>$() -> Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse!
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.CommandText.get -> string!
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.CommandText.init -> void
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.Deconstruct(out string? PluginId, out string! CommandText, out double DurationMs, out System.DateTimeOffset OccurredAtUtc) -> void
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.DurationMs.get -> double
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.DurationMs.init -> void
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.Equals(Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse? other) -> bool
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.OccurredAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.OccurredAtUtc.init -> void
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.PluginId.get -> string?
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.PluginId.init -> void
+Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.RecordedCommandApiResponse(string? PluginId, string! CommandText, double DurationMs, System.DateTimeOffset OccurredAtUtc) -> void
+Callora.Administration.Api.Admin.Diagnostics.RecorderController
+Callora.Administration.Api.Admin.Diagnostics.RecorderController.Recent(Callora.Core.Application.Diagnostics.PluginExecutionRecorder! recorder) -> Microsoft.AspNetCore.Mvc.IActionResult!
+Callora.Administration.Api.Admin.Diagnostics.RecorderController.RecorderController() -> void
+Callora.Administration.Api.Admin.Diagnostics.RecorderController.Start(Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest! request, Callora.Core.Application.Diagnostics.PluginExecutionRecorder! recorder) -> Microsoft.AspNetCore.Mvc.IActionResult!
+Callora.Administration.Api.Admin.Diagnostics.RecorderController.Stop(Callora.Core.Application.Diagnostics.PluginExecutionRecorder! recorder) -> Microsoft.AspNetCore.Mvc.IActionResult!
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.<Clone>$() -> Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse!
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.CapturedCommands.get -> int
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.CapturedCommands.init -> void
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.Deconstruct(out bool IsRecording, out int WindowSeconds, out string? PluginId, out int CapturedCommands) -> void
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.Equals(Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse? other) -> bool
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.IsRecording.get -> bool
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.IsRecording.init -> void
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.PluginId.get -> string?
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.PluginId.init -> void
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.RecorderStatusApiResponse(bool IsRecording, int WindowSeconds, string? PluginId, int CapturedCommands) -> void
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.WindowSeconds.get -> int
+Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.WindowSeconds.init -> void
+Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest
+Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.<Clone>$() -> Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest!
+Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.Deconstruct(out int? WindowSeconds, out string? PluginId) -> void
+Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.Equals(Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest? other) -> bool
+Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.PluginId.get -> string?
+Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.PluginId.init -> void
+Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.StartRecordingApiRequest(int? WindowSeconds, string? PluginId) -> void
+Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.WindowSeconds.get -> int?
+Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.WindowSeconds.init -> void
 Callora.Administration.Api.Admin.Integrations.IntegrationsController
 Callora.Administration.Api.Admin.Integrations.IntegrationsController.Create(Callora.Administration.Api.IntegrationCreateApiRequest! request, Callora.Core.Application.Integrations.IIntegrationCredentialStore! store, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Audit.IHostAuditStore! auditStore, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult!>!
 Callora.Administration.Api.Admin.Integrations.IntegrationsController.IntegrationsController() -> void
@@ -1016,6 +1056,15 @@ Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.WorkspaceKey.get ->
 Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.WorkspaceThemeSettingsApiResponse(string! WorkspaceKey, bool HasAssignedTheme, string? ThemePluginId, string? ThemeVersion, System.Collections.Generic.IReadOnlyList<Callora.Administration.Api.WorkspaceThemeSettingDefinitionApiResponse!>! Fields, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! ValuesByKey) -> void
 Callora.Administration.CalloraAdministrationExtensions
+override Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.ToString() -> string!
+override Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.ToString() -> string!
+override Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.ToString() -> string!
 override Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.ToString() -> string!
@@ -1211,6 +1260,12 @@ override Callora.Administration.Api.WorkspaceThemeSettingDefinitionApiResponse.T
 override Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.WorkspaceThemeSettingsApiResponse.ToString() -> string!
+static Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.operator !=(Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse? left, Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse? right) -> bool
+static Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse.operator ==(Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse? left, Callora.Administration.Api.Admin.Diagnostics.RecordedCommandApiResponse? right) -> bool
+static Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.operator !=(Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse? left, Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse? right) -> bool
+static Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse.operator ==(Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse? left, Callora.Administration.Api.Admin.Diagnostics.RecorderStatusApiResponse? right) -> bool
+static Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.operator !=(Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest? left, Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest? right) -> bool
+static Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest.operator ==(Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest? left, Callora.Administration.Api.Admin.Diagnostics.StartRecordingApiRequest? right) -> bool
 static Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.operator !=(Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest? left, Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest? right) -> bool
 static Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest.operator ==(Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest? left, Callora.Administration.Api.Admin.Snippets.SetSnippetApiRequest? right) -> bool
 static Callora.Administration.Api.Admin.Snippets.SnippetApiResponse.operator !=(Callora.Administration.Api.Admin.Snippets.SnippetApiResponse? left, Callora.Administration.Api.Admin.Snippets.SnippetApiResponse? right) -> bool

@@ -300,6 +300,36 @@ Callora.Core.Application.Data.Contracts.PluginDataKey.PluginId.get -> string!
 Callora.Core.Application.Data.Contracts.PluginDataKey.PluginId.init -> void
 Callora.Core.Application.Data.Contracts.PluginDataKey.WorkspaceKey.get -> string?
 Callora.Core.Application.Data.Contracts.PluginDataKey.WorkspaceKey.init -> void
+Callora.Core.Application.Diagnostics.PluginExecutionRecorder
+Callora.Core.Application.Diagnostics.PluginExecutionRecorder.IsRecording.get -> bool
+Callora.Core.Application.Diagnostics.PluginExecutionRecorder.PluginExecutionRecorder(System.TimeProvider! timeProvider) -> void
+Callora.Core.Application.Diagnostics.PluginExecutionRecorder.Recent() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Diagnostics.RecordedCommand!>!
+Callora.Core.Application.Diagnostics.PluginExecutionRecorder.RecordCommand(string? pluginId, string! commandText, System.TimeSpan duration) -> void
+Callora.Core.Application.Diagnostics.PluginExecutionRecorder.Start(Callora.Core.Application.Diagnostics.RecorderSession! session) -> void
+Callora.Core.Application.Diagnostics.PluginExecutionRecorder.Stop() -> void
+Callora.Core.Application.Diagnostics.PluginExecutionScope
+Callora.Core.Application.Diagnostics.RecordedCommand
+Callora.Core.Application.Diagnostics.RecordedCommand.<Clone>$() -> Callora.Core.Application.Diagnostics.RecordedCommand!
+Callora.Core.Application.Diagnostics.RecordedCommand.CommandText.get -> string!
+Callora.Core.Application.Diagnostics.RecordedCommand.CommandText.init -> void
+Callora.Core.Application.Diagnostics.RecordedCommand.Deconstruct(out string? PluginId, out string! CommandText, out System.TimeSpan Duration, out System.DateTimeOffset OccurredAtUtc) -> void
+Callora.Core.Application.Diagnostics.RecordedCommand.Duration.get -> System.TimeSpan
+Callora.Core.Application.Diagnostics.RecordedCommand.Duration.init -> void
+Callora.Core.Application.Diagnostics.RecordedCommand.Equals(Callora.Core.Application.Diagnostics.RecordedCommand? other) -> bool
+Callora.Core.Application.Diagnostics.RecordedCommand.OccurredAtUtc.get -> System.DateTimeOffset
+Callora.Core.Application.Diagnostics.RecordedCommand.OccurredAtUtc.init -> void
+Callora.Core.Application.Diagnostics.RecordedCommand.PluginId.get -> string?
+Callora.Core.Application.Diagnostics.RecordedCommand.PluginId.init -> void
+Callora.Core.Application.Diagnostics.RecordedCommand.RecordedCommand(string? PluginId, string! CommandText, System.TimeSpan Duration, System.DateTimeOffset OccurredAtUtc) -> void
+Callora.Core.Application.Diagnostics.RecorderSession
+Callora.Core.Application.Diagnostics.RecorderSession.<Clone>$() -> Callora.Core.Application.Diagnostics.RecorderSession!
+Callora.Core.Application.Diagnostics.RecorderSession.Deconstruct(out System.TimeSpan Window, out string? PluginId) -> void
+Callora.Core.Application.Diagnostics.RecorderSession.Equals(Callora.Core.Application.Diagnostics.RecorderSession? other) -> bool
+Callora.Core.Application.Diagnostics.RecorderSession.PluginId.get -> string?
+Callora.Core.Application.Diagnostics.RecorderSession.PluginId.init -> void
+Callora.Core.Application.Diagnostics.RecorderSession.RecorderSession(System.TimeSpan Window, string? PluginId = null) -> void
+Callora.Core.Application.Diagnostics.RecorderSession.Window.get -> System.TimeSpan
+Callora.Core.Application.Diagnostics.RecorderSession.Window.init -> void
 Callora.Core.Application.Entitlements.IMarketplaceEntitlementEventStore
 Callora.Core.Application.Entitlements.IMarketplaceEntitlementEventStore.TryRecordAsync(Callora.Core.Domain.Entitlements.MarketplaceEntitlementEventRecord! record, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Entitlements.IPluginEntitlementStore
@@ -5008,6 +5038,8 @@ Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleto
 Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleton(System.Type! serviceType, object! instance) -> void
 Callora.Core.Infrastructure.DependencyInjection.ServiceCollectionExtensions
 Callora.Core.Infrastructure.DependencyInjection.WebhookDeliveryResilienceExtensions
+Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor
+Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.RecordingDbCommandInterceptor(Callora.Core.Application.Diagnostics.PluginExecutionRecorder! recorder) -> void
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher.DispatchAsync<TEvent>(TEvent appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher.HostApplicationEventDispatcher(System.IServiceProvider! services, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher!>! logger, Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null, Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator? availability = null) -> void
@@ -5483,7 +5515,7 @@ Callora.Core.Infrastructure.Persistence.HostPersistenceDbContextDesignTimeFactor
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.Reflection.Assembly! migrationsAssembly) -> void
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.GetMigrationLockKey(string! pluginId) -> long
-Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.NpgsqlPluginDbContextProvider(Callora.Core.Application.Policies.BackendHostOptions! options) -> void
+Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.NpgsqlPluginDbContextProvider(Callora.Core.Application.Policies.BackendHostOptions! options, Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor? recorder = null) -> void
 Callora.Core.Infrastructure.Persistence.PluginManifestSchemaReader
 Callora.Core.Infrastructure.Persistence.PluginSchemaName
 Callora.Core.Infrastructure.Persistence.ScopedBackgroundJobQueue
@@ -5766,6 +5798,7 @@ const Callora.Core.Application.Configuration.SystemConfigFieldTypes.Secret = "se
 const Callora.Core.Application.Configuration.SystemConfigScopes.Global = "global" -> string!
 const Callora.Core.Application.Configuration.SystemConfigScopes.Tenant = "tenant" -> string!
 const Callora.Core.Application.Configuration.SystemConfigScopes.Workspace = "workspace" -> string!
+const Callora.Core.Application.Diagnostics.PluginExecutionRecorder.Capacity = 500 -> int
 const Callora.Core.Application.Entitlements.MarketplaceEntitlementActions.Grant = "grant" -> string!
 const Callora.Core.Application.Entitlements.MarketplaceEntitlementActions.Revoke = "revoke" -> string!
 const Callora.Core.Application.Entitlements.MarketplaceEntitlementSyncJobHandler.JobTypeName = "marketplace.entitlement-sync" -> string!
@@ -5871,6 +5904,7 @@ const Callora.Core.Application.Security.BackendPermissionKeys.ConfigRead = "conf
 const Callora.Core.Application.Security.BackendPermissionKeys.ConfigUpdate = "config.update" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.CustomFieldRead = "customfield.read" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.CustomFieldUpdate = "customfield.update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.DiagnosticsRecord = "diagnostics.record" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.ExtensionRead = "extension.read" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.ExtensionUpdate = "extension.update" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.FlowManage = "flow.manage" -> string!
@@ -6005,6 +6039,12 @@ override Callora.Core.Application.Data.Contracts.PluginDataEntry.ToString() -> s
 override Callora.Core.Application.Data.Contracts.PluginDataKey.Equals(object? obj) -> bool
 override Callora.Core.Application.Data.Contracts.PluginDataKey.GetHashCode() -> int
 override Callora.Core.Application.Data.Contracts.PluginDataKey.ToString() -> string!
+override Callora.Core.Application.Diagnostics.RecordedCommand.Equals(object? obj) -> bool
+override Callora.Core.Application.Diagnostics.RecordedCommand.GetHashCode() -> int
+override Callora.Core.Application.Diagnostics.RecordedCommand.ToString() -> string!
+override Callora.Core.Application.Diagnostics.RecorderSession.Equals(object? obj) -> bool
+override Callora.Core.Application.Diagnostics.RecorderSession.GetHashCode() -> int
+override Callora.Core.Application.Diagnostics.RecorderSession.ToString() -> string!
 override Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload.Equals(object? obj) -> bool
 override Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload.GetHashCode() -> int
 override Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload.ToString() -> string!
@@ -6500,6 +6540,12 @@ override Callora.Core.Domain.Extensions.ExtensionPointDefinition.ToString() -> s
 override Callora.Core.Domain.Extensions.ExtensionPointRegistrySnapshot.Equals(object? obj) -> bool
 override Callora.Core.Domain.Extensions.ExtensionPointRegistrySnapshot.GetHashCode() -> int
 override Callora.Core.Domain.Extensions.ExtensionPointRegistrySnapshot.ToString() -> string!
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.NonQueryExecuted(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, int result) -> int
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.NonQueryExecutedAsync(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, int result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.ReaderExecuted(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, System.Data.Common.DbDataReader! result) -> System.Data.Common.DbDataReader!
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.ReaderExecutedAsync(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, System.Data.Common.DbDataReader! result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.Common.DbDataReader!>
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.ScalarExecuted(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, object? result) -> object?
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.ScalarExecutedAsync(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, object? result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<object?>
 override Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.Equals(object? obj) -> bool
 override Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.GetHashCode() -> int
 override Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.ToString() -> string!
@@ -6578,6 +6624,12 @@ static Callora.Core.Application.Data.Contracts.PluginDataEntry.operator !=(Callo
 static Callora.Core.Application.Data.Contracts.PluginDataEntry.operator ==(Callora.Core.Application.Data.Contracts.PluginDataEntry? left, Callora.Core.Application.Data.Contracts.PluginDataEntry? right) -> bool
 static Callora.Core.Application.Data.Contracts.PluginDataKey.operator !=(Callora.Core.Application.Data.Contracts.PluginDataKey? left, Callora.Core.Application.Data.Contracts.PluginDataKey? right) -> bool
 static Callora.Core.Application.Data.Contracts.PluginDataKey.operator ==(Callora.Core.Application.Data.Contracts.PluginDataKey? left, Callora.Core.Application.Data.Contracts.PluginDataKey? right) -> bool
+static Callora.Core.Application.Diagnostics.PluginExecutionScope.Current.get -> string?
+static Callora.Core.Application.Diagnostics.PluginExecutionScope.Enter(string! pluginId) -> System.IDisposable!
+static Callora.Core.Application.Diagnostics.RecordedCommand.operator !=(Callora.Core.Application.Diagnostics.RecordedCommand? left, Callora.Core.Application.Diagnostics.RecordedCommand? right) -> bool
+static Callora.Core.Application.Diagnostics.RecordedCommand.operator ==(Callora.Core.Application.Diagnostics.RecordedCommand? left, Callora.Core.Application.Diagnostics.RecordedCommand? right) -> bool
+static Callora.Core.Application.Diagnostics.RecorderSession.operator !=(Callora.Core.Application.Diagnostics.RecorderSession? left, Callora.Core.Application.Diagnostics.RecorderSession? right) -> bool
+static Callora.Core.Application.Diagnostics.RecorderSession.operator ==(Callora.Core.Application.Diagnostics.RecorderSession? left, Callora.Core.Application.Diagnostics.RecorderSession? right) -> bool
 static Callora.Core.Application.Entitlements.MarketplaceEntitlementActions.IsSupported(string? action) -> bool
 static Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload.operator !=(Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload? left, Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload? right) -> bool
 static Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload.operator ==(Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload? left, Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload? right) -> bool
@@ -7136,6 +7188,7 @@ static Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService.ParseSnip
 static Callora.Core.Infrastructure.Snippets.RegistrySnippetSyncService.ParseSnippetFiles(string! registryJson) -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 static Callora.Core.Infrastructure.Surfaces.SurfaceRequestOrigin.IsSameOrigin(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> bool
 static Callora.Core.Infrastructure.Webhooks.RegistrySensitiveFieldSyncService.ParseSensitiveFields(string! registryJson) -> System.Collections.Generic.IReadOnlyList<string!>!
+static readonly Callora.Core.Application.Diagnostics.PluginExecutionRecorder.MaximumWindow -> System.TimeSpan
 static readonly Callora.Core.Application.Security.BackendLockoutPolicy.LockoutDuration -> System.TimeSpan
 static readonly Callora.Core.Application.Security.BackendPermissionActions.All -> string![]!
 static readonly Callora.Core.Application.Surfaces.Data.SurfaceDataComposition.Empty -> Callora.Core.Application.Surfaces.Data.SurfaceDataComposition!

@@ -11,7 +11,13 @@ namespace Callora.Core.Infrastructure.Persistence;
 /// plugin keeps its tables in its own schema (set by the plugin context via
 /// HasDefaultSchema), so uninstalling can drop that schema cleanly.
 /// </summary>
-public sealed class NpgsqlPluginDbContextProvider(BackendHostOptions options) : IPluginDbContextProvider
+public sealed class NpgsqlPluginDbContextProvider(
+    BackendHostOptions options,
+    // Optional: Ein Host ohne Aufzeichnung verhält sich unverändert. Hier ist die einzige
+    // Stelle, an der ein PLUGIN-Kontext konfiguriert wird — ohne sie bliebe genau die Arbeit
+    // unsichtbar, für die der Rekorder gebaut ist.
+    Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor? recorder = null)
+    : IPluginDbContextProvider
 {
     // Distinct from the host migration lock so plugin and host migrations
     // never block each other on the same key.
@@ -27,6 +33,11 @@ public sealed class NpgsqlPluginDbContextProvider(BackendHostOptions options) : 
             // otherwise does Assembly.Load(name) from the host load context, which
             // cannot see the plugin assembly in its collectible ALC.
             npgsql => npgsql.MigrationsAssembly(migrationsAssembly));
+
+        if (recorder is not null)
+        {
+            builder.AddInterceptors(recorder);
+        }
     }
 
     /// <summary>
