@@ -38,6 +38,9 @@ dotnet build Callora.Host.sln                       # baut die Admin-SPA mit (vu
 dotnet build Callora.Host.sln -p:SkipAdminFrontend=true   # ohne Node, deutlich schneller
 dotnet test  Callora.Host.sln
 bash scripts/build-repo-map.sh                      # Landkarte neu erzeugen
+
+scripts/dev-build.sh                                # Host + alle Plugins für den Dev-Stack bauen
+docker compose up                                   # Dev-Stack starten (Host, Postgres, TURN)
 ```
 
 Die Frontend-Suiten laufen eigenständig und sind **nicht** Teil von `dotnet test`:
@@ -101,8 +104,12 @@ Das ist der Grund, warum man sich hier zurechtfindet.
 
 ## Fallen, die Zeit gekostet haben
 
-- **Dev-Stack:** Die Frontdoor läuft auf **8080**, nicht auf 5000. Port 5000 direkt liefert
-  unter `/admin/` einen Redirect-Loop — das ist Absicht, kein Fehler.
+- **Dev-Stack:** Es gibt **eine** Compose-Datei für die Entwicklung — `docker-compose.yml`.
+  Die Frontdoor in `docker-compose.frontdoor.yml` ist optional; sie gibt nur einen stabilen
+  Port **8080** vor den Host auf 5000 und ist ein pfadneutraler Reverse Proxy, beide Ports
+  liefern also dasselbe. (Hier stand einmal, Port 5000 liefere unter `/admin/` einen
+  Redirect-Loop. Das galt, solange die Frontdoor `/admin*` auf eine eigene Admin-Shell auf
+  3200 routete — die gibt es seit dem Modul-Schnitt nicht mehr.)
 - **Host-Builds brauchen einen gestoppten Dev-Container** (NuGet-`obj`-Race im Bind-Mount →
   NETSDK1064).
 - **NuGet-Cache bei lokalen Paketen:** Gleiche Versionsnummer (`0.1.0-local`) gibt den **alten**
