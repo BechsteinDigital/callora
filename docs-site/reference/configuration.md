@@ -192,7 +192,7 @@ after binding, so a relative path is resolved against the application base direc
 
 | Section | Options class | Purpose (selected properties) |
 | --- | --- | --- |
-| `BackgroundJobs` | `BackgroundJobOptions` | Worker/scheduler tuning: `PollInterval` (1s), `SchedulerInterval` (5s), `RetryBaseDelay` (30s), `LeaseDuration` (5m), `RecentListLimit` (100). |
+| `BackgroundJobs` | `BackgroundJobOptions` | Worker/scheduler tuning: `PollInterval` (1s), `SchedulerInterval` (5s), `RetryBaseDelay` (30s), `LeaseDuration` (5m), `UnavailableRetryDelay` (1m), `RecentListLimit` (100). |
 | `Retention` | `RetentionOptions` | Data cleanup: `Enabled` (`true`), `SweepInterval` (6h), `CompletedJobRetention` (14d), `NotificationRetention` (90d). |
 | `Observability` | `ObservabilityOptions` | Telemetry: `ServiceName` (`callora-host`), `OtlpEndpoint` (`null` — export disabled when empty). |
 
