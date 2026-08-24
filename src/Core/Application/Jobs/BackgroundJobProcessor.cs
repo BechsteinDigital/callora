@@ -89,7 +89,16 @@ public sealed class BackgroundJobProcessor(
                 job.WorkspaceKey,
                 job.AttemptCount);
 
-            await handler.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
+            // Der Handler läuft unter der Herkunft seines Exports, damit alles, was er
+            // auslöst — Datenbankkommandos vor allem — ihm zugerechnet werden kann. Ein
+            // Host-Handler hat keinen Eigentümer und läuft ohne Markierung; sonst trüge
+            // Host-Arbeit den Namen des Plugins, das zufällig davor lief.
+            var owner = handlerResolver.ResolveOwner(job.JobType);
+            using (owner is null ? null : Diagnostics.PluginExecutionScope.Enter(owner))
+            {
+                await handler.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
+            }
+
             job.MarkSucceeded(DateTimeOffset.UtcNow);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

@@ -54,11 +54,13 @@ public sealed class BusinessEventBus(
         }
 
         // Host rails first, so a plugin listener of equal priority still runs after them —
-        // the ordering MergeWithHost produced, preserved by the stable sort.
+        // the ordering MergeWithHost produced, preserved by the stable sort. The owning
+        // plugin travels with each listener so its work can be attributed while it runs.
         var listeners = services
             .GetServices<IBusinessEventListener>()
-            .Concat(pluginListeners.Select(static x => x.Listener))
-            .OrderByDescending(static listener => listener.Priority)
+            .Select(static listener => ((string?)null, Listener: listener))
+            .Concat(pluginListeners.Select(static x => ((string?)x.PluginId, x.Listener)))
+            .OrderByDescending(static entry => entry.Listener.Priority)
             .ToArray();
 
         await FanOutAsync(listeners, businessEvent, cancellationToken).ConfigureAwait(false);
@@ -120,11 +122,11 @@ public sealed class BusinessEventBus(
     }
 
     private async Task FanOutAsync(
-        IBusinessEventListener[] listeners,
+        (string? PluginId, IBusinessEventListener Listener)[] listeners,
         IBusinessEvent businessEvent,
         CancellationToken cancellationToken)
     {
-        foreach (var listener in listeners)
+        foreach (var (pluginId, listener) in listeners)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -137,7 +139,10 @@ public sealed class BusinessEventBus(
 
             try
             {
-                await listener.OnBusinessEventAsync(businessEvent, cancellationToken).ConfigureAwait(false);
+                using (pluginId is null ? null : Diagnostics.PluginExecutionScope.Enter(pluginId))
+                {
+                    await listener.OnBusinessEventAsync(businessEvent, cancellationToken).ConfigureAwait(false);
+                }
             }
             catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
             {

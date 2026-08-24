@@ -5038,6 +5038,8 @@ Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleto
 Callora.Core.Infrastructure.DependencyInjection.IHostServiceRegistry.AddSingleton(System.Type! serviceType, object! instance) -> void
 Callora.Core.Infrastructure.DependencyInjection.ServiceCollectionExtensions
 Callora.Core.Infrastructure.DependencyInjection.WebhookDeliveryResilienceExtensions
+Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor
+Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.RecordingDbCommandInterceptor(Callora.Core.Application.Diagnostics.PluginExecutionRecorder! recorder) -> void
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher.DispatchAsync<TEvent>(TEvent appEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher.HostApplicationEventDispatcher(System.IServiceProvider! services, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Events.HostApplicationEventDispatcher!>! logger, Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null, Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator? availability = null) -> void
@@ -6537,6 +6539,12 @@ override Callora.Core.Domain.Extensions.ExtensionPointDefinition.ToString() -> s
 override Callora.Core.Domain.Extensions.ExtensionPointRegistrySnapshot.Equals(object? obj) -> bool
 override Callora.Core.Domain.Extensions.ExtensionPointRegistrySnapshot.GetHashCode() -> int
 override Callora.Core.Domain.Extensions.ExtensionPointRegistrySnapshot.ToString() -> string!
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.NonQueryExecuted(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, int result) -> int
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.NonQueryExecutedAsync(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, int result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.ReaderExecuted(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, System.Data.Common.DbDataReader! result) -> System.Data.Common.DbDataReader!
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.ReaderExecutedAsync(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, System.Data.Common.DbDataReader! result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.Common.DbDataReader!>
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.ScalarExecuted(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, object? result) -> object?
+override Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor.ScalarExecutedAsync(System.Data.Common.DbCommand! command, Microsoft.EntityFrameworkCore.Diagnostics.CommandExecutedEventData! eventData, object? result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<object?>
 override Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.Equals(object? obj) -> bool
 override Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.GetHashCode() -> int
 override Callora.Core.Infrastructure.Extensions.ThemeJsonDefinitionReadResult.ToString() -> string!
