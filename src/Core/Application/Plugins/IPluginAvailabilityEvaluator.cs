@@ -17,6 +17,30 @@ public interface IPluginAvailabilityEvaluator
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Derives whether a plugin may do <b>any</b> work on this host, for the entry points
+    /// that name no workspace: platform-wide jobs and events, plugin-wide routes.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A different question from <see cref="EvaluateAsync"/>, not a weaker one. It combines
+    /// only the four factors that hold host-wide (<see cref="PluginPlatformInputs"/>) — which
+    /// are precisely the ones that must hold in every workspace — so a plugin activated in no
+    /// workspace at all may still work platform-wide.
+    /// </para>
+    /// <para>
+    /// The default implementation refuses rather than guesses: an evaluator that has not
+    /// implemented the platform question must not answer it with a workspace answer, and
+    /// returning "available" would open exactly the gate this abstraction exists to close.
+    /// </para>
+    /// </remarks>
+    Task<PluginAvailability> EvaluatePlatformAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult(new PluginAvailability(
+            IsAvailable: false,
+            UnmetFactors: [PluginAvailabilityFactor.BundledOrInstalled]));
+
+    /// <summary>
     /// Wertet mehrere Plugins desselben Workspaces in einem Zug aus.
     /// </summary>
     /// <remarks>

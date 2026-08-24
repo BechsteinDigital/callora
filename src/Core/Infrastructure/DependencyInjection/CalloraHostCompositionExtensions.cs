@@ -250,7 +250,18 @@ public static class CalloraHostCompositionExtensions
                 System.TimeProvider.System,
                 sp.GetService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Plugins.PluginFaultRegistry>>()));
         builder.Services.AddScoped<Callora.Core.Application.Lifecycle.PluginCapabilityGuard>();
-        builder.Services.AddScoped<Callora.Core.Application.Plugins.PluginAvailabilityEvaluator>();
+        // Ausgeschrieben: Ohne BackendHostOptions fragt das Plattform-Urteil den Anspruch ohne
+        // Mandant und findet die Mandanten-Zeile nicht, die der Marketplace-Applier schreibt —
+        // ein bezahltes Plugin stünde still. Die Konstruktorauflösung darf das nicht raten.
+        builder.Services.AddScoped(sp => new Callora.Core.Application.Plugins.PluginAvailabilityEvaluator(
+            sp.GetRequiredService<Callora.Core.Application.Persistence.IPluginInstallationRepository>(),
+            sp.GetRequiredService<Callora.Core.Application.Plugins.Contracts.IHostPluginLifecycle>(),
+            sp.GetRequiredService<Callora.Core.Application.Entitlements.IPluginEntitlementStore>(),
+            sp.GetRequiredService<Callora.Core.Application.Plugins.IWorkspacePluginActivationReader>(),
+            sp.GetRequiredService<Callora.Core.Application.Workspaces.IWorkspaceManagementStore>(),
+            sp.GetRequiredService<Callora.Core.Application.Lifecycle.PluginCapabilityGuard>(),
+            sp.GetService<Callora.Core.Application.Plugins.PluginFaultRegistry>(),
+            sp.GetRequiredService<BackendHostOptions>()));
         builder.Services.AddScoped<Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator>(
             static sp => sp.GetRequiredService<Callora.Core.Application.Plugins.PluginAvailabilityEvaluator>());
         // Ausdrücklich zusammengesetzt statt vom Container geraten: Die Layout-Quelle kommt aus
