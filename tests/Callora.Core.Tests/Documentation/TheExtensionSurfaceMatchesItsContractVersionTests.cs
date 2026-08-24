@@ -51,6 +51,17 @@ public sealed class TheExtensionSurfaceMatchesItsContractVersionTests
 
         var baseline = File.ReadAllText(BaselinePath).ReplaceLineEndings("\n");
 
+        // Der eine Fall, der kein Urteil braucht: Was als deprecated angekündigt war und jetzt
+        // fehlt, IST ein Bruch — die Ankündigung hat es gesagt. Alles andere geht weiterhin an
+        // einen Menschen.
+        var verdict = ExtensionSurfaceComparison.Compare(baseline, current);
+        Assert.False(
+            verdict.RequiresContractVersionBump,
+            $"Entfernt, obwohl nur angekündigt und die contractVersion steht:\n  - " +
+            string.Join("\n  - ", verdict.DeprecatedRemovals) +
+            "\n\nEine Ankündigung ist ein Versprechen: Das Member trägt bis zu der Vertragsversion, " +
+            "die sie nennt. Vorher entfernen heißt, die contractVersion mitzuziehen.");
+
         Assert.True(
             string.Equals(current, baseline, StringComparison.Ordinal),
             BuildMessage(current, baseline));
@@ -77,9 +88,9 @@ public sealed class TheExtensionSurfaceMatchesItsContractVersionTests
     /// Plugin sie sieht: bei einem markierten Typ dessen gesamte öffentliche Oberfläche, bei einem
     /// markierten Member nur dieses.
     /// </summary>
-    private static string DescribeExtensionSurface()
+    internal static string DescribeExtensionSurface(Assembly? assembly = null)
     {
-        var assembly = typeof(CalloraExtensibleAttribute).Assembly;
+        assembly ??= typeof(CalloraExtensibleAttribute).Assembly;
         var signatures = new SortedSet<string>(StringComparer.Ordinal);
 
         foreach (var type in assembly.GetExportedTypes())
@@ -88,7 +99,7 @@ public sealed class TheExtensionSurfaceMatchesItsContractVersionTests
             {
                 foreach (var member in PublicMembersOf(type))
                 {
-                    signatures.Add(Describe(member));
+                    signatures.Add(Describe(member) + DeprecationSuffix(member, type));
                 }
 
                 continue;
@@ -98,7 +109,7 @@ public sealed class TheExtensionSurfaceMatchesItsContractVersionTests
             foreach (var member in PublicMembersOf(type)
                          .Where(static member => member.GetCustomAttribute<CalloraExtensibleAttribute>(inherit: false) is not null))
             {
-                signatures.Add(Describe(member));
+                signatures.Add(Describe(member) + DeprecationSuffix(member, member.DeclaringType));
             }
         }
 
@@ -113,6 +124,26 @@ public sealed class TheExtensionSurfaceMatchesItsContractVersionTests
         }
 
         return builder.ToString();
+    }
+
+    /// <summary>
+    /// Hängt die Deprecations-Ankündigung an die Signatur — als Suffix, nicht als Präfix.
+    /// </summary>
+    /// <remarks>
+    /// Die Datei ist sortiert. Ein Präfix hätte die Zeile beim Statuswechsel an eine andere
+    /// Stelle geschoben, und aus einer Ankündigung wäre ein Diff über die halbe Datei
+    /// geworden. So bleibt sie stehen, wo sie war, und der Diff zeigt genau die eine Zeile.
+    /// Ein am TYP markierter Zustand gilt für alle seine Member — sonst müsste man jedes
+    /// einzeln markieren, um einen Typ zu verabschieden.
+    /// </remarks>
+    private static string DeprecationSuffix(MemberInfo member, Type? declaringType)
+    {
+        var announcement = member.GetCustomAttribute<CalloraDeprecatedAttribute>(inherit: false)
+            ?? declaringType?.GetCustomAttribute<CalloraDeprecatedAttribute>(inherit: false);
+
+        return announcement is null
+            ? string.Empty
+            : $"  # deprecated since {announcement.Since}, error in {announcement.ErrorsIn}";
     }
 
     private static IEnumerable<MemberInfo> PublicMembersOf(Type type) =>

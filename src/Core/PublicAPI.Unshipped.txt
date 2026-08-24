@@ -4968,6 +4968,12 @@ Callora.Core.Domain.Workspaces.WorkspaceSurface.Workspace.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.WorkspaceId.get -> System.Guid
 Callora.Core.Domain.Workspaces.WorkspaceSurface.WorkspaceId.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface.WorkspaceSurface() -> void
+Callora.Core.Extensibility.CalloraDeprecatedAttribute
+Callora.Core.Extensibility.CalloraDeprecatedAttribute.CalloraDeprecatedAttribute(string! since, string! errorsIn) -> void
+Callora.Core.Extensibility.CalloraDeprecatedAttribute.ErrorsIn.get -> string!
+Callora.Core.Extensibility.CalloraDeprecatedAttribute.Replacement.get -> string?
+Callora.Core.Extensibility.CalloraDeprecatedAttribute.Replacement.init -> void
+Callora.Core.Extensibility.CalloraDeprecatedAttribute.Since.get -> string!
 Callora.Core.Extensibility.CalloraExtensibleAttribute
 Callora.Core.Extensibility.CalloraExtensibleAttribute.CalloraExtensibleAttribute() -> void
 Callora.Core.Extensibility.CalloraExtensibleAttribute.CalloraExtensibleAttribute(Callora.Core.Extensibility.ExtensionPointMode mode, string? note = null) -> void
