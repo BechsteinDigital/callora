@@ -64,6 +64,37 @@ internal static class AnalyzerTestHarness
     }
 
     /// <summary>
+    /// Runs <see cref="CalloraDeprecatedConsumptionAnalyzer"/> over <paramref name="source"/>
+    /// and returns the CAL0005 diagnostics.
+    /// </summary>
+    public static async Task<ImmutableArray<Diagnostic>> RunDeprecationAsync(
+        string source,
+        bool frameworkAssembly,
+        params MetadataReference[] extraReferences)
+    {
+        var compilation = CSharpCompilation.Create(
+            "DeprecationConsumer",
+            new[] { Parse(source) },
+            RuntimeReferences.AddRange(extraReferences),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (frameworkAssembly)
+        {
+            values[FrameworkProperty] = "true";
+        }
+
+        var withAnalyzers = compilation.WithAnalyzers(
+            ImmutableArray.Create<DiagnosticAnalyzer>(new CalloraDeprecatedConsumptionAnalyzer()),
+            new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, new OptionsProvider(values)));
+
+        var diagnostics = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
+        return diagnostics
+            .Where(d => d.Id == CalloraDeprecatedConsumptionAnalyzer.DiagnosticId)
+            .ToImmutableArray();
+    }
+
+    /// <summary>
     /// Runs <see cref="CalloraContractDocumentationAnalyzer"/> over <paramref name="source"/>
     /// and returns the CAL0003 diagnostics. Parses with <see cref="DocumentationMode.Parse"/>
     /// so the analyzer can read the doc comments — the real build gets this from
