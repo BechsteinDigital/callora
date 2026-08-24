@@ -5515,7 +5515,7 @@ Callora.Core.Infrastructure.Persistence.HostPersistenceDbContextDesignTimeFactor
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.Reflection.Assembly! migrationsAssembly) -> void
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.GetMigrationLockKey(string! pluginId) -> long
-Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.NpgsqlPluginDbContextProvider(Callora.Core.Application.Policies.BackendHostOptions! options) -> void
+Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.NpgsqlPluginDbContextProvider(Callora.Core.Application.Policies.BackendHostOptions! options, Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor? recorder = null) -> void
 Callora.Core.Infrastructure.Persistence.PluginManifestSchemaReader
 Callora.Core.Infrastructure.Persistence.PluginSchemaName
 Callora.Core.Infrastructure.Persistence.ScopedBackgroundJobQueue
@@ -5904,6 +5904,7 @@ const Callora.Core.Application.Security.BackendPermissionKeys.ConfigRead = "conf
 const Callora.Core.Application.Security.BackendPermissionKeys.ConfigUpdate = "config.update" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.CustomFieldRead = "customfield.read" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.CustomFieldUpdate = "customfield.update" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.DiagnosticsRecord = "diagnostics.record" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.ExtensionRead = "extension.read" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.ExtensionUpdate = "extension.update" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.FlowManage = "flow.manage" -> string!

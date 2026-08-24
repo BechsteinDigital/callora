@@ -43,10 +43,18 @@ public static class BackendPersistenceServiceCollectionExtensions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(options.DatabaseConnectionString);
 
-        services.AddDbContext<HostPersistenceDbContext>(db =>
+        // Der Rekorder ist ein Singleton und standardmäßig aus; der Interceptor kostet dann
+        // eine Feldabfrage je Kommando. Registriert wird er trotzdem immer — ein Schalter,
+        // der erst nach einem Neustart wirkt, hilft in dem Moment nicht, in dem man ihn
+        // braucht.
+        services.TryAddSingleton(_ => new Callora.Core.Application.Diagnostics.PluginExecutionRecorder(TimeProvider.System));
+        services.TryAddSingleton<Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor>();
+
+        services.AddDbContext<HostPersistenceDbContext>((sp, db) =>
             db.UseNpgsql(
-                options.DatabaseConnectionString,
-                npgsql => npgsql.CommandTimeout((int)RequestCommandTimeout.TotalSeconds)));
+                    options.DatabaseConnectionString,
+                    npgsql => npgsql.CommandTimeout((int)RequestCommandTimeout.TotalSeconds))
+                .AddInterceptors(sp.GetRequiredService<Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor>()));
 
         // Trägt den Workspace-Scope des Requests in den globalen Query-Filter
         // des DbContext (PLAT-267). Operatoren/Nicht-Requests umgehen ihn.
