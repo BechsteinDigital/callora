@@ -9,3 +9,4 @@ CAL0001 | Callora.Extensibility | Error | Plugins must not consume [CalloraInter
 CAL0002 | Callora.Extensibility | Error | Plugins must not derive from or implement [CalloraInternal] types
 CAL0003 | Callora.Extensibility | Error | Public contract-surface types and members must have XML documentation
 CAL0004 | Callora.Extensibility | Error | Extension-point ids must reference a CalloraExtensionPoints constant
+CAL0005 | Callora.Extensibility | Warning | Using a [CalloraDeprecated] extension surface announced for removal

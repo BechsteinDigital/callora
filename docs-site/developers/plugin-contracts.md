@@ -101,6 +101,19 @@ worth planning around:
   already-loaded one. A different **major** version is refused.
 - Announce a contract change before applying it. The catalog below tells you who is affected.
 
+### The platform's own surface has a middle rung
+
+The same discipline applies to the surface *you* build against, and the platform now has a
+way to say it. A member marked `[CalloraDeprecated]` still works and warns
+([`CAL0005`](/reference/analyzer-rules#cal0005-using-a-deprecated-callora-extension-surface))
+in your build, naming when it was announced, which contract version it stops working in, and
+what to use instead.
+
+The stated version is a **promise**: the member survives every release until then, and the
+extension-surface gate refuses an earlier removal. So a `CAL0005` warning is not urgent — it
+is a deadline you can plan against, which is exactly what the previous two-state contract
+could not give you.
+
 ## The catalog
 
 `GET /api/plugins/contracts` (permission `extension.read`) lists what an installation offers:

@@ -41,6 +41,7 @@ referenced, the corresponding analyzers have nothing to resolve and stay silent.
 | `[CalloraExtensible]` (`CalloraExtensibleAttribute`) | A sanctioned extension point plugins may implement/consume. | Places the symbol on the documented contract surface (`CAL0003`). |
 | `[ExtensionPointId]` (`ExtensionPointIdAttribute`) | Marks a parameter that carries an extension-point id. | A raw string literal there triggers `CAL0004`. |
 | `[HostProtected]` (`HostProtectedAttribute`, `internal`) | An extension point the host keeps precedence over. | Referenced by `ExtensionPointMode`; not itself a plugin-facing analyzer target. |
+| `[CalloraDeprecated]` (`CalloraDeprecatedAttribute`) | An extension surface announced for removal in a named contract version. Carries `Since`, `ErrorsIn` and an optional `Replacement`. | Consuming or implementing it from outside the framework is a **warning** (`CAL0005`). |
 
 ## Rules at a glance
 
@@ -50,6 +51,7 @@ referenced, the corresponding analyzers have nothing to resolve and stay silent.
 | `CAL0002` | Deriving from or implementing a `[CalloraInternal]` type | `Callora.Extensibility` | Error | Plugin compilations | A base type or implemented interface in the declared base list that is `[CalloraInternal]`. |
 | `CAL0003` | Missing XML documentation on the plugin contract surface | `Callora.Extensibility` | Error | Any compilation | A public contract-surface symbol without XML docs. |
 | `CAL0004` | Extension-point id must reference a `CalloraExtensionPoints` constant | `Callora.Extensibility` | Error | Any compilation (marker present) | A string literal passed to an `[ExtensionPointId]` parameter. |
+| `CAL0005` | Using a deprecated Callora extension surface | `Callora.Extensibility` | **Warning** | Plugin compilations | Calling, referencing or implementing a `[CalloraDeprecated]` type or member. |
 
 ---
 
@@ -199,6 +201,71 @@ builder.AddNavigation(CalloraExtensionPoints.WorkspaceNavigationMain, …);
 ```
 
 See [Exporting extensions](/guides/fundamentals/exporting-extensions).
+
+---
+
+## CAL0005 — Using a deprecated Callora extension surface
+
+**Warning.** The member still works. It is announced for removal in a named contract
+version, and this is how you find out in time.
+
+### Why a warning and not an error
+
+Before this rule the contract had two states: it breaks (`contractVersion++`, every external
+plugin rebuilt) or it does not. There was no way to say *this still works, warns from now on,
+and is gone in v3* — so every change had to be argued as one or the other, and the pressure
+was always toward "additive, ship it". The cost of getting that argument wrong is
+[#283](https://github.com/BechsteinDigital/callora/issues/283): a signature gained a
+parameter, `contractVersion` stayed put, and a plugin from another repository stopped
+loading.
+
+An error would not help, because it arrives at the wrong moment. A warning reaches the
+plugin author **in their own build, in their own repository, at a time they choose** —
+instead of arriving as a failed install in someone else's deployment.
+
+### What the message tells you
+
+```text
+CAL0005: 'Framework.Registry.Register()' is deprecated since 0.9.2 and stops working
+         in contract version v3; use Registry.Attach instead
+```
+
+Three things, all needed: when it was announced (so you can tell a fresh deprecation from a
+long-standing one), when it stops (a **promise** — see below), and what to use instead. A
+deprecation without a replacement tells an author their code is doomed and not what to do
+about it, which is how a warning becomes noise someone suppresses.
+
+### The announcement is a promise
+
+`ErrorsIn` is binding. The member survives every release until that contract version, and
+`TheExtensionSurfaceMatchesItsContractVersionTests` refuses a removal that arrives sooner
+while the contract version stands.
+
+That refusal is the one extension-surface question needing no judgement. The gate otherwise
+declines to guess whether a change breaks plugins — a new method with a default
+implementation does not, an extra parameter does, and a test that guesses is eventually
+wrong and then routed around. But a member announced as deprecated and then removed is
+breaking *by definition*, because the announcement said so.
+
+### What it does not fire on
+
+- **Framework assemblies.** The platform implements and calls its own deprecated surface for
+  as long as it ships it. Warning there would flood the host build and teach everyone to
+  ignore the rule before a plugin author ever saw it. Exempt via
+  `CalloraFrameworkAssembly=true`, exactly like `CAL0001`.
+- **Symbols declared in your own assembly.** Your deprecations are your business.
+
+### The ladder
+
+| Rung | Marked how | Building against it | Removing it |
+| --- | --- | --- | --- |
+| Active | nothing | silent | needs judgement — the gate asks |
+| Deprecated | `[CalloraDeprecated]` | `CAL0005` warning | refused until `contractVersion` moves |
+| Gone | removed | compile error | — |
+
+Moving from *active* to *deprecated* is **additive**: refresh `src/Core/ExtensionSurface.txt`
+and nothing else. Announcing costs nothing, which is the point — there is no reason to skip
+straight to removal.
 
 ---
 
