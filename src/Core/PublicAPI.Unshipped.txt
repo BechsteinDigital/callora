@@ -6921,6 +6921,7 @@ static Callora.Core.Application.Security.Events.UserBusinessEvent.Created(string
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Deleted(string! externalId) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Updated(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.PluginPermissionKeyPolicy.IsDeclarable(string! pluginId, string! permissionKey, out string! reason) -> bool
+static Callora.Core.Application.Security.PluginPermissionKeyPolicy.ReservedFunctions.get -> System.Collections.Generic.IReadOnlySet<string!>!
 static Callora.Core.Application.Security.ReservedMembershipRoles.IsReserved(string? role, Callora.Core.Application.Policies.BackendHostOptions! options) -> bool
 static Callora.Core.Application.Security.SingleUseSecret.Create() -> string!
 static Callora.Core.Application.Security.SingleUseSecret.Hash(string! secret) -> string!

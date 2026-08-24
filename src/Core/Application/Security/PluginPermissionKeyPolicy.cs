@@ -1,4 +1,5 @@
 using Callora.Core.Extensibility;
+using System.Reflection;
 
 namespace Callora.Core.Application.Security;
 
@@ -24,6 +25,23 @@ namespace Callora.Core.Application.Security;
 public static class PluginPermissionKeyPolicy
 {
     /// <summary>
+    /// The function segments the host's own keys occupy. No plugin may declare inside them,
+    /// whatever it calls itself.
+    /// </summary>
+    /// <remarks>
+    /// Derived from <see cref="BackendPermissionKeys"/> rather than listed by hand. A
+    /// hand-kept list is one release away from being wrong, and wrong here means a plugin
+    /// holding a host permission.
+    /// </remarks>
+    public static IReadOnlySet<string> ReservedFunctions { get; } = typeof(BackendPermissionKeys)
+        .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+        .Where(field => field is { IsLiteral: true, IsInitOnly: false } && field.FieldType == typeof(string))
+        .Select(field => field.GetRawConstantValue() as string ?? string.Empty)
+        .Where(value => value.Contains('.', StringComparison.Ordinal))
+        .Select(value => value[..value.IndexOf('.', StringComparison.Ordinal)])
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Whether <paramref name="permissionKey"/> may be declared by <paramref name="pluginId"/>,
     /// with the reason when it may not.
     /// </summary>
@@ -42,7 +60,31 @@ public static class PluginPermissionKeyPolicy
         }
 
         var key = permissionKey.Trim();
-        var prefix = pluginId.Trim() + ".";
+        var owner = pluginId.Trim();
+
+        // Checked BEFORE the namespace rule, because the namespace rule cannot see this:
+        // pluginId is only validated for being non-empty, so a plugin can call itself
+        // "user" — and then "user.delete" is genuinely inside its own namespace. An
+        // operator reading its declared permissions would see what looks like the plugin's
+        // key and grant the host's. Choosing the namespace defeated the rule that guards it.
+        if (ReservedFunctions.Contains(owner))
+        {
+            reason = $"'{owner}' is a host permission namespace; a plugin may not declare keys in it.";
+            return false;
+        }
+
+        // Authorization compares permission claims with StringComparison.Ordinal and
+        // BackendRbacPermissionCatalog emits lower case. A key declared with capitals would
+        // pass here and then never match anything — this issue's own failure mode, one
+        // layer up: it looks right and answers 403 forever. Refused rather than silently
+        // normalised, because the route still demands the string the author wrote.
+        if (!string.Equals(key, key.ToLowerInvariant(), StringComparison.Ordinal))
+        {
+            reason = $"'{key}' must be lower case; permission keys are compared exactly.";
+            return false;
+        }
+
+        var prefix = owner + ".";
 
         // The separator is part of the comparison on purpose: "communications.read" starts
         // with "communication" as a string but belongs to a different plugin.

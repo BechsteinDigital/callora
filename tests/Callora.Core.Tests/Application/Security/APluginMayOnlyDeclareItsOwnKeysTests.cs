@@ -90,3 +90,55 @@ public sealed class APluginMayOnlyDeclareItsOwnKeysTests
         Assert.False(PluginPermissionKeyPolicy.IsDeclarable("communication", key, out _));
     }
 }
+
+/// <summary>
+/// Two holes the namespace rule alone does not close, found reviewing it after the fact.
+/// </summary>
+public sealed class TheNamespaceRuleAloneIsNotEnoughTests
+{
+    [Theory]
+    [InlineData("user")]
+    [InlineData("workspace")]
+    [InlineData("plugin")]
+    [InlineData("role")]
+    public void A_plugin_cannot_take_a_host_function_as_its_namespace(string hostFunction)
+    {
+        // The hole: pluginId is only checked for being non-empty, so a plugin can call
+        // itself "user" — and then "user.delete" IS inside its own namespace. An operator
+        // reading the plugin's declared permissions sees what looks like the plugin's own
+        // key and grants the host's. The namespace rule was the whole defence, and it was
+        // defeated by choosing the namespace.
+        Assert.False(
+            PluginPermissionKeyPolicy.IsDeclarable(hostFunction, $"{hostFunction}.delete", out var reason));
+        Assert.Contains("host", reason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void The_reserved_functions_come_from_the_host_keys_themselves()
+    {
+        // Derived, not listed: a hand-kept list of reserved names is one release away from
+        // being wrong, and wrong here means a plugin gets a host permission.
+        Assert.Contains("membership", PluginPermissionKeyPolicy.ReservedFunctions, StringComparer.Ordinal);
+        Assert.Contains("snippet", PluginPermissionKeyPolicy.ReservedFunctions, StringComparer.Ordinal);
+        Assert.Contains("webhook", PluginPermissionKeyPolicy.ReservedFunctions, StringComparer.Ordinal);
+
+        // Every host key's function segment, with none missed — the property that makes a
+        // hand-kept list unnecessary and this one trustworthy.
+        Assert.Contains("user", PluginPermissionKeyPolicy.ReservedFunctions, StringComparer.Ordinal);
+        Assert.DoesNotContain("communication", PluginPermissionKeyPolicy.ReservedFunctions, StringComparer.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Communication.Thing.Read")]
+    [InlineData("communication.Thing.read")]
+    [InlineData("communication.thing.READ")]
+    public void A_key_that_is_not_lower_case_is_refused(string key)
+    {
+        // The second hole, quieter. Authorization compares claims with StringComparison
+        // .Ordinal and BackendRbacPermissionCatalog emits lower case, so a key declared with
+        // capitals passes the manifest and then never matches anything. That is this whole
+        // issue's failure mode again: it looks right and answers 403 forever.
+        Assert.False(PluginPermissionKeyPolicy.IsDeclarable("communication", key, out var reason));
+        Assert.Contains("lower case", reason, StringComparison.OrdinalIgnoreCase);
+    }
+}

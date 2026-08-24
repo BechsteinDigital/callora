@@ -81,6 +81,15 @@ the check: a plugin called `communications` cannot declare `communication.read`.
 Keys are granted through role-function-action configuration; one that cannot be expressed
 there would move the dead end rather than remove it.
 
+**The key must be lower case.** Authorization compares permission claims exactly, and role
+configuration emits lower case, so a key with capitals would pass this check and then never
+match anything — installed, serving `403`, looking correct.
+
+**Your `pluginId` must not be a host permission namespace.** `user`, `workspace`, `plugin`,
+`role`, `job` and the rest are reserved. Without this the namespace rule defeats itself: a
+plugin calling itself `user` would find `user.delete` genuinely inside its own namespace, and
+an operator granting the plugin's declared permissions would hand it the host's.
+
 A key breaking either rule makes the **whole manifest invalid**
 (`PLUGIN_PERMISSION_NOT_DECLARABLE`) rather than being skipped. Skipping would put the plugin
 back in the state this exists to fix: installed, serving `403`, with the reason two layers
