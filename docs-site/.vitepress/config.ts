@@ -104,6 +104,7 @@ const developerSidebar = [
       { text: 'Permissions', link: '/reference/permissions' },
       { text: 'Configuration', link: '/reference/configuration' },
       { text: 'Business Events', link: '/reference/business-events' },
+      { text: 'Plugin Availability', link: '/reference/plugin-availability' },
     ],
   },
 ]
