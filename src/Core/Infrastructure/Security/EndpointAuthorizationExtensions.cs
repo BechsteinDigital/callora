@@ -1,3 +1,4 @@
+using Callora.Core.Api;
 using Callora.Core.Application.Security;
 using System.Security.Claims;
 
@@ -17,10 +18,7 @@ public static class EndpointAuthorizationExtensions
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentException.ThrowIfNullOrWhiteSpace(permissionKey);
 
-        builder.RequireAuthorization(policy =>
-            policy.RequireAssertion(context => HasPermission(context.User, permissionKey)));
-
-        return builder;
+        return builder.RequirePermissions(permissionKey);
     }
 
     /// <summary>
@@ -44,11 +42,7 @@ public static class EndpointAuthorizationExtensions
             ArgumentException.ThrowIfNullOrWhiteSpace(permissionKey);
         }
 
-        builder.RequireAuthorization(policy =>
-            policy.RequireAssertion(context =>
-                permissionKeys.Any(permissionKey => HasPermission(context.User, permissionKey))));
-
-        return builder;
+        return builder.RequirePermissions(permissionKeys);
     }
 
     /// <summary>
@@ -59,6 +53,39 @@ public static class EndpointAuthorizationExtensions
         ArgumentNullException.ThrowIfNull(user);
         ArgumentException.ThrowIfNullOrWhiteSpace(permissionKey);
         return HasPermission(user, permissionKey);
+    }
+
+    /// <summary>
+    /// Authentication stays a policy; the permission becomes an endpoint filter.
+    /// </summary>
+    /// <remarks>
+    /// A policy can only say yes or no — <c>RequireAssertion</c> yields a bare 403 with no
+    /// body, so an operator debugging a role grant had to bisect the 37-key catalogue by
+    /// hand. A filter can answer, and it answers with the key that was missing. The
+    /// decision itself is unchanged and still comes from <see cref="UserHasPermission"/>.
+    /// </remarks>
+    private static TBuilder RequirePermissions<TBuilder>(this TBuilder builder, params string[] permissionKeys)
+        where TBuilder : IEndpointConventionBuilder
+    {
+        builder.RequireAuthorization();
+        builder.AddEndpointFilter(async (invocationContext, next) =>
+        {
+            var user = invocationContext.HttpContext.User;
+            var missing = permissionKeys.FirstOrDefault(key => !HasPermission(user, key));
+            if (permissionKeys.Any(key => HasPermission(user, key)))
+            {
+                return await next(invocationContext).ConfigureAwait(false);
+            }
+
+            return Results.Problem(
+                title: "Forbidden",
+                detail: $"The permission '{missing}' is required.",
+                statusCode: StatusCodes.Status403Forbidden,
+                type: ApiProblems.TypeBaseUri + "forbidden",
+                extensions: new Dictionary<string, object?> { ["missingPermission"] = missing });
+        });
+
+        return builder;
     }
 
     private static bool HasPermission(ClaimsPrincipal user, string permissionKey)
