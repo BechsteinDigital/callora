@@ -1,3 +1,4 @@
+using Callora.Core.Extensibility;
 namespace Callora.Core.Application.Diagnostics;
 
 /// <summary>
@@ -17,6 +18,7 @@ namespace Callora.Core.Application.Diagnostics;
 /// being switched on during an incident and forgotten afterwards.
 /// </para>
 /// </remarks>
+[CalloraInternal("Operator diagnostics — not a plugin contract (REV2 §7.2)")]
 public sealed class PluginExecutionRecorder(TimeProvider timeProvider)
 {
     /// <summary>The longest a recording run may last, however long the caller asks for.</summary>

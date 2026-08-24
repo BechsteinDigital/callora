@@ -2,6 +2,7 @@ using Callora.Core.Application.Diagnostics;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Data.Common;
 
+using Callora.Core.Extensibility;
 namespace Callora.Core.Infrastructure.Diagnostics;
 
 /// <summary>
@@ -21,6 +22,7 @@ namespace Callora.Core.Infrastructure.Diagnostics;
 /// installed.
 /// </para>
 /// </remarks>
+[CalloraInternal("Operator diagnostics — not a plugin contract (REV2 §7.2)")]
 public sealed class RecordingDbCommandInterceptor(PluginExecutionRecorder recorder) : DbCommandInterceptor
 {
     /// <inheritdoc />

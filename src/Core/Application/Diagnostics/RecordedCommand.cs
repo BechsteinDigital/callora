@@ -1,3 +1,4 @@
+using Callora.Core.Extensibility;
 namespace Callora.Core.Application.Diagnostics;
 
 /// <summary>
@@ -11,6 +12,7 @@ namespace Callora.Core.Application.Diagnostics;
 /// <param name="CommandText">The SQL as sent.</param>
 /// <param name="Duration">How long it took.</param>
 /// <param name="OccurredAtUtc">When it started.</param>
+[CalloraInternal("Operator diagnostics — not a plugin contract (REV2 §7.2)")]
 public sealed record RecordedCommand(
     string? PluginId,
     string CommandText,

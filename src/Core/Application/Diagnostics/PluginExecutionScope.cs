@@ -1,3 +1,4 @@
+using Callora.Core.Extensibility;
 namespace Callora.Core.Application.Diagnostics;
 
 /// <summary>
@@ -16,6 +17,7 @@ namespace Callora.Core.Application.Diagnostics;
 /// across awaits and thread-pool hops without leaking into requests running beside it.
 /// </para>
 /// </remarks>
+[CalloraInternal("Attribution for the execution recorder — writing it would let a plugin file its work under a neighbour (REV2 §7.2)")]
 public static class PluginExecutionScope
 {
     private static readonly AsyncLocal<string?> CurrentPluginId = new();

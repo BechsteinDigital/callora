@@ -93,6 +93,17 @@ Two consequences worth knowing when reading a recording:
 
 ## Security
 
+Attribution is **not writable by plugins**. `PluginExecutionScope` and the recorder are
+marked `[CalloraInternal]`, so a plugin touching them trips
+[`CAL0001`](/reference/analyzer-rules#cal0001-consuming-a-callorainternal-api-from-outside-the-framework)
+at build time. Without that a plugin could file its own database work under a neighbour —
+and it would do so precisely where the recorder is meant to be used: a support case, with a
+customer waiting and several foreign plugins in one process.
+
+Under ADR-013 the marker plus the analyzer is the available hardness. It makes forging
+attribution a deliberate breach of a build-time rule rather than something reachable by
+accident.
+
 A recording contains **SQL command text**, including literals EF Core inlines into the
 statement. That is a wider disclosure than any other monitoring endpoint makes, which is why
 `diagnostics.record` is a permission of its own rather than part of `job.read`. Grant it to
