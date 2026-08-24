@@ -28,4 +28,7 @@ public sealed class PluginRegistryJsonDto
     public Dictionary<string, string>? Dependencies { get; set; }
 
     public PluginRegistryExtensionJsonDto[]? Extensions { get; set; }
+
+    /// <summary>Permission keys this plugin declares for its own routes.</summary>
+    public PluginRegistryPermissionJsonDto[]? Permissions { get; set; }
 }

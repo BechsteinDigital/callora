@@ -9,6 +9,13 @@ namespace Callora.Core.Application.Plugins;
 /// nie: Der Leser parste sie aus der registry.json und ließ sie hier fallen.
 /// </para>
 /// </param>
+/// <param name="DeclaredPermissionsOrNull">
+/// Die Berechtigungsschlüssel, die dieses Plugin für seine Routen deklariert. Im Manifest und
+/// nicht im Code, obwohl ADR-009 die Verdrahtung in den Code legt: Wer installiert, muss
+/// VORHER sehen können, was ein Plugin verlangen wird — eine Angabe, die erst zur Laufzeit
+/// entsteht, kommt für diese Entscheidung zu spät. Über <see cref="DeclaredPermissions"/>
+/// abrufen; das Feld selbst ist nur der optionale Konstruktorparameter.
+/// </param>
 public sealed record PluginPackageRegistryMetadata(
     string ContractVersion,
     string SchemaVersion,
@@ -22,4 +29,10 @@ public sealed record PluginPackageRegistryMetadata(
     IReadOnlyList<PluginPackageExtensionRegistration>? ExtensionRegistrations = null,
     IReadOnlyList<string>? RequiredCapabilities = null,
     IReadOnlyList<string>? ConditionalCapabilities = null,
-    string? Tier = null);
+    string? Tier = null,
+    IReadOnlyList<PluginDeclaredPermission>? DeclaredPermissionsOrNull = null)
+{
+    /// <summary>Die deklarierten Schlüssel, nie null.</summary>
+    public IReadOnlyList<PluginDeclaredPermission> DeclaredPermissions =>
+        DeclaredPermissionsOrNull ?? [];
+}

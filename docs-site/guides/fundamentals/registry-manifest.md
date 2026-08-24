@@ -48,8 +48,52 @@ The core manifest is parsed into `PluginRegistryJsonDto`
 | `requiresCapabilities` | Optional | Capability strings this plugin **requires** another active plugin to provide. |
 | `dependencies` | Optional | Map of package name → version range (e.g. `"Callora.Core": ">=0.9.0"`). Enforced at install time — see [plugin dependencies](./plugin-dependencies). |
 | `extensions` | Optional | Declared extension-point participations — an array of `{ extensionPointId, surface }`. |
+| `permissions` | Optional | Permission keys this plugin's routes require — an array of `{ key, description }`. Each key must sit inside the plugin's own namespace and end in a known action; anything else makes the manifest invalid. |
 | `databaseSchema` | Optional | Explicit EF schema name for cleanup on uninstall. Read separately (see [Fields read outside the core parser](#fields-read-outside-the-core-parser)). |
 | `sensitiveFields` | Optional | Person-related payload field names for webhook data-minimization. Read separately. |
+
+## Declaring the permissions your routes require
+
+`CalloraRouteAttribute.Permission` lets a route **demand** a permission key. Until you declare
+it here, nothing can **supply** one — the key exists only in your source, and an operator has
+no way to grant it. A plugin in that state installs, activates, and answers `403` forever.
+
+```json
+"permissions": [
+  { "key": "communication.trunk.update", "description": "Reconfigure a SIP trunk" },
+  { "key": "communication.call.execute",  "description": "Place an outbound call" }
+]
+```
+
+The manifest carries it — not `context.Export(...)` — although [ADR-009](https://github.com/BechsteinDigital/callora/blob/main/docs/adr/ADR-009-code-first-extension-wiring.md)
+otherwise puts wiring in code. An operator has to see what a plugin will ask for **before**
+installing it, and a declaration that only exists once the plugin runs is too late for that
+decision.
+
+### Two rules, both enforced at read time
+
+**The key must sit inside your own namespace** — it begins with your `pluginId` and a dot.
+Declaration is self-service, so without this a plugin could declare `user.delete` and have an
+operator grant it in good faith, believing it to be the plugin's own. The separator is part of
+the check: a plugin called `communications` cannot declare `communication.read`.
+
+**The key must end in a known action** — `create`, `read`, `update`, `delete` or `execute`.
+Keys are granted through role-function-action configuration; one that cannot be expressed
+there would move the dead end rather than remove it.
+
+**The key must be lower case.** Authorization compares permission claims exactly, and role
+configuration emits lower case, so a key with capitals would pass this check and then never
+match anything — installed, serving `403`, looking correct.
+
+**Your `pluginId` must not be a host permission namespace.** `user`, `workspace`, `plugin`,
+`role`, `job` and the rest are reserved. Without this the namespace rule defeats itself: a
+plugin calling itself `user` would find `user.delete` genuinely inside its own namespace, and
+an operator granting the plugin's declared permissions would hand it the host's.
+
+A key breaking either rule makes the **whole manifest invalid**
+(`PLUGIN_PERMISSION_NOT_DECLARABLE`) rather than being skipped. Skipping would put the plugin
+back in the state this exists to fix: installed, serving `403`, with the reason two layers
+down. Repeating the same key is collapsed, not refused — untidy, not dangerous.
 
 ::: warning The eight required fields
 `JsonPluginPackageRegistryReader` rejects the manifest with a clear error if any of

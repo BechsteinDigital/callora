@@ -1,4 +1,5 @@
 using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Security;
 using Callora.Core.Domain.Extensions;
 using System.Text.Json;
 
@@ -127,6 +128,38 @@ public sealed class JsonPluginPackageRegistryReader : IPluginPackageRegistryRead
                 }
             }
 
+            // Ein nicht deklarierbarer Schlüssel macht das ganze Manifest ungültig, statt
+            // übersprungen zu werden. Überspringen setzte das Plugin genau in den Zustand
+            // zurück, den diese Deklaration behebt: installiert, 403 liefernd, und der Grund
+            // zwei Schichten tiefer.
+            var declaredPermissions = new List<PluginDeclaredPermission>();
+            var seenPermissionKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var permission in dto.Permissions ?? [])
+            {
+                var key = permission?.Key?.Trim();
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (!PluginPermissionKeyPolicy.IsDeclarable(dto.PluginId, key, out var reason))
+                {
+                    return Invalid(
+                        registryPath,
+                        $"registry.json: {reason}",
+                        PluginRegistryErrorCodes.PermissionNotDeclarable);
+                }
+
+                // Wiederholung ist unordentlich, nicht gefährlich — eine Installation daran
+                // scheitern zu lassen wäre ein schlechter Tausch für den, der davorsteht.
+                if (seenPermissionKeys.Add(key))
+                {
+                    declaredPermissions.Add(new PluginDeclaredPermission(
+                        key,
+                        string.IsNullOrWhiteSpace(permission!.Description) ? null : permission.Description.Trim()));
+                }
+            }
+
             var metadata = new PluginPackageRegistryMetadata(
                 dto.ContractVersion,
                 dto.SchemaVersion,
@@ -152,7 +185,8 @@ public sealed class JsonPluginPackageRegistryReader : IPluginPackageRegistryRead
                 .Select(x => x.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray(),
-                dto.Tier);
+                dto.Tier,
+                declaredPermissions);
 
             var warningMessage = contractPolicy.Status is PluginContractSupportStatus.Deprecated
                 ? $"registry.json: contractVersion '{dto.ContractVersion}' is deprecated and will be removed in a future release."
