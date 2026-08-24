@@ -181,7 +181,15 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton<ILocalPluginProjectBuilder, LocalPluginProjectBuilder>();
         builder.Services.AddSingleton<ILocalPluginInstallSourceResolver, LocalPluginInstallSourceResolver>();
         builder.Services.AddScoped<IPluginUiAssetPublisher, PluginUiAssetPublisher>();
-        builder.Services.AddScoped<IHostApplicationEventDispatcher, HostApplicationEventDispatcher>();
+        // Ausgeschrieben aus demselben Grund wie beim Business-Bus: Ein still weggelassener
+        // Verfügbarkeits-Prüfer sieht hier nicht nach fehlendem Dienst aus, sondern öffnet
+        // das Tor.
+        builder.Services.AddScoped<IHostApplicationEventDispatcher>(sp => new HostApplicationEventDispatcher(
+            sp,
+            sp.GetRequiredService<ICalloraPluginCatalog>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<HostApplicationEventDispatcher>>(),
+            sp.GetService<Callora.Core.Application.Plugins.PluginFaultRegistry>(),
+            sp.GetRequiredService<Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator>()));
         builder.Services.AddScoped<IHostApplicationEventPublisher, HostApplicationEventPublisher>();
         builder.Services.AddScoped<IHostEventPublisher>(sp => sp.GetRequiredService<IHostApplicationEventPublisher>());
         builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginLifecycleLoggingSubscriber>();
@@ -363,7 +371,14 @@ public static class CalloraHostCompositionExtensions
         // Business-Event-Bus (PLAT-270): benannte Events, an die sich Flows,
         // Webhooks und Plugins generisch hängen. Der Bus ist auch für Plugins
         // auflösbar (PluginContract), damit sie Events publizieren können.
-        builder.Services.AddSingleton<Callora.Core.Application.Events.Business.BusinessEventBus>();
+        // Ausgeschrieben, damit die Scope-Fabrik sicher ankommt: Bei optionalen Parametern
+        // wählt die Konstruktorauflösung sonst die kürzere Variante, und der Bus ließe
+        // wieder jedes Plugin an jedes Event — auch das, dessen Entitlement erloschen ist.
+        builder.Services.AddSingleton(sp => new Callora.Core.Application.Events.Business.BusinessEventBus(
+            sp,
+            sp.GetRequiredService<ICalloraPluginCatalog>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Events.Business.BusinessEventBus>>(),
+            sp.GetRequiredService<IServiceScopeFactory>()));
         builder.Services.AddSingleton<Callora.Core.Application.Events.Contracts.IBusinessEventBus>(
             sp => sp.GetRequiredService<Callora.Core.Application.Events.Business.BusinessEventBus>());
         builder.Services.AddSingleton<Callora.Core.Application.Events.Business.BusinessEventRegistry>();
