@@ -64,6 +64,19 @@ The seeder also assigns the demo admin user and the one-time bootstrap operator
 (`InitialOperator`) to the `superadmin` role. Non-SuperAdmin roles derive their permissions
 from `BackendHostOptions.RbacRoles` via `BackendRbacPermissionCatalog`.
 
+### Keys a plugin brings with it
+
+The keys above are the host's. A plugin declares its own in its
+[`registry.json`](/guides/fundamentals/registry-manifest#declaring-the-permissions-your-routes-require),
+because `CalloraRouteAttribute.Permission` lets a route demand a key and nothing else could
+supply one.
+
+A plugin may only declare keys **inside its own namespace** (`<pluginId>.…`) that **end in a
+known action**. Both are enforced when the manifest is read, and either violation makes the
+manifest invalid. The namespace rule is the important one: declaration is self-service, and
+without it a plugin could declare `user.delete` and be granted the host's permission by an
+operator who believed they were granting the plugin's own.
+
 ### One evaluator, three call sites
 
 All three enforcement paths — the minimal-API `RequirePermission(...)`, the MVC
