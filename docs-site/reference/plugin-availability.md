@@ -72,8 +72,30 @@ asking a question the derivation can answer, and these therefore stay ungated:
 | Plugin routes declared `HostAdminApiRouteScope.Global` | An explicit opt-out for plugin-wide status and metadata |
 | Host-owned handlers, listeners and subscribers | They have no owning plugin, so no entitlement can lapse for them |
 
-Closing these means deciding what a platform-wide entitlement is, which is a larger question
-than the gate itself. Until then the boundary is stated here rather than left implicit.
+### Why they are not simply gated too
+
+Not because a platform-wide entitlement is undefined — it is defined and stored.
+`EfPluginEntitlementStore` resolves in a fixed precedence: **workspace row → tenant row →
+platform row → `BackendHost:DefaultPluginEntitlement`**. A platform row is one with neither
+`WorkspaceKey` nor `TenantKey`, and the default is deliberate policy: `true` suits self-hosted
+installs where every installed plugin is usable, `false` suits cloud and marketplace
+deployments where every grant is explicit.
+
+What is missing is the **derivation** without a workspace, because the eight factors split
+unevenly:
+
+| Determinable without a workspace | Requires a workspace |
+| --- | --- |
+| `BundledOrInstalled` — the installation repository is global | `WorkspaceEnabled` — reads that workspace's activations |
+| `RuntimeHealthy` — host lifecycle state, global by design | `TenantActive` / `WorkspaceActive` — properties of that workspace |
+| `Entitled` — falls back to the platform row | `RequiredCapabilitiesAvailable` — checked against that workspace's active set |
+| `WithinFaultBudget` — counted per plugin, not per workspace | |
+
+So a platform-wide verdict is answerable — it means *may this plugin do any work on this host
+at all* — but it is a **different question** from workspace availability, with four factors
+instead of eight. `IPluginAvailabilityEvaluator.EvaluateAsync` takes a non-null `workspaceKey`
+and cannot express it, which is why these entry points stay ungated for now rather than
+because the concept is unsettled.
 
 ## When the gate is missing
 
