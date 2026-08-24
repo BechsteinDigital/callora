@@ -100,6 +100,33 @@ public sealed class BackgroundJob
     }
 
     /// <summary>
+    /// Returns the job to the queue without spending an attempt, releasing the lease
+    /// and rescheduling after the given delay.
+    /// </summary>
+    /// <remarks>
+    /// Distinct from <see cref="MarkFailedAttempt"/> because the job did not fail: the
+    /// host declined to run it. Counting that as an attempt would let a billing outage
+    /// exhaust the retry budget and destroy the work — the caller is expected to retry
+    /// once the condition clears, which is why <see cref="AttemptCount"/> is given back.
+    /// The reason lands in <see cref="LastError"/>: it is the only channel the job list
+    /// has, and an operator reading it wants "why is this not running", which is exactly
+    /// what the field answers here.
+    /// </remarks>
+    public void Defer(string reason, TimeSpan delay, DateTimeOffset nowUtc)
+    {
+        LastError = reason;
+        LeaseExpiresAtUtc = null;
+        StartedAtUtc = null;
+        if (AttemptCount > 0)
+        {
+            AttemptCount--;
+        }
+
+        Status = BackgroundJobStatus.Pending;
+        ScheduledAtUtc = nowUtc + delay;
+    }
+
+    /// <summary>
     /// Records one failed attempt and releases the lease: reschedules with the
     /// given delay while attempts remain, otherwise transitions to
     /// <see cref="BackgroundJobStatus.Failed"/>.

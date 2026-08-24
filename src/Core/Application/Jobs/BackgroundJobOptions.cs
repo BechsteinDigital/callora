@@ -21,6 +21,14 @@ public sealed class BackgroundJobOptions
     /// </summary>
     public TimeSpan LeaseDuration { get; set; } = TimeSpan.FromMinutes(5);
 
+    /// <summary>
+    /// How long a job waits before it is retried after its owning plugin was found
+    /// unavailable. Deliberately separate from <see cref="RetryBaseDelay"/>: this is
+    /// not a failure and must not escalate — an entitlement returns when it returns,
+    /// and doubling the wait each time would leave the queue idle long after it did.
+    /// </summary>
+    public TimeSpan UnavailableRetryDelay { get; set; } = TimeSpan.FromMinutes(1);
+
     /// <summary>Maximum number of jobs returned by the monitoring endpoint.</summary>
     public int RecentListLimit { get; set; } = 100;
 }

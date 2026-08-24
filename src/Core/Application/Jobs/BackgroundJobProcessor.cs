@@ -14,7 +14,8 @@ public sealed class BackgroundJobProcessor(
     BackgroundJobOptions options,
     ILogger<BackgroundJobProcessor> logger,
     // Optional: Ein Host ohne Fehlerbudget rechnet nichts zu und verhält sich unverändert.
-    Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null)
+    Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null,
+    Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator? availability = null)
 {
     /// <summary>
     /// Processes the next due job. Returns false when no job was due.
@@ -43,6 +44,35 @@ public sealed class BackgroundJobProcessor(
             await jobStore.SaveAsync(job, cancellationToken).ConfigureAwait(false);
             logger.LogWarning("No handler for job type {JobType} (job {JobId}).", job.JobType, job.Id);
             return true;
+        }
+
+        // A revoked entitlement darkens a plugin's HTTP routes (REV2 §13) but used to
+        // leave its queue running: webhooks delivered, mail sent, data synced for a
+        // workspace that no longer holds the plugin. The gate belongs here too — and it
+        // parks rather than fails, so a billing outage cannot burn the retry budget.
+        if (availability is not null &&
+            !string.IsNullOrWhiteSpace(job.WorkspaceKey) &&
+            handlerResolver.ResolveOwner(job.JobType) is { } owningPlugin)
+        {
+            var verdict = await availability
+                .EvaluateAsync(owningPlugin, job.WorkspaceKey, cancellationToken)
+                .ConfigureAwait(false);
+            if (!verdict.IsAvailable)
+            {
+                job.Defer(
+                    $"Plugin '{owningPlugin}' is not available in workspace '{job.WorkspaceKey}'.",
+                    options.UnavailableRetryDelay,
+                    DateTimeOffset.UtcNow);
+                await jobStore.SaveAsync(job, cancellationToken).ConfigureAwait(false);
+                logger.LogInformation(
+                    "Job {JobId} ({JobType}) parked: plugin {PluginId} is unavailable in workspace {WorkspaceKey} ({UnmetFactors}).",
+                    job.Id,
+                    job.JobType,
+                    owningPlugin,
+                    job.WorkspaceKey,
+                    string.Join(", ", verdict.UnmetFactors));
+                return true;
+            }
         }
 
         try

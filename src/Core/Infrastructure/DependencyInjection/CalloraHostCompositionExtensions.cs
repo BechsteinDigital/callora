@@ -97,7 +97,19 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton(backgroundJobOptions);
         builder.Services.AddScoped<IBackgroundJobStore, EfBackgroundJobStore>();
         builder.Services.AddScoped<BackgroundJobHandlerResolver>();
-        builder.Services.AddScoped<BackgroundJobProcessor>();
+        // Ausgeschrieben statt vom Container geraten — aus demselben Grund, aus dem der
+        // WorkspaceUiChainResolver es weiter unten ist: Bei optionalen Parametern wählt die
+        // Konstruktorauflösung stillschweigend die kürzere Variante, und ein nicht injizierter
+        // Verfügbarkeits-Prüfer heißt hier nicht "etwas fehlt", sondern "das Tor steht offen"
+        // — die Jobs eines Plugins ohne Entitlement liefen weiter, und kein Test hätte es
+        // gemerkt.
+        builder.Services.AddScoped(sp => new BackgroundJobProcessor(
+            sp.GetRequiredService<IBackgroundJobStore>(),
+            sp.GetRequiredService<BackgroundJobHandlerResolver>(),
+            sp.GetRequiredService<BackgroundJobOptions>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BackgroundJobProcessor>>(),
+            sp.GetService<Callora.Core.Application.Plugins.PluginFaultRegistry>(),
+            sp.GetRequiredService<Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator>()));
         builder.Services.AddSingleton<IBackgroundJobQueue, ScopedBackgroundJobQueue>();
         builder.Services.AddSingleton<RecurringJobEnqueuer>();
 

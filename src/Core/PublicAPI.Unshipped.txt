@@ -1006,8 +1006,10 @@ Callora.Core.Application.Jobs.BackgroundJobOptions.RetryBaseDelay.get -> System.
 Callora.Core.Application.Jobs.BackgroundJobOptions.RetryBaseDelay.set -> void
 Callora.Core.Application.Jobs.BackgroundJobOptions.SchedulerInterval.get -> System.TimeSpan
 Callora.Core.Application.Jobs.BackgroundJobOptions.SchedulerInterval.set -> void
+Callora.Core.Application.Jobs.BackgroundJobOptions.UnavailableRetryDelay.get -> System.TimeSpan
+Callora.Core.Application.Jobs.BackgroundJobOptions.UnavailableRetryDelay.set -> void
 Callora.Core.Application.Jobs.BackgroundJobProcessor
-Callora.Core.Application.Jobs.BackgroundJobProcessor.BackgroundJobProcessor(Callora.Core.Application.Jobs.IBackgroundJobStore! jobStore, Callora.Core.Application.Jobs.BackgroundJobHandlerResolver! handlerResolver, Callora.Core.Application.Jobs.BackgroundJobOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Jobs.BackgroundJobProcessor!>! logger, Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null) -> void
+Callora.Core.Application.Jobs.BackgroundJobProcessor.BackgroundJobProcessor(Callora.Core.Application.Jobs.IBackgroundJobStore! jobStore, Callora.Core.Application.Jobs.BackgroundJobHandlerResolver! handlerResolver, Callora.Core.Application.Jobs.BackgroundJobOptions! options, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Jobs.BackgroundJobProcessor!>! logger, Callora.Core.Application.Plugins.PluginFaultRegistry? faults = null, Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator? availability = null) -> void
 Callora.Core.Application.Jobs.BackgroundJobProcessor.ProcessNextAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Jobs.BackgroundJobTelemetry
 Callora.Core.Application.Jobs.Contracts.BackgroundJobExecutionContext
@@ -4491,6 +4493,7 @@ Callora.Core.Domain.Jobs.BackgroundJob
 Callora.Core.Domain.Jobs.BackgroundJob.AttemptCount.get -> int
 Callora.Core.Domain.Jobs.BackgroundJob.CompletedAtUtc.get -> System.DateTimeOffset?
 Callora.Core.Domain.Jobs.BackgroundJob.CreatedAtUtc.get -> System.DateTimeOffset
+Callora.Core.Domain.Jobs.BackgroundJob.Defer(string! reason, System.TimeSpan delay, System.DateTimeOffset nowUtc) -> void
 Callora.Core.Domain.Jobs.BackgroundJob.Id.get -> System.Guid
 Callora.Core.Domain.Jobs.BackgroundJob.JobType.get -> string!
 Callora.Core.Domain.Jobs.BackgroundJob.LastError.get -> string?
