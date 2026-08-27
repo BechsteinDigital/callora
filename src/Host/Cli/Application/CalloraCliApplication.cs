@@ -45,6 +45,30 @@ public static class CalloraCliApplication
             return 0;
         }
 
+        if (IsPluginInspectCommand(args))
+        {
+            var inspectParseResult = PluginInspectCommandParser.TryParse(args);
+            if (!inspectParseResult.IsSuccess || inspectParseResult.Request is null)
+            {
+                await standardError.WriteLineAsync(inspectParseResult.ErrorMessage).ConfigureAwait(false);
+                await standardError.WriteLineAsync(Usage).ConfigureAwait(false);
+                return 1;
+            }
+
+            var inspector = new PluginInspector();
+            var inspection = await inspector
+                .InspectAsync(inspectParseResult.Request, cancellationToken)
+                .ConfigureAwait(false);
+            if (!inspection.IsSuccess)
+            {
+                await standardError.WriteLineAsync(inspection.ErrorMessage).ConfigureAwait(false);
+                return 1;
+            }
+
+            await standardOutput.WriteAsync(inspection.Report).ConfigureAwait(false);
+            return 0;
+        }
+
         if (IsPluginTestContractCommand(args))
         {
             var testParseResult = PluginContractTestCommandParser.TryParse(args);
@@ -113,6 +137,11 @@ public static class CalloraCliApplication
         && string.Equals(args[0], "plugin", StringComparison.OrdinalIgnoreCase)
         && string.Equals(args[1], "new", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsPluginInspectCommand(IReadOnlyList<string> args) =>
+        args.Count >= 2
+        && string.Equals(args[0], "plugin", StringComparison.Ordinal)
+        && string.Equals(args[1], "inspect", StringComparison.Ordinal);
+
     private static bool IsPluginTestContractCommand(IReadOnlyList<string> args) =>
         args.Count >= 2
         && string.Equals(args[0], "plugin", StringComparison.OrdinalIgnoreCase)
@@ -127,5 +156,6 @@ public static class CalloraCliApplication
         "Usage:\n"
         + "  callora plugin new [name] [--name <display-name>] [--id <plugin-id>] [--output <directory>] [--force]\n"
         + "  callora plugin test-contract --assembly <path-to-dll> [--registry <path-to-registry.json>] [--entry-type <full-type-name>]\n"
+        + "  callora plugin inspect --assembly <path-to-dll> [--registry <path-to-registry.json>]\n"
         + "  callora plugin sign --plugin <plugin-directory> --key <private-key.pem> [--out <plugin.signature.json>]";
 }

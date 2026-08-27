@@ -39,6 +39,7 @@ argument), prints usage and exits `0`.
 Usage:
   callora plugin new [name] [--name <display-name>] [--id <plugin-id>] [--output <directory>] [--force]
   callora plugin test-contract --assembly <path-to-dll> [--registry <path-to-registry.json>] [--entry-type <full-type-name>]
+  callora plugin inspect --assembly <path-to-dll> [--registry <path-to-registry.json>]
   callora plugin sign --plugin <plugin-directory> --key <private-key.pem> [--out <plugin.signature.json>]
 ```
 
@@ -48,6 +49,7 @@ Usage:
 | --- | --- | --- | --- | --- |
 | `plugin new` | Scaffold a new plugin project (csproj, entry class, `registry.json`). | A plugin name (positional or `--name`). | Scaffold created. | Parse error or scaffold failure. |
 | `plugin test-contract` | Validate a built plugin assembly + `registry.json` against the v1 plugin contract. | `--assembly`. | All contract checks passed. | Any validation issue (each printed with its code). |
+| `plugin inspect` | Report what a plugin package declares and what it attaches to. | `--assembly`. | Report written to stdout. | Assembly not found, or a parse error. |
 | `plugin sign` | Produce a signed content manifest (`plugin.signature.json`) over the whole plugin directory. | `--plugin` and `--key`. | Signature written. | Parse error or signing failure. |
 
 Every command exits `0` on success and `1` on any parse or execution failure.
@@ -203,6 +205,58 @@ The manifest fields validated here are documented in
 contract boundary these checks enforce is described under
 [.NET contracts](/reference/dotnet-contracts) and
 [Architecture](/concepts/architecture).
+
+---
+
+## `plugin inspect`
+
+Answers **what does this plugin do to the host** — before the plugin is anywhere near one.
+
+```bash
+callora plugin inspect --assembly ./bin/Release/net10.0/Callora.Plugin.Communication.dll
+```
+
+```text
+Plugin:     Communication (communication) 0.2.0
+Contract:   v2
+Entry type: Callora.Plugin.Communication.CommunicationPlugin
+Provides:   communication.voice
+Requires:   surface.rendering
+Permissions: communication.trunk.update, communication.call.execute
+Depends on: Callora.Core >=0.9.0
+
+Attaches to:
+  IHostManagedPlugin  (CommunicationPlugin)
+  IBusinessEventListener  (CallRingingListener)
+  IApiController  (TrunkController)
+```
+
+The top half comes from `registry.json`; **the bottom half cannot**. What a plugin attaches
+to lives in its compiled types, and reading it is the reason this command loads the assembly
+rather than only parsing the manifest.
+
+### Why it exists
+
+The host already knows all of this once a plugin is installed — the extension-point registry
+and the route inventory hold it. What was missing is the answer at the moment it decides
+something: **before installing**, from a file on disk, with no host and no database.
+
+### Two behaviours worth knowing
+
+**A missing manifest is reported, not fatal.** Inspecting raw build output is a real case,
+and *there is no manifest here* is itself the answer. The assembly still says what it
+attaches to.
+
+**Types that fail to load are skipped, not fatal.** A package may reference assemblies this
+machine cannot resolve; the types that did load are still worth reporting. Failing the whole
+inspection over one unresolved reference would break the command exactly where it is most
+needed — an unfamiliar package.
+
+### What it does not do
+
+It does not report **conflicts** between plugins — which of two plugins wins a replaceable
+extension point, and why. That is a question about an installation, not about a package, and
+it belongs to the live view in the Admin UI rather than here.
 
 ---
 
