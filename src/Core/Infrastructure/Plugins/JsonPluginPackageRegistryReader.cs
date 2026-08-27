@@ -107,24 +107,57 @@ public sealed class JsonPluginPackageRegistryReader : IPluginPackageRegistryRead
                 for (var i = 0; i < dto.Extensions.Length; i++)
                 {
                     var extension = dto.Extensions[i];
-                    if (extension is null || string.IsNullOrWhiteSpace(extension.ExtensionPointId))
+
+                    // Ein Eintrag, der GAR NICHTS nennt, wird weiterhin übersprungen: ein leeres
+                    // Array-Element ist unordentlich, aber kein Vertipper — es gibt niemanden zu
+                    // warnen. Ein Eintrag, der etwas Falsches nennt, ist das Gegenteil.
+                    if (extension is null ||
+                        (string.IsNullOrWhiteSpace(extension.ExtensionPointId) &&
+                         string.IsNullOrWhiteSpace(extension.Surface)))
                     {
                         continue;
+                    }
+
+                    // Dieselben zwei Prüfungen, die PluginExtensionSynchronizer zur Laufzeit
+                    // macht — nur früher. Vorher übersprang dieser Pfad sie stillschweigend:
+                    // "workspace.navigation.mian" installierte, aktivierte, meldete sich gesund
+                    // und tauchte einfach nicht auf. Dass CAL0004 im CODE genau diesen Vertipper
+                    // verhindert, machte es schlimmer, nicht besser — die Regel bewachte die Tür
+                    // und ließ das Fenster offen.
+                    var extensionPointId = extension.ExtensionPointId?.Trim() ?? string.Empty;
+                    if (extensionPointId.Length == 0)
+                    {
+                        return Invalid(
+                            registryPath,
+                            "registry.json: an extension entry names a surface but no 'extensionPointId'.",
+                            PluginRegistryErrorCodes.ExtensionPointIdMissing);
                     }
 
                     if (string.IsNullOrWhiteSpace(extension.Surface))
                     {
-                        continue;
+                        return Invalid(
+                            registryPath,
+                            $"registry.json: extension '{extensionPointId}' names no 'surface'.",
+                            PluginRegistryErrorCodes.ExtensionSurfaceMissing);
+                    }
+
+                    if (!KnownExtensionPointIds.Contains(extensionPointId))
+                    {
+                        return Invalid(
+                            registryPath,
+                            $"registry.json: extension point '{extensionPointId}' does not exist.",
+                            PluginRegistryErrorCodes.ExtensionPointUnknown);
                     }
 
                     if (!ExtensionSurfaceCodes.TryParse(extension.Surface, out var surface))
                     {
-                        continue;
+                        return Invalid(
+                            registryPath,
+                            $"registry.json: extension surface '{extension.Surface}' for '{extensionPointId}' is not a known surface.",
+                            PluginRegistryErrorCodes.ExtensionSurfaceInvalid);
                     }
 
-                    extensions.Add(new PluginPackageExtensionRegistration(
-                        extension.ExtensionPointId.Trim(),
-                        surface));
+                    extensions.Add(new PluginPackageExtensionRegistration(extensionPointId, surface));
                 }
             }
 
@@ -208,6 +241,16 @@ public sealed class JsonPluginPackageRegistryReader : IPluginPackageRegistryRead
             return Invalid(registryPath, $"registry.json parse error: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Die Erweiterungspunkte, die es gibt — aus derselben Quelle, aus der auch
+    /// <c>InMemoryExtensionPointRegistryStore</c> sich füllt. Eine zweite Liste hier wäre genau
+    /// die Stelle, an der Manifest-Prüfung und Laufzeit-Prüfung auseinanderlaufen.
+    /// </summary>
+    private static readonly HashSet<string> KnownExtensionPointIds =
+        Callora.Core.Infrastructure.Extensions.BackendExtensionPointCatalog.Build()
+            .Select(definition => definition.ExtensionPointId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     private static PluginPackageRegistryReadResult Invalid(
         string registryPath,
