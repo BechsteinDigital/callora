@@ -216,6 +216,31 @@ Callora.Administration.Api.FeatureFlagApiResponse.Equals(Callora.Administration.
 Callora.Administration.Api.FeatureFlagApiResponse.FeatureFlagApiResponse(string! Key, bool Enabled) -> void
 Callora.Administration.Api.FeatureFlagApiResponse.Key.get -> string!
 Callora.Administration.Api.FeatureFlagApiResponse.Key.init -> void
+Callora.Administration.Api.FlowApiResponse
+Callora.Administration.Api.FlowApiResponse.<Clone>$() -> Callora.Administration.Api.FlowApiResponse!
+Callora.Administration.Api.FlowApiResponse.ActionsJson.get -> string!
+Callora.Administration.Api.FlowApiResponse.ActionsJson.init -> void
+Callora.Administration.Api.FlowApiResponse.ConditionsJson.get -> string?
+Callora.Administration.Api.FlowApiResponse.ConditionsJson.init -> void
+Callora.Administration.Api.FlowApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
+Callora.Administration.Api.FlowApiResponse.CreatedAtUtc.init -> void
+Callora.Administration.Api.FlowApiResponse.Deconstruct(out System.Guid Id, out string! WorkspaceKey, out string! Name, out string! TriggerEvent, out string? ConditionsJson, out string! ActionsJson, out bool IsActive, out int Priority, out System.DateTimeOffset CreatedAtUtc, out bool MatchesKnownEvent) -> void
+Callora.Administration.Api.FlowApiResponse.Equals(Callora.Administration.Api.FlowApiResponse? other) -> bool
+Callora.Administration.Api.FlowApiResponse.FlowApiResponse(System.Guid Id, string! WorkspaceKey, string! Name, string! TriggerEvent, string? ConditionsJson, string! ActionsJson, bool IsActive, int Priority, System.DateTimeOffset CreatedAtUtc, bool MatchesKnownEvent) -> void
+Callora.Administration.Api.FlowApiResponse.Id.get -> System.Guid
+Callora.Administration.Api.FlowApiResponse.Id.init -> void
+Callora.Administration.Api.FlowApiResponse.IsActive.get -> bool
+Callora.Administration.Api.FlowApiResponse.IsActive.init -> void
+Callora.Administration.Api.FlowApiResponse.MatchesKnownEvent.get -> bool
+Callora.Administration.Api.FlowApiResponse.MatchesKnownEvent.init -> void
+Callora.Administration.Api.FlowApiResponse.Name.get -> string!
+Callora.Administration.Api.FlowApiResponse.Name.init -> void
+Callora.Administration.Api.FlowApiResponse.Priority.get -> int
+Callora.Administration.Api.FlowApiResponse.Priority.init -> void
+Callora.Administration.Api.FlowApiResponse.TriggerEvent.get -> string!
+Callora.Administration.Api.FlowApiResponse.TriggerEvent.init -> void
+Callora.Administration.Api.FlowApiResponse.WorkspaceKey.get -> string!
+Callora.Administration.Api.FlowApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.FlowEndpoints
 Callora.Administration.Api.InstallLocalPluginRequest
 Callora.Administration.Api.InstallLocalPluginRequest.<Clone>$() -> Callora.Administration.Api.InstallLocalPluginRequest!
@@ -923,7 +948,7 @@ Callora.Administration.Api.WebhookSubscriptionApiResponse
 Callora.Administration.Api.WebhookSubscriptionApiResponse.<Clone>$() -> Callora.Administration.Api.WebhookSubscriptionApiResponse!
 Callora.Administration.Api.WebhookSubscriptionApiResponse.CreatedAtUtc.get -> System.DateTimeOffset
 Callora.Administration.Api.WebhookSubscriptionApiResponse.CreatedAtUtc.init -> void
-Callora.Administration.Api.WebhookSubscriptionApiResponse.Deconstruct(out System.Guid Id, out string? WorkspaceKey, out string! EventName, out string! TargetUrl, out bool IsActive, out bool IncludeSensitiveData, out System.DateTimeOffset CreatedAtUtc) -> void
+Callora.Administration.Api.WebhookSubscriptionApiResponse.Deconstruct(out System.Guid Id, out string? WorkspaceKey, out string! EventName, out string! TargetUrl, out bool IsActive, out bool IncludeSensitiveData, out System.DateTimeOffset CreatedAtUtc, out bool MatchesKnownEvent) -> void
 Callora.Administration.Api.WebhookSubscriptionApiResponse.Equals(Callora.Administration.Api.WebhookSubscriptionApiResponse? other) -> bool
 Callora.Administration.Api.WebhookSubscriptionApiResponse.EventName.get -> string!
 Callora.Administration.Api.WebhookSubscriptionApiResponse.EventName.init -> void
@@ -933,9 +958,11 @@ Callora.Administration.Api.WebhookSubscriptionApiResponse.IncludeSensitiveData.g
 Callora.Administration.Api.WebhookSubscriptionApiResponse.IncludeSensitiveData.init -> void
 Callora.Administration.Api.WebhookSubscriptionApiResponse.IsActive.get -> bool
 Callora.Administration.Api.WebhookSubscriptionApiResponse.IsActive.init -> void
+Callora.Administration.Api.WebhookSubscriptionApiResponse.MatchesKnownEvent.get -> bool
+Callora.Administration.Api.WebhookSubscriptionApiResponse.MatchesKnownEvent.init -> void
 Callora.Administration.Api.WebhookSubscriptionApiResponse.TargetUrl.get -> string!
 Callora.Administration.Api.WebhookSubscriptionApiResponse.TargetUrl.init -> void
-Callora.Administration.Api.WebhookSubscriptionApiResponse.WebhookSubscriptionApiResponse(System.Guid Id, string? WorkspaceKey, string! EventName, string! TargetUrl, bool IsActive, bool IncludeSensitiveData, System.DateTimeOffset CreatedAtUtc) -> void
+Callora.Administration.Api.WebhookSubscriptionApiResponse.WebhookSubscriptionApiResponse(System.Guid Id, string? WorkspaceKey, string! EventName, string! TargetUrl, bool IsActive, bool IncludeSensitiveData, System.DateTimeOffset CreatedAtUtc, bool MatchesKnownEvent) -> void
 Callora.Administration.Api.WebhookSubscriptionApiResponse.WorkspaceKey.get -> string?
 Callora.Administration.Api.WebhookSubscriptionApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.WorkspaceApiResponse
@@ -1095,6 +1122,9 @@ override Callora.Administration.Api.EntitlementApiResponse.ToString() -> string!
 override Callora.Administration.Api.FeatureFlagApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.FeatureFlagApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.FeatureFlagApiResponse.ToString() -> string!
+override Callora.Administration.Api.FlowApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.FlowApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.FlowApiResponse.ToString() -> string!
 override Callora.Administration.Api.InstallLocalPluginRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.InstallLocalPluginRequest.GetHashCode() -> int
 override Callora.Administration.Api.InstallLocalPluginRequest.ToString() -> string!
@@ -1293,6 +1323,9 @@ static Callora.Administration.Api.EntitlementSyncEndpoints.MapEntitlementSyncEnd
 static Callora.Administration.Api.FeatureEndpoints.MapFeatureEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.FeatureFlagApiResponse.operator !=(Callora.Administration.Api.FeatureFlagApiResponse? left, Callora.Administration.Api.FeatureFlagApiResponse? right) -> bool
 static Callora.Administration.Api.FeatureFlagApiResponse.operator ==(Callora.Administration.Api.FeatureFlagApiResponse? left, Callora.Administration.Api.FeatureFlagApiResponse? right) -> bool
+static Callora.Administration.Api.FlowApiResponse.From(Callora.Core.Application.Flows.FlowSnapshot! flow, System.Collections.Generic.IReadOnlyCollection<string!>! knownEvents) -> Callora.Administration.Api.FlowApiResponse!
+static Callora.Administration.Api.FlowApiResponse.operator !=(Callora.Administration.Api.FlowApiResponse? left, Callora.Administration.Api.FlowApiResponse? right) -> bool
+static Callora.Administration.Api.FlowApiResponse.operator ==(Callora.Administration.Api.FlowApiResponse? left, Callora.Administration.Api.FlowApiResponse? right) -> bool
 static Callora.Administration.Api.FlowEndpoints.MapFlowEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! app) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
 static Callora.Administration.Api.InstallLocalPluginRequest.operator !=(Callora.Administration.Api.InstallLocalPluginRequest? left, Callora.Administration.Api.InstallLocalPluginRequest? right) -> bool
 static Callora.Administration.Api.InstallLocalPluginRequest.operator ==(Callora.Administration.Api.InstallLocalPluginRequest? left, Callora.Administration.Api.InstallLocalPluginRequest? right) -> bool
