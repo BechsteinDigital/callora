@@ -71,6 +71,13 @@ The keys above are the host's. A plugin declares its own in its
 because `CalloraRouteAttribute.Permission` lets a route demand a key and nothing else could
 supply one.
 
+Declared keys appear in `GET /api/security/rbac/permissions` alongside the host's, so an
+operator grants them by picking them — the same list, whichever way the plugin supplied them.
+A plugin contributing Admin-API routes could always supply keys through
+`IHostAdminApiExtensionContributor.PermissionKeys`; a plugin whose surface is
+`[CalloraRoute]` controllers had no such path, and its routes demanded keys nobody could
+grant.
+
 A plugin may only declare keys **inside its own namespace** (`<pluginId>.…`) that **end in a
 known action**. Both are enforced when the manifest is read, and either violation makes the
 manifest invalid. The namespace rule is the important one: declaration is self-service, and

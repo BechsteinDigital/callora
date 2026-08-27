@@ -225,6 +225,9 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddSingleton(static sp =>
             sp.GetRequiredService<Callora.Core.Application.Plugins.RuntimePluginHost>().SharedContracts);
         builder.Services.AddScoped<Callora.Core.Application.Plugins.ContractCatalogService>();
+        builder.Services.AddScoped<
+            Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog,
+            Callora.Core.Application.Security.PluginDeclaredPermissionCatalog>();
         builder.Services.AddSingleton<Callora.Core.Application.Plugins.PluginDependencyVersionGate>(
             static sp => new Callora.Core.Application.Plugins.PluginDependencyVersionGate(
                 sp.GetRequiredService<Callora.Core.Application.Plugins.IProvidedContractVersionProvider>(),
