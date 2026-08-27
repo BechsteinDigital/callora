@@ -12,6 +12,13 @@ public static class PluginRegistryErrorCodes
     /// außerhalb seines Namensraums oder ohne bekannte Aktion.
     /// </summary>
     public const string PermissionNotDeclarable = "PLUGIN_PERMISSION_NOT_DECLARABLE";
+
+    /// <summary>
+    /// Das Manifest nennt einen Erweiterungspunkt, den es nicht gibt. Derselbe Befund, den der
+    /// Laufzeitpfad als <c>PluginExtensionPointUnknown</c> meldet — hier nur früher.
+    /// </summary>
+    public const string ExtensionPointUnknown = "PLUGIN_EXTENSION_POINT_UNKNOWN";
+
     public const string ExtensionPointIdMissing = "PLUGIN_EXTENSION_POINT_ID_MISSING";
     public const string ExtensionSurfaceMissing = "PLUGIN_EXTENSION_SURFACE_MISSING";
     public const string ExtensionSurfaceInvalid = "PLUGIN_EXTENSION_SURFACE_INVALID";

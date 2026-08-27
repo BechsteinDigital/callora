@@ -47,10 +47,39 @@ The core manifest is parsed into `PluginRegistryJsonDto`
 | `capabilities` | Optional | Capability strings this plugin **provides** (e.g. `"communication.voice"`). Trimmed and de-duplicated. |
 | `requiresCapabilities` | Optional | Capability strings this plugin **requires** another active plugin to provide. |
 | `dependencies` | Optional | Map of package name → version range (e.g. `"Callora.Core": ">=0.9.0"`). Enforced at install time — see [plugin dependencies](./plugin-dependencies). |
-| `extensions` | Optional | Declared extension-point participations — an array of `{ extensionPointId, surface }`. |
+| `extensions` | Optional | Declared extension-point participations — an array of `{ extensionPointId, surface }`. Both are validated: an unknown point or an unparseable surface makes the manifest invalid. |
 | `permissions` | Optional | Permission keys this plugin's routes require — an array of `{ key, description }`. Each key must sit inside the plugin's own namespace and end in a known action; anything else makes the manifest invalid. |
 | `databaseSchema` | Optional | Explicit EF schema name for cleanup on uninstall. Read separately (see [Fields read outside the core parser](#fields-read-outside-the-core-parser)). |
 | `sensitiveFields` | Optional | Person-related payload field names for webhook data-minimization. Read separately. |
+
+## Extension registrations are checked, not assumed
+
+Each entry of `extensions` names a point and a surface, and **both must exist**:
+
+```json
+"extensions": [
+  { "extensionPointId": "admin.api.route", "surface": "admin" }
+]
+```
+
+An unknown `extensionPointId` or an unparseable `surface` makes the manifest invalid
+(`PLUGIN_EXTENSION_POINT_UNKNOWN`, `PLUGIN_EXTENSION_SURFACE_INVALID`). Naming one without
+the other is refused too (`PLUGIN_EXTENSION_POINT_ID_MISSING`,
+`PLUGIN_EXTENSION_SURFACE_MISSING`). An entry that names **neither** is skipped — an empty
+array element is untidy, not a typo.
+
+<!-- cspell:ignore mian -- deliberate typo in the example below; the dictionary stays free of
+     misspellings, or it stops being a spell check -->
+::: info Why this is checked twice
+The runtime path (`PluginExtensionSynchronizer`) has always refused an unknown point. The
+manifest path used to skip it silently, so a manifest whose id ends in `.mian` rather than `.main` installed,
+activated, reported healthy and simply never appeared — with nothing in the log to suggest
+the manifest.
+
+The valid ids are the constants in `CalloraExtensionPoints`, and analyzer `CAL0004` already
+forbids passing a raw string literal where one belongs **in code**. The manifest carrying the
+same value unchecked was the window beside the guarded door.
+:::
 
 ## Declaring the permissions your routes require
 

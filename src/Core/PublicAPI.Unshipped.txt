@@ -5895,6 +5895,7 @@ const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ContractVersionM
 const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ContractVersionRemoved = "PLUGIN_CONTRACT_VERSION_REMOVED" -> string!
 const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ContractVersionUnsupported = "PLUGIN_CONTRACT_VERSION_UNSUPPORTED" -> string!
 const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ExtensionPointIdMissing = "PLUGIN_EXTENSION_POINT_ID_MISSING" -> string!
+const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ExtensionPointUnknown = "PLUGIN_EXTENSION_POINT_UNKNOWN" -> string!
 const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ExtensionSurfaceInvalid = "PLUGIN_EXTENSION_SURFACE_INVALID" -> string!
 const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.ExtensionSurfaceMissing = "PLUGIN_EXTENSION_SURFACE_MISSING" -> string!
 const Callora.Core.Application.Plugins.PluginRegistryErrorCodes.PermissionNotDeclarable = "PLUGIN_PERMISSION_NOT_DECLARABLE" -> string!
