@@ -68,9 +68,11 @@ the other is refused too (`PLUGIN_EXTENSION_POINT_ID_MISSING`,
 `PLUGIN_EXTENSION_SURFACE_MISSING`). An entry that names **neither** is skipped — an empty
 array element is untidy, not a typo.
 
+<!-- cspell:ignore mian -- deliberate typo in the example below; the dictionary stays free of
+     misspellings, or it stops being a spell check -->
 ::: info Why this is checked twice
 The runtime path (`PluginExtensionSynchronizer`) has always refused an unknown point. The
-manifest path used to skip it silently, so `"workspace.navigation.mian"` installed,
+manifest path used to skip it silently, so a manifest whose id ends in `.mian` rather than `.main` installed,
 activated, reported healthy and simply never appeared — with nothing in the log to suggest
 the manifest.
 
