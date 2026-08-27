@@ -2964,12 +2964,17 @@ Callora.Core.Application.Security.IBackendUserStore.RemoveAsync(string! external
 Callora.Core.Application.Security.IBackendUserStore.RevokeSessionsAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Security.IBackendUserStore.SetEnabledAsync(string! externalId, bool enabled, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Security.IBackendUserStore.UpsertCredentialsAsync(string! externalId, string? email, string? displayName, string? password, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Domain.Security.BackendUser!>!
+Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog
+Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
 Callora.Core.Application.Security.IUserDataSubjectService
 Callora.Core.Application.Security.IUserDataSubjectService.EraseAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Security.IUserDataSubjectService.ExportAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.UserDataExport?>!
 Callora.Core.Application.Security.IWorkspaceScopeContext
 Callora.Core.Application.Security.IWorkspaceScopeContext.IsWorkspaceScoped.get -> bool
 Callora.Core.Application.Security.IWorkspaceScopeContext.WorkspaceKey.get -> string?
+Callora.Core.Application.Security.PluginDeclaredPermissionCatalog
+Callora.Core.Application.Security.PluginDeclaredPermissionCatalog.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Callora.Core.Application.Security.PluginDeclaredPermissionCatalog.PluginDeclaredPermissionCatalog(Callora.Core.Application.Persistence.IPluginInstallationRepository! installations, Callora.Core.Application.Plugins.IPluginPackageRegistryReader? registryReader = null) -> void
 Callora.Core.Application.Security.PluginPermissionKeyPolicy
 Callora.Core.Application.Security.ReservedMembershipRoles
 Callora.Core.Application.Security.SessionRevocationPurgeJobHandler
@@ -6956,7 +6961,7 @@ static Callora.Core.Application.Security.AdminLoginGrant.operator ==(Callora.Cor
 static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!
 static Callora.Core.Application.Security.BackendPasswordPolicy.IsAcceptable(string? password) -> bool
 static Callora.Core.Application.Security.BackendPasswordPolicy.Validate(string? password) -> string?
-static Callora.Core.Application.Security.BackendPermissionInventory.All(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog) -> System.Collections.Generic.IReadOnlyList<string!>!
+static Callora.Core.Application.Security.BackendPermissionInventory.All(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, System.Collections.Generic.IEnumerable<string!>? declaredByManifest = null) -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Security.BackendPermissionInventory.Core() -> System.Collections.Generic.IReadOnlyList<string!>!
 static Callora.Core.Application.Security.BackendPermissionKey.TryParse(string? permissionKey, out Callora.Core.Application.Security.BackendPermissionKey key) -> bool
 static Callora.Core.Application.Security.BackendPermissionKey.operator !=(Callora.Core.Application.Security.BackendPermissionKey left, Callora.Core.Application.Security.BackendPermissionKey right) -> bool

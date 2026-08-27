@@ -19,18 +19,37 @@ public static class BackendPermissionInventory
     /// <summary>
     /// Alle bekannten Berechtigungsschlüssel, sortiert und ohne Dubletten.
     /// </summary>
-    /// <param name="pluginCatalog">Quelle der von Plugins deklarierten Berechtigungen.</param>
-    public static IReadOnlyList<string> All(ICalloraPluginCatalog pluginCatalog)
+    /// <param name="pluginCatalog">Quelle der von Plugins beigesteuerten Berechtigungen.</param>
+    /// <param name="declaredByManifest">
+    /// Zusätzlich die in <c>registry.json</c> deklarierten Schlüssel.
+    /// </param>
+    /// <remarks>
+    /// Zwei Zulieferwege, ein Inventar. Über <see cref="IHostAdminApiExtensionContributor"/>
+    /// konnte ein Plugin schon immer Schlüssel beisteuern — wer Admin-API-Routen beiträgt, kam
+    /// damit durch. Ein Plugin, dessen Fläche aus <c>IApiController</c>-Routen besteht, hatte
+    /// diesen Weg nicht: Seine Routen VERLANGTEN einen Schlüssel, den niemand vergeben konnte.
+    /// Absicherung wirksam, Vergabe unmöglich — dieselbe Fehlerklasse, die schon einmal in
+    /// <see cref="BackendPermissionKeyValidator"/> behoben wurde. Welchen Weg ein Plugin nutzt,
+    /// muss der Betreiber nicht wissen.
+    /// </remarks>
+    public static IReadOnlyList<string> All(
+        ICalloraPluginCatalog pluginCatalog,
+        IEnumerable<string>? declaredByManifest = null)
     {
         ArgumentNullException.ThrowIfNull(pluginCatalog);
 
         var pluginPermissions = pluginCatalog
             .GetExports<IHostAdminApiExtensionContributor>()
-            .SelectMany(contributor => contributor.PermissionKeys)
-            .Where(BackendPermissionKeyValidator.IsValid);
+            .SelectMany(contributor => contributor.PermissionKeys);
 
         return Core()
             .Concat(pluginPermissions)
+            .Concat(declaredByManifest ?? [])
+            // Auch für die deklarierten Schlüssel: Das Manifest weist strukturell ungültige
+            // schon ab, aber gefüttert wird dieses Inventar auch von älteren Installationen,
+            // deren Manifest vor dieser Prüfung entstand. Einen Schlüssel anzubieten, der nie
+            // greifen kann, setzte den Betreiber genau dorthin zurück, wo er losging.
+            .Where(BackendPermissionKeyValidator.IsValid)
             .Distinct(StringComparer.Ordinal)
             .OrderBy(value => value, StringComparer.Ordinal)
             .ToArray();

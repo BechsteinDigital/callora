@@ -26,9 +26,17 @@ public static class RbacEndpoints
             .WithName("Rbac_Roles_List")
             .RequirePermission(BackendPermissionKeys.RoleRead);
 
-        group.MapGet("/permissions", ([FromServices] ICalloraPluginCatalog pluginCatalog) =>
+        group.MapGet("/permissions", async (
+            [FromServices] ICalloraPluginCatalog pluginCatalog,
+            [FromServices] IPluginDeclaredPermissionCatalog declaredPermissions,
+            CancellationToken cancellationToken) =>
         {
-            var permissions = BackendPermissionInventory.All(pluginCatalog)
+            // Beide Zulieferwege in einer Liste: beigesteuerte Schlüssel aus dem Katalog und
+            // im Manifest deklarierte. Ein Plugin, dessen Fläche aus IApiController-Routen
+            // besteht, hatte nur den zweiten — und ohne ihn stand sein Schlüssel nirgends,
+            // wo ihn jemand hätte vergeben können.
+            var declared = await declaredPermissions.ListAsync(cancellationToken).ConfigureAwait(false);
+            var permissions = BackendPermissionInventory.All(pluginCatalog, declared)
                 // Dieselbe Zerlegung wie die Gültigkeitsprüfung: Aktion ist das LETZTE Segment.
                 // Am ersten Punkt zu teilen machte aus `communication.accounts.read` die Funktion
                 // „communication" mit der Aktion „accounts.read" — und aus zwei getrennten

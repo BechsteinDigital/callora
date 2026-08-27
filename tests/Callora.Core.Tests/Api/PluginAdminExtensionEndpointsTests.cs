@@ -259,6 +259,11 @@ public sealed class PluginAdminExtensionEndpointsTests
         Assert.NotNull(payload);
         Assert.Contains(payload!, permission => permission.PermissionKey == "sipaccount.read");
         Assert.Contains(payload!, permission => permission.PermissionKey == "sipaccount.create");
+
+        // Beide Zulieferwege in einer Liste. Die beiden oben kommen über
+        // IHostAdminApiExtensionContributor; dieser hier steht im Manifest — der Weg, den ein
+        // Plugin hat, dessen Fläche aus IApiController-Routen besteht.
+        Assert.Contains(payload!, permission => permission.PermissionKey == "communication.trunk.update");
     }
 
     // The admin UI chain (V1): which plugin bundles the admin shell may load for the
@@ -414,6 +419,11 @@ public sealed class PluginAdminExtensionEndpointsTests
         // The dispatcher resolves the caller's workspace scope from the principal.
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IWorkspaceScopeContext, HttpWorkspaceScopeContext>();
+        // Der Manifest-Weg des Berechtigungsinventars. Bewusst nicht optional gemacht: Fehlte
+        // der Dienst still, fehlten die deklarierten Schlüssel im Inventar — und damit stünde
+        // der Betreiber wieder vor einem Schlüssel, den er sehen, aber nicht vergeben kann.
+        builder.Services.AddScoped<IPluginDeclaredPermissionCatalog>(
+            _ => new StaticDeclaredPermissionCatalog("communication.trunk.update"));
         builder.Services.AddSingleton<ICalloraPluginCatalog>(new StaticPluginCatalog(new Dictionary<Type, IReadOnlyList<object>>
         {
             [typeof(IHostAdminApiExtensionContributor)] = [contributor]
