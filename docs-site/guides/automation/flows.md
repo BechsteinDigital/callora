@@ -235,6 +235,17 @@ The response is `201 Created` with the persisted `FlowSnapshot` (including its n
 now on, every `call.ringing` event in workspace `acme` whose `direction` field is `inbound`
 enqueues a `flow.execute` job that runs your `sms.send` action.
 
+## A trigger nobody publishes
+
+A flow is accepted whatever event you name in `triggerEvent`, for the same reason webhooks
+are: a rule prepared before its plugin is installed is legitimate. A misspelled one is not,
+and both are silent.
+
+Every flow therefore carries `matchesKnownEvent`, derived per request and never stored — it
+becomes `true` on its own once the plugin arrives. See
+[webhooks](/guides/automation/webhooks#an-event-nobody-publishes) for the wildcard rules,
+which are the same.
+
 ## Next steps
 
 - [Rules](./rules) — the **conditions** side of the same model

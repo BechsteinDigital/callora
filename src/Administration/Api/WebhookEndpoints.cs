@@ -1,4 +1,5 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Events.Business;
 using Callora.Core.Application.Security;
 using Callora.Core.Application.Webhooks;
 using Callora.Core.Infrastructure.Security;
@@ -18,16 +19,20 @@ public static class WebhookEndpoints
 
         group.MapGet("/", async (
                 IWebhookSubscriptionStore store,
+                BusinessEventRegistry eventRegistry,
                 string? workspaceKey,
                 int? limit,
                 string? cursor,
                 CancellationToken cancellationToken) =>
             {
                 var subscriptions = await store.ListAsync(workspaceKey, cancellationToken);
+                var knownEvents = eventRegistry.ListDescriptors()
+                    .Select(static descriptor => descriptor.EventName)
+                    .ToArray();
                 var ordered = subscriptions
                     .OrderByDescending(static x => x.CreatedAtUtc)
                     .ThenBy(static x => x.Id)
-                    .Select(ToPublicShape)
+                    .Select(subscription => ToPublicShape(subscription, knownEvents))
                     .ToArray();
                 return Results.Ok(ListPagination.Page(
                     ordered, limit, cursor, static x => x.Id.ToString()));
@@ -38,6 +43,7 @@ public static class WebhookEndpoints
 
         group.MapPost("/", async (
                 IWebhookSubscriptionStore store,
+                BusinessEventRegistry eventRegistry,
                 CreateWebhookSubscriptionApiRequest request,
                 HttpContext httpContext,
                 CancellationToken cancellationToken) =>
@@ -69,7 +75,16 @@ public static class WebhookEndpoints
                     request.Secret,
                     request.IncludeSensitiveData,
                     cancellationToken);
-                return Results.Created($"/api/webhooks/{created.Id}", ToPublicShape(created));
+
+                // Die Antwort sagt sofort, ob das Muster etwas trifft. Genau hier ist ein
+                // Vertipper noch billig — später fällt er nur dadurch auf, dass etwas NICHT
+                // passiert, und das bemerkt niemand.
+                var knownEvents = eventRegistry.ListDescriptors()
+                    .Select(static descriptor => descriptor.EventName)
+                    .ToArray();
+                return Results.Created(
+                    $"/api/webhooks/{created.Id}",
+                    ToPublicShape(created, knownEvents));
             })
             .RequirePermission(BackendPermissionKeys.WebhookManage);
 
@@ -121,12 +136,15 @@ public static class WebhookEndpoints
         return app;
     }
 
-    private static WebhookSubscriptionApiResponse ToPublicShape(WebhookSubscriptionSnapshot subscription) => new(
+    private static WebhookSubscriptionApiResponse ToPublicShape(
+        WebhookSubscriptionSnapshot subscription,
+        IReadOnlyCollection<string> knownEvents) => new(
         subscription.Id,
         subscription.WorkspaceKey,
         subscription.EventName,
         subscription.TargetUrl,
         subscription.IsActive,
         subscription.IncludeSensitiveData,
-        subscription.CreatedAtUtc);
+        subscription.CreatedAtUtc,
+        BusinessEventPattern.MatchesAny(subscription.EventName, knownEvents));
 }

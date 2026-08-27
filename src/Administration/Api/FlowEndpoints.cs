@@ -1,5 +1,6 @@
 using Callora.Core.Api;
 using Callora.Core.Application.Flows;
+using Callora.Core.Application.Events.Business;
 using Callora.Core.Application.Security;
 using Callora.Core.Infrastructure.Security;
 
@@ -18,25 +19,31 @@ public static class FlowEndpoints
 
         group.MapGet("/", async (
                 IFlowStore store,
+                BusinessEventRegistry eventRegistry,
                 string workspaceKey,
                 int? limit,
                 string? cursor,
                 CancellationToken cancellationToken) =>
             {
                 var flows = await store.ListAsync(workspaceKey, cancellationToken);
+                var knownEvents = eventRegistry.ListDescriptors()
+                    .Select(static descriptor => descriptor.EventName)
+                    .ToArray();
                 var ordered = flows
                     .OrderByDescending(static x => x.CreatedAtUtc)
                     .ThenBy(static x => x.Id)
+                    .Select(flow => FlowApiResponse.From(flow, knownEvents))
                     .ToArray();
                 return Results.Ok(ListPagination.Page(
                     ordered, limit, cursor, static x => x.Id.ToString()));
             })
-            .Produces<PagedApiResponse<FlowSnapshot>>()
+            .Produces<PagedApiResponse<FlowApiResponse>>()
             .RequirePermission(BackendPermissionKeys.FlowRead)
             .RequireWorkspaceScope();
 
         group.MapPost("/", async (
                 IFlowStore store,
+                BusinessEventRegistry eventRegistry,
                 string workspaceKey,
                 UpsertFlowApiRequest request,
                 CancellationToken cancellationToken) =>
@@ -58,13 +65,16 @@ public static class FlowEndpoints
                         request.Priority,
                         DateTimeOffset.UtcNow),
                     cancellationToken);
-                return Results.Created($"/api/flows/{created.Id}", created);
+                return Results.Created(
+                    $"/api/flows/{created.Id}",
+                    FlowApiResponse.From(created, KnownEvents(eventRegistry)));
             })
             .RequirePermission(BackendPermissionKeys.FlowManage)
             .RequireWorkspaceScope();
 
         group.MapPut("/{id:guid}", async (
                 IFlowStore store,
+                BusinessEventRegistry eventRegistry,
                 Guid id,
                 string workspaceKey,
                 UpsertFlowApiRequest request,
@@ -88,7 +98,7 @@ public static class FlowEndpoints
                         Priority = request.Priority
                     },
                     cancellationToken);
-                return Results.Ok(updated);
+                return Results.Ok(FlowApiResponse.From(updated, KnownEvents(eventRegistry)));
             })
             .RequirePermission(BackendPermissionKeys.FlowManage)
             .RequireWorkspaceScope();
@@ -114,4 +124,12 @@ public static class FlowEndpoints
 
         return app;
     }
+
+    /// <summary>
+    /// Die Ereignisse, die es auf dieser Installation gibt. Je Anfrage gelesen, nie
+    /// gespeichert: Ob ein Auslöser etwas trifft, ist eine Eigenschaft des Moments — und wird
+    /// von selbst wahr, sobald das Plugin dazukommt, das sein Ereignis mitbringt.
+    /// </summary>
+    private static IReadOnlyCollection<string> KnownEvents(BusinessEventRegistry registry) =>
+        registry.ListDescriptors().Select(static descriptor => descriptor.EventName).ToArray();
 }

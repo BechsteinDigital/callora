@@ -391,6 +391,7 @@ Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.WorkspaceKey.ini
 Callora.Core.Application.Events.Business.BusinessEventBus
 Callora.Core.Application.Events.Business.BusinessEventBus.BusinessEventBus(System.IServiceProvider! services, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Microsoft.Extensions.Logging.ILogger<Callora.Core.Application.Events.Business.BusinessEventBus!>! logger, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory? scopeFactory = null) -> void
 Callora.Core.Application.Events.Business.BusinessEventBus.PublishAsync(Callora.Core.Application.Events.Contracts.IBusinessEvent! businessEvent, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Callora.Core.Application.Events.Business.BusinessEventPattern
 Callora.Core.Application.Events.Business.BusinessEventRegistry
 Callora.Core.Application.Events.Business.BusinessEventRegistry.BusinessEventRegistry(System.Collections.Generic.IEnumerable<Callora.Core.Application.Events.Contracts.IBusinessEventProvider!>! hostProviders, Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog) -> void
 Callora.Core.Application.Events.Business.BusinessEventRegistry.ListDescriptors() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Events.Contracts.BusinessEventDescriptor!>!
@@ -6665,6 +6666,7 @@ static Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload.
 static Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload.operator ==(Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload? left, Callora.Core.Application.Entitlements.MarketplaceEntitlementEventPayload? right) -> bool
 static Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.operator !=(Callora.Core.Application.Entitlements.PluginEntitlementSnapshot? left, Callora.Core.Application.Entitlements.PluginEntitlementSnapshot? right) -> bool
 static Callora.Core.Application.Entitlements.PluginEntitlementSnapshot.operator ==(Callora.Core.Application.Entitlements.PluginEntitlementSnapshot? left, Callora.Core.Application.Entitlements.PluginEntitlementSnapshot? right) -> bool
+static Callora.Core.Application.Events.Business.BusinessEventPattern.MatchesAny(string! pattern, System.Collections.Generic.IReadOnlyCollection<string!>! knownEventNames) -> bool
 static Callora.Core.Application.Events.Contracts.BusinessEventDescriptor.operator !=(Callora.Core.Application.Events.Contracts.BusinessEventDescriptor? left, Callora.Core.Application.Events.Contracts.BusinessEventDescriptor? right) -> bool
 static Callora.Core.Application.Events.Contracts.BusinessEventDescriptor.operator ==(Callora.Core.Application.Events.Contracts.BusinessEventDescriptor? left, Callora.Core.Application.Events.Contracts.BusinessEventDescriptor? right) -> bool
 static Callora.Core.Application.Events.Contracts.BusinessEventField.operator !=(Callora.Core.Application.Events.Contracts.BusinessEventField? left, Callora.Core.Application.Events.Contracts.BusinessEventField? right) -> bool

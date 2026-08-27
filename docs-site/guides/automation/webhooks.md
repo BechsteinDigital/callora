@@ -149,6 +149,35 @@ create and never returned. Store it on the receiving side at creation time — y
 back from Callora.
 :::
 
+<!-- cspell:ignore creted -- deliberate typo in the example below; the dictionary stays free
+     of misspellings, or it stops being a spell check -->
+## An event nobody publishes
+
+A subscription is accepted whatever event you name — the endpoint checks the shape of the
+string, not whether such an event exists. That is deliberate: subscribing to
+`communication.call.ringing` **before** the Communication plugin is installed is legitimate,
+and arguably the normal order when preparing a workspace.
+
+But `workspace.creted` is not legitimate, and until it fires nothing tells you apart from
+the first case. So every subscription carries `matchesKnownEvent`:
+
+```json
+{
+  "eventName": "workspace.creted",
+  "matchesKnownEvent": false
+}
+```
+
+**Derived, never stored.** Whether a pattern matches is a property of the moment you ask, so
+it becomes `true` on its own once the plugin arrives that publishes the event — there is no
+field to update and nothing to clean up when a plugin is removed.
+
+Wildcards are matched against the catalogue rather than compared for equality, so
+`workspace.*` is `true` as long as any `workspace.` event exists. Only `*` is a wildcard;
+everything else in the pattern is literal.
+
+The events that exist are listed at `GET /api/events/catalog`.
+
 ## Delivery, signing & retries
 
 Delivery is a `webhook.deliver` background job (`WebhookDeliveryJobHandler`), so it inherits the
