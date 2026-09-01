@@ -47,19 +47,33 @@ services:
         condition: service_healthy
       coturn:
         condition: service_started
-    ports:
-      - "${DEV_CALLORA_PORT:-5000}:5000"
-    extra_hosts:
-      # Coturn läuft im Host-Netz; über diesen Namen erreicht der serverseitige
-      # ICE-Agent es aus dem Container. Der Browser nutzt dagegen DEV_TURN_IP.
-      - "host.docker.internal:host-gateway"
+    # Host-Netz, nicht Bridge — wegen eingehendem SIP und wegen RTP.
+    #
+    # Ein registrierendes SIP-Konto kommt durch NAT nach draußen: der REGISTER geht
+    # raus, die Antwort kommt über dieselbe Bindung zurück, das Konto steht auf Up.
+    # Ein eingehender INVITE ist aber eine NEUE Transaktion, und dafür müsste die
+    # Gegenstelle die Adresse erreichen, die wir ihr als Contact genannt haben — im
+    # Bridge-Netz eine Container-IP wie 192.168.64.2, die es außerhalb von Docker
+    # nicht gibt. Es klingelt also nie, und im Log steht nichts, weil nie etwas
+    # ankommt.
+    #
+    # Ports zu mappen reicht nicht: RTP wählt seine Ports dynamisch. Selbst ein
+    # durchgereichter INVITE ergäbe ein stummes Gespräch. Coturn steht aus genau
+    # demselben Grund im Host-Netz.
+    #
+    # Preis: kein Portmapping mehr, also bindet der Host direkt auf DEV_CALLORA_PORT
+    # (siehe ASPNETCORE_URLS weiter unten), und der Compose-DNS-Name "postgres" löst
+    # nicht mehr auf — die Datenbank wird über localhost erreicht. Linux only; auf
+    # macOS/Windows gibt es kein echtes Host-Netz.
+    network_mode: host
     environment:
       # Muss gesetzt sein. Der Host prüft beim Start, ob unsichere Dev-Defaults
       # außerhalb von Development aktiv sind, und bricht fail-closed ab —
       # AllowUnsignedPlugins weiter unten ist genau so ein Default. Ohne diese
       # Zeile gilt der ASP.NET-Default Production und der Stack startet nicht.
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      ASPNETCORE_URLS: http://0.0.0.0:5000
+      # Ohne Portmapping ist das der Port, auf dem der Host wirklich liegt.
+      ASPNETCORE_URLS: http://0.0.0.0:${DEV_CALLORA_PORT:-5000}
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
       # Derselbe Cache-Pfad wie auf dem Host — die Hälfte der Pfad-Identität;
       # die andere ist der Mount weiter unten.
@@ -106,7 +120,7 @@ services:
       CalloraHosting__PluginRegistryFilePath: ${CalloraHosting__PluginRegistryFilePath:-custom/plugins/registry.json}
 
       # --- Host -------------------------------------------------------------
-      BackendHost__DatabaseConnectionString: Host=postgres;Port=5432;Database=${DEV_POSTGRES_DB:-callora_host};Username=${DEV_POSTGRES_USER:-callora};Password=${DEV_POSTGRES_PASSWORD:-callora}
+      BackendHost__DatabaseConnectionString: Host=localhost;Port=${DEV_POSTGRES_PORT:-5432};Database=${DEV_POSTGRES_DB:-callora_host};Username=${DEV_POSTGRES_USER:-callora};Password=${DEV_POSTGRES_PASSWORD:-callora}
       BackendHost__EnableTenantManagementApi: ${BackendHost__EnableTenantManagementApi:-false}
       BackendHost__DefaultTenantKey: ${BackendHost__DefaultTenantKey:-default}
       BackendHost__DefaultTenantDisplayName: ${BackendHost__DefaultTenantDisplayName:-Default Tenant}
@@ -145,7 +159,9 @@ services:
       Communication__Voice__Enabled: ${Communication__Voice__Enabled:-true}
 
       # --- ICE: derselbe Relay, zwei Agenten --------------------------------
-      Communication__WebRtc__IceServers__0__Host: host.docker.internal
+      # Im Host-Netz gibt es host.docker.internal nicht mehr. Beide ICE-Agenten
+      # nutzen jetzt dieselbe Adresse, die auch Coturn als Relay-IP ausgibt.
+      Communication__WebRtc__IceServers__0__Host: ${DEV_TURN_IP:-172.17.0.1}
       Communication__WebRtc__IceServers__0__Port: "${DEV_TURN_PORT:-3478}"
       Communication__WebRtc__IceServers__0__Type: Turn
       Communication__WebRtc__IceServers__0__Transport: Udp
@@ -153,7 +169,18 @@ services:
       Communication__WebRtc__IceServers__0__Password: ${DEV_TURN_PASSWORD:-callora-dev-turn}
       # Der SDK-Default 127.0.0.1:0 bindet den Mediensocket an das Container-Loopback
       # und verhindert damit jede TURN-Allocation.
-      Communication__WebRtc__LocalEndPoint: "0.0.0.0:0"
+      #
+      # 0.0.0.0 wäre die naheliegende Gegenrichtung, kostet im Host-Netz aber Zeit: Der Agent sammelt
+      # dann einen Host-Kandidaten je Interface, und das sind hier vier Docker-Bridges plus LAN plus
+      # Loopback. Der Browser bringt seine eigenen mit, Chrome staffelt die Konnektivitätsprüfungen
+      # mit ~50 ms Abstand, und aus mehreren Dutzend Paaren werden Sekunden bis zur Nominierung —
+      # gemessen: 2 s bis ICE, 2 s bis DTLS, bei 265 ms für die gesamte Signalisierung davor.
+      # Eine feste Adresse ist für eine Dev-Umgebung vertretbar und für ein Produktions-Setup nicht.
+      #
+      # Der Default bindet auf alle Interfaces und funktioniert überall; DEV_MEDIA_IP macht es
+      # schnell. Eine LAN-Adresse als eingecheckter Default wäre die Adresse genau eines Rechners
+      # und bei jedem anderen ein Mediensocket, der an nichts bindet.
+      Communication__WebRtc__LocalEndPoint: "${DEV_MEDIA_IP:-0.0.0.0}:0"
       # Dem Browser wird ausschließlich die vom Host erreichbare Adresse ausgeliefert.
       VideoConference__BrowserIceServers__0__Urls__0: stun:${DEV_TURN_IP:-172.17.0.1}:${DEV_TURN_PORT:-3478}
       VideoConference__BrowserIceServers__1__Urls__0: turn:${DEV_TURN_IP:-172.17.0.1}:${DEV_TURN_PORT:-3478}?transport=udp
