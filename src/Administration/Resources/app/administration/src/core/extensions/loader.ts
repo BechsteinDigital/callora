@@ -4,6 +4,7 @@ import { getExtensions, registerExtension } from './registry'
 import { registerSurfaceTab } from './surfaceTabs'
 import { registerHook, type HookContext } from './hooks'
 import { registerService } from './services'
+import { t } from '@/core/i18n/i18n'
 
 /**
  * The admin micro-frontend loader.
@@ -114,6 +115,14 @@ export interface CalloraAdminGlobal {
   registerService<T>(key: string, implementation: T, meta?: { priority?: number }): void
   /** Read side of the slot registry, so a plugin can render into a slot it does not own. */
   getExtensions(slot: string): Component[]
+  /**
+   * Resolves a snippet key against the shell's loaded texts, falling back to the text passed in.
+   *
+   * Here rather than in the plugin, for the same reason Vue is: the shell holds the loaded
+   * snippets, and a plugin bundling its own vue-i18n would get a second instance that knows none
+   * of them — a translation function that always returns the fallback and never says why.
+   */
+  translate(key: string, fallback: string): string
 }
 
 // The plugin whose bundle is currently executing; register* calls made during that window are
@@ -198,6 +207,7 @@ export function installGlobalApi(): void {
     registerService: (key, implementation, meta) =>
       registerService(key, implementation, { pluginId: currentPluginId, priority: meta?.priority }),
     getExtensions,
+    translate: t,
   }
   ;(globalThis as unknown as { CalloraAdmin?: CalloraAdminGlobal }).CalloraAdmin = api
 

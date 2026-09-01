@@ -6,6 +6,7 @@ import {
   registerPage,
   registerService,
   resolveAdminApi,
+  t,
 } from './extensions'
 
 type Global = Record<string, unknown>
@@ -108,5 +109,43 @@ describe('admin registration API', () => {
 
     // @ts-expect-error 'users.before-safe' is a typo for 'users.before-save'
     registerHook('users.before-safe', () => {})
+  })
+})
+
+describe('t', () => {
+  beforeEach(() => {
+    delete (globalThis as Global).CalloraAdmin
+  })
+
+  it('returns the shell translation when the key is known', () => {
+    ;(globalThis as Global).CalloraAdmin = {
+      translate: (key: string, fallback: string) => (key === 'pbx.hello' ? 'Hallo' : fallback),
+    }
+
+    expect(t('pbx.hello', 'Hello')).toBe('Hallo')
+  })
+
+  it('falls back to the text passed in when the key is unknown', () => {
+    // What makes this adoptable one line at a time: until a key exists, the fallback shows — never
+    // the key itself. A screen displaying `pbx.person.blocked` to an operator is worse than an
+    // untranslated one.
+    ;(globalThis as Global).CalloraAdmin = {
+      translate: (_key: string, fallback: string) => fallback,
+    }
+
+    expect(t('pbx.unknown', 'Fallback')).toBe('Fallback')
+  })
+
+  it('falls back without warning when the shell is absent', () => {
+    // The only function here that does not warn: every other one registers something and can say
+    // "that did not happen". This one has to return a string, and the fallback is a correct answer
+    // rather than a degraded one — a warning per rendered label would drown a test run in noise.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    delete (globalThis as Record<string, unknown>).CalloraAdmin
+
+    expect(t('pbx.anything', 'Fallback')).toBe('Fallback')
+    expect(warn).not.toHaveBeenCalled()
+
+    warn.mockRestore()
   })
 })
