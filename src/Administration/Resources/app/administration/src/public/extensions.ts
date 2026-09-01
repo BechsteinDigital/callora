@@ -38,6 +38,7 @@ export interface CalloraAdminApi {
   registerService<T>(key: string, implementation: T, meta?: ServiceMeta): void
   /** Read side of the slot registry, so a component can render into a slot it does not own. */
   getExtensions(slot: string): Component[]
+  translate(key: string, fallback: string): string
 }
 
 export function resolveAdminApi(): CalloraAdminApi | undefined {
@@ -127,6 +128,29 @@ export function registerPage(pluginId: string, component: Component, order?: num
     return
   }
   api.registerExtension(`extension.page.${pluginId}`, component, order)
+}
+
+/**
+ * Translates a snippet key, falling back to the text passed in.
+ *
+ * The second parameter is what makes this adoptable one line at a time: until a key exists in the
+ * plugin's snippet files, the fallback is what shows — never the key itself. A screen that displays
+ * `pbx.person.blocked` to an operator is worse than one that was never translated.
+ *
+ * ```ts
+ * t('pbx.number.taken', 'Diese Nummer führt hier bereits irgendwohin.')
+ * ```
+ *
+ * The keys come from the plugin's own `snippets/<locale>.json`, declared in `registry.json` and
+ * prefixed with its pluginId — the host refuses a key belonging to another package.
+ *
+ * <b>The only function here that does not warn when the shell is absent.</b> Every other one
+ * registers something and can say "that did not happen"; this one has to return a string, and the
+ * fallback is a correct answer rather than a degraded one. A warning per rendered label would drown
+ * a test run in noise for a case that is working as designed.
+ */
+export function t(key: string, fallback: string): string {
+  return resolveAdminApi()?.translate(key, fallback) ?? fallback
 }
 
 export type { AdminHook, AdminSlot }
