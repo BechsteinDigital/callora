@@ -1,6 +1,6 @@
 {
   "name": "@callora/admin",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "type": "module",
   "description": "Typed contract for building Callora admin plugins: extension points, primitives, patterns.",
   "license": "Apache-2.0",

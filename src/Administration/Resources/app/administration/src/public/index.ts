@@ -15,4 +15,4 @@
  * Contract version of this package. A plugin can compare it against what it was built for and
  * refuse an incompatible host instead of failing halfway through rendering.
  */
-export const ADMIN_PACKAGE_VERSION = '0.9.0'
+export const ADMIN_PACKAGE_VERSION = '0.10.0'

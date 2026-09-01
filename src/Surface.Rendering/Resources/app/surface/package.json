@@ -1,6 +1,6 @@
 {
   "name": "@callora/surface",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "The Callora surface runtime and the contract surface plugins compile against — views, blocks, the context channel, and the blessed Vite preset.",
   "license": "Apache-2.0",
   "type": "module",
