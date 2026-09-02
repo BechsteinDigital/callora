@@ -18,12 +18,24 @@ public sealed class PluginDeclaredPermissionCatalog(
 {
     public async Task<IReadOnlyList<string>> ListAsync(CancellationToken cancellationToken = default)
     {
+        var byPlugin = await ListByPluginAsync(cancellationToken).ConfigureAwait(false);
+
+        return byPlugin.Values
+            .SelectMany(keys => keys)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(key => key, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    public async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> ListByPluginAsync(
+        CancellationToken cancellationToken = default)
+    {
         if (registryReader is null)
         {
-            return [];
+            return new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         }
 
-        var keys = new HashSet<string>(StringComparer.Ordinal);
+        var byPlugin = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         foreach (var installation in await installations.ListAsync(cancellationToken).ConfigureAwait(false))
         {
             if (installation.State == PluginInstallationState.Uninstalled ||
@@ -35,12 +47,22 @@ public sealed class PluginDeclaredPermissionCatalog(
             var result = await registryReader
                 .ReadForAssemblyAsync(installation.AssemblyPath, cancellationToken)
                 .ConfigureAwait(false);
-            foreach (var declared in result.Registry?.DeclaredPermissions ?? [])
+
+            var keys = (result.Registry?.DeclaredPermissions ?? [])
+                .Select(declared => declared.Key)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(key => key, StringComparer.Ordinal)
+                .ToArray();
+
+            if (keys.Length > 0)
             {
-                keys.Add(declared.Key);
+                // Der Schlüssel ist die installierte PluginId, nicht die aus dem Manifest: Was der Host
+                // unter diesem Plugin führt, entscheidet die Installation, und ein Manifest, das sich
+                // anders nennt, würde hier eine zweite Zeile für dasselbe Plugin erzeugen.
+                byPlugin[installation.PluginId] = keys;
             }
         }
 
-        return keys.OrderBy(key => key, StringComparer.Ordinal).ToArray();
+        return byPlugin;
     }
 }

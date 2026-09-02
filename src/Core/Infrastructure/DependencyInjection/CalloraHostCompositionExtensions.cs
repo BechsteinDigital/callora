@@ -228,6 +228,13 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<
             Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog,
             Callora.Core.Application.Security.PluginDeclaredPermissionCatalog>();
+        // Rollen, die eine Plugin-Installation nach sich zieht. Die Quelle liest beide Zulieferwege
+        // (Manifest und Contributor), der Provisioner schreibt sie einmal und fasst sie danach nie
+        // wieder an — siehe die Bemerkung dort.
+        builder.Services.AddScoped<
+            Callora.Core.Application.Security.IPluginRoleTemplateSource,
+            Callora.Core.Application.Security.PluginAdminRoleTemplates>();
+        builder.Services.AddScoped<Callora.Core.Infrastructure.Persistence.PluginRoleProvisioner>();
         builder.Services.AddSingleton<Callora.Core.Application.Plugins.PluginDependencyVersionGate>(
             static sp => new Callora.Core.Application.Plugins.PluginDependencyVersionGate(
                 sp.GetRequiredService<Callora.Core.Application.Plugins.IProvidedContractVersionProvider>(),
@@ -365,6 +372,7 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<Callora.Core.Application.CustomFields.ICustomFieldStore, EfCustomFieldStore>();
         builder.Services.AddScoped<Callora.Core.Infrastructure.CustomFields.RegistryCustomFieldSyncService>();
         builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginCustomFieldSyncSubscriber>();
+        builder.Services.AddScoped<IHostApplicationEventSubscriber<PluginLifecycleChangedEvent>, PluginRoleSyncSubscriber>();
         // Webhook data-minimization: domain-neutral field set — core baseline plus
         // plugin-declared "sensitiveFields" (PLAT-244). Registry is a singleton
         // because the singleton WebhookDispatcher depends on it.
@@ -426,6 +434,10 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddHostedService<LocalPluginDiscoveryHostedService>();
         builder.Services.AddHostedService<PluginRuntimeRehydrationHostedService>();
         builder.Services.AddHostedService<PluginUiAssetPublishHostedService>();
+        // Zuletzt: Er liest, was die geladenen Plugins beisteuern, und die sind erst nach der
+        // Rehydrierung da. Vorher registriert bekämen genau die Plugins keine Rolle, die ihre
+        // Schlüssel über den Contributor liefern statt über das Manifest.
+        builder.Services.AddHostedService<PluginRoleProvisioningHostedService>();
 
         return builder;
     }
