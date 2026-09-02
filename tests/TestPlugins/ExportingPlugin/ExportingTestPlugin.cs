@@ -1,6 +1,7 @@
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace Callora.TestPlugin.Exporting;
 
@@ -17,9 +18,19 @@ public sealed class ExportingTestPlugin : IHostManagedPlugin
 
     public string DisplayName => "Exporting Test Plugin";
 
+    /// <summary>Der aufgelöste Logger — als beobachtbare Zuweisung, damit der JIT sie nicht wegoptimiert.</summary>
+    public static ILogger? Logger { get; private set; }
+
     public ValueTask StartAsync(IHostPluginContext context, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
+
+        // Wie ein echtes Plugin: ILogger<EigenerTyp> aus den Diensten. Genau dieser Weg trägt den
+        // geschlossenen generischen Plugin-Typ in den Wurzel-Container des Hosts — und hielt damit
+        // den Ladekontext fest. Ohne diese Zeile prüft der Entlade-Test einen Fall, den es in
+        // Produktion nicht gibt.
+        Logger = context.Services.GetService(typeof(ILogger<ExportingTestPlugin>)) as ILogger;
+
         context.Export<IWorkspaceDataPurgeContributor>(new NoopPurgeContributor());
         context.Export<IRuntimeCapabilitySource>(new StaticRuntimeCapabilitySource());
         return ValueTask.CompletedTask;
