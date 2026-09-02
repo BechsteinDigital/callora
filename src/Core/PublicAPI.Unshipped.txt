@@ -2165,8 +2165,9 @@ Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator.EvaluateAsync(stri
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator.EvaluateManyAsync(System.Collections.Generic.IReadOnlyCollection<string!>! pluginIds, string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, Callora.Core.Application.Plugins.PluginAvailability!>!>!
 Callora.Core.Application.Plugins.IPluginAvailabilityEvaluator.EvaluatePlatformAsync(string! pluginId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.PluginAvailability!>!
 Callora.Core.Application.Plugins.IPluginDbContextProvider
-Callora.Core.Application.Plugins.IPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.Reflection.Assembly! migrationsAssembly) -> void
+Callora.Core.Application.Plugins.IPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.Reflection.Assembly! migrationsAssembly, string! pluginId) -> void
 Callora.Core.Application.Plugins.IPluginDbContextProvider.GetMigrationLockKey(string! pluginId) -> long
+Callora.Core.Application.Plugins.IPluginDbContextProvider.ReleasePlugin(string! pluginId) -> void
 Callora.Core.Application.Plugins.IPluginDiscoveryService
 Callora.Core.Application.Plugins.IPluginDiscoveryService.RefreshAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Plugins.PluginDiscoveryRefreshResult!>!
 Callora.Core.Application.Plugins.IPluginPackageRegistryReader
@@ -5599,9 +5600,11 @@ Callora.Core.Infrastructure.Persistence.HostPersistenceDbContextDesignTimeFactor
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContextDesignTimeFactory.CreateDbContext(string![]! args) -> Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContextDesignTimeFactory.HostPersistenceDbContextDesignTimeFactory() -> void
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider
-Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.Reflection.Assembly! migrationsAssembly) -> void
+Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.ConfigureOptions(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.Reflection.Assembly! migrationsAssembly, string! pluginId) -> void
+Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.Dispose() -> void
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.GetMigrationLockKey(string! pluginId) -> long
 Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.NpgsqlPluginDbContextProvider(Callora.Core.Application.Policies.BackendHostOptions! options, Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor? recorder = null) -> void
+Callora.Core.Infrastructure.Persistence.NpgsqlPluginDbContextProvider.ReleasePlugin(string! pluginId) -> void
 Callora.Core.Infrastructure.Persistence.PluginManifestSchemaReader
 Callora.Core.Infrastructure.Persistence.PluginRoleProvisioner
 Callora.Core.Infrastructure.Persistence.PluginRoleProvisioner.PluginRoleProvisioner(Callora.Core.Application.Security.IPluginRoleTemplateSource! templates, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Persistence.PluginRoleProvisioner!>! logger) -> void

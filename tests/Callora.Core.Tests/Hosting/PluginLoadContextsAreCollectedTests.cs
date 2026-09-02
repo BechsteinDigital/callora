@@ -1,5 +1,8 @@
 using Callora.Core.Application.Options;
+using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Policies;
+using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -60,6 +63,31 @@ public sealed class PluginLoadContextsAreCollectedTests
 
         var install = await host.InstallAsync(
             TestPluginAssemblies.Exporting(), "Callora.TestPlugin.Exporting.ExportingTestPlugin");
+        Assert.True(install.IsSuccess, install.Message);
+        Assert.True((await host.ActivateAsync(install.Plugin!.PluginId)).IsSuccess);
+
+        var deactivate = await host.DeactivateAsync(install.Plugin.PluginId);
+
+        Assert.True(deactivate.IsSuccess, deactivate.Message);
+    }
+
+    [Fact]
+    public async Task A_plugin_that_built_its_ef_model_still_unloads()
+    {
+        // Ohne Datenbank: Gebaut wird das Modell, nicht verbunden. EF Core legt es in einem
+        // prozessweiten Zwischenspeicher ab, dessen Schlüssel der Kontext-TYP ist — und der gehört dem
+        // Plugin. Ohne einen eigenen internen Dienstanbieter je Plugin hält dieser Speicher den
+        // Ladekontext, solange der Prozess läuft.
+        await using var host = HostWith(services => services
+            .AddLogging()
+            .AddSingleton<IPluginDbContextProvider>(new NpgsqlPluginDbContextProvider(
+                new BackendHostOptions
+                {
+                    DatabaseConnectionString = "Host=127.0.0.1;Port=1;Database=unused;Username=u;Password=p"
+                })));
+
+        var install = await host.InstallAsync(
+            TestPluginAssemblies.DbContext(), "Callora.TestPlugin.DbContextPlugin.DbContextTestPlugin");
         Assert.True(install.IsSuccess, install.Message);
         Assert.True((await host.ActivateAsync(install.Plugin!.PluginId)).IsSuccess);
 

@@ -25,7 +25,7 @@ internal sealed class PluginDbContextFactory<TContext>(
     public TContext CreateDbContext()
     {
         var builder = new DbContextOptionsBuilder<TContext>();
-        provider.ConfigureOptions(builder, MigrationsAssembly);
+        provider.ConfigureOptions(builder, MigrationsAssembly, pluginId);
         return (TContext)Activator.CreateInstance(typeof(TContext), builder.Options)!;
     }
 
