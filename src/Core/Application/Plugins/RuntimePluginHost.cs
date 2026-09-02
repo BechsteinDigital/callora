@@ -464,7 +464,15 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             // Shopware-artige Controller-Discovery: IApiController-Typen der
             // Plugin-Assembly werden automatisch instanziiert (Ctor-DI über
             // die kuratierte Oberfläche) und exportiert (PLAT-257).
-            RegisterApiControllers(record.PluginId, assembly, pluginContext.Services);
+            PluginApiControllerDiscovery.Register(
+                record.PluginId,
+                assembly,
+                pluginContext.Services,
+                GetExports(typeof(Callora.Core.Application.Http.Contracts.IApiController))
+                    .Select(static export => export.GetType())
+                    .ToHashSet(),
+                RegisterExport,
+                _logger);
 
             var handle = new ActivePluginHandle(record.PluginId, plugin, loadContext);
             if (!_active.TryAdd(record.PluginId, handle))
@@ -511,12 +519,9 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         WeakReference loadContextReference;
         try
         {
-            // Draining comes first and runs with the exports still in place, because work that is
-            // still finishing may depend on them (ADR-018 §2.1).
-            await DrainAsync(handle.Plugin, pluginId, cancellationToken).ConfigureAwait(false);
-            RemoveExportsByPlugin(pluginId);
-            await SafeStopAsync(handle.Plugin, cancellationToken).ConfigureAwait(false);
-            loadContextReference = UnloadAndTrack(handle);
+            // In einer eigenen Methode, und das ist der ganze Fix — die Begründung steht dort.
+            loadContextReference = await TearDownAsync(handle, pluginId, cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -524,8 +529,7 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.Failed, pluginId, ex.Message);
         }
 
-        // Drop the last strong reference before verifying collection; otherwise
-        // this frame would pin the context and always report a false failure.
+        // Der Handle dieser Methode zusätzlich, damit auch hier nichts mehr zeigt.
         handle = null!;
 
         if (!AssemblyLoadContextUnload.WaitForCollection(loadContextReference))
@@ -544,6 +548,39 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             _logger.LogInformation("Deactivated plugin {PluginId}.", pluginId);
         }
         return new RuntimePluginDeactivateResult(RuntimePluginDeactivateStatus.Deactivated, pluginId);
+    }
+
+    /// <summary>
+    /// Hält das Plugin an, zieht seine Exports zurück und entlädt seinen Ladekontext — und gibt
+    /// ausschließlich eine schwache Referenz darauf zurück.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Eine eigene Methode, und das ist der Punkt.</b> Alles, was auf das Plugin zeigt — die
+    /// Instanz, der Handle, der Ladekontext — lebt in DEREN Zustandsmaschine und endet mit ihr. Wer
+    /// danach nachsieht, ob der Kontext eingesammelt wurde, hält selbst nichts mehr in der Hand.
+    /// </para>
+    /// <para>
+    /// Vorher stand die Prüfung in derselben async-Methode, die kurz zuvor <c>handle.Plugin</c> an
+    /// zwei await-Aufrufe übergeben hatte. Deren Zwischenwerte liegen in der Zustandsmaschine, und
+    /// <c>handle = null!</c> räumt nur das Feld, das der Compiler so nennt — nicht die Ablageplätze
+    /// für die Argumente. Ergebnis: Der Kontext war beim Nachsehen immer noch erreichbar, und JEDE
+    /// Deaktivierung meldete „still pinned after unload" — für jedes Plugin, in jedem Aufbau, seit
+    /// es diese Prüfung gibt. Keine Aktualisierung ohne Neustart, und der Grund lag nicht dort, wo
+    /// die Meldung hinzeigte.
+    /// </para>
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private async Task<WeakReference> TearDownAsync(
+        ActivePluginHandle handle, string pluginId, CancellationToken cancellationToken)
+    {
+        // Draining comes first and runs with the exports still in place, because work that is
+        // still finishing may depend on them (ADR-018 §2.1).
+        await DrainAsync(handle.Plugin, pluginId, cancellationToken).ConfigureAwait(false);
+        RemoveExportsByPlugin(pluginId);
+        await SafeStopAsync(handle.Plugin, cancellationToken).ConfigureAwait(false);
+
+        return UnloadAndTrack(handle);
     }
 
     // Non-inlined so no caller-frame local keeps the load context alive while we
@@ -714,55 +751,6 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
 
     private static IHostManagedPlugin? CreatePluginInstance(Type pluginType) =>
         Activator.CreateInstance(pluginType) as IHostManagedPlugin;
-
-    private void RegisterApiControllers(string pluginId, Assembly pluginAssembly, IServiceProvider pluginServices)
-    {
-        Type[] assemblyTypes;
-        try
-        {
-            assemblyTypes = pluginAssembly.GetTypes();
-        }
-        catch (ReflectionTypeLoadException exception)
-        {
-            assemblyTypes = exception.Types.Where(static type => type is not null).ToArray()!;
-        }
-
-        var manuallyExported = GetExports(typeof(Callora.Core.Application.Http.Contracts.IApiController))
-            .Select(static export => export.GetType())
-            .ToHashSet();
-
-        foreach (var controllerType in assemblyTypes)
-        {
-            if (controllerType.IsAbstract ||
-                controllerType.IsInterface ||
-                !typeof(Callora.Core.Application.Http.Contracts.IApiController).IsAssignableFrom(controllerType))
-            {
-                continue;
-            }
-
-            // Vom Plugin in StartAsync selbst exportierte Controller (eigene
-            // Ctor-Abhängigkeiten) werden nicht doppelt instanziiert.
-            if (manuallyExported.Contains(controllerType))
-            {
-                continue;
-            }
-
-            // Ctor-Fehler (nicht kuratierter Service) lassen die Aktivierung
-            // bewusst laut scheitern statt Routen still zu verlieren.
-            var controller = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance(
-                pluginServices,
-                controllerType);
-            RegisterExport(pluginId, typeof(Callora.Core.Application.Http.Contracts.IApiController), controller);
-
-            if (_logger.IsEnabled(LogLevel.Information))
-            {
-                _logger.LogInformation(
-                    "Registered API controller {ControllerType} for plugin {PluginId}.",
-                    controllerType.FullName,
-                    pluginId);
-            }
-        }
-    }
 
     private void RegisterExport(string pluginId, Type contractType, object service)
     {

@@ -13,6 +13,9 @@ internal static class TestPluginAssemblies
     /// <summary>Das Plugin, das einen Vertrag über <c>context.Export</c> anbietet.</summary>
     internal static string Exporting() => Resolve("ExportingPlugin", "Callora.TestPlugin.Exporting.dll");
 
+    /// <summary>Das Plugin, das seinen eigenen EF-Kontext auflöst und sein Modell baut.</summary>
+    internal static string DbContext() => Resolve("DbContextPlugin", "Callora.TestPlugin.DbContext.dll");
+
     private static string Resolve(string projectDirectory, string assemblyFileName)
     {
         // Das Plugin baut nach bin/<Config>/<Tfm>/ wie diese Testassembly auch — Konfiguration

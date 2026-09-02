@@ -73,6 +73,24 @@ internal sealed class CuratedPluginServiceProvider(
             return Activator.CreateInstance(factoryType, provider, pluginId);
         }
 
+        // ILogger<PluginTyp>: selbst gebaut, nicht beim Wurzel-Container bestellt.
+        //
+        // Der Wurzel-Container merkt sich jede aufgelöste Dienstkennung — und die hält den Type. Bei
+        // einem geschlossenen generischen Typ über einen PLUGIN-Typ heißt das: Der Container des Hosts
+        // hält den Plugin-Typ, solange der Prozess läuft, und damit dessen Ladekontext. Ein
+        // deaktiviertes Plugin wurde nie eingesammelt, und die Aktualisierung meldete „still pinned
+        // after unload" — für jedes Plugin, das sich einen Logger geben ließ.
+        //
+        // Über die Fabrik gebaut lebt die Instanz nur, solange das Plugin sie hält: ILoggerFactory
+        // schlüsselt ihre eigenen Zwischenspeicher nach dem Kategorie-STRING, nicht nach dem Typ.
+        if (serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(ILogger<>))
+        {
+            return rootServices.GetService(typeof(ILoggerFactory)) is ILoggerFactory factory
+                ? Activator.CreateInstance(
+                    typeof(Logger<>).MakeGenericType(serviceType.GetGenericArguments()[0]), factory)
+                : null;
+        }
+
         if (!IsAllowed(serviceType))
         {
             return null;
@@ -90,6 +108,9 @@ internal sealed class CuratedPluginServiceProvider(
             return true;
         }
 
+        // ILogger<> steht hier weiterhin, obwohl die Auflösung oben abgefangen wird: IsAllowed
+        // beantwortet „darf ein Plugin das überhaupt fragen", und die Antwort ist ja. Wo es herkommt,
+        // entscheidet die Stelle darüber.
         if (serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(ILogger<>))
         {
             return true;
