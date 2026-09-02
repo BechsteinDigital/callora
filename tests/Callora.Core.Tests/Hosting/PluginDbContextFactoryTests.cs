@@ -31,10 +31,14 @@ public sealed class PluginDbContextFactoryTests
     {
         public Assembly? CapturedAssembly { get; private set; }
 
-        public void ConfigureOptions(DbContextOptionsBuilder builder, Assembly migrationsAssembly) =>
+        public void ConfigureOptions(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string pluginId) =>
             CapturedAssembly = migrationsAssembly;
 
         public long GetMigrationLockKey(string pluginId) => 0;
+
+        public void ReleasePlugin(string pluginId)
+        {
+        }
     }
 
     private sealed class SampleDbContext(DbContextOptions<SampleDbContext> options) : DbContext(options);

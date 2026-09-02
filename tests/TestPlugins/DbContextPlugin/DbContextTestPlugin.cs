@@ -1,6 +1,7 @@
 using Callora.Core.Application.Persistence.Contracts;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Domain.Plugins.Contracts;
+using Microsoft.EntityFrameworkCore;
 
 namespace Callora.TestPlugin.DbContextPlugin;
 
@@ -23,6 +24,9 @@ public sealed class DbContextTestPlugin : IHostManagedPlugin
     /// </summary>
     public static Type? ResolvedFactoryType { get; private set; }
 
+    /// <summary>Wie viele Entitätstypen das gebaute Modell hatte — beobachtbar, also nicht wegoptimierbar.</summary>
+    public static int BuiltEntityTypes { get; private set; }
+
     public string PluginId => "dbcontext-test-plugin";
 
     public string DisplayName => "DbContext Test Plugin";
@@ -37,7 +41,15 @@ public sealed class DbContextTestPlugin : IHostManagedPlugin
         // different DbContext identity and this throws TypeLoadException — the exact
         // production failure. With host-unified EF Core it resolves cleanly.
         ResolvedFactoryType = typeof(IPluginDbContextFactory<PluginTestDbContext>);
-        _ = context.Services.GetService(ResolvedFactoryType);
+        var factory = context.Services.GetService(ResolvedFactoryType) as IPluginDbContextFactory<PluginTestDbContext>;
+
+        // Und das Modell wirklich bauen — ohne Datenbank. Erst dabei legt EF Core die Entitätstypen
+        // dieses Plugins ab, und die Frage ist, wo. Eine Auflösung ohne Modellaufbau berührt das nicht.
+        if (factory is not null)
+        {
+            using var dbContext = factory.CreateDbContext();
+            BuiltEntityTypes = dbContext.Model.GetEntityTypes().Count();
+        }
 
         return ValueTask.CompletedTask;
     }

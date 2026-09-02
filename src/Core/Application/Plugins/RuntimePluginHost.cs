@@ -580,6 +580,12 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
         RemoveExportsByPlugin(pluginId);
         await SafeStopAsync(handle.Plugin, cancellationToken).ConfigureAwait(false);
 
+        // Nach dem Anhalten, vor dem Entladen: EF Core hält das gebaute Modell dieses Plugins in einem
+        // internen Dienstanbieter, und der hält die Entitätstypen — also den Ladekontext. Wer das
+        // stehen lässt, entlädt nichts, egal wie sauber der Rest aufräumt.
+        (_services.GetService(typeof(IPluginDbContextProvider)) as IPluginDbContextProvider)
+            ?.ReleasePlugin(pluginId);
+
         return UnloadAndTrack(handle);
     }
 

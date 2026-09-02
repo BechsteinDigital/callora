@@ -1,7 +1,9 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Policies;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Callora.Core.Infrastructure.Persistence;
 
@@ -17,16 +19,49 @@ public sealed class NpgsqlPluginDbContextProvider(
     // Stelle, an der ein PLUGIN-Kontext konfiguriert wird — ohne sie bliebe genau die Arbeit
     // unsichtbar, für die der Rekorder gebaut ist.
     Callora.Core.Infrastructure.Diagnostics.RecordingDbCommandInterceptor? recorder = null)
-    : IPluginDbContextProvider
+    : IPluginDbContextProvider, IDisposable
 {
     // Distinct from the host migration lock so plugin and host migrations
     // never block each other on the same key.
     private const long PluginLockNamespace = 0x504C5547; // "PLUG"
 
-    public void ConfigureOptions(DbContextOptionsBuilder builder, Assembly migrationsAssembly)
+    /// <summary>
+    /// Je Plugin ein eigener interner EF-Dienstanbieter.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Der Grund ist der Modell-Cache.</b> Ohne <c>UseInternalServiceProvider</c> baut EF Core seinen
+    /// internen Anbieter selbst und legt ihn in einem PROZESSWEITEN, statischen Zwischenspeicher ab.
+    /// Darin liegt das gebaute Modell, geschlüsselt nach dem Kontext-Typ — und dieser Typ gehört dem
+    /// Plugin. Damit hielt ein einziger Modellaufbau den Ladekontext des Plugins fest, bis der Prozess
+    /// endete: Jede Aktualisierung meldete „still pinned after unload", jede Änderung brauchte einen
+    /// Neustart.
+    /// </para>
+    /// <para>
+    /// Verschärfend war, dass der Schlüssel dieses Zwischenspeichers die Optionen-Erweiterungen
+    /// heranzieht, die Migrations-Assembly aber nicht: Alle Plugins teilten sich denselben Anbieter,
+    /// und eine Tabelle hielt die Typen aller Ladekontexte.
+    /// </para>
+    /// <para>
+    /// Je Plugin gebaut und beim Deaktivieren weggeworfen lebt der Speicher genau so lange wie das
+    /// Plugin. Der Preis ist ein Anbieter je Plugin statt einem je Prozess — bei einer Handvoll Plugins
+    /// ist das nichts gegen einen Ladekontext, der nie wieder verschwindet.
+    /// </para>
+    /// </remarks>
+    private readonly ConcurrentDictionary<string, ServiceProvider> _internalServices =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public void ConfigureOptions(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string pluginId)
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(migrationsAssembly);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
+
+        builder.UseInternalServiceProvider(
+            _internalServices.GetOrAdd(
+                pluginId.Trim(),
+                static _ => new ServiceCollection().AddEntityFrameworkNpgsql().BuildServiceProvider()));
+
         builder.UseNpgsql(
             options.DatabaseConnectionString,
             // Pass the loaded assembly, not its name: EF Core's MigrationsAssembly
@@ -37,6 +72,25 @@ public sealed class NpgsqlPluginDbContextProvider(
         if (recorder is not null)
         {
             builder.AddInterceptors(recorder);
+        }
+    }
+
+    /// <inheritdoc />
+    public void ReleasePlugin(string pluginId)
+    {
+        if (!string.IsNullOrWhiteSpace(pluginId)
+            && _internalServices.TryRemove(pluginId.Trim(), out var services))
+        {
+            services.Dispose();
+        }
+    }
+
+    /// <summary>Gibt frei, was für alle Plugins gehalten wurde — beim Ende des Hosts.</summary>
+    public void Dispose()
+    {
+        foreach (var pluginId in _internalServices.Keys)
+        {
+            ReleasePlugin(pluginId);
         }
     }
 
