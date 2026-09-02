@@ -228,9 +228,14 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<
             Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog,
             Callora.Core.Application.Security.PluginDeclaredPermissionCatalog>();
-        // Rollen, die eine Plugin-Installation nach sich zieht. Die Quelle liest beide Zulieferwege
-        // (Manifest und Contributor), der Provisioner schreibt sie einmal und fasst sie danach nie
-        // wieder an — siehe die Bemerkung dort.
+        // Wem welche Berechtigung gehört — beide Zulieferwege, eine Antwort. Zwei Verwender: die
+        // Rollenanlage und die Sitzung eines Workspace-Admins.
+        builder.Services.AddScoped<
+            Callora.Core.Application.Security.IPluginPermissionMap,
+            Callora.Core.Application.Security.PluginPermissionMap>();
+        builder.Services.AddScoped<Callora.Core.Application.Security.WorkspacePluginPermissions>();
+        // Rollen, die eine Plugin-Installation nach sich zieht. Der Provisioner schreibt sie einmal
+        // und fasst sie danach nie wieder an — siehe die Bemerkung dort.
         builder.Services.AddScoped<
             Callora.Core.Application.Security.IPluginRoleTemplateSource,
             Callora.Core.Application.Security.PluginAdminRoleTemplates>();

@@ -47,6 +47,42 @@ public static class PluginPermissionKeyPolicy
     /// </summary>
     public static bool IsDeclarable(string pluginId, string permissionKey, out string reason)
     {
+        if (!IsInsideNamespace(pluginId, permissionKey, out reason))
+        {
+            return false;
+        }
+
+        var declared = permissionKey.Trim();
+        var lastSeparator = declared.LastIndexOf('.');
+        var declaredAction = declared[(lastSeparator + 1)..];
+        if (!BackendPermissionActions.All.Contains(declaredAction, StringComparer.OrdinalIgnoreCase))
+        {
+            reason = $"'{declared}' does not end in a known action ({string.Join(", ", BackendPermissionActions.All)}).";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    /// <summary>
+    /// Whether the key belongs to this plugin at all — the boundary, without the vocabulary.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Split out of <see cref="IsDeclarable"/> because a second caller arrived that needs the boundary
+    /// and must not have the vocabulary: the keys a plugin contributes through
+    /// <c>IHostAdminApiExtensionContributor</c> never passed the manifest's action rule and never had
+    /// to — <c>composer.layout.publish</c> and <c>communication.accounts.manage</c> work today and would
+    /// vanish if the full rule were applied to them. What must hold for every path is the namespace: a
+    /// plugin whose keys widen somebody's session may only widen it with its own.
+    /// </para>
+    /// <para>
+    /// Three rules, and each of them is load-bearing on its own — see the comments inside.
+    /// </para>
+    /// </remarks>
+    public static bool IsInsideNamespace(string pluginId, string permissionKey, out string reason)
+    {
         if (string.IsNullOrWhiteSpace(pluginId))
         {
             reason = "The plugin id is required to decide which keys it may declare.";
@@ -91,14 +127,6 @@ public static class PluginPermissionKeyPolicy
         if (!key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
         {
             reason = $"'{key}' is outside the '{pluginId}' namespace; a plugin may only declare keys beginning with '{prefix}'.";
-            return false;
-        }
-
-        var lastSeparator = key.LastIndexOf('.');
-        var action = key[(lastSeparator + 1)..];
-        if (!BackendPermissionActions.All.Contains(action, StringComparer.OrdinalIgnoreCase))
-        {
-            reason = $"'{key}' does not end in a known action ({string.Join(", ", BackendPermissionActions.All)}).";
             return false;
         }
 

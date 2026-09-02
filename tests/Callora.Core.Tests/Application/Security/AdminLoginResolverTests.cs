@@ -149,4 +149,103 @@ public sealed class AdminLoginResolverTests
         var rbacStore = new InMemoryBackendRbacStore(options);
         return (userStore, rbacStore, options);
     }
+
+    [Fact]
+    public async Task Ein_Workspace_Admin_traegt_die_Rechte_der_Plugins_seines_Workspace()
+    {
+        // Vorher konnte ein Plugin-Schlüssel auf KEINEM Weg in eine Workspace-Sitzung gelangen: Die
+        // Rechte kommen aus einer fest verdrahteten Kern-Liste, und die Projektion aus RBAC steigt für
+        // Workspace-Scope bewusst sofort aus. Jede Plugin-Oberfläche war damit für alle außer dem
+        // Super-Admin leer — egal welche Rolle jemand hatte, egal welche Rolle die Installation anlegte.
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var carol = await userStore.GetByExternalIdAsync("carol");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            carol!, "workspace-a", userStore, rbacStore, options,
+            workspacePlugins: WorkspacePlugins(["pbx"], new() { ["pbx"] = ["pbx.person.read"] }));
+
+        Assert.Contains("pbx.person.read", grant!.Permissions);
+        // Der Kern-Satz bleibt daneben stehen; die Erweiterung ersetzt ihn nicht.
+        Assert.Contains(BackendPermissionKeys.FlowManage, grant.Permissions);
+    }
+
+    [Fact]
+    public async Task Ein_Mitglied_bekommt_sie_nicht()
+    {
+        // Der Leseboden bleibt der Leseboden. Wer die Telefonanlage verwalten soll, wird Administrator
+        // seines Workspace — feinere Zuschnitte brauchen Rollen, die das Plugin selbst benennt.
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var alice = await userStore.GetByExternalIdAsync("alice");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            alice!, "workspace-a", userStore, rbacStore, options,
+            workspacePlugins: WorkspacePlugins(["pbx"], new() { ["pbx"] = ["pbx.person.read"] }));
+
+        Assert.DoesNotContain("pbx.person.read", grant!.Permissions);
+    }
+
+    [Fact]
+    public async Task Ein_Plugin_das_in_diesem_Workspace_nicht_aktiv_ist_gibt_nichts()
+    {
+        // Die Grenze, die das Ganze vertretbar macht: Gefiltert wird nach Aktivierung, nicht nach
+        // Installation. Sonst trüge der Administrator eines Workspace die Rechte jedes Plugins der
+        // Anlage — auch derer, die sein Workspace nie gesehen hat.
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var carol = await userStore.GetByExternalIdAsync("carol");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            carol!, "workspace-a", userStore, rbacStore, options,
+            workspacePlugins: WorkspacePlugins([], new() { ["pbx"] = ["pbx.person.read"] }));
+
+        Assert.DoesNotContain("pbx.person.read", grant!.Permissions);
+        Assert.Contains(BackendPermissionKeys.FlowManage, grant.Permissions);
+    }
+
+    [Fact]
+    public async Task Ohne_die_Plugin_Quelle_bleibt_es_beim_Kern_Satz()
+    {
+        // Das Verhalten von vorher, für jeden von Hand zusammengesetzten Aufbau. Eine Anmeldung darf
+        // nicht daran scheitern, dass ein Dienst fehlt, an dem sie nicht hängen sollte.
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var carol = await userStore.GetByExternalIdAsync("carol");
+
+        var grant = await AdminLoginResolver.ResolveAsync(carol!, "workspace-a", userStore, rbacStore, options);
+
+        Assert.Equal(WorkspaceRolePermissions.ForRole(BackendRoles.Admin), grant!.Permissions);
+    }
+
+    [Fact]
+    public async Task Ein_Plattform_Operator_bekommt_weiterhin_keine_Rechte_ins_Token()
+    {
+        // Plattform-Scope heißt Reichweite, nicht Vollmacht: Seine Rechte werden bei jeder Anfrage aus
+        // RBAC projiziert, und ein Workspace steht dabei gar nicht fest. Etwas hier hineinzuschreiben
+        // hieße, die Plugins EINES Workspace in eine Sitzung zu schreiben, die für alle gilt.
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var root = await userStore.GetByExternalIdAsync("root");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            root!, "workspace-a", userStore, rbacStore, options,
+            workspacePlugins: WorkspacePlugins(["pbx"], new() { ["pbx"] = ["pbx.person.read"] }));
+
+        Assert.Empty(grant!.Permissions);
+    }
+
+    private static WorkspacePluginPermissions WorkspacePlugins(
+        IReadOnlyList<string> active, Dictionary<string, IReadOnlyList<string>> byPlugin)
+        => new(new StubActivations(active), new StubMap(byPlugin));
+
+    private sealed class StubActivations(IReadOnlyList<string> active)
+        : Callora.Core.Application.Plugins.IWorkspacePluginActivationReader
+    {
+        public Task<IReadOnlyList<string>> ListActivePluginIdsAsync(
+            string workspaceKey, CancellationToken cancellationToken = default)
+            => Task.FromResult(active);
+    }
+
+    private sealed class StubMap(Dictionary<string, IReadOnlyList<string>> byPlugin) : IPluginPermissionMap
+    {
+        public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> ByPluginAsync(
+            CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyDictionary<string, IReadOnlyList<string>>>(byPlugin);
+    }
 }

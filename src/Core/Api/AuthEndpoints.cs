@@ -119,7 +119,11 @@ public static class AuthEndpoints
         IBackendUserStore userStore,
         IBackendRbacStore rbacStore,
         HttpContext httpContext,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        // Optional aufgelöst: Ein Aufbau ohne Plugin-Persistenz (Tests, ein nackter Host) meldet
+        // weiterhin an, nur ohne die Plugin-Berechtigungen — statt an einem fehlenden Dienst zu
+        // scheitern, an dem eine Anmeldung nicht hängen sollte.
+        WorkspacePluginPermissions? workspacePlugins = null)
     {
         var user = await userStore.AuthenticateAsync(login, password, cancellationToken).ConfigureAwait(false);
         if (user is null)
@@ -128,7 +132,8 @@ public static class AuthEndpoints
         }
 
         var grant = await AdminLoginResolver
-            .ResolveAsync(user, workspaceKey, userStore, rbacStore, options, cancellationToken)
+            .ResolveAsync(
+                user, workspaceKey, userStore, rbacStore, options, cancellationToken, workspacePlugins)
             .ConfigureAwait(false);
         if (grant is null)
         {
