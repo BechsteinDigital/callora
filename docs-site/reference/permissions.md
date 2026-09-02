@@ -109,11 +109,46 @@ workspace**. Two boundaries make that defensible, and both are load-bearing:
   path never had that boundary, and without it a plugin could have written `user.delete` — a key that
   reaches past the workspace — into a workspace administrator's session.
 
-A **member** keeps the read-only floor. Finer cuts than "administrator" need roles a plugin names for
-itself; guessing a split here would look considered and therefore go unchecked.
+### Roles per membership
 
-Permissions live in the token, so a plugin activated after sign-in takes effect at the next one — the
-same as any other permission change.
+"Administrator or member" is a floor, not an answer. *"May use the phone system but change nothing"*
+had no place to live: the membership carried one string and the permissions behind it were fixed in
+code.
+
+A membership can now carry **any number of roles** — the same
+`backend_rbac_roles` the platform uses, assigned per workspace:
+
+```
+GET  /api/workspaces/{workspaceKey}/members/{userId}/roles   → { userId, roles: [...] }
+PUT  /api/workspaces/{workspaceKey}/members/{userId}/roles     { "roles": ["pbx.viewer"] }
+```
+
+The `PUT` sets the state, it does not add to it: a screen shows checkboxes, and what the operator saw
+is what they meant. An empty list removes everything.
+
+**Not a second role system.** What a role contains lives in one place and is edited through the
+existing role administration. What it *means inside a workspace* is decided at sign-in, where its keys
+are filtered to what may hold there:
+
+- **core keys** — only those a workspace administrator could hold anyway (`WorkspaceRolePermissions
+  .WorkspaceGrantable`). `tenant.create`, a `user.*` write key or a `*` wildcard never survive the
+  filter.
+- **plugin keys** — only for plugins activated in that workspace.
+
+That filter is the condition, not a precaution. Roles are global; without it, assigning one to a
+membership would be the way to move platform permissions into a workspace session — exactly what the
+early exit in `BackendClaimsTransformation` prevents.
+
+So the example, end to end: create a role `pbx.viewer` holding `pbx.person.read`, `pbx.number.read`
+and `pbx.announcement.read`, assign it to the member, and they can open the phone system and change
+nothing.
+
+**The global assignment stays at one role.** It decides whether somebody is a platform operator, and
+that is not a question with several answers.
+
+Permissions live in the token, so a plugin activated after sign-in — or a role assigned after it —
+takes effect at the next one. Changing or deleting a role revokes the sessions of everybody holding
+it, by either path.
 
 ### One evaluator, three call sites
 

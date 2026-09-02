@@ -563,6 +563,13 @@ Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.get -> string?
 Callora.Administration.Api.SetEntitlementApiRequest.TenantKey.init -> void
 Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.get -> string?
 Callora.Administration.Api.SetEntitlementApiRequest.WorkspaceKey.init -> void
+Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest
+Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.<Clone>$() -> Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest!
+Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>? Roles) -> void
+Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.Equals(Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest? other) -> bool
+Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.Roles.init -> void
+Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.SetWorkspaceMemberRolesApiRequest(System.Collections.Generic.IReadOnlyList<string!>? Roles) -> void
 Callora.Administration.Api.SurfaceApiResponse
 Callora.Administration.Api.SurfaceApiResponse.<Clone>$() -> Callora.Administration.Api.SurfaceApiResponse!
 Callora.Administration.Api.SurfaceApiResponse.Authentication.get -> string!
@@ -1014,6 +1021,15 @@ Callora.Administration.Api.WorkspaceMemberApiResponse.UserId.init -> void
 Callora.Administration.Api.WorkspaceMemberApiResponse.WorkspaceKey.get -> string!
 Callora.Administration.Api.WorkspaceMemberApiResponse.WorkspaceKey.init -> void
 Callora.Administration.Api.WorkspaceMemberApiResponse.WorkspaceMemberApiResponse(string! WorkspaceKey, string! UserId, string? Email, string? DisplayName, string! Role, System.DateTimeOffset AssignedAtUtc) -> void
+Callora.Administration.Api.WorkspaceMemberRolesApiResponse
+Callora.Administration.Api.WorkspaceMemberRolesApiResponse.<Clone>$() -> Callora.Administration.Api.WorkspaceMemberRolesApiResponse!
+Callora.Administration.Api.WorkspaceMemberRolesApiResponse.Deconstruct(out string! UserId, out System.Collections.Generic.IReadOnlyList<string!>! Roles) -> void
+Callora.Administration.Api.WorkspaceMemberRolesApiResponse.Equals(Callora.Administration.Api.WorkspaceMemberRolesApiResponse? other) -> bool
+Callora.Administration.Api.WorkspaceMemberRolesApiResponse.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Callora.Administration.Api.WorkspaceMemberRolesApiResponse.Roles.init -> void
+Callora.Administration.Api.WorkspaceMemberRolesApiResponse.UserId.get -> string!
+Callora.Administration.Api.WorkspaceMemberRolesApiResponse.UserId.init -> void
+Callora.Administration.Api.WorkspaceMemberRolesApiResponse.WorkspaceMemberRolesApiResponse(string! UserId, System.Collections.Generic.IReadOnlyList<string!>! Roles) -> void
 Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse
 Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse.<Clone>$() -> Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse!
 Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse.AssignedAtUtc.get -> System.DateTimeOffset?
@@ -1200,6 +1216,9 @@ override Callora.Administration.Api.SetBackendUserActivationApiRequest.ToString(
 override Callora.Administration.Api.SetEntitlementApiRequest.Equals(object? obj) -> bool
 override Callora.Administration.Api.SetEntitlementApiRequest.GetHashCode() -> int
 override Callora.Administration.Api.SetEntitlementApiRequest.ToString() -> string!
+override Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.Equals(object? obj) -> bool
+override Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.GetHashCode() -> int
+override Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.ToString() -> string!
 override Callora.Administration.Api.SurfaceApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.SurfaceApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.SurfaceApiResponse.ToString() -> string!
@@ -1278,6 +1297,9 @@ override Callora.Administration.Api.WorkspaceApiResponse.ToString() -> string!
 override Callora.Administration.Api.WorkspaceMemberApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.WorkspaceMemberApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.WorkspaceMemberApiResponse.ToString() -> string!
+override Callora.Administration.Api.WorkspaceMemberRolesApiResponse.Equals(object? obj) -> bool
+override Callora.Administration.Api.WorkspaceMemberRolesApiResponse.GetHashCode() -> int
+override Callora.Administration.Api.WorkspaceMemberRolesApiResponse.ToString() -> string!
 override Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse.Equals(object? obj) -> bool
 override Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse.GetHashCode() -> int
 override Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse.ToString() -> string!
@@ -1391,6 +1413,8 @@ static Callora.Administration.Api.SetBackendUserActivationApiRequest.operator !=
 static Callora.Administration.Api.SetBackendUserActivationApiRequest.operator ==(Callora.Administration.Api.SetBackendUserActivationApiRequest? left, Callora.Administration.Api.SetBackendUserActivationApiRequest? right) -> bool
 static Callora.Administration.Api.SetEntitlementApiRequest.operator !=(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
 static Callora.Administration.Api.SetEntitlementApiRequest.operator ==(Callora.Administration.Api.SetEntitlementApiRequest? left, Callora.Administration.Api.SetEntitlementApiRequest? right) -> bool
+static Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.operator !=(Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest? left, Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest? right) -> bool
+static Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest.operator ==(Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest? left, Callora.Administration.Api.SetWorkspaceMemberRolesApiRequest? right) -> bool
 static Callora.Administration.Api.SurfaceApiResponse.operator !=(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
 static Callora.Administration.Api.SurfaceApiResponse.operator ==(Callora.Administration.Api.SurfaceApiResponse? left, Callora.Administration.Api.SurfaceApiResponse? right) -> bool
 static Callora.Administration.Api.SurfaceEndpoints.MapSurfaceEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
@@ -1452,6 +1476,8 @@ static Callora.Administration.Api.WorkspaceApiResponse.operator ==(Callora.Admin
 static Callora.Administration.Api.WorkspaceEndpoints.MapWorkspaceEndpoints(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> void
 static Callora.Administration.Api.WorkspaceMemberApiResponse.operator !=(Callora.Administration.Api.WorkspaceMemberApiResponse? left, Callora.Administration.Api.WorkspaceMemberApiResponse? right) -> bool
 static Callora.Administration.Api.WorkspaceMemberApiResponse.operator ==(Callora.Administration.Api.WorkspaceMemberApiResponse? left, Callora.Administration.Api.WorkspaceMemberApiResponse? right) -> bool
+static Callora.Administration.Api.WorkspaceMemberRolesApiResponse.operator !=(Callora.Administration.Api.WorkspaceMemberRolesApiResponse? left, Callora.Administration.Api.WorkspaceMemberRolesApiResponse? right) -> bool
+static Callora.Administration.Api.WorkspaceMemberRolesApiResponse.operator ==(Callora.Administration.Api.WorkspaceMemberRolesApiResponse? left, Callora.Administration.Api.WorkspaceMemberRolesApiResponse? right) -> bool
 static Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse.operator !=(Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse? left, Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse? right) -> bool
 static Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse.operator ==(Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse? left, Callora.Administration.Api.WorkspaceThemeAssignmentApiResponse? right) -> bool
 static Callora.Administration.Api.WorkspaceThemeAssignmentUpsertApiRequest.operator !=(Callora.Administration.Api.WorkspaceThemeAssignmentUpsertApiRequest? left, Callora.Administration.Api.WorkspaceThemeAssignmentUpsertApiRequest? right) -> bool

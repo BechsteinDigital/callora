@@ -14,7 +14,14 @@ public sealed class WorkspaceMembership
 
     public BackendUser User { get; set; } = null!;
 
+    /// <summary>
+    /// Die Mitgliedsrolle: <c>admin</c> oder alles andere. Sie entscheidet den Boden, auf dem eine
+    /// Sitzung steht — was darüber hinaus gilt, steht in <see cref="Roles"/>.
+    /// </summary>
     public string Role { get; set; } = string.Empty;
+
+    /// <summary>Zusätzlich zugewiesene Rollen, beliebig viele.</summary>
+    public ICollection<WorkspaceMembershipRole> Roles { get; set; } = new List<WorkspaceMembershipRole>();
 
     public DateTimeOffset AssignedAtUtc { get; set; }
 }
