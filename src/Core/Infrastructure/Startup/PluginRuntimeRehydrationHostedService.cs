@@ -1,6 +1,7 @@
 using Callora.Core.Application.Lifecycle;
 using Callora.Core.Application.Persistence;
 using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Options;
 using Callora.Core.Application.Plugins.Contracts;
 using Callora.Core.Domain.Plugins;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,13 +12,30 @@ namespace Callora.Core.Infrastructure.Startup;
 
 /// <summary>
 /// Reconstitutes runtime plugin state from the database on startup: a plugin is
-/// runtime-loaded only when the DB records it as installed, and activated only when
+/// runtime-loaded only when the DB records it as installed, and activated when
 /// the DB records it as active (REV2 §3.1) — directory presence alone does nothing.
 /// Activation runs in dependency order (REV2 §5.1) so a plugin's required
 /// capabilities are provided before it starts.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>Und wenn <c>AutoActivateInstalledPlugins</c> gesetzt ist, auch für den Zustand
+/// <see cref="PluginInstallationState.Installed"/>.</b> Ohne das war „installiert" eine Falltür: Eine
+/// gescheiterte Aktualisierung lässt die Zeile dort zurück, und danach aktivierte sie niemand mehr —
+/// weder diese Phase, die nur <c>Active</c> ansieht, noch die Discovery, deren Auto-Aktivierung nur für
+/// neu gefundene Plugins gilt. Das Plugin lud bei jedem Start, seine Routen antworteten mit 404, und die
+/// einzige Spur war eine Warnung von vor Tagen. Ein einmaliger Aussetzer wurde so dauerhaft.
+/// </para>
+/// <para>
+/// <see cref="PluginInstallationState.Inactive"/> bleibt ausdrücklich außen vor: Das ist die
+/// Entscheidung eines Betreibers, ein Plugin abzuschalten, und sie beim nächsten Start zurückzudrehen
+/// wäre schlimmer als der Fehler, den das hier behebt. <c>Installed</c> heißt „noch nie aktiviert oder
+/// durch einen Fehlschlag zurückgestuft" — genau das, was die Option verspricht zu aktivieren.
+/// </para>
+/// </remarks>
 public sealed class PluginRuntimeRehydrationHostedService(
     IServiceProvider services,
+    CalloraHostingOptions hostingOptions,
     ILogger<PluginRuntimeRehydrationHostedService> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -71,7 +89,7 @@ public sealed class PluginRuntimeRehydrationHostedService(
         // Phase 2: activate the desired-active plugins in dependency order (REV2 §5.1),
         // so a plugin's required capabilities are provided before it starts.
         var active = installations
-            .Where(installation => installation.State == PluginInstallationState.Active
+            .Where(installation => ShouldActivate(installation.State)
                 && available.Contains(installation.PluginId))
             .Select(installation => (installation.PluginId, installation.AssemblyPath))
             .ToList();
@@ -98,6 +116,15 @@ public sealed class PluginRuntimeRehydrationHostedService(
             }
         }
     }
+
+    private bool ShouldActivate(PluginInstallationState state) => state switch
+    {
+        PluginInstallationState.Active => true,
+        // Die Falltür, siehe oben. Nur mit der Option, damit ein Aufbau, der Aktivierung ausdrücklich
+        // als bewusste Handlung führt, unverändert bleibt.
+        PluginInstallationState.Installed => hostingOptions.AutoActivateInstalledPlugins,
+        _ => false,
+    };
 
     private static bool IsLoaded(IPluginLifecycleService lifecycleService, string pluginId)
         => lifecycleService.Plugins.Any(plugin =>

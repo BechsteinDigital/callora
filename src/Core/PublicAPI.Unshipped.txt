@@ -5852,7 +5852,7 @@ Callora.Core.Infrastructure.Startup.PluginRoleProvisioningHostedService.PluginRo
 Callora.Core.Infrastructure.Startup.PluginRoleProvisioningHostedService.StartAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Startup.PluginRoleProvisioningHostedService.StopAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Startup.PluginRuntimeRehydrationHostedService
-Callora.Core.Infrastructure.Startup.PluginRuntimeRehydrationHostedService.PluginRuntimeRehydrationHostedService(System.IServiceProvider! services, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Startup.PluginRuntimeRehydrationHostedService!>! logger) -> void
+Callora.Core.Infrastructure.Startup.PluginRuntimeRehydrationHostedService.PluginRuntimeRehydrationHostedService(System.IServiceProvider! services, Callora.Core.Application.Options.CalloraHostingOptions! hostingOptions, Microsoft.Extensions.Logging.ILogger<Callora.Core.Infrastructure.Startup.PluginRuntimeRehydrationHostedService!>! logger) -> void
 Callora.Core.Infrastructure.Startup.PluginRuntimeRehydrationHostedService.StartAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Startup.PluginRuntimeRehydrationHostedService.StopAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Callora.Core.Infrastructure.Startup.PluginUiAssetPublishHostedService
