@@ -16,4 +16,15 @@ public interface IPluginDeclaredPermissionCatalog
 {
     /// <summary>Every key declared by an installed plugin, de-duplicated.</summary>
     Task<IReadOnlyList<string>> ListAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The same keys, but grouped by the plugin that declared them.
+    /// </summary>
+    /// <remarks>
+    /// Provisioning a role needs to know whose keys these are, and the flat list has thrown that away by
+    /// the time it is returned. Two methods over one read rather than two readers: a second traversal of
+    /// the same manifests is a second answer that can disagree with the first.
+    /// </remarks>
+    Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> ListByPluginAsync(
+        CancellationToken cancellationToken = default);
 }

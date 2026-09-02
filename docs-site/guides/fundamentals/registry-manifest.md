@@ -124,6 +124,35 @@ A key breaking either rule makes the **whole manifest invalid**
 back in the state this exists to fix: installed, serving `403`, with the reason two layers
 down. Repeating the same key is collapsed, not refused — untidy, not dangerous.
 
+### The host builds a role out of them
+
+Declaring keys makes them **grantable**; it does not put them anywhere. Until now that left the last
+step to the operator: install a plugin, open role administration, and click its keys together into a
+role by hand. Miss it, and the plugin is installed, its screens answer `403`, and the only account that
+can use it is the super admin — with nothing anywhere saying why.
+
+So an installation now brings a role with it. For every plugin that has permissions at all, the host
+creates one role named `<pluginId>.admin` holding all of them — from the manifest **and** from
+`IHostAdminApiExtensionContributor.PermissionKeys`, because which of the two a plugin uses is its own
+build decision and not something an operator should have to know.
+
+It is created once and then never touched again. Take a key out, add another, rename the role — that
+survives every restart, because a tuning decision silently reverted at the next start is worse than a
+missing permission: the missing one is visible and the reverted one is not. What a plugin update
+declares on top lands in a log line, not in the role.
+
+The role is found again by the pair `(ProvisionedByPluginId, ProvisionedAs)` rather than by its name,
+so renaming it does not produce a second one beside it. A role a human already created under the same
+name is left alone and reported — it belongs to them, and adopting it would mean treating their keys as
+the plugin's.
+
+::: warning A role alone is not yet reach
+A workspace-scoped session carries the permissions in `WorkspaceRolePermissions.ForRole` and nothing
+else — a hardcoded core-key list. A provisioned role therefore takes effect for platform-scoped
+operators, and a workspace administrator still cannot hold a plugin key. That gap is older than this
+mechanism and is not closed by it.
+:::
+
 ::: warning The eight required fields
 `JsonPluginPackageRegistryReader` rejects the manifest with a clear error if any of
 `contractVersion`, `schemaVersion`, `name`, `pluginId`, `version`, `assemblyFileName`, or
