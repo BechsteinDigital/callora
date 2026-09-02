@@ -2968,6 +2968,8 @@ Callora.Core.Application.Security.IBackendUserStore.UpsertCredentialsAsync(strin
 Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog
 Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
 Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog.ListByPluginAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<string!>!>!>!
+Callora.Core.Application.Security.IPluginPermissionMap
+Callora.Core.Application.Security.IPluginPermissionMap.ByPluginAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<string!>!>!>!
 Callora.Core.Application.Security.IPluginRoleTemplateSource
 Callora.Core.Application.Security.IPluginRoleTemplateSource.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Security.PluginRoleTemplate!>!>!
 Callora.Core.Application.Security.IUserDataSubjectService
@@ -2978,12 +2980,15 @@ Callora.Core.Application.Security.IWorkspaceScopeContext.IsWorkspaceScoped.get -
 Callora.Core.Application.Security.IWorkspaceScopeContext.WorkspaceKey.get -> string?
 Callora.Core.Application.Security.PluginAdminRoleTemplates
 Callora.Core.Application.Security.PluginAdminRoleTemplates.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Security.PluginRoleTemplate!>!>!
-Callora.Core.Application.Security.PluginAdminRoleTemplates.PluginAdminRoleTemplates(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog! declaredPermissions) -> void
+Callora.Core.Application.Security.PluginAdminRoleTemplates.PluginAdminRoleTemplates(Callora.Core.Application.Security.IPluginPermissionMap! permissions) -> void
 Callora.Core.Application.Security.PluginDeclaredPermissionCatalog
 Callora.Core.Application.Security.PluginDeclaredPermissionCatalog.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
 Callora.Core.Application.Security.PluginDeclaredPermissionCatalog.ListByPluginAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<string!>!>!>!
 Callora.Core.Application.Security.PluginDeclaredPermissionCatalog.PluginDeclaredPermissionCatalog(Callora.Core.Application.Persistence.IPluginInstallationRepository! installations, Callora.Core.Application.Plugins.IPluginPackageRegistryReader? registryReader = null) -> void
 Callora.Core.Application.Security.PluginPermissionKeyPolicy
+Callora.Core.Application.Security.PluginPermissionMap
+Callora.Core.Application.Security.PluginPermissionMap.ByPluginAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyList<string!>!>!>!
+Callora.Core.Application.Security.PluginPermissionMap.PluginPermissionMap(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, Callora.Core.Application.Security.IPluginDeclaredPermissionCatalog! declaredPermissions) -> void
 Callora.Core.Application.Security.PluginRoleTemplate
 Callora.Core.Application.Security.PluginRoleTemplate.<Clone>$() -> Callora.Core.Application.Security.PluginRoleTemplate!
 Callora.Core.Application.Security.PluginRoleTemplate.Deconstruct(out string! PluginId, out string! Slug, out string! RoleName, out System.Collections.Generic.IReadOnlyList<string!>! PermissionKeys) -> void
@@ -3049,6 +3054,9 @@ Callora.Core.Application.Security.UserDataExportMembership.Role.init -> void
 Callora.Core.Application.Security.UserDataExportMembership.UserDataExportMembership(string! WorkspaceKey, string! Role, System.DateTimeOffset AssignedAtUtc) -> void
 Callora.Core.Application.Security.UserDataExportMembership.WorkspaceKey.get -> string!
 Callora.Core.Application.Security.UserDataExportMembership.WorkspaceKey.init -> void
+Callora.Core.Application.Security.WorkspacePluginPermissions
+Callora.Core.Application.Security.WorkspacePluginPermissions.ForWorkspaceAsync(string? workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Callora.Core.Application.Security.WorkspacePluginPermissions.WorkspacePluginPermissions(Callora.Core.Application.Plugins.IWorkspacePluginActivationReader! activations, Callora.Core.Application.Security.IPluginPermissionMap! permissions) -> void
 Callora.Core.Application.Security.WorkspaceRolePermissions
 Callora.Core.Application.Security.WorkspaceScopeEvaluator
 Callora.Core.Application.Snippets.CachedSnippetResolver
@@ -6999,7 +7007,7 @@ static Callora.Core.Application.Security.AdminContextView.operator !=(Callora.Co
 static Callora.Core.Application.Security.AdminContextView.operator ==(Callora.Core.Application.Security.AdminContextView? left, Callora.Core.Application.Security.AdminContextView? right) -> bool
 static Callora.Core.Application.Security.AdminLoginGrant.operator !=(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
 static Callora.Core.Application.Security.AdminLoginGrant.operator ==(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
-static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!
+static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), Callora.Core.Application.Security.WorkspacePluginPermissions? workspacePlugins = null) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!
 static Callora.Core.Application.Security.BackendPasswordPolicy.IsAcceptable(string? password) -> bool
 static Callora.Core.Application.Security.BackendPasswordPolicy.Validate(string? password) -> string?
 static Callora.Core.Application.Security.BackendPermissionInventory.All(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, System.Collections.Generic.IEnumerable<string!>? declaredByManifest = null) -> System.Collections.Generic.IReadOnlyList<string!>!
@@ -7019,6 +7027,7 @@ static Callora.Core.Application.Security.Events.UserBusinessEvent.Created(string
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Deleted(string! externalId) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.Events.UserBusinessEvent.Updated(string! externalId, string? email, string? displayName) -> Callora.Core.Application.Security.Events.UserBusinessEvent!
 static Callora.Core.Application.Security.PluginPermissionKeyPolicy.IsDeclarable(string! pluginId, string! permissionKey, out string! reason) -> bool
+static Callora.Core.Application.Security.PluginPermissionKeyPolicy.IsInsideNamespace(string! pluginId, string! permissionKey, out string! reason) -> bool
 static Callora.Core.Application.Security.PluginPermissionKeyPolicy.ReservedFunctions.get -> System.Collections.Generic.IReadOnlySet<string!>!
 static Callora.Core.Application.Security.PluginRoleTemplate.operator !=(Callora.Core.Application.Security.PluginRoleTemplate? left, Callora.Core.Application.Security.PluginRoleTemplate? right) -> bool
 static Callora.Core.Application.Security.PluginRoleTemplate.operator ==(Callora.Core.Application.Security.PluginRoleTemplate? left, Callora.Core.Application.Security.PluginRoleTemplate? right) -> bool

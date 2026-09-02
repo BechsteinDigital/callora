@@ -146,11 +146,11 @@ so renaming it does not produce a second one beside it. A role a human already c
 name is left alone and reported — it belongs to them, and adopting it would mean treating their keys as
 the plugin's.
 
-::: warning A role alone is not yet reach
-A workspace-scoped session carries the permissions in `WorkspaceRolePermissions.ForRole` and nothing
-else — a hardcoded core-key list. A provisioned role therefore takes effect for platform-scoped
-operators, and a workspace administrator still cannot hold a plugin key. That gap is older than this
-mechanism and is not closed by it.
+::: info Who the role is for
+The provisioned role is carried by **platform-scoped operators** — the ones who work across
+workspaces. A **workspace administrator** needs no role for this: their session picks up the keys of
+the plugins activated in their own workspace, filtered by activation. See
+[permissions](/reference/permissions#a-workspace-administrator-and-the-plugins-of-their-workspace).
 :::
 
 ::: warning The eight required fields

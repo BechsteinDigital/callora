@@ -84,6 +84,37 @@ manifest invalid. The namespace rule is the important one: declaration is self-s
 without it a plugin could declare `user.delete` and be granted the host's permission by an
 operator who believed they were granting the plugin's own.
 
+The two rules are separable, and the split matters. `PluginPermissionKeyPolicy.IsInsideNamespace`
+holds the boundary — reserved host namespaces, lower case, own prefix — and is applied to **both**
+supply paths wherever keys are attributed to a plugin. The action vocabulary is applied to the
+manifest only: keys contributed through `IHostAdminApiExtensionContributor` never passed it and never
+had to, and `composer.layout.publish` and `communication.accounts.manage` are in service today.
+
+### A workspace administrator and the plugins of their workspace
+
+A workspace-scoped session used to carry `WorkspaceRolePermissions.ForRole` and nothing else — a
+fixed list of core keys — and `BackendClaimsTransformation` deliberately returns early for workspace
+scope, so an RBAC role could not supply one either. A plugin key could therefore reach a workspace
+session on **no** path: every plugin screen was empty for everybody but the super admin, whatever role
+they held. Enforcement worked; granting was impossible.
+
+The `admin` workspace role now additionally carries the keys of the plugins **activated in that
+workspace**. Two boundaries make that defensible, and both are load-bearing:
+
+- **Activation, not installation.** A plugin sitting on the machine but inactive in this workspace
+  supplies nothing. A workspace administrator gets their workspace's plugins, never the
+  installation's.
+- **The plugin's own namespace.** Keys are attributed per plugin and filtered to `<pluginId>.…`
+  before they reach a session. The manifest path has always refused a foreign key; the contributor
+  path never had that boundary, and without it a plugin could have written `user.delete` — a key that
+  reaches past the workspace — into a workspace administrator's session.
+
+A **member** keeps the read-only floor. Finer cuts than "administrator" need roles a plugin names for
+itself; guessing a split here would look considered and therefore go unchecked.
+
+Permissions live in the token, so a plugin activated after sign-in takes effect at the next one — the
+same as any other permission change.
+
 ### One evaluator, three call sites
 
 All three enforcement paths — the minimal-API `RequirePermission(...)`, the MVC

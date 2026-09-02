@@ -25,13 +25,18 @@ public static class AdminLoginResolver
     /// targeting <paramref name="workspaceKey"/>. Returns <c>null</c> when the
     /// user is neither a platform operator nor a member of a named workspace.
     /// </summary>
+    /// <param name="workspacePlugins">
+    /// Was die Plugins dieses Workspace an Berechtigungen mitbringen. Ohne diesen Parameter bleibt es
+    /// beim festen Kern-Satz — das Verhalten von vorher, für jeden von Hand zusammengesetzten Aufbau.
+    /// </param>
     public static async Task<AdminLoginGrant?> ResolveAsync(
         BackendUser user,
         string? workspaceKey,
         IBackendUserStore userStore,
         IBackendRbacStore rbacStore,
         BackendHostOptions options,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        WorkspacePluginPermissions? workspacePlugins = null)
     {
         ArgumentNullException.ThrowIfNull(user);
         ArgumentNullException.ThrowIfNull(userStore);
@@ -83,7 +88,61 @@ public static class AdminLoginResolver
             Scope: BackendAuthScopes.Workspace,
             WorkspaceKey: trimmedKey,
             Role: workspaceRole,
-            Permissions: WorkspaceRolePermissions.ForRole(workspaceRole));
+            Permissions: await WorkspacePermissionsAsync(
+                    workspaceRole, trimmedKey, workspacePlugins, cancellationToken)
+                .ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// Was eine Workspace-Sitzung tragen darf: der feste Kern-Satz, und für den Administrator die
+    /// Berechtigungen der Plugins, die in diesem Workspace aktiv sind.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Warum das überhaupt nötig war.</b> Eine Workspace-Sitzung bekam ihre Berechtigungen
+    /// ausschließlich aus <see cref="WorkspaceRolePermissions"/> — einer festen Liste von
+    /// Kern-Schlüsseln —, und die Projektion aus RBAC steigt für Workspace-Scope bewusst sofort aus. Ein
+    /// Plugin-Schlüssel konnte damit auf keinem Weg in eine Workspace-Sitzung gelangen: Jede
+    /// Plugin-Oberfläche war für alle außer dem Super-Admin leer, egal welche Rolle jemand hatte. Die
+    /// Absicherung wirkte, die Vergabe war unmöglich.
+    /// </para>
+    /// <para>
+    /// <b>Nur der Administrator, und nur seine Plugins.</b> Ein Mitglied behält den Leseboden. Der
+    /// Administrator verwaltet seinen Workspace ohnehin vollständig — Abläufe, Medien, Webhooks,
+    /// Mitgliedschaften —, und die Telefonanlage seines Workspace ist von derselben Art. Was er
+    /// <em>nicht</em> bekommt, sind die Plugins anderer Workspaces: Gefiltert wird nach Aktivierung, nicht
+    /// nach Installation.
+    /// </para>
+    /// <para>
+    /// <b>Der Ausstieg in <c>BackendClaimsTransformation</c> bleibt, wie er ist.</b> Er verhindert, dass
+    /// eine gleichnamige Plattformrolle auf eine Mitgliedschaft durchschlägt, und genau das soll er
+    /// weiter tun. Die Erweiterung hier führt keine Rolle nach; sie erweitert den Satz, den die
+    /// Mitgliedschaft ohnehin trägt, um das, was der Workspace an Plugins hat.
+    /// </para>
+    /// <para>
+    /// Die Berechtigungen stehen im Token. Ein Plugin, das nach der Anmeldung aktiviert wird, wirkt
+    /// deshalb erst bei der nächsten — dasselbe gilt für jede andere Rechteänderung, und der Weg dorthin
+    /// ist derselbe: neu anmelden.
+    /// </para>
+    /// </remarks>
+    private static async Task<IReadOnlyList<string>> WorkspacePermissionsAsync(
+        string workspaceRole,
+        string workspaceKey,
+        WorkspacePluginPermissions? workspacePlugins,
+        CancellationToken cancellationToken)
+    {
+        var core = WorkspaceRolePermissions.ForRole(workspaceRole);
+        if (workspacePlugins is null
+            || !string.Equals(workspaceRole.Trim(), BackendRoles.Admin, StringComparison.OrdinalIgnoreCase))
+        {
+            return core;
+        }
+
+        var fromPlugins = await workspacePlugins
+            .ForWorkspaceAsync(workspaceKey, cancellationToken)
+            .ConfigureAwait(false);
+
+        return fromPlugins.Count == 0 ? core : [.. core, .. fromPlugins];
     }
 
     private static bool IsPlatformOperatorRole(BackendHostOptions options, string? role)
