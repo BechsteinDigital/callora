@@ -49,6 +49,8 @@ public sealed class HostPersistenceDbContext(
 
     public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
 
+    public DbSet<WorkspaceMembershipRole> WorkspaceMembershipRoles => Set<WorkspaceMembershipRole>();
+
     public DbSet<Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition> WorkspaceTemplateDefinitions =>
         Set<Callora.Core.Domain.Extensions.WorkspaceTemplateDefinition>();
 

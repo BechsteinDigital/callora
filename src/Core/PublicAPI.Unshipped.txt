@@ -2975,6 +2975,10 @@ Callora.Core.Application.Security.IPluginRoleTemplateSource.ListAsync(System.Thr
 Callora.Core.Application.Security.IUserDataSubjectService
 Callora.Core.Application.Security.IUserDataSubjectService.EraseAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 Callora.Core.Application.Security.IUserDataSubjectService.ExportAsync(string! externalId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.UserDataExport?>!
+Callora.Core.Application.Security.IWorkspaceMembershipRoleStore
+Callora.Core.Application.Security.IWorkspaceMembershipRoleStore.ListRolesAsync(string! workspaceKey, string! userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Callora.Core.Application.Security.IWorkspaceMembershipRoleStore.ListUsersWithRoleAsync(string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Callora.Core.Application.Security.IWorkspaceMembershipRoleStore.ReplaceRolesAsync(string! workspaceKey, string! userId, System.Collections.Generic.IReadOnlyCollection<string!>! roles, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>?>!
 Callora.Core.Application.Security.IWorkspaceScopeContext
 Callora.Core.Application.Security.IWorkspaceScopeContext.IsWorkspaceScoped.get -> bool
 Callora.Core.Application.Security.IWorkspaceScopeContext.WorkspaceKey.get -> string?
@@ -3059,6 +3063,9 @@ Callora.Core.Application.Security.WorkspacePluginPermissions.ForWorkspaceAsync(s
 Callora.Core.Application.Security.WorkspacePluginPermissions.WorkspacePluginPermissions(Callora.Core.Application.Plugins.IWorkspacePluginActivationReader! activations, Callora.Core.Application.Security.IPluginPermissionMap! permissions) -> void
 Callora.Core.Application.Security.WorkspaceRolePermissions
 Callora.Core.Application.Security.WorkspaceScopeEvaluator
+Callora.Core.Application.Security.WorkspaceSessionPermissions
+Callora.Core.Application.Security.WorkspaceSessionPermissions.ForAsync(string! workspaceKey, string! userId, string? membershipRole, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Callora.Core.Application.Security.WorkspaceSessionPermissions.WorkspaceSessionPermissions(Callora.Core.Application.Security.IWorkspaceMembershipRoleStore! memberships, Callora.Core.Application.Security.IBackendRbacStore! rbac, Callora.Core.Application.Security.WorkspacePluginPermissions! workspacePlugins) -> void
 Callora.Core.Application.Snippets.CachedSnippetResolver
 Callora.Core.Application.Snippets.CachedSnippetResolver.CachedSnippetResolver(Microsoft.Extensions.Caching.Memory.IMemoryCache! cache, Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory) -> void
 Callora.Core.Application.Snippets.CachedSnippetResolver.InvalidateAll() -> void
@@ -4978,6 +4985,8 @@ Callora.Core.Domain.Workspaces.WorkspaceMembership.Id.get -> System.Guid
 Callora.Core.Domain.Workspaces.WorkspaceMembership.Id.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceMembership.Role.get -> string!
 Callora.Core.Domain.Workspaces.WorkspaceMembership.Role.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceMembership.Roles.get -> System.Collections.Generic.ICollection<Callora.Core.Domain.Workspaces.WorkspaceMembershipRole!>!
+Callora.Core.Domain.Workspaces.WorkspaceMembership.Roles.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceMembership.User.get -> Callora.Core.Domain.Security.BackendUser!
 Callora.Core.Domain.Workspaces.WorkspaceMembership.User.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceMembership.UserId.get -> System.Guid
@@ -4987,6 +4996,20 @@ Callora.Core.Domain.Workspaces.WorkspaceMembership.Workspace.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceMembership.WorkspaceId.get -> System.Guid
 Callora.Core.Domain.Workspaces.WorkspaceMembership.WorkspaceId.set -> void
 Callora.Core.Domain.Workspaces.WorkspaceMembership.WorkspaceMembership() -> void
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.AssignedAtUtc.get -> System.DateTimeOffset
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.AssignedAtUtc.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.Id.get -> System.Guid
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.Id.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.Membership.get -> Callora.Core.Domain.Workspaces.WorkspaceMembership!
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.Membership.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.MembershipId.get -> System.Guid
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.MembershipId.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.Role.get -> Callora.Core.Domain.Security.BackendRbacRole!
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.Role.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.RoleId.get -> System.Guid
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.RoleId.set -> void
+Callora.Core.Domain.Workspaces.WorkspaceMembershipRole.WorkspaceMembershipRole() -> void
 Callora.Core.Domain.Workspaces.WorkspaceSurface
 Callora.Core.Domain.Workspaces.WorkspaceSurface.Authentication.get -> Callora.Core.Domain.Workspaces.SurfaceAuthentication
 Callora.Core.Domain.Workspaces.WorkspaceSurface.Authentication.set -> void
@@ -5291,6 +5314,9 @@ Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceEntityTypeConfig
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceMembershipEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceMembershipEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Workspaces.WorkspaceMembership!>! builder) -> void
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceMembershipEntityTypeConfiguration.WorkspaceMembershipEntityTypeConfiguration() -> void
+Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceMembershipRoleEntityTypeConfiguration
+Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceMembershipRoleEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Workspaces.WorkspaceMembershipRole!>! builder) -> void
+Callora.Core.Infrastructure.Persistence.Configurations.WorkspaceMembershipRoleEntityTypeConfiguration.WorkspaceMembershipRoleEntityTypeConfiguration() -> void
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspacePluginActivationEntityTypeConfiguration
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspacePluginActivationEntityTypeConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Callora.Core.Domain.Plugins.WorkspacePluginActivation!>! builder) -> void
 Callora.Core.Infrastructure.Persistence.Configurations.WorkspacePluginActivationEntityTypeConfiguration.WorkspacePluginActivationEntityTypeConfiguration() -> void
@@ -5490,6 +5516,11 @@ Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.ResolveSurfac
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.UpsertAsync(string! tenantKey, string! workspaceKey, string! displayName, string! workspaceType, bool isActive, string? defaultSurfaceBaseUrl = null, string? publicHost = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceUpsertResult!>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.UpsertMemberAsync(string! workspaceKey, string! userExternalId, string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceMemberUpsertResult!>!
 Callora.Core.Infrastructure.Persistence.EfWorkspaceManagementStore.UpsertThemeAssignmentAsync(string! workspaceKey, string! themePluginId, string! themeVersion, string? assignedBy, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Callora.Core.Application.Workspaces.WorkspaceThemeAssignmentSnapshot?>!
+Callora.Core.Infrastructure.Persistence.EfWorkspaceMembershipRoleStore
+Callora.Core.Infrastructure.Persistence.EfWorkspaceMembershipRoleStore.EfWorkspaceMembershipRoleStore(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
+Callora.Core.Infrastructure.Persistence.EfWorkspaceMembershipRoleStore.ListRolesAsync(string! workspaceKey, string! userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Callora.Core.Infrastructure.Persistence.EfWorkspaceMembershipRoleStore.ListUsersWithRoleAsync(string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Callora.Core.Infrastructure.Persistence.EfWorkspaceMembershipRoleStore.ReplaceRolesAsync(string! workspaceKey, string! userId, System.Collections.Generic.IReadOnlyCollection<string!>! roles, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>?>!
 Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationReader
 Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationReader.EfWorkspacePluginActivationReader(Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext! dbContext) -> void
 Callora.Core.Infrastructure.Persistence.EfWorkspacePluginActivationReader.ListActivePluginIdsAsync(string! workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
@@ -5555,6 +5586,7 @@ Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SystemConfigDef
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.SystemConfigValues.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Configuration.SystemConfigValue!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.Tenants.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Tenants.Tenant!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WebhookSubscriptions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Webhooks.WebhookSubscription!>!
+Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspaceMembershipRoles.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Workspaces.WorkspaceMembershipRole!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspaceMemberships.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Workspaces.WorkspaceMembership!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspacePluginActivations.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Plugins.WorkspacePluginActivation!>!
 Callora.Core.Infrastructure.Persistence.HostPersistenceDbContext.WorkspaceSectionLayoutDefinitions.get -> Microsoft.EntityFrameworkCore.DbSet<Callora.Core.Domain.Extensions.WorkspaceSectionLayoutDefinition!>!
@@ -7007,7 +7039,7 @@ static Callora.Core.Application.Security.AdminContextView.operator !=(Callora.Co
 static Callora.Core.Application.Security.AdminContextView.operator ==(Callora.Core.Application.Security.AdminContextView? left, Callora.Core.Application.Security.AdminContextView? right) -> bool
 static Callora.Core.Application.Security.AdminLoginGrant.operator !=(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
 static Callora.Core.Application.Security.AdminLoginGrant.operator ==(Callora.Core.Application.Security.AdminLoginGrant? left, Callora.Core.Application.Security.AdminLoginGrant? right) -> bool
-static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), Callora.Core.Application.Security.WorkspacePluginPermissions? workspacePlugins = null) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!
+static Callora.Core.Application.Security.AdminLoginResolver.ResolveAsync(Callora.Core.Domain.Security.BackendUser! user, string? workspaceKey, Callora.Core.Application.Security.IBackendUserStore! userStore, Callora.Core.Application.Security.IBackendRbacStore! rbacStore, Callora.Core.Application.Policies.BackendHostOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken), Callora.Core.Application.Security.WorkspaceSessionPermissions? sessionPermissions = null) -> System.Threading.Tasks.Task<Callora.Core.Application.Security.AdminLoginGrant?>!
 static Callora.Core.Application.Security.BackendPasswordPolicy.IsAcceptable(string? password) -> bool
 static Callora.Core.Application.Security.BackendPasswordPolicy.Validate(string? password) -> string?
 static Callora.Core.Application.Security.BackendPermissionInventory.All(Callora.Core.Application.Plugins.ICalloraPluginCatalog! pluginCatalog, System.Collections.Generic.IEnumerable<string!>? declaredByManifest = null) -> System.Collections.Generic.IReadOnlyList<string!>!
@@ -7041,6 +7073,7 @@ static Callora.Core.Application.Security.UserDataExportAuditEntry.operator ==(Ca
 static Callora.Core.Application.Security.UserDataExportMembership.operator !=(Callora.Core.Application.Security.UserDataExportMembership? left, Callora.Core.Application.Security.UserDataExportMembership? right) -> bool
 static Callora.Core.Application.Security.UserDataExportMembership.operator ==(Callora.Core.Application.Security.UserDataExportMembership? left, Callora.Core.Application.Security.UserDataExportMembership? right) -> bool
 static Callora.Core.Application.Security.WorkspaceRolePermissions.ForRole(string? workspaceRole) -> System.Collections.Generic.IReadOnlyList<string!>!
+static Callora.Core.Application.Security.WorkspaceRolePermissions.WorkspaceGrantable.get -> System.Collections.Generic.IReadOnlySet<string!>!
 static Callora.Core.Application.Security.WorkspaceScopeEvaluator.HasWorkspaceAccess(System.Security.Claims.ClaimsPrincipal! user, string? requestedWorkspaceKey) -> bool
 static Callora.Core.Application.Security.WorkspaceScopeEvaluator.IsOperator(System.Security.Claims.ClaimsPrincipal! user) -> bool
 static Callora.Core.Application.Snippets.SnippetAdminEntry.operator !=(Callora.Core.Application.Snippets.SnippetAdminEntry? left, Callora.Core.Application.Snippets.SnippetAdminEntry? right) -> bool

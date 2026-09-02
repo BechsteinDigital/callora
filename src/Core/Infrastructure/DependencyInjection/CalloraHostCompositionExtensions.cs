@@ -234,6 +234,10 @@ public static class CalloraHostCompositionExtensions
             Callora.Core.Application.Security.IPluginPermissionMap,
             Callora.Core.Application.Security.PluginPermissionMap>();
         builder.Services.AddScoped<Callora.Core.Application.Security.WorkspacePluginPermissions>();
+        builder.Services.AddScoped<
+            Callora.Core.Application.Security.IWorkspaceMembershipRoleStore,
+            Callora.Core.Infrastructure.Persistence.EfWorkspaceMembershipRoleStore>();
+        builder.Services.AddScoped<Callora.Core.Application.Security.WorkspaceSessionPermissions>();
         // Rollen, die eine Plugin-Installation nach sich zieht. Der Provisioner schreibt sie einmal
         // und fasst sie danach nie wieder an — siehe die Bemerkung dort.
         builder.Services.AddScoped<

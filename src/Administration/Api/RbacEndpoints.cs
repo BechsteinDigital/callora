@@ -58,6 +58,7 @@ public static class RbacEndpoints
             RbacRoleUpsertApiRequest request,
             [FromServices] IBackendRbacStore store,
             [FromServices] IBackendUserStore userStore,
+            [FromServices] IWorkspaceMembershipRoleStore? membershipRoles,
             CancellationToken cancellationToken) =>
         {
             var permissions = request.Functions
@@ -65,7 +66,8 @@ public static class RbacEndpoints
                 .ToArray();
 
             await store.UpsertRoleAsync(role, permissions, cancellationToken).ConfigureAwait(false);
-            await RevokeSessionsOfRoleMembersAsync(role, store, userStore, cancellationToken).ConfigureAwait(false);
+            await RevokeSessionsOfRoleMembersAsync(role, store, membershipRoles, userStore, cancellationToken)
+                .ConfigureAwait(false);
             return Results.Ok(new RbacRoleApiResponse(role, permissions));
         })
             .WithName("Rbac_Roles_Upsert")
@@ -75,10 +77,14 @@ public static class RbacEndpoints
             string role,
             [FromServices] IBackendRbacStore store,
             [FromServices] IBackendUserStore userStore,
+            [FromServices] IWorkspaceMembershipRoleStore? membershipRoles,
             CancellationToken cancellationToken) =>
         {
-            // Collect the members first — after removal the assignments are gone.
-            var members = await ResolveRoleMembersAsync(role, store, cancellationToken).ConfigureAwait(false);
+            // Collect the members first — after removal the assignments are gone. Das gilt jetzt
+            // doppelt: Die Zuweisungen je Mitgliedschaft hängen per Kaskade an der Rolle und
+            // verschwinden mit ihr.
+            var members = await ResolveRoleMembersAsync(role, store, membershipRoles, cancellationToken)
+                .ConfigureAwait(false);
             var removed = await store.RemoveRoleAsync(role, cancellationToken).ConfigureAwait(false);
             if (removed)
             {
@@ -148,16 +154,31 @@ public static class RbacEndpoints
     /// <summary>
     /// External ids of the accounts currently assigned <paramref name="role"/>.
     /// </summary>
+    /// <remarks>
+    /// Zwei Wege, dieselbe Rolle zu tragen: global über <c>backend_rbac_user_roles</c> und je
+    /// Mitgliedschaft über <c>workspace_membership_roles</c>. Nur den ersten zu sammeln hieße, dass
+    /// jemand, dessen Rechte sich gerade geändert haben, die alten bis zum Ablauf seiner Sitzung
+    /// behält — und zwar genau die Leute, für die die zweite Zuweisung erfunden wurde.
+    /// </remarks>
     private static async Task<IReadOnlyList<string>> ResolveRoleMembersAsync(
         string role,
         IBackendRbacStore store,
+        IWorkspaceMembershipRoleStore? membershipRoles,
         CancellationToken cancellationToken)
     {
         var assignments = await store.GetUserRolesAsync(cancellationToken).ConfigureAwait(false);
-        return assignments
+        var members = assignments
             .Where(x => string.Equals(x.Value, role, StringComparison.OrdinalIgnoreCase))
             .Select(x => x.Key)
-            .ToArray();
+            .ToHashSet(StringComparer.Ordinal);
+
+        if (membershipRoles is not null)
+        {
+            members.UnionWith(
+                await membershipRoles.ListUsersWithRoleAsync(role, cancellationToken).ConfigureAwait(false));
+        }
+
+        return [.. members];
     }
 
     /// <summary>
@@ -168,10 +189,12 @@ public static class RbacEndpoints
     private static async Task RevokeSessionsOfRoleMembersAsync(
         string role,
         IBackendRbacStore store,
+        IWorkspaceMembershipRoleStore? membershipRoles,
         IBackendUserStore userStore,
         CancellationToken cancellationToken)
     {
-        var members = await ResolveRoleMembersAsync(role, store, cancellationToken).ConfigureAwait(false);
+        var members = await ResolveRoleMembersAsync(role, store, membershipRoles, cancellationToken)
+            .ConfigureAwait(false);
         await RevokeSessionsAsync(members, userStore, cancellationToken).ConfigureAwait(false);
     }
 

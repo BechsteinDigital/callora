@@ -7,6 +7,7 @@ using Callora.Core.Application.Workspaces.Events;
 using Callora.Core.Domain.Workspaces;
 using Callora.Core.Infrastructure.Persistence;
 using Callora.Core.Infrastructure.Security;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace Callora.Administration.Api;
@@ -245,6 +246,90 @@ public static class WorkspaceEndpoints
                 BackendPermissionKeys.MembershipUpdate,
                 BackendPermissionKeys.WorkspaceUpdate);
 
+        // Rollen je Mitgliedschaft. Die Mitgliedsrolle darüber sagt „Administrator oder nicht"; hier
+        // steht alles, was feiner ist — „darf die Telefonanlage benutzen, aber nichts ändern" ist genau
+        // das, wofür es vorher keinen Ort gab.
+        //
+        // Dieselben Rollen wie global, kein zweites Rollensystem: Was eine Rolle enthält, steht in
+        // backend_rbac_roles, und was davon in DIESEM Workspace gilt, entscheidet die Anmeldung.
+        group.MapGet("/{workspaceKey}/members/{userId}/roles", async (
+            string workspaceKey,
+            string userId,
+            HttpContext httpContext,
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            // Ausdrücklich aus den Diensten: Minimal-APIs raten sonst „Body" für jeden Typ, den der
+            // Container beim Aufbau der Route nicht kennt — und in einem Testhost, der nur die Hälfte
+            // registriert, wird aus einer GET-Route eine, die einen Rumpf verlangt.
+            [FromServices] IWorkspaceMembershipRoleStore membershipRoles,
+            CancellationToken cancellationToken) =>
+        {
+            if (await ResolveWorkspaceAsync(workspaceKey, httpContext, hostOptions, workspaceStore, cancellationToken)
+                .ConfigureAwait(false) is { } problem)
+            {
+                return problem;
+            }
+
+            var roles = await membershipRoles
+                .ListRolesAsync(workspaceKey, userId, cancellationToken)
+                .ConfigureAwait(false);
+
+            return Results.Ok(new WorkspaceMemberRolesApiResponse(userId, roles));
+        }).WithName("Workspaces_Members_Roles_List")
+            .Produces<WorkspaceMemberRolesApiResponse>()
+            .RequireAnyPermission(
+                BackendPermissionKeys.MembershipRead,
+                BackendPermissionKeys.WorkspaceRead);
+
+        group.MapPut("/{workspaceKey}/members/{userId}/roles", async (
+            string workspaceKey,
+            string userId,
+            SetWorkspaceMemberRolesApiRequest request,
+            HttpContext httpContext,
+            BackendHostOptions hostOptions,
+            IWorkspaceManagementStore workspaceStore,
+            [FromServices] IWorkspaceMembershipRoleStore membershipRoles,
+            [FromServices] IBackendUserStore userStore,
+            CancellationToken cancellationToken) =>
+        {
+            if (await ResolveWorkspaceAsync(workspaceKey, httpContext, hostOptions, workspaceStore, cancellationToken)
+                .ConfigureAwait(false) is { } problem)
+            {
+                return problem;
+            }
+
+            // Eine Plattform-Rolle hier zuzuweisen bewirkt nichts — ihre Schlüssel werden bei der
+            // Anmeldung ohnehin auf das gefiltert, was im Workspace gelten darf. Trotzdem abgewiesen:
+            // Eine Zuweisung, die in der Oberfläche steht und nichts tut, ist eine Falle, und der
+            // Betreiber liest sie als „hat Operator-Rechte".
+            var reserved = (request.Roles ?? [])
+                .FirstOrDefault(role => ReservedMembershipRoles.IsReserved(role, hostOptions));
+            if (reserved is not null)
+            {
+                return ApiProblems.BadRequest(
+                    $"Role '{reserved}' is reserved for platform operators and cannot be assigned in a workspace.");
+            }
+
+            var stored = await membershipRoles
+                .ReplaceRolesAsync(workspaceKey, userId, request.Roles ?? [], cancellationToken)
+                .ConfigureAwait(false);
+
+            if (stored is null)
+            {
+                return ApiProblems.NotFound($"User '{userId}' is not a member of workspace '{workspaceKey}'.");
+            }
+
+            // Berechtigungen stehen im Token, nicht in der Datenbank: Ohne den Widerruf behielte
+            // jemand, dem eine Rolle gerade entzogen wurde, sie bis zum Ablauf seiner Sitzung.
+            await userStore.RevokeSessionsAsync(userId, cancellationToken).ConfigureAwait(false);
+
+            return Results.Ok(new WorkspaceMemberRolesApiResponse(userId, stored));
+        }).WithName("Workspaces_Members_Roles_Set")
+            .Produces<WorkspaceMemberRolesApiResponse>()
+            .RequireAnyPermission(
+                BackendPermissionKeys.MembershipUpdate,
+                BackendPermissionKeys.WorkspaceUpdate);
+
         group.MapDelete("/{workspaceKey}/members/{userId}", async (
             string workspaceKey,
             string userId,
@@ -323,5 +408,36 @@ public static class WorkspaceEndpoints
             member.DisplayName,
             member.Role,
             member.AssignedAtUtc);
+    }
+
+    /// <summary>
+    /// Die drei Prüfungen, die jede Mitglieder-Route zuerst macht, oder das Problem, das sie beendet.
+    /// </summary>
+    /// <remarks>
+    /// Zusammengefasst, weil sie zusammengehören und weil eine vergessene davon nicht auffällt: Die
+    /// Sichtbarkeitsprüfung fehlt, und die Route antwortet für jeden Workspace.
+    /// </remarks>
+    private static async Task<IResult?> ResolveWorkspaceAsync(
+        string workspaceKey,
+        HttpContext httpContext,
+        BackendHostOptions hostOptions,
+        IWorkspaceManagementStore workspaceStore,
+        CancellationToken cancellationToken)
+    {
+        if (!WorkspaceScopeEvaluator.HasWorkspaceAccess(httpContext.User, workspaceKey))
+        {
+            return ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(hostOptions.DefaultTenantKey))
+        {
+            return ApiProblems.BadRequest("Workspace host default tenant key is not configured.");
+        }
+
+        var workspace = await workspaceStore.GetAsync(workspaceKey, cancellationToken).ConfigureAwait(false);
+        return workspace is null ||
+            !string.Equals(workspace.TenantKey, hostOptions.DefaultTenantKey, StringComparison.OrdinalIgnoreCase)
+            ? ApiProblems.NotFound($"Workspace '{workspaceKey}' not found.")
+            : null;
     }
 }

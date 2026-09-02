@@ -1,5 +1,6 @@
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Security;
+using Microsoft.AspNetCore.Mvc;
 using Callora.Core.Infrastructure.Security;
 using System.Security.Claims;
 
@@ -120,10 +121,12 @@ public static class AuthEndpoints
         IBackendRbacStore rbacStore,
         HttpContext httpContext,
         CancellationToken cancellationToken,
-        // Optional aufgelöst: Ein Aufbau ohne Plugin-Persistenz (Tests, ein nackter Host) meldet
-        // weiterhin an, nur ohne die Plugin-Berechtigungen — statt an einem fehlenden Dienst zu
-        // scheitern, an dem eine Anmeldung nicht hängen sollte.
-        WorkspacePluginPermissions? workspacePlugins = null)
+        // Ausdrücklich aus den Diensten und ausdrücklich optional. Ohne [FromServices] rät eine
+        // Minimal-API „Body" für jeden Typ, den der Container beim Aufbau der Route nicht kennt — in
+        // einem Testhost, der nur die Hälfte registriert, verlangte die Anmeldung dann einen zweiten
+        // Rumpf. Optional, weil ein Aufbau ohne Plugin-Persistenz weiterhin anmelden soll, nur mit dem
+        // Kern-Satz: Eine Anmeldung darf nicht an einem Dienst hängen, der sie nicht braucht.
+        [FromServices] WorkspaceSessionPermissions? sessionPermissions = null)
     {
         var user = await userStore.AuthenticateAsync(login, password, cancellationToken).ConfigureAwait(false);
         if (user is null)
@@ -133,7 +136,7 @@ public static class AuthEndpoints
 
         var grant = await AdminLoginResolver
             .ResolveAsync(
-                user, workspaceKey, userStore, rbacStore, options, cancellationToken, workspacePlugins)
+                user, workspaceKey, userStore, rbacStore, options, cancellationToken, sessionPermissions)
             .ConfigureAwait(false);
         if (grant is null)
         {

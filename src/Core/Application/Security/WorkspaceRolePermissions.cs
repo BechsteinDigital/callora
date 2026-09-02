@@ -59,6 +59,19 @@ public static class WorkspaceRolePermissions
     /// full workspace-scoped set; every other (including unknown) role gets the
     /// read-only member floor — least privilege by default.
     /// </summary>
+    /// <summary>
+    /// Die Kern-Berechtigungen, die eine Workspace-Sitzung überhaupt tragen darf.
+    /// </summary>
+    /// <remarks>
+    /// Der Satz des Administrators ist per Definition die Obergrenze: Er ist das, was jemand innerhalb
+    /// eines Workspace können soll. Eine zugewiesene Rolle wird dagegen gefiltert — sonst brächte
+    /// <c>tenant.create</c> oder ein <c>*</c> aus einer globalen Rolle eine Workspace-Sitzung über ihre
+    /// Grenzen hinaus, und die Zuweisung wäre ein Weg, genau das zu tun, was der frühe Ausstieg in
+    /// <c>BackendClaimsTransformation</c> verhindert.
+    /// </remarks>
+    public static IReadOnlySet<string> WorkspaceGrantable { get; } =
+        AdminPermissions.ToHashSet(StringComparer.Ordinal);
+
     public static IReadOnlyList<string> ForRole(string? workspaceRole) =>
         string.Equals(workspaceRole?.Trim(), BackendRoles.Admin, StringComparison.OrdinalIgnoreCase)
             ? AdminPermissions
