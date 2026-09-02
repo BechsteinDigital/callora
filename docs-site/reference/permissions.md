@@ -118,7 +118,7 @@ code.
 A membership can now carry **any number of roles** — the same
 `backend_rbac_roles` the platform uses, assigned per workspace:
 
-```
+```text
 GET  /api/workspaces/{workspaceKey}/members/{userId}/roles   → { userId, roles: [...] }
 PUT  /api/workspaces/{workspaceKey}/members/{userId}/roles     { "roles": ["pbx.viewer"] }
 ```
