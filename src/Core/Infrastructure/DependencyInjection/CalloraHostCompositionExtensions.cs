@@ -251,6 +251,9 @@ public static class CalloraHostCompositionExtensions
         builder.Services.AddScoped<IPluginLifecycleService, PluginLifecycleService>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.WorkspaceAssignments.WorkspacePluginAssignmentService>();
         builder.Services.AddScoped<Callora.Core.Application.Security.WorkspaceReach>();
+        builder.Services.AddScoped<Callora.Core.Application.Security.PluginSelfService>();
+        builder.Services.AddScoped<Callora.Core.Application.Plugins.ITenantPluginDelegationStore,
+            Callora.Core.Infrastructure.Persistence.EfTenantPluginDelegationStore>();
         builder.Services.AddScoped<IWorkspacePluginActivationReader, EfWorkspacePluginActivationReader>();
         builder.Services.AddScoped<Callora.Core.Application.Plugins.IWorkspacePluginActivationStore, EfWorkspacePluginActivationStore>();
         // Runtime-capability registry: singleton state tracking health-derived conditional capabilities.

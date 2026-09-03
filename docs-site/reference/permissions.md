@@ -200,7 +200,7 @@ to everyone who may watch it.
 | `plugin.read` | `PluginRead` | `GET /api/plugins`, `/installed`, `/signature-report`, `/audit`, `/contracts/support`, `/contracts/compatibility`, `/security/trusted-signers`, `/workspaces/{wk}/entitlements/{pid}`, `/tenants/{tid}/entitlements/{pid}`; `GET /api/entitlements` |
 | `plugin.delete` | `PluginDelete` | `DELETE /api/plugins/{id}` |
 | `plugin.execute` | `PluginExecute` | `POST /api/plugins/{id}/activate`, `/deactivate`; `PUT /api/entitlements`; `POST /api/entitlements/sync` |
-| `plugin.assign` | `PluginAssign` | `PUT /api/workspaces/{workspaceKey}/plugins/{pluginId}` |
+| `plugin.assign` | `PluginAssign` | `GET`/`PUT /api/workspaces/{workspaceKey}/plugins`; `GET /api/tenants/{tenantKey}/plugins/delegations`, `PUT /api/tenants/{tenantKey}/plugins/{pluginId}/delegation` |
 | `config.read` | `ConfigRead` | `GET /api/config/definitions`, `GET /api/config/effective` |
 | `config.update` | `ConfigUpdate` | `PUT /api/config/values` |
 | `webhook.read` | `WebhookRead` | `GET /api/webhooks` |

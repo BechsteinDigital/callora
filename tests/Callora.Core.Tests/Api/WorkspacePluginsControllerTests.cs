@@ -93,7 +93,9 @@ public sealed class WorkspacePluginsControllerTests
         ApiKeys = ["unused"],
     };
 
-    private static async Task<WebApplication> CreateAppAsync(BackendHostOptions? options = null)
+    private static async Task<WebApplication> CreateAppAsync(
+        BackendHostOptions? options = null,
+        InMemoryTenantPluginDelegationStore? delegations = null)
     {
         options ??= CreateOptions();
         var workspaceStore = new InMemoryWorkspaceManagementStore();
@@ -111,6 +113,7 @@ public sealed class WorkspacePluginsControllerTests
             "Nachbar",
             "standard",
             isActive: true);
+        delegations ??= new InMemoryTenantPluginDelegationStore();
         var lifecycle = new ConfigurablePluginLifecycleService();
         lifecycle.Installations.Add(new PluginInstallationSnapshot(
             "videoconference",
@@ -137,6 +140,8 @@ public sealed class WorkspacePluginsControllerTests
             .AddApplicationPart(typeof(WorkspacePluginsController).Assembly);
         builder.Services.AddSingleton(assignmentService);
         builder.Services.AddSingleton(new WorkspaceReach(workspaceStore));
+        builder.Services.AddSingleton(delegations);
+        builder.Services.AddSingleton(new PluginSelfService(workspaceStore, delegations));
 
         var app = builder.Build();
         app.UseAuthentication();
@@ -190,6 +195,59 @@ public sealed class WorkspacePluginsControllerTests
         var response = await client.GetAsync("/api/workspaces/nachbar/plugins");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    /// <summary>
+    /// Der Workspace-Administrator bedient sich selbst — aber nur, wenn sein Mandant es abgegeben hat.
+    /// </summary>
+    /// <remarks>
+    /// Das ist die Schranke, die <c>plugin.assign</c> im Workspace-Satz tragbar macht. Ohne sie
+    /// hieße der Schlüssel: Jeder Workspace nimmt sich, was der Mandant lizenziert hat.
+    /// </remarks>
+    [Fact]
+    public async Task AWorkspaceAdmin_AssignsOnlyWhatTheTenantDelegated()
+    {
+        var options = CreateOptions();
+        var delegations = new InMemoryTenantPluginDelegationStore();
+        await using var app = await CreateAppAsync(options, delegations);
+        var client = app.GetTestClient();
+        Authenticate(client, CreateWorkspaceJwt(options, "acme"));
+
+        var before = await client.PutAsJsonAsync(
+            "/api/workspaces/acme/plugins/videoconference",
+            new SetWorkspacePluginAssignmentApiRequest { IsAssigned = true });
+
+        await delegations.SetAsync("tenant-a", "videoconference", true, updatedBy: "tenant-admin");
+
+        var after = await client.PutAsJsonAsync(
+            "/api/workspaces/acme/plugins/videoconference",
+            new SetWorkspacePluginAssignmentApiRequest { IsAssigned = true });
+
+        Assert.Equal(HttpStatusCode.Forbidden, before.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+    }
+
+    private static string CreateWorkspaceJwt(BackendHostOptions options, string workspaceKey)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.JwtSigningKey));
+        var descriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(
+                [
+                    new Claim("sub", "workspace-admin"),
+                    new Claim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Workspace),
+                    new Claim(BackendClaimTypes.WorkspaceKey, workspaceKey),
+                    .. WorkspaceRolePermissions
+                        .ForRole(BackendRoles.Admin)
+                        .Select(permission => new Claim(BackendClaimTypes.Permission, permission)),
+                ]),
+            Expires = DateTime.UtcNow.AddMinutes(30),
+            Issuer = options.JwtIssuer,
+            Audience = options.JwtAudience,
+            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256),
+        };
+        var tokenHandler = new JwtSecurityTokenHandler();
+        return tokenHandler.WriteToken(tokenHandler.CreateToken(descriptor));
     }
 
     private static string CreateTenantJwt(BackendHostOptions options, string tenantKey)

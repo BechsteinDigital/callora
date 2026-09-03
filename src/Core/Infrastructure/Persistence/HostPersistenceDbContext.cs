@@ -45,6 +45,9 @@ public sealed class HostPersistenceDbContext(
 
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
 
+    public DbSet<Callora.Core.Domain.Plugins.TenantPluginDelegation> TenantPluginDelegations =>
+        Set<Callora.Core.Domain.Plugins.TenantPluginDelegation>();
+
     public DbSet<WorkspaceEntity> Workspaces => Set<WorkspaceEntity>();
 
     public DbSet<WorkspaceSurface> WorkspaceSurfaces => Set<WorkspaceSurface>();
@@ -161,6 +164,12 @@ public sealed class HostPersistenceDbContext(
         modelBuilder.Entity<Callora.Core.Domain.Plugins.PluginDataDocument>()
             .HasQueryFilter(e =>
                 !TenantFilterActive && (!WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey));
+
+        // Trägt den TenantKey: die Entscheidung eines Mandanten über seine eigenen Workspaces.
+        // Für eine Workspace-Sitzung bleibt sie unsichtbar — sie ist über ihre Wirkung erfahrbar,
+        // nicht über die Tabelle.
+        modelBuilder.Entity<Callora.Core.Domain.Plugins.TenantPluginDelegation>()
+            .HasQueryFilter(e => !TenantFilterActive || e.TenantKey == TenantFilterKey);
 
         // Die Ebene selbst. Ohne Filter listete eine Mandanten-Sitzung mit workspace.read die
         // Workspaces JEDES Mandanten — die Tabelle kannte bisher nur Operatoren, die genau das
