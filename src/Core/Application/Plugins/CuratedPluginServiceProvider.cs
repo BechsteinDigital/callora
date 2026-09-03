@@ -22,7 +22,8 @@ namespace Callora.Core.Application.Plugins;
 internal sealed class CuratedPluginServiceProvider(
     IServiceProvider rootServices,
     string pluginId,
-    Func<Type, object?>? resolveExport = null) : IServiceProvider
+    Func<Type, object?>? resolveExport = null,
+    SharedContractAssemblyRegistry? sharedContracts = null) : IServiceProvider
 {
     public object? GetService(Type serviceType)
     {
@@ -91,7 +92,7 @@ internal sealed class CuratedPluginServiceProvider(
                 : null;
         }
 
-        if (!IsAllowed(serviceType))
+        if (!IsAllowed(serviceType, sharedContracts))
         {
             return null;
         }
@@ -101,7 +102,7 @@ internal sealed class CuratedPluginServiceProvider(
         return rootServices.GetService(serviceType) ?? resolveExport?.Invoke(serviceType);
     }
 
-    private static bool IsAllowed(Type serviceType)
+    private static bool IsAllowed(Type serviceType, SharedContractAssemblyRegistry? sharedContracts)
     {
         if (serviceType == typeof(ILoggerFactory))
         {
@@ -136,10 +137,25 @@ internal sealed class CuratedPluginServiceProvider(
             return false;
         }
 
-        return assemblyName.StartsWith("Callora.Contracts.", StringComparison.Ordinal) ||
-               // Foundation contract packages (e.g. Callora.Plugin.Communication.Abstractions)
-               // are unified in the shared load context and published cross-plugin.
-               (assemblyName.StartsWith("Callora.Plugin.", StringComparison.Ordinal) &&
-                assemblyName.EndsWith(".Abstractions", StringComparison.Ordinal));
+        if (assemblyName.StartsWith("Callora.Contracts.", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        // Und alles, was IRGENDEIN Plugin (oder der Host) als geteilten Vertrag deklariert hat.
+        //
+        // Hier stand eine Namensregel: Assemblies, die mit "Callora.Plugin." beginnen und auf
+        // ".Abstractions" enden. Die trug, solange alle Plugins aus einem Haus kamen — und sie fällt in
+        // dem Moment, in dem ein Fremdanbieter sein Paket "Acme.Crm.Contracts" nennt. Sein Plugin
+        // installiert, lädt, exportiert seinen Vertrag, und kein zweites Plugin kann ihn auflösen. Die
+        // Ablehnung hätte nichts mit Richtigkeit zu tun, sondern mit einer Konvention, die er nicht
+        // kennen konnte.
+        //
+        // Gefragt wird deshalb die Quelle, die es weiß: das Manifest. Was dort unter "contracts" steht,
+        // hat der Host ohnehin in den geteilten Ladekontext gehoben — die Auskunft lag die ganze Zeit
+        // vor, nur hat dieses Tor sie nicht benutzt. Damit ist die Namenswahl frei, und ADR-025 gilt
+        // auch an der vierten Stelle: kein Mechanismus leitet aus dem Namen ab, wer eine Assembly
+        // stellt.
+        return sharedContracts?.IsDeclaredContract(assemblyName) == true;
     }
 }
