@@ -133,7 +133,35 @@ so weit ist.
 
 ## 6. Offen
 
-**Die eine Zahl, die noch fehlt: Deutsch über 8 kHz Telefonie.** Alle veröffentlichten Werte
+### Erst prüfen, ob es überhaupt 8 kHz sein muss
+
+Hier stand, Telefonie sei 8 kHz. Das ist zu eng, und der Unterschied ist der größte Hebel auf die
+Erkennungsqualität, den es in diesem Stapel gibt — größer als die Modellwahl.
+
+**Das SDK kann mehr.** `CalloraVoipSdk.Audio.Abstractions.Processing.ActiveCodec` kennt `Pcmu`, `Pcma`,
+**`G722`** und **`Opus`**, `AudioCodecResolver.GetCodecSampleRate` gibt dafür 8 000, 16 000 und 48 000 Hz
+zurück, und `IAudioPayloadCodec.DecodeToPcm16` liefert PCM16 mit `PcmSampleRate` — also genau die Form,
+die eine Erkennung will, ohne Zwischenrechnung.
+
+**Communication verengt.** Sein `AudioCodec` hat zwei Werte, G.711 µ-law und A-law, und sagt es selbst:
+„v1: G.711 (µ-law/A-law) für SIP/PSTN". `AudioFormat` trägt Rate und Framelänge zwar schon als Felder,
+aber `BytesPerFrame` rechnet mit einem Byte je Sample und `SilenceByte` wirft für alles außer G.711. Die
+8 kHz sind damit eine Festlegung dieser Ebene, keine Eigenschaft des Mediums.
+
+**Und trotzdem hilft Breitband im Leitszenario womöglich nicht.** Ein vom Handy umgeleiteter Anruf ist
+schmalbandig, bevor er ankommt: Die Bandbegrenzung passiert auf dem Weg durchs Netz, und G.722 auf dem
+letzten Sprung trägt denselben 3,4-kHz-Inhalt in einem breiteren Behälter. Wo es wirklich zählt, ist
+**intern** — Nebenstelle zu Nebenstelle, Browser zu Browser berührt kein PSTN, und die Browser-Seite ist
+über WebRTC ohnehin schon Opus.
+
+Daraus folgt die Reihenfolge: **messen, was der Anschluss aushandelt**, bevor jemand Communication
+verbreitert. Liefert der Trunk für umgeleitete Anrufe G.722, lohnt die Erweiterung vor allem anderen.
+Liefert er G.711, ist sie für das Leitszenario Zierde — und die Erkennung muss mit Schmalband
+zurechtkommen.
+
+### Die Zahl, die dann noch fehlt
+
+**Deutsch über 8 kHz Telefonie.** Alle veröffentlichten Werte
 stammen von sauber vorgelesener Sprache bei 16 kHz (Deutsch 8,3 % WER bei 1,12 s Chunks,
 9,8 % bei 80 ms). Euer Material ist auf ~3,4 kHz bandbegrenzt, und Hochrechnen erfindet die
 fehlenden Frequenzen nicht. Wie weit die Werte auseinanderliegen, sagt kein Benchmark — und die
