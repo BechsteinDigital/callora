@@ -138,26 +138,50 @@ so weit ist.
 Hier stand, Telefonie sei 8 kHz. Das ist zu eng, und der Unterschied ist der größte Hebel auf die
 Erkennungsqualität, den es in diesem Stapel gibt — größer als die Modellwahl.
 
-**Das SDK kann mehr.** `CalloraVoipSdk.Audio.Abstractions.Processing.ActiveCodec` kennt `Pcmu`, `Pcma`,
-**`G722`** und **`Opus`**, `AudioCodecResolver.GetCodecSampleRate` gibt dafür 8 000, 16 000 und 48 000 Hz
-zurück, und `IAudioPayloadCodec.DecodeToPcm16` liefert PCM16 mit `PcmSampleRate` — also genau die Form,
-die eine Erkennung will, ohne Zwischenrechnung.
+**Das SDK bietet G.722 sogar von sich aus an, und zwar an erster Stelle.** Sein Standard-Angebot ist
+`G722, PCMA, PCMU, telephone-event` (`SdpUtilities.DefaultCodecs`), und die Präferenzordnung setzt
+`"G722" => 0` vor alles andere. Opus und G.729 sind opt-in. Dekodieren kann es `Pcmu`, `Pcma`, `G722`
+und `Opus`; `GetCodecSampleRate` antwortet mit 8 000, 16 000 und 48 000 Hz, und
+`IAudioPayloadCodec.DecodeToPcm16` liefert PCM16 mit `PcmSampleRate` — genau die Form, die eine
+Erkennung will.
 
-**Communication verengt.** Sein `AudioCodec` hat zwei Werte, G.711 µ-law und A-law, und sagt es selbst:
-„v1: G.711 (µ-law/A-law) für SIP/PSTN". `AudioFormat` trägt Rate und Framelänge zwar schon als Felder,
-aber `BytesPerFrame` rechnet mit einem Byte je Sample und `SilenceByte` wirft für alles außer G.711. Die
-8 kHz sind damit eine Festlegung dieser Ebene, keine Eigenschaft des Mediums.
+**Communication schaltet es ab.** Zwei Zeilen in `HeadlessVoipClientFactory`:
 
-**Und trotzdem hilft Breitband im Leitszenario womöglich nicht.** Ein vom Handy umgeleiteter Anruf ist
-schmalbandig, bevor er ankommt: Die Bandbegrenzung passiert auf dem Weg durchs Netz, und G.722 auf dem
-letzten Sprung trägt denselben 3,4-kHz-Inhalt in einem breiteren Behälter. Wo es wirklich zählt, ist
-**intern** — Nebenstelle zu Nebenstelle, Browser zu Browser berührt kein PSTN, und die Browser-Seite ist
-über WebRTC ohnehin schon Opus.
+```csharp
+PreferredAudioCodecs = ["PCMU", "PCMA"],
+BridgeAudioFormat = BridgeAudioFormat.Pcmu,
+```
 
-Daraus folgt die Reihenfolge: **messen, was der Anschluss aushandelt**, bevor jemand Communication
-verbreitert. Liefert der Trunk für umgeleitete Anrufe G.722, lohnt die Erweiterung vor allem anderen.
-Liefert er G.711, ist sie für das Leitszenario Zierde — und die Erkennung muss mit Schmalband
-zurechtkommen.
+`VoiceClientOptions` sagt auch, warum: „Codec and bridge format are deliberately NOT exposed: the media
+bridge (`SdkCallAudioStream`) is G.711 µ-law only, so they stay PCMU."
+
+**Und der Grund dahinter ist echt, nicht Bequemlichkeit.** Der µ-law-Tap des SDK
+(`BridgeAudioTranscoder`) rechnet immer über PCM16 bei 8 kHz und hat keinen Resampler; seine eigene
+Dokumentation schließt G.722 ausdrücklich aus: *„Wire codecs that are not 8 kHz-native (e.g. G.722 at
+16 kHz) are not bridged here — that needs a resampler and is out of scope"* (SDK-ADR-050). Ein
+`PcmSampleRateConverter` existiert, arbeitet aber mit Nearest-Neighbour und wird vom Tap nicht benutzt —
+für Sprache wäre er in dieser Form kein Fortschritt.
+
+Dasselbe Muster in der Konferenz: Die SFU kodiert Opus für das Telefon-Bein bewusst bei **8 kHz**
+(`TelephonyPcmSampleRate`), obwohl die RTP-Clock 48 kHz bleibt. Auch der Browser-zu-Telefon-Weg ist
+damit schmalbandig gebaut, nicht nur schmalbandig geerbt.
+
+**Was daraus folgt — und es ist nicht „ein Enum erweitern":**
+
+1. Ein tauglicher Resampler im SDK-Bridge-Tap (oder ein zweiter Tap, der PCM statt µ-law liefert).
+2. Danach Communications `AudioCodec`/`AudioFormat` — `BytesPerFrame` rechnet mit einem Byte je
+   Sample, `SilenceByte` wirft für alles außer G.711.
+3. Zuletzt die PBX, die Ansagen als 8-kHz-µ-law speichert und beim Hochladen alles andere abweist.
+
+**Die Messung, die vorher kommt, ist eine andere als gedacht.** Was der Anschluss heute aushandelt,
+sagt nichts — wir bieten G.722 gar nicht an. Zu klären ist, ob der Carrier es *anbieten würde*, und das
+sieht man erst, wenn man es probeweise wieder anbietet.
+
+Nüchtern dazu: Im Leitszenario hilft es womöglich trotzdem nicht. Ein vom Handy umgeleiteter Anruf ist
+schmalbandig, bevor er ankommt; G.722 auf dem letzten Sprung trägt denselben 3,4-kHz-Inhalt in einem
+breiteren Behälter. AMR/AMR-WB kennt das SDK ohnehin nicht. Wo Breitband wirklich zählt, ist **intern**:
+Nebenstelle zu Nebenstelle und Browser zu Browser berührt kein PSTN — und genau dort schneidet die SFU
+heute auf 8 kHz herunter, ohne dass es jemand müsste.
 
 ### Die Zahl, die dann noch fehlt
 
