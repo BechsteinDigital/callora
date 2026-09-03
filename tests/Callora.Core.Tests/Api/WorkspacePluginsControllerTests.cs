@@ -104,6 +104,13 @@ public sealed class WorkspacePluginsControllerTests
             "Acme",
             "standard",
             isActive: true);
+        workspaceStore.AddTenant("tenant-b");
+        _ = await workspaceStore.UpsertAsync(
+            "tenant-b",
+            "nachbar",
+            "Nachbar",
+            "standard",
+            isActive: true);
         var lifecycle = new ConfigurablePluginLifecycleService();
         lifecycle.Installations.Add(new PluginInstallationSnapshot(
             "videoconference",
@@ -129,6 +136,7 @@ public sealed class WorkspacePluginsControllerTests
         builder.Services.AddControllers()
             .AddApplicationPart(typeof(WorkspacePluginsController).Assembly);
         builder.Services.AddSingleton(assignmentService);
+        builder.Services.AddSingleton(new WorkspaceReach(workspaceStore));
 
         var app = builder.Build();
         app.UseAuthentication();
@@ -140,6 +148,72 @@ public sealed class WorkspacePluginsControllerTests
 
     private static void Authenticate(HttpClient client, string token) =>
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+    /// <summary>
+    /// Ein Mandanten-Administrator verwaltet die Workspaces seines Mandanten — und nur die.
+    /// </summary>
+    /// <remarks>
+    /// <b>Der Befund:</b> Der Controller nahm den Workspace-Schlüssel aus der URL und fragte nie, ob
+    /// der Aufrufer ihn erreichen darf. Das blieb folgenlos, solange nur Operatoren
+    /// <c>plugin.execute</c> hielten; mit <c>plugin.assign</c> im Mandantensatz wäre es der Weg
+    /// gewesen, den Nachbarn zu verwalten, indem man seinen Schlüssel in die URL schreibt. Der
+    /// Write-Backstop in der Persistenz hätte den Schreibzugriff zwar abgefangen — als 500, und die
+    /// Lesesicht gar nicht.
+    /// </remarks>
+    [Fact]
+    public async Task ATenantAdmin_ReachesItsOwnWorkspace_ButNotTheNeighbours()
+    {
+        var options = CreateOptions();
+        await using var app = await CreateAppAsync(options);
+        var client = app.GetTestClient();
+        Authenticate(client, CreateTenantJwt(options, "tenant-a"));
+
+        var own = await client.PutAsJsonAsync(
+            "/api/workspaces/acme/plugins/videoconference",
+            new SetWorkspacePluginAssignmentApiRequest { IsAssigned = true });
+        var neighbour = await client.PutAsJsonAsync(
+            "/api/workspaces/nachbar/plugins/videoconference",
+            new SetWorkspacePluginAssignmentApiRequest { IsAssigned = true });
+
+        Assert.Equal(HttpStatusCode.OK, own.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, neighbour.StatusCode);
+    }
+
+    [Fact]
+    public async Task ATenantAdmin_DoesNotListTheNeighboursPlugins()
+    {
+        var options = CreateOptions();
+        await using var app = await CreateAppAsync(options);
+        var client = app.GetTestClient();
+        Authenticate(client, CreateTenantJwt(options, "tenant-a"));
+
+        var response = await client.GetAsync("/api/workspaces/nachbar/plugins");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    private static string CreateTenantJwt(BackendHostOptions options, string tenantKey)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.JwtSigningKey));
+        var descriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(
+                [
+                    new Claim("sub", "tenant-admin"),
+                    new Claim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Tenant),
+                    new Claim(BackendClaimTypes.TenantKey, tenantKey),
+                    .. TenantRolePermissions
+                        .ForRole(BackendRoles.Admin)
+                        .Select(permission => new Claim(BackendClaimTypes.Permission, permission)),
+                ]),
+            Expires = DateTime.UtcNow.AddMinutes(30),
+            Issuer = options.JwtIssuer,
+            Audience = options.JwtAudience,
+            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256),
+        };
+        var tokenHandler = new JwtSecurityTokenHandler();
+        return tokenHandler.WriteToken(tokenHandler.CreateToken(descriptor));
+    }
 
     private static string CreateJwt(BackendHostOptions options)
     {

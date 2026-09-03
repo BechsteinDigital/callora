@@ -23,11 +23,18 @@ public sealed class WorkspacePluginsController : ControllerBase
     [HttpGet]
     [CalloraPermission(BackendPermissionKeys.WorkspaceRead)]
     [ProducesResponseType<WorkspacePluginAssignmentApiResponse[]>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> List(
         string workspaceKey,
         [FromServices] WorkspacePluginAssignmentService service,
+        [FromServices] WorkspaceReach reach,
         CancellationToken cancellationToken)
     {
+        if (!await reach.CanReachAsync(User, workspaceKey, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var result = await service
             .ListAsync(workspaceKey, cancellationToken)
             .ConfigureAwait(false);
@@ -42,15 +49,26 @@ public sealed class WorkspacePluginsController : ControllerBase
     }
 
     [HttpPut("{pluginId}")]
-    [CalloraPermission(BackendPermissionKeys.PluginExecute)]
+    [CalloraPermission(BackendPermissionKeys.PluginAssign)]
     [ProducesResponseType<WorkspacePluginAssignmentApiResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SetAssignment(
         string workspaceKey,
         string pluginId,
         [FromBody] SetWorkspacePluginAssignmentApiRequest request,
         [FromServices] WorkspacePluginAssignmentService service,
+        [FromServices] WorkspaceReach reach,
         CancellationToken cancellationToken)
     {
+        // Der Workspace-Schlüssel steht in der URL, also muss die Reichweite hier geprüft werden und
+        // nicht erst in der Persistenz. Der Write-Backstop fängt den fremden Schreibzugriff zwar ab,
+        // aber als InvalidOperationException — der Aufrufer bekäme 500 für etwas, das 403 ist, und
+        // die Lesesicht wäre davon ohnehin unberührt.
+        if (!await reach.CanReachAsync(User, workspaceKey, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var requestedBy = User.FindFirstValue("sub") ?? User.Identity?.Name;
         var result = await service
             .SetAssignedAsync(

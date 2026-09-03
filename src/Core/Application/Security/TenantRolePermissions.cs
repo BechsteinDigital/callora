@@ -18,7 +18,9 @@ namespace Callora.Core.Application.Security;
 /// Host installieren bzw. entfernen" — eine Binary, eine Version, ein Schema für alle Mandanten
 /// dieser Instanz. Wer sie einem Kunden gäbe, ließe ihn Fremdcode in den Prozess ziehen, in dem die
 /// anderen Kunden mitlaufen. <c>plugin.read</c> genügt, um zu sehen, was verfügbar ist; das Zuweisen
-/// an den eigenen Workspace ist eine eigene Frage und bekommt einen eigenen Schlüssel.
+/// an einen eigenen Workspace ist eine eigene Frage und trägt deshalb
+/// <see cref="BackendPermissionKeys.PluginAssign"/>: Der Mandant entscheidet, welcher seiner
+/// Workspaces welches lizenzierte Plugin nutzt, ohne dafür an der Installation drehen zu dürfen.
 /// </para>
 /// <para>
 /// <b>Workspaces nur lesend, und das ist eine Entscheidung.</b> <c>workspace.create</c> schriebe
@@ -47,6 +49,7 @@ public static class TenantRolePermissions
         BackendPermissionKeys.MembershipDelete,
         BackendPermissionKeys.UserRead,
         BackendPermissionKeys.PluginRead,
+        BackendPermissionKeys.PluginAssign,
         BackendPermissionKeys.ConfigRead,
         BackendPermissionKeys.NotificationRead
     ];

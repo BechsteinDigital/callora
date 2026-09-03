@@ -3082,6 +3082,9 @@ Callora.Core.Application.Security.UserDataExport.UserDataExport(string! External
 Callora.Core.Application.Security.WorkspacePluginPermissions
 Callora.Core.Application.Security.WorkspacePluginPermissions.ForWorkspaceAsync(string? workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
 Callora.Core.Application.Security.WorkspacePluginPermissions.WorkspacePluginPermissions(Callora.Core.Application.Plugins.IWorkspacePluginActivationReader! activations, Callora.Core.Application.Security.IPluginPermissionMap! permissions) -> void
+Callora.Core.Application.Security.WorkspaceReach
+Callora.Core.Application.Security.WorkspaceReach.CanReachAsync(System.Security.Claims.ClaimsPrincipal! user, string? workspaceKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Callora.Core.Application.Security.WorkspaceReach.WorkspaceReach(Callora.Core.Application.Workspaces.IWorkspaceManagementStore! workspaces) -> void
 Callora.Core.Application.Security.WorkspaceRolePermissions
 Callora.Core.Application.Security.WorkspaceScopeEvaluator
 Callora.Core.Application.Security.WorkspaceSessionPermissions
@@ -6065,6 +6068,7 @@ const Callora.Core.Application.Security.BackendPermissionKeys.MembershipDelete =
 const Callora.Core.Application.Security.BackendPermissionKeys.MembershipRead = "membership.read" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.MembershipUpdate = "membership.update" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.NotificationRead = "notification.read" -> string!
+const Callora.Core.Application.Security.BackendPermissionKeys.PluginAssign = "plugin.assign" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.PluginCreate = "plugin.create" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.PluginDelete = "plugin.delete" -> string!
 const Callora.Core.Application.Security.BackendPermissionKeys.PluginExecute = "plugin.execute" -> string!
