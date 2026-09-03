@@ -1,5 +1,7 @@
 using Callora.Administration.Api;
 using Callora.Core.Api;
+using Callora.Core.Application.Plugins;
+using Callora.Core.Application.Security;
 using Callora.Core.Application.Tenants;
 using Callora.Core.Tests.Support;
 using Microsoft.AspNetCore.Authentication;
@@ -60,6 +62,40 @@ public sealed class TenantEndpointsTests
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    /// <summary>
+    /// Ein Mandant gibt die Zuweisung an seine Workspaces ab — für seinen Mandanten, nicht für den
+    /// des Nachbarn.
+    /// </summary>
+    /// <remarks>
+    /// Das Recht allein genügt hier nicht: <c>plugin.assign</c> trägt jeder Mandanten-Administrator,
+    /// und der Mandantenschlüssel steht im Pfad. Ohne den Abgleich gegen die Sitzung setzte er die
+    /// Delegation des Nachbarn, indem er dessen Schlüssel schreibt.
+    /// </remarks>
+    [Fact]
+    public async Task ATenantDelegates_ForItsOwnTenantOnly()
+    {
+        await using var app = await CreateAppAsync();
+
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Permissions", "plugin.assign");
+        client.DefaultRequestHeaders.Add("X-Test-Callora-Scope", BackendAuthScopes.Tenant);
+        client.DefaultRequestHeaders.Add("X-Test-Tenant-Key", "tenant-a");
+
+        var own = await client.PutAsJsonAsync(
+            "/api/tenants/tenant-a/plugins/pbx/delegation",
+            new SetTenantPluginDelegationApiRequest(true));
+        var neighbour = await client.PutAsJsonAsync(
+            "/api/tenants/tenant-b/plugins/pbx/delegation",
+            new SetTenantPluginDelegationApiRequest(true));
+
+        Assert.Equal(HttpStatusCode.OK, own.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, neighbour.StatusCode);
+
+        var delegated = await client.GetFromJsonAsync<string[]>(
+            "/api/tenants/tenant-a/plugins/delegations");
+        Assert.Equal(["pbx"], delegated!);
+    }
+
     private static async Task<WebApplication> CreateAppAsync()
     {
         var builder = WebApplication.CreateBuilder();
@@ -69,6 +105,8 @@ public sealed class TenantEndpointsTests
             .AddScheme<AuthenticationSchemeOptions, HeaderAuthenticationHandler>("Header", _ => { });
         builder.Services.AddAuthorization();
         builder.Services.AddSingleton<ITenantManagementStore>(new InMemoryTenantManagementStore());
+        builder.Services.AddSingleton<ITenantPluginDelegationStore>(
+            new InMemoryTenantPluginDelegationStore());
 
         var app = builder.Build();
         app.UseAuthentication();

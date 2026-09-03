@@ -1,7 +1,10 @@
 using Callora.Core.Api;
+using Callora.Core.Application.Plugins;
 using Callora.Core.Application.Security;
 using Callora.Core.Application.Tenants;
 using Callora.Core.Infrastructure.Security;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Callora.Administration.Api;
 
@@ -103,6 +106,57 @@ public static class TenantEndpoints
             };
         }).WithName("Tenants_Delete")
             .RequirePermission(BackendPermissionKeys.TenantDelete);
+
+        // Die dritte Stufe des Bezugs. Der Instanzbetreiber entscheidet per Entitlement, WAS ein
+        // Mandant nutzen darf; der Mandant weist es seinen Workspaces zu. Hier gibt er die Zuweisung
+        // für einzelne Plugins an die Workspace-Administratoren ab — oder holt sie zurück.
+        group.MapGet("/{tenantKey}/plugins/delegations", async (
+            string tenantKey,
+            [FromServices] ITenantPluginDelegationStore delegations,
+            HttpContext httpContext,
+            CancellationToken cancellationToken) =>
+        {
+            if (!WorkspaceScopeEvaluator.HasTenantAccess(httpContext.User, tenantKey))
+            {
+                return Results.Forbid();
+            }
+
+            var delegated = await delegations
+                .ListDelegatedAsync(tenantKey, cancellationToken)
+                .ConfigureAwait(false);
+            return Results.Ok(delegated);
+        }).WithName("Tenants_ListPluginDelegations")
+            .RequirePermission(BackendPermissionKeys.PluginAssign);
+
+        group.MapPut("/{tenantKey}/plugins/{pluginId}/delegation", async (
+            string tenantKey,
+            string pluginId,
+            SetTenantPluginDelegationApiRequest request,
+            [FromServices] ITenantPluginDelegationStore delegations,
+            HttpContext httpContext,
+            CancellationToken cancellationToken) =>
+        {
+            // Geprüft wird der Mandant aus der URL gegen den der Sitzung, nicht nur das Recht: Ein
+            // Mandanten-Administrator trägt plugin.assign, und ohne diese Zeile setzte er die
+            // Delegation des Nachbarn, indem er dessen Schlüssel in den Pfad schreibt.
+            if (!WorkspaceScopeEvaluator.HasTenantAccess(httpContext.User, tenantKey))
+            {
+                return Results.Forbid();
+            }
+
+            await delegations
+                .SetAsync(
+                    tenantKey,
+                    pluginId,
+                    request.WorkspacesMayAssign,
+                    httpContext.User.FindFirstValue("sub") ?? httpContext.User.Identity?.Name,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            return Results.Ok(new TenantPluginDelegationApiResponse(
+                pluginId, request.WorkspacesMayAssign));
+        }).WithName("Tenants_SetPluginDelegation")
+            .RequirePermission(BackendPermissionKeys.PluginAssign);
     }
 
     private static TenantApiResponse ToResponse(TenantSnapshot snapshot)

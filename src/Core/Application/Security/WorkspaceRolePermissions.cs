@@ -41,7 +41,12 @@ public static class WorkspaceRolePermissions
         BackendPermissionKeys.UserRead,
         BackendPermissionKeys.MembershipRead,
         BackendPermissionKeys.MembershipUpdate,
-        BackendPermissionKeys.MembershipDelete
+        BackendPermissionKeys.MembershipDelete,
+        // Erst tragbar, seit der Mandant es begrenzen kann: PluginSelfService lässt eine
+        // Workspace-Sitzung nur die Plugins zuweisen, die ihr Mandant dafür freigegeben hat. Ohne
+        // diese Schranke hieße der Schlüssel: Jeder Workspace nimmt sich, was der Mandant lizenziert
+        // hat, und der Mandant erfährt es, wenn es passiert ist.
+        BackendPermissionKeys.PluginAssign
     ];
 
     private static readonly IReadOnlyList<string> MemberPermissions =

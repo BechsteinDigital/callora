@@ -31,6 +31,38 @@ public static class WorkspaceScopeEvaluator
                user.HasClaim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Platform);
     }
 
+    /// <summary>
+    /// True when the principal may act on the named tenant: an operator, or a tenant session bound
+    /// to exactly that tenant. Pure and synchronous — the tenant key travels in the claim, so no
+    /// lookup is needed, unlike <see cref="WorkspaceReach"/>.
+    /// </summary>
+    public static bool HasTenantAccess(ClaimsPrincipal user, string? requestedTenantKey)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+
+        if (IsOperator(user))
+        {
+            return true;
+        }
+
+        if (!user.HasClaim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Tenant))
+        {
+            return false;
+        }
+
+        var boundTenantKey = user.FindFirst(BackendClaimTypes.TenantKey)?.Value;
+        if (string.IsNullOrWhiteSpace(boundTenantKey))
+        {
+            return false;
+        }
+
+        return !string.IsNullOrWhiteSpace(requestedTenantKey) &&
+               string.Equals(
+                   boundTenantKey.Trim(),
+                   requestedTenantKey.Trim(),
+                   StringComparison.OrdinalIgnoreCase);
+    }
+
     public static bool HasWorkspaceAccess(ClaimsPrincipal user, string? requestedWorkspaceKey)
     {
         ArgumentNullException.ThrowIfNull(user);

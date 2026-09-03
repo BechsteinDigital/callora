@@ -34,6 +34,7 @@ public sealed class HeaderAuthenticationHandler : AuthenticationHandler<Authenti
         AddClaimsFromHeader(claims, "X-Test-Permissions", "permission");
         AddClaimsFromHeader(claims, "X-Test-Scopes", "scope");
         AddClaimsFromHeader(claims, "X-Test-Workspace-Key", BackendClaimTypes.WorkspaceKey);
+        AddClaimsFromHeader(claims, "X-Test-Tenant-Key", BackendClaimTypes.TenantKey);
 
         AddCalloraScopeClaim(claims);
 
