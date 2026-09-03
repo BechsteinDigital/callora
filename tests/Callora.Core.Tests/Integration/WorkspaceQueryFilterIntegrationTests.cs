@@ -1,6 +1,7 @@
 using Callora.Core.Application.Security;
 using Callora.Core.Domain.Media;
 using Callora.Core.Domain.Notifications;
+using Callora.Core.Domain.Plugins;
 using Callora.Core.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -90,6 +91,113 @@ public sealed class WorkspaceQueryFilterIntegrationTests(PostgresFixture postgre
         }
     }
 
+    /// <summary>
+    /// Eine Mandanten-Sitzung sieht die Plugin-Aktivierungen ihrer eigenen Workspaces — und nur die.
+    /// </summary>
+    /// <remarks>
+    /// Der Grund, warum es diesen Filter überhaupt gibt: Eine Mandanten-Sitzung ist an keinen
+    /// Workspace gebunden, wäre damit „nicht scoped" und liefe wie ein Operator am Backstop vorbei.
+    /// Bei einer Agentur, die die Instanz für ihre Kunden betreibt, hieße das: jeder Kunde liest die
+    /// Plugin-Landschaft aller anderen.
+    /// </remarks>
+    [SkippableFact]
+    public async Task TenantScopedContext_ReadsOnlyItsOwnTenantsActivations()
+    {
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
+
+        var options = new DbContextOptionsBuilder<HostPersistenceDbContext>()
+            .UseNpgsql(await DatabaseAsync())
+            .Options;
+
+        await using (var seed = new HostPersistenceDbContext(options))
+        {
+            await seed.Database.EnsureCreatedAsync();
+            seed.Set<WorkspacePluginActivation>().AddRange(
+                NewActivation("tenant-a", "workspace-a", "pbx"),
+                NewActivation("tenant-a", "workspace-a2", "cms"),
+                NewActivation("tenant-b", "workspace-b", "pbx"));
+            await seed.SaveChangesAsync();
+        }
+
+        await using (var scoped = new HostPersistenceDbContext(options, new StubTenantScope("tenant-a")))
+        {
+            var rows = await scoped.Set<WorkspacePluginActivation>().ToListAsync();
+            Assert.Equal(2, rows.Count);
+            Assert.All(rows, row => Assert.Equal("tenant-a", row.TenantKey));
+        }
+    }
+
+    /// <summary>
+    /// Arbeit IM Workspace bleibt für eine Mandanten-Sitzung leer — der Filter ist eine positive
+    /// Liste, kein Bypass.
+    /// </summary>
+    /// <remarks>
+    /// Sichtbar ist nur, was auf Mandantenebene etwas bedeutet. Medien, Flows, Jobs und Webhooks
+    /// gehören dem Workspace; wer darin arbeiten will, meldet sich dort an. Fiele die Entscheidung
+    /// andersherum, wäre der Mandanten-Scope ein zweiter Operator mit anderem Namen.
+    /// </remarks>
+    [SkippableFact]
+    public async Task TenantScopedContext_SeesNoWorkspaceWorkAtAll()
+    {
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
+
+        var options = new DbContextOptionsBuilder<HostPersistenceDbContext>()
+            .UseNpgsql(await DatabaseAsync())
+            .Options;
+
+        await using (var seed = new HostPersistenceDbContext(options))
+        {
+            await seed.Database.EnsureCreatedAsync();
+            seed.Set<MediaItem>().Add(NewItem("workspace-a", "a1.mp3"));
+            seed.Set<NotificationEntry>().AddRange(
+                NewNotification("workspace-a", "own"),
+                NewNotification(null, "global"));
+            await seed.SaveChangesAsync();
+        }
+
+        await using (var scoped = new HostPersistenceDbContext(options, new StubTenantScope("tenant-a")))
+        {
+            Assert.Empty(await scoped.Set<MediaItem>().ToListAsync());
+
+            // Auch die plattformweite Zeile nicht: Sie ist für Workspace-Sitzungen gedacht, nicht
+            // dafür, dem Mandanten eine Teilsicht auf fremde Arbeit zu öffnen.
+            Assert.Empty(await scoped.Set<NotificationEntry>().ToListAsync());
+        }
+    }
+
+    /// <summary>Schreiben für einen fremden Mandanten scheitert, statt still durchzugehen.</summary>
+    [SkippableFact]
+    public async Task TenantScopedWrite_ToAForeignTenant_IsRefused()
+    {
+        Skip.IfNot(postgres.Available, "Docker/Postgres container not available.");
+
+        var options = new DbContextOptionsBuilder<HostPersistenceDbContext>()
+            .UseNpgsql(await DatabaseAsync())
+            .Options;
+
+        await using (var seed = new HostPersistenceDbContext(options))
+        {
+            await seed.Database.EnsureCreatedAsync();
+        }
+
+        await using var scoped = new HostPersistenceDbContext(options, new StubTenantScope("tenant-a"));
+        scoped.Set<WorkspacePluginActivation>().Add(NewActivation("tenant-b", "workspace-b", "pbx"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => scoped.SaveChangesAsync());
+    }
+
+    private static WorkspacePluginActivation NewActivation(
+        string tenantKey, string workspaceKey, string pluginId) => new()
+    {
+        Id = Guid.NewGuid(),
+        TenantKey = tenantKey,
+        WorkspaceKey = workspaceKey,
+        PluginId = pluginId,
+        IsActive = true,
+        CreatedAtUtc = DateTimeOffset.UtcNow,
+        UpdatedAtUtc = DateTimeOffset.UtcNow
+    };
+
     private static NotificationEntry NewNotification(string? workspaceKey, string title) => new()
     {
         Id = Guid.NewGuid(),
@@ -116,5 +224,18 @@ public sealed class WorkspaceQueryFilterIntegrationTests(PostgresFixture postgre
         public bool IsWorkspaceScoped => true;
 
         public string? WorkspaceKey { get; } = workspaceKey;
+    }
+
+    // Bewusst ohne WorkspaceKey: Genau das ist der Fall, den es abzusichern gilt — an keinen
+    // Workspace gebunden, und trotzdem kein Operator.
+    private sealed class StubTenantScope(string tenantKey) : IWorkspaceScopeContext
+    {
+        public bool IsWorkspaceScoped => false;
+
+        public string? WorkspaceKey => null;
+
+        public bool IsTenantScoped => true;
+
+        public string? TenantKey { get; } = tenantKey;
     }
 }

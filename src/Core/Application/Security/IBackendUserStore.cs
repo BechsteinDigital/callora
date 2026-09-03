@@ -24,6 +24,15 @@ public interface IBackendUserStore
         string workspaceKey,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The user's membership role in the named tenant, or <c>null</c> when they are not a member of
+    /// it — the level ADR-014 §18 calls the TenantAdmin.
+    /// </summary>
+    Task<string?> GetTenantRoleAsync(
+        string externalId,
+        string tenantKey,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<BackendUser>> ListAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Users that are members of the given workspace (audit finding H1 scoping).</summary>

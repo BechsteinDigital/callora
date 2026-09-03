@@ -46,4 +46,6 @@ public sealed class BackendUser
     public ICollection<BackendRbacUserRole> RoleAssignments { get; set; } = new List<BackendRbacUserRole>();
 
     public ICollection<WorkspaceMembership> WorkspaceMemberships { get; set; } = new List<WorkspaceMembership>();
+
+    public ICollection<Tenants.TenantMembership> TenantMemberships { get; set; } = new List<Tenants.TenantMembership>();
 }

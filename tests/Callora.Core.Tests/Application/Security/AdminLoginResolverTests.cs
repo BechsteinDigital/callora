@@ -126,6 +126,101 @@ public sealed class AdminLoginResolverTests
         Assert.Equal("agent", grant.Role);
     }
 
+    [Fact]
+    public async Task TenantMember_WithoutAWorkspace_GetsTenantScope()
+    {
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var carol = await userStore.GetByExternalIdAsync("carol");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            carol!, workspaceKey: null, userStore, rbacStore, options, tenantKey: "tenant-a");
+
+        Assert.NotNull(grant);
+        Assert.Equal(BackendAuthScopes.Tenant, grant!.Scope);
+        Assert.Equal("tenant-a", grant.TenantKey);
+        Assert.Null(grant.WorkspaceKey);
+        Assert.Equal(TenantRolePermissions.ForRole(BackendRoles.Admin), grant.Permissions);
+    }
+
+    /// <summary>Wer einen Workspace nennt, will darin arbeiten — auch als Mandanten-Mitglied.</summary>
+    /// <remarks>
+    /// Die Mandantenebene ist kein Oberbegriff, der eine Workspace-Anmeldung ersetzt: Sie verwaltet,
+    /// sie arbeitet nicht. Führe der Mandant, säße jemand mit beiden Mitgliedschaften plötzlich in
+    /// einer Sitzung, die seine Medien und Flows nicht mehr sieht — herabgestuft, ohne es zu wollen.
+    /// </remarks>
+    [Fact]
+    public async Task ANamedWorkspaceWins_EvenForATenantMember()
+    {
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var carol = await userStore.GetByExternalIdAsync("carol");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            carol!, "workspace-a", userStore, rbacStore, options, tenantKey: "tenant-a");
+
+        Assert.NotNull(grant);
+        Assert.Equal(BackendAuthScopes.Workspace, grant!.Scope);
+        Assert.Equal("workspace-a", grant.WorkspaceKey);
+        Assert.Null(grant.TenantKey);
+    }
+
+    /// <summary>Eine Mandanten-Mitgliedschaft öffnet keinen fremden Workspace.</summary>
+    /// <remarks>
+    /// Fail-closed: Ob ein TenantAdmin in jeden Workspace seines Mandanten darf, ist eine eigene
+    /// Entscheidung mit eigener Prüfung. Bis sie getroffen ist, gilt die Mitgliedschaft.
+    /// </remarks>
+    [Fact]
+    public async Task ATenantMember_DoesNotGetIntoAWorkspaceTheyDoNotBelongTo()
+    {
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var carol = await userStore.GetByExternalIdAsync("carol");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            carol!, "workspace-fremd", userStore, rbacStore, options, tenantKey: "tenant-a");
+
+        Assert.Null(grant);
+    }
+
+    [Fact]
+    public async Task NonTenantMember_GetsNothing()
+    {
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var alice = await userStore.GetByExternalIdAsync("alice");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            alice!, workspaceKey: null, userStore, rbacStore, options, tenantKey: "tenant-fremd");
+
+        Assert.Null(grant);
+    }
+
+    [Fact]
+    public async Task ATenantMembershipNamedLikeAnOperatorRole_IsRefused()
+    {
+        // Die Mitgliedsrolle wird zum Rollen-Claim, und WorkspaceScopeEvaluator.IsOperator prüft auf
+        // den Namen. Eine Mandanten-Mitgliedschaft, die so hieße, wäre der Betreiber der Instanz.
+        var (userStore, rbacStore, options) = await SetupAsync();
+        userStore.AddTenantMember("tenant-a", "alice", BackendRoles.SuperAdmin);
+        var alice = await userStore.GetByExternalIdAsync("alice");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            alice!, workspaceKey: null, userStore, rbacStore, options, tenantKey: "tenant-a");
+
+        Assert.Null(grant);
+    }
+
+    [Fact]
+    public async Task Operator_IsNeverDownScopedToATenant()
+    {
+        var (userStore, rbacStore, options) = await SetupAsync();
+        var root = await userStore.GetByExternalIdAsync("root");
+
+        var grant = await AdminLoginResolver.ResolveAsync(
+            root!, workspaceKey: null, userStore, rbacStore, options, tenantKey: "tenant-a");
+
+        Assert.NotNull(grant);
+        Assert.Equal(BackendAuthScopes.Platform, grant!.Scope);
+        Assert.Null(grant.TenantKey);
+    }
+
     private static async Task<(InMemoryBackendUserStore UserStore, InMemoryBackendRbacStore RbacStore, BackendHostOptions Options)> SetupAsync()
     {
         var options = new BackendHostOptions
@@ -145,6 +240,8 @@ public sealed class AdminLoginResolverTests
         await userStore.UpsertCredentialsAsync("carol", "carol@example.test", "Carol", "pass-carol");
         userStore.AddWorkspaceMember("workspace-a", "alice");
         userStore.AddWorkspaceMember("workspace-a", "carol", BackendRoles.Admin);
+        userStore.AddTenantMember("tenant-a", "alice");
+        userStore.AddTenantMember("tenant-a", "carol", BackendRoles.Admin);
 
         var rbacStore = new InMemoryBackendRbacStore(options);
         return (userStore, rbacStore, options);

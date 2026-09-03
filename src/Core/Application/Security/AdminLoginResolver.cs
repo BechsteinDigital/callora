@@ -37,7 +37,8 @@ public static class AdminLoginResolver
         IBackendRbacStore rbacStore,
         BackendHostOptions options,
         CancellationToken cancellationToken = default,
-        WorkspaceSessionPermissions? sessionPermissions = null)
+        WorkspaceSessionPermissions? sessionPermissions = null,
+        string? tenantKey = null)
     {
         ArgumentNullException.ThrowIfNull(user);
         ArgumentNullException.ThrowIfNull(userStore);
@@ -60,11 +61,19 @@ public static class AdminLoginResolver
                 Permissions: Array.Empty<string>());
         }
 
-        // Non-operators must name a workspace they belong to; the membership
-        // role — not any global role — drives what the session may do inside it.
+        // Ein benannter Workspace entscheidet, auch wenn die Person zugleich Mandanten-Mitglied ist:
+        // Wer einen Workspace nennt, will darin arbeiten. Die Mandantenebene ist kein Oberbegriff,
+        // der eine Workspace-Anmeldung ersetzt — sie verwaltet, sie arbeitet nicht.
+        //
+        // Umgekehrt wird niemand hochgestuft: Eine Mandanten-Mitgliedschaft öffnet keinen Workspace,
+        // dem die Person nicht angehört. Das wäre eine eigene Entscheidung mit eigener Prüfung, und
+        // fail-closed heißt hier: erst wenn sie getroffen ist.
         if (string.IsNullOrWhiteSpace(workspaceKey))
         {
-            return null;
+            return string.IsNullOrWhiteSpace(tenantKey)
+                ? null
+                : await ResolveTenantAsync(user, tenantKey, userStore, options, cancellationToken)
+                    .ConfigureAwait(false);
         }
 
         var trimmedKey = workspaceKey.Trim();
@@ -94,6 +103,39 @@ public static class AdminLoginResolver
                 : await sessionPermissions
                     .ForAsync(trimmedKey, user.ExternalId, workspaceRole, cancellationToken)
                     .ConfigureAwait(false));
+    }
+
+    private static async Task<AdminLoginGrant?> ResolveTenantAsync(
+        BackendUser user,
+        string tenantKey,
+        IBackendUserStore userStore,
+        BackendHostOptions options,
+        CancellationToken cancellationToken)
+    {
+        var trimmedKey = tenantKey.Trim();
+        var tenantRole = await userStore
+            .GetTenantRoleAsync(user.ExternalId, trimmedKey, cancellationToken)
+            .ConfigureAwait(false);
+        if (tenantRole is null)
+        {
+            return null;
+        }
+
+        // Dieselbe Sperre wie im Workspace, und sie trägt hier genauso: Die Mitgliedsrolle wird zum
+        // Rollen-Claim der Sitzung, und WorkspaceScopeEvaluator.IsOperator prüft auf den Namen
+        // "superadmin". Eine Mandanten-Mitgliedschaft, die so hieße, wäre keine Verwaltung eines
+        // Kunden mehr, sondern der Betreiber der Instanz.
+        if (ReservedMembershipRoles.IsReserved(tenantRole, options))
+        {
+            return null;
+        }
+
+        return new AdminLoginGrant(
+            Scope: BackendAuthScopes.Tenant,
+            WorkspaceKey: null,
+            Role: tenantRole,
+            Permissions: TenantRolePermissions.ForRole(tenantRole),
+            TenantKey: trimmedKey);
     }
 
     private static bool IsPlatformOperatorRole(BackendHostOptions options, string? role)

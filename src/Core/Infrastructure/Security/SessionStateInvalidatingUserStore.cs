@@ -37,6 +37,12 @@ public sealed class SessionStateInvalidatingUserStore(
         CancellationToken cancellationToken = default) =>
         inner.GetWorkspaceRoleAsync(externalId, workspaceKey, cancellationToken);
 
+    public Task<string?> GetTenantRoleAsync(
+        string externalId,
+        string tenantKey,
+        CancellationToken cancellationToken = default) =>
+        inner.GetTenantRoleAsync(externalId, tenantKey, cancellationToken);
+
     public Task<IReadOnlyList<BackendUser>> ListAsync(CancellationToken cancellationToken = default) =>
         inner.ListAsync(cancellationToken);
 

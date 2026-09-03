@@ -9,6 +9,8 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
 {
     private readonly ConcurrentDictionary<string, BackendUser> _users = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _workspaceMembers = new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _tenantMembers = new(StringComparer.OrdinalIgnoreCase);
     private readonly IPasswordHasher<BackendUser> _passwordHasher = new PasswordHasher<BackendUser>();
 
     public Task<BackendUser?> AuthenticateAsync(
@@ -83,6 +85,26 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
         }
 
         if (_workspaceMembers.TryGetValue(workspaceKey.Trim(), out var members) &&
+            members.TryGetValue(externalId.Trim(), out var role))
+        {
+            return Task.FromResult<string?>(role);
+        }
+
+        return Task.FromResult<string?>(null);
+    }
+
+    public Task<string?> GetTenantRoleAsync(
+        string externalId,
+        string tenantKey,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(externalId) || string.IsNullOrWhiteSpace(tenantKey))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        if (_tenantMembers.TryGetValue(tenantKey.Trim(), out var members) &&
             members.TryGetValue(externalId.Trim(), out var role))
         {
             return Task.FromResult<string?>(role);
@@ -241,6 +263,12 @@ internal sealed class InMemoryBackendUserStore : IBackendUserStore
     public void AddWorkspaceMember(string workspaceKey, string externalId, string role = "member")
     {
         var members = _workspaceMembers.GetOrAdd(workspaceKey.Trim(), _ => new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+        members[externalId.Trim()] = role.Trim();
+    }
+
+    public void AddTenantMember(string tenantKey, string externalId, string role = "member")
+    {
+        var members = _tenantMembers.GetOrAdd(tenantKey.Trim(), _ => new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase));
         members[externalId.Trim()] = role.Trim();
     }
 }

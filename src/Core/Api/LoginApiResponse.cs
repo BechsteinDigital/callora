@@ -8,4 +8,5 @@ public sealed record LoginApiResponse(
     string? DisplayName,
     string? Email,
     string? Role,
-    string? WorkspaceKey);
+    string? WorkspaceKey,
+    string? TenantKey = null);
