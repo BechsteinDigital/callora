@@ -124,6 +124,18 @@ public sealed class HostPersistenceDbContext(
 
     private string WorkspaceFilterKey => workspaceScope?.WorkspaceKey ?? string.Empty;
 
+    // Mandanten-Isolation, zweite Dimension desselben Backstops. Ein Mandanten-Aufrufer ist an keinen
+    // Workspace gebunden — ohne diesen Filter wäre er damit "nicht scoped" und liefe wie ein Operator
+    // am Filter vorbei, also quer durch fremde Mandanten.
+    //
+    // Er ist eine POSITIVE LISTE, kein Bypass: Sichtbar ist nur, was auf Mandantenebene überhaupt
+    // etwas bedeutet — Plugin-Aktivierung und Entitlement, beide tragen den TenantKey bereits. Alles
+    // andere (Medien, Flows, Jobs, Webhooks, ...) ist Arbeit IM Workspace und bleibt für eine
+    // Mandanten-Sitzung leer. Wer darin arbeiten will, meldet sich am Workspace an.
+    private bool TenantFilterActive => workspaceScope?.IsTenantScoped == true;
+
+    private string TenantFilterKey => workspaceScope?.TenantKey ?? string.Empty;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -132,33 +144,69 @@ public sealed class HostPersistenceDbContext(
         // Strikt workspace-gebundene Entities (WorkspaceKey nicht nullable):
         // ein scoped Aufrufer sieht ausschließlich Zeilen seines Workspace.
         modelBuilder.Entity<Callora.Core.Domain.Media.MediaItem>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive && (!WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey));
         modelBuilder.Entity<Callora.Core.Domain.Flows.FlowDefinition>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive && (!WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey));
         modelBuilder.Entity<Callora.Core.Domain.Extensions.WorkspaceThemeSettingValue>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive && (!WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey));
+        // Trägt den TenantKey selbst: die eine workspace-gebundene Tabelle, die eine
+        // Mandanten-Sitzung sehen muss — welches Plugin in welchem ihrer Workspaces aktiv ist.
         modelBuilder.Entity<Callora.Core.Domain.Plugins.WorkspacePluginActivation>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                (!WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey) &&
+                (!TenantFilterActive || e.TenantKey == TenantFilterKey));
         modelBuilder.Entity<Callora.Core.Domain.Plugins.PluginDataDocument>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive && (!WorkspaceFilterActive || e.WorkspaceKey == WorkspaceFilterKey));
+
+        // Die Ebene selbst. Ohne Filter listete eine Mandanten-Sitzung mit workspace.read die
+        // Workspaces JEDES Mandanten — die Tabelle kannte bisher nur Operatoren, die genau das
+        // dürfen. Der Weg führt über die Navigation, weil der Claim den Schlüssel trägt und nicht
+        // die Id; eine Auflösung Key->Id bräuchte eine Abfrage aus dem Kontext heraus, der gerade
+        // gebaut wird.
+        modelBuilder.Entity<Callora.Core.Domain.Workspaces.Workspace>()
+            .HasQueryFilter(e => !TenantFilterActive || e.Tenant.TenantKey == TenantFilterKey);
+        modelBuilder.Entity<Callora.Core.Domain.Tenants.TenantMembership>()
+            .HasQueryFilter(e => !TenantFilterActive || e.Tenant.TenantKey == TenantFilterKey);
+        modelBuilder.Entity<Callora.Core.Domain.Workspaces.WorkspaceMembership>()
+            .HasQueryFilter(e => !TenantFilterActive || e.Workspace.Tenant.TenantKey == TenantFilterKey);
 
         // Entities mit nullable WorkspaceKey: null bedeutet plattformweite Zeile
         // (z. B. globale Notifications). Ein scoped Aufrufer sieht seine Zeilen
         // plus die globalen, aber keine fremden Workspaces (PLAT-267).
         modelBuilder.Entity<Callora.Core.Domain.Notifications.NotificationEntry>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive &&
+                (!WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey));
         modelBuilder.Entity<Callora.Core.Domain.Webhooks.WebhookSubscription>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive &&
+                (!WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey));
         modelBuilder.Entity<Callora.Core.Domain.Integrations.IntegrationCredential>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive &&
+                (!WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey));
         modelBuilder.Entity<Callora.Core.Domain.CustomFields.CustomFieldValue>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive &&
+                (!WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey));
+        // Ebenso mit TenantKey: die Lizenz ist die Frage, die auf Mandantenebene gestellt wird.
+        // TenantKey == null heißt plattformweit erteilt und gilt für jeden.
         modelBuilder.Entity<Callora.Core.Domain.Entitlements.PluginEntitlement>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                (!WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey) &&
+                (!TenantFilterActive || e.TenantKey == null || e.TenantKey == TenantFilterKey));
         modelBuilder.Entity<Callora.Core.Domain.Entitlements.MarketplaceEntitlementEventRecord>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive &&
+                (!WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey));
         modelBuilder.Entity<Callora.Core.Domain.Jobs.BackgroundJob>()
-            .HasQueryFilter(e => !WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey);
+            .HasQueryFilter(e =>
+                !TenantFilterActive &&
+                (!WorkspaceFilterActive || e.WorkspaceKey == null || e.WorkspaceKey == WorkspaceFilterKey));
     }
 
     /// <inheritdoc />
@@ -175,6 +223,55 @@ public sealed class HostPersistenceDbContext(
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 
+    // Dasselbe für die Mandantenebene. Bewusst enger als der Lese-Filter: Geschrieben werden darf
+    // ausschließlich, was den eigenen TenantKey trägt — auch ein plattformweites Entitlement
+    // (TenantKey == null) ist tabu, denn das erteilte sich der Kunde für alle. Eine Zeile mit
+    // WorkspaceKey, aber ohne TenantKey, ist Arbeit IM Workspace und gehört einer Sitzung, die dort
+    // angemeldet ist.
+    //
+    // GRENZE, offen benannt: Entities, die den Mandanten über eine Fremdschlüssel-Id führen statt
+    // über den Schlüssel (Workspace.TenantId, TenantMembership.TenantId), erreicht dieser Backstop
+    // nicht — er vergleicht Werte, keine Beziehungen. Dass ein Kunde keinen Workspace unter einem
+    // fremden Mandanten anlegt, muss der Endpunkt sicherstellen. Hier steht es, damit niemand den
+    // Backstop für vollständiger hält, als er ist.
+    private void EnforceTenantWriteScope()
+    {
+        if (!TenantFilterActive)
+        {
+            return;
+        }
+
+        var scopedTenant = TenantFilterKey;
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State is not (Microsoft.EntityFrameworkCore.EntityState.Added or Microsoft.EntityFrameworkCore.EntityState.Modified))
+            {
+                continue;
+            }
+
+            var tenantProperty = entry.Metadata.FindProperty("TenantKey");
+            if (tenantProperty is null)
+            {
+                if (entry.Metadata.FindProperty("WorkspaceKey") is null)
+                {
+                    continue;
+                }
+
+                throw new InvalidOperationException(
+                    $"Tenant-scoped write to '{entry.Metadata.DisplayName()}' is workspace work: " +
+                    "the row is bound to a workspace, and a tenant session is bound to none.");
+            }
+
+            var value = entry.CurrentValues[tenantProperty] as string;
+            if (!string.Equals(value, scopedTenant, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Tenant-scoped write to '{entry.Metadata.DisplayName()}' targets tenant " +
+                    $"'{value ?? "<platform-wide>"}' but the caller is scoped to '{scopedTenant}'.");
+            }
+        }
+    }
+
     // Write-Backstop (PLAT-267): ein workspace-gebundener Aufrufer darf nur
     // Zeilen seines eigenen Workspace schreiben — auch wenn ein Store den
     // WorkspaceKey aus Client-Eingabe übernimmt. Operatoren/Jobs/Seeding haben
@@ -183,6 +280,8 @@ public sealed class HostPersistenceDbContext(
     // System-Kontexten ohne Scope).
     private void EnforceWorkspaceWriteScope()
     {
+        EnforceTenantWriteScope();
+
         if (!WorkspaceFilterActive)
         {
             return;

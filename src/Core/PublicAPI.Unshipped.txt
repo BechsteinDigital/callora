@@ -2991,7 +2991,9 @@ Callora.Core.Application.Security.IWorkspaceMembershipRoleStore.ListRolesAsync(s
 Callora.Core.Application.Security.IWorkspaceMembershipRoleStore.ListUsersWithRoleAsync(string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
 Callora.Core.Application.Security.IWorkspaceMembershipRoleStore.ReplaceRolesAsync(string! workspaceKey, string! userId, System.Collections.Generic.IReadOnlyCollection<string!>! roles, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>?>!
 Callora.Core.Application.Security.IWorkspaceScopeContext
+Callora.Core.Application.Security.IWorkspaceScopeContext.IsTenantScoped.get -> bool
 Callora.Core.Application.Security.IWorkspaceScopeContext.IsWorkspaceScoped.get -> bool
+Callora.Core.Application.Security.IWorkspaceScopeContext.TenantKey.get -> string?
 Callora.Core.Application.Security.IWorkspaceScopeContext.WorkspaceKey.get -> string?
 Callora.Core.Application.Security.PluginAdminRoleTemplates
 Callora.Core.Application.Security.PluginAdminRoleTemplates.ListAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Security.PluginRoleTemplate!>!>!
@@ -5841,7 +5843,9 @@ Callora.Core.Infrastructure.Security.EnvironmentSecretStore.EnvironmentSecretSto
 Callora.Core.Infrastructure.Security.EnvironmentSecretStore.GetSecretAsync(string! name, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string?>!
 Callora.Core.Infrastructure.Security.HttpWorkspaceScopeContext
 Callora.Core.Infrastructure.Security.HttpWorkspaceScopeContext.HttpWorkspaceScopeContext(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor) -> void
+Callora.Core.Infrastructure.Security.HttpWorkspaceScopeContext.IsTenantScoped.get -> bool
 Callora.Core.Infrastructure.Security.HttpWorkspaceScopeContext.IsWorkspaceScoped.get -> bool
+Callora.Core.Infrastructure.Security.HttpWorkspaceScopeContext.TenantKey.get -> string?
 Callora.Core.Infrastructure.Security.HttpWorkspaceScopeContext.WorkspaceKey.get -> string?
 Callora.Core.Infrastructure.Security.InMemoryBackendRbacStore
 Callora.Core.Infrastructure.Security.InMemoryBackendRbacStore.GetRolePermissionsAsync(string! role, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<string!>?>!

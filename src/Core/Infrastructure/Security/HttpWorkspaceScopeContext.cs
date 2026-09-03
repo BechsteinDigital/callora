@@ -15,6 +15,31 @@ public sealed class HttpWorkspaceScopeContext(IHttpContextAccessor httpContextAc
 
     public string? WorkspaceKey => Resolve();
 
+    public bool IsTenantScoped => ResolveTenant() is not null;
+
+    public string? TenantKey => ResolveTenant();
+
+    private string? ResolveTenant()
+    {
+        var user = httpContextAccessor.HttpContext?.User;
+        if (user is null || WorkspaceScopeEvaluator.IsOperator(user))
+        {
+            return null;
+        }
+
+        // Der Scope-Claim wird mitgeprüft und nicht nur der Schlüssel: Ein tenant_key allein sagt
+        // "gehört zu diesem Mandanten", nicht "darf mandantenweit lesen". Würde der Filter schon auf
+        // den Schlüssel anspringen, öffnete jede spätere Sitzung, die ihren Mandanten der Vollständig-
+        // keit halber mitführt, unbeabsichtigt die Sicht auf alle seine Workspaces.
+        if (!user.HasClaim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Tenant))
+        {
+            return null;
+        }
+
+        var key = user.FindFirst(BackendClaimTypes.TenantKey)?.Value;
+        return string.IsNullOrWhiteSpace(key) ? null : key.Trim();
+    }
+
     private string? Resolve()
     {
         var user = httpContextAccessor.HttpContext?.User;
