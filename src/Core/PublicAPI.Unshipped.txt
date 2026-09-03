@@ -3028,6 +3028,7 @@ Callora.Core.Application.Security.SessionRevocationPurgeRecurringJobProvider
 Callora.Core.Application.Security.SessionRevocationPurgeRecurringJobProvider.GetDefinitions() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Jobs.Contracts.RecurringJobDefinition!>!
 Callora.Core.Application.Security.SessionRevocationPurgeRecurringJobProvider.SessionRevocationPurgeRecurringJobProvider() -> void
 Callora.Core.Application.Security.SingleUseSecret
+Callora.Core.Application.Security.TenantRolePermissions
 Callora.Core.Application.Security.UserDataExport
 Callora.Core.Application.Security.UserDataExportAuditEntry
 Callora.Core.Application.Security.UserDataExportAuditEntry.Action.get -> string!
@@ -7108,6 +7109,8 @@ static Callora.Core.Application.Security.PluginRoleTemplate.operator ==(Callora.
 static Callora.Core.Application.Security.ReservedMembershipRoles.IsReserved(string? role, Callora.Core.Application.Policies.BackendHostOptions! options) -> bool
 static Callora.Core.Application.Security.SingleUseSecret.Create() -> string!
 static Callora.Core.Application.Security.SingleUseSecret.Hash(string! secret) -> string!
+static Callora.Core.Application.Security.TenantRolePermissions.ForRole(string? tenantRole) -> System.Collections.Generic.IReadOnlyList<string!>!
+static Callora.Core.Application.Security.TenantRolePermissions.TenantGrantable.get -> System.Collections.Generic.IReadOnlySet<string!>!
 static Callora.Core.Application.Security.UserDataExportAuditEntry.operator !=(Callora.Core.Application.Security.UserDataExportAuditEntry? left, Callora.Core.Application.Security.UserDataExportAuditEntry? right) -> bool
 static Callora.Core.Application.Security.UserDataExportAuditEntry.operator ==(Callora.Core.Application.Security.UserDataExportAuditEntry? left, Callora.Core.Application.Security.UserDataExportAuditEntry? right) -> bool
 static Callora.Core.Application.Security.UserDataExportMembership.operator !=(Callora.Core.Application.Security.UserDataExportMembership? left, Callora.Core.Application.Security.UserDataExportMembership? right) -> bool
