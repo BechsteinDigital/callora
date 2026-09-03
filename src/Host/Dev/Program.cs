@@ -13,7 +13,11 @@ using Callora.Workspace;
 //
 // This host closes that gap and nothing more. It is deliberately the same handful of calls the
 // distribution host makes, because that is its second job: if someone breaks AddCalloraHost or the
-// order these have to run in, this stops building rather than the next distribution finding out.
+// order these have to run in, it shows up here rather than in the next distribution.
+//
+// "Shows up here" used to say "stops building", which was only true of compile errors. A missing
+// registration compiles cleanly and fails at builder.Build() — and nothing in CI made that call.
+// TheCompositionBuildsTests now does, with the same calls in the same order; keep them in step.
 //
 // It is not a second product. No installer, no first-run provisioning, no packaging — those belong
 // to a distribution, which owns its own configuration and lifecycle.
