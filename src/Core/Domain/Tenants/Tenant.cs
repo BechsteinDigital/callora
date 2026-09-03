@@ -15,4 +15,6 @@ public sealed class Tenant
     public DateTimeOffset UpdatedAtUtc { get; set; }
 
     public ICollection<Workspaces.Workspace> Workspaces { get; set; } = new List<Workspaces.Workspace>();
+
+    public ICollection<TenantMembership> Memberships { get; set; } = new List<TenantMembership>();
 }
