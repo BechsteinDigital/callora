@@ -30,7 +30,16 @@ public sealed class BackendClaimsTransformation(IBackendRbacStore rbacStore) : I
         // Eine Workspace-Session verliert dabei nichts: Sie trägt ihre Permissions vollständig aus
         // WorkspaceRolePermissions im Token (AdminLoginResolver) — die Projektion ist der Weg für
         // Plattform-Operatoren, nicht für Mitgliedschaften.
-        if (principal.HasClaim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Workspace))
+        // Der Mandanten-Scope steigt aus demselben Grund aus: "admin" heißt eine Mitgliedschaft
+        // dort genauso, und eine gleichnamige Plattformrolle würde jedem TenantAdmin JEDES
+        // Mandanten deren Rechte geben. Auch er trägt seine Berechtigungen vollständig im Token
+        // (TenantRolePermissions, gesetzt im AdminLoginResolver).
+        //
+        // Aufgezählt statt "alles außer platform": Es gibt authentifizierte Principals ohne
+        // Scope-Claim, und für die IST die Projektion der Weg. Eine Negation würde ihnen still ihre
+        // Rechte nehmen — ein Ausfall, der wie ein Rechteproblem aussieht und keins ist.
+        if (principal.HasClaim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Workspace) ||
+            principal.HasClaim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Tenant))
         {
             return principal;
         }

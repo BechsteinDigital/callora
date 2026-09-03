@@ -22,6 +22,11 @@ public static class BackendClaimTypes
     public const string WorkspaceKey = "workspace_key";
 
     /// <summary>
+    /// The tenant a <see cref="BackendAuthScopes.Tenant"/> session is bound to.
+    /// </summary>
+    public const string TenantKey = "tenant_key";
+
+    /// <summary>
     /// Authorization tier of the session (see <see cref="BackendAuthScopes"/>).
     /// Stamped at token issuance; a principal without it never gains
     /// platform-wide access.

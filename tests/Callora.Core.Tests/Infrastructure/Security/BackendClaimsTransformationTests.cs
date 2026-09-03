@@ -67,7 +67,16 @@ public sealed class BackendClaimsTransformationTests
             claim => claim.Type == BackendClaimTypes.Permission && claim.Value == PlatformPermission);
     }
 
-    /// <summary>Eine Session ohne Scope-Claim bleibt projiziert — der Ausstieg gilt nur „workspace".</summary>
+    /// <summary>
+    /// Eine Session ohne Scope-Claim bleibt projiziert — der Ausstieg ist aufgezählt, nicht negiert.
+    /// </summary>
+    /// <remarks>
+    /// Der Grund, warum der Ausstieg „workspace oder tenant" prüft statt „nicht platform": Es gibt
+    /// authentifizierte Principals ohne Scope-Claim, und für die IST die Projektion der Weg. Eine
+    /// Negation nähme ihnen still ihre Rechte — ein Ausfall, der wie ein Rechteproblem aussieht und
+    /// keins ist. Dieser Test ist der Grund, warum die Erweiterung um den Mandanten-Scope nicht als
+    /// Negation geschrieben wurde.
+    /// </remarks>
     [Fact]
     public async Task SessionWithoutAScopeClaim_StillReceivesTheProjectedPermissions()
     {
@@ -76,6 +85,44 @@ public sealed class BackendClaimsTransformationTests
         var result = await transformation.TransformAsync(Session(scope: null, role: BackendRoles.Admin));
 
         Assert.Contains(
+            result.Claims,
+            claim => claim.Type == BackendClaimTypes.Permission && claim.Value == PlatformPermission);
+    }
+
+    /// <summary>
+    /// Dieselbe Falle eine Ebene höher: Eine Mandanten-Mitgliedschaft heißt ebenfalls <c>admin</c>.
+    /// </summary>
+    /// <remarks>
+    /// Ohne den Ausstieg bekäme jeder TenantAdmin jedes Mandanten die Plattform-Permissions der
+    /// gleichnamigen RBAC-Rolle — also genau das, was der Mandanten-Scope verhindern soll: Er ist
+    /// die Ebene, die einen Kunden verwaltet, nicht die Instanz.
+    /// </remarks>
+    [Fact]
+    public async Task TenantSession_DoesNotInheritAPlatformRoleOfTheSameName()
+    {
+        var transformation = new BackendClaimsTransformation(await StoreWithPlatformRoleNamedAdminAsync());
+
+        var result = await transformation.TransformAsync(
+            Session(BackendAuthScopes.Tenant, role: BackendRoles.Admin));
+
+        Assert.DoesNotContain(
+            result.Claims,
+            claim => claim.Type == BackendClaimTypes.Permission && claim.Value == PlatformPermission);
+    }
+
+    [Fact]
+    public async Task TenantSession_DoesNotInheritTheGloballyAssignedRoleEither()
+    {
+        var store = await StoreWithPlatformRoleNamedAdminAsync();
+        await store.UpsertRoleAsync("operator", [PlatformPermission]);
+        await store.UpsertUserRoleAsync("user-1", "operator");
+        var transformation = new BackendClaimsTransformation(store);
+
+        var result = await transformation.TransformAsync(
+            Session(BackendAuthScopes.Tenant, role: "member"));
+
+        Assert.DoesNotContain(result.Claims, claim => claim.Type == ClaimTypes.Role && claim.Value == "operator");
+        Assert.DoesNotContain(
             result.Claims,
             claim => claim.Type == BackendClaimTypes.Permission && claim.Value == PlatformPermission);
     }
