@@ -20,6 +20,10 @@ public sealed class TenantRolePermissionsTests
         Assert.Contains(BackendPermissionKeys.WorkspaceRead, permissions);
         Assert.Contains(BackendPermissionKeys.MembershipUpdate, permissions);
         Assert.Contains(BackendPermissionKeys.PluginRead, permissions);
+
+        // Der Punkt der Ebene: Der Mandant entscheidet, welcher seiner Workspaces welches
+        // lizenzierte Plugin nutzt — ohne an der Installation drehen zu dürfen.
+        Assert.Contains(BackendPermissionKeys.PluginAssign, permissions);
     }
 
     [Fact]

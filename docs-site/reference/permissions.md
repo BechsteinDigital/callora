@@ -200,6 +200,7 @@ to everyone who may watch it.
 | `plugin.read` | `PluginRead` | `GET /api/plugins`, `/installed`, `/signature-report`, `/audit`, `/contracts/support`, `/contracts/compatibility`, `/security/trusted-signers`, `/workspaces/{wk}/entitlements/{pid}`, `/tenants/{tid}/entitlements/{pid}`; `GET /api/entitlements` |
 | `plugin.delete` | `PluginDelete` | `DELETE /api/plugins/{id}` |
 | `plugin.execute` | `PluginExecute` | `POST /api/plugins/{id}/activate`, `/deactivate`; `PUT /api/entitlements`; `POST /api/entitlements/sync` |
+| `plugin.assign` | `PluginAssign` | `PUT /api/workspaces/{workspaceKey}/plugins/{pluginId}` |
 | `config.read` | `ConfigRead` | `GET /api/config/definitions`, `GET /api/config/effective` |
 | `config.update` | `ConfigUpdate` | `PUT /api/config/values` |
 | `webhook.read` | `WebhookRead` | `GET /api/webhooks` |
@@ -230,6 +231,8 @@ to everyone who may watch it.
 | `workspace.delete` | `WorkspaceDelete` | `DELETE /api/workspaces/{wk}` |
 | `integration.read` | `IntegrationRead` | `GET /api/security/integrations` |
 | `integration.manage` | `IntegrationManage` | `POST /api/security/integrations`, `DELETE /api/security/integrations/{id}` |
+| `snippet.read` | `SnippetRead` | `GET /api/snippets` |
+| `snippet.update` | `SnippetUpdate` | `PUT /api/snippets/{snippetKey}`, `DELETE /api/snippets/{snippetKey}` |
 
 ::: tip Key naming
 Keys follow a `{function}.{action}` shape where the action is one of

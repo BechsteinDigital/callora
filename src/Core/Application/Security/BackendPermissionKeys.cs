@@ -13,6 +13,20 @@ public static class BackendPermissionKeys
     public const string PluginRead = "plugin.read";
     public const string PluginDelete = "plugin.delete";
     public const string PluginExecute = "plugin.execute";
+
+    /// <summary>
+    /// Assigning an available plugin to one workspace — a different authority from
+    /// <see cref="PluginCreate"/> and <see cref="PluginExecute"/>.
+    /// </summary>
+    /// <remarks>
+    /// <c>plugin.create</c> und <c>plugin.delete</c> bedeuten „Artefakt auf dem Host": eine Binary,
+    /// eine Version, ein Schema für alle Mandanten dieser Instanz. <c>plugin.execute</c> bedeutet
+    /// „an der Installation drehen" — aktivieren, deaktivieren, Lizenzen setzen. Beides gehört dem
+    /// Betreiber. Die Frage „nutzt dieser eine Workspace das Plugin" ist eine dritte und gehört dem,
+    /// der den Workspace verwaltet; sie auf einen der anderen Schlüssel zu legen hieße, ihm die
+    /// beiden anderen mitzugeben.
+    /// </remarks>
+    public const string PluginAssign = "plugin.assign";
     public const string ConfigRead = "config.read";
     public const string ConfigUpdate = "config.update";
     public const string WebhookRead = "webhook.read";
