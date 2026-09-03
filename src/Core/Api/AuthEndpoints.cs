@@ -26,16 +26,28 @@ public static class AuthEndpoints
             IBackendUserStore userStore,
             IBackendRbacStore rbacStore,
             HttpContext httpContext,
+            // Ausdrücklich aus den Diensten und ausdrücklich nullbar. Ohne [FromServices] rät eine
+            // Minimal-API „Body" für jeden Typ, den der Container beim Aufbau der Route nicht kennt —
+            // in einem Testhost, der nur die Hälfte registriert, verlangte die Anmeldung dann einen
+            // zweiten Rumpf.
+            //
+            // Und ohne diesen Parameter überhaupt bekam der Helfer seinen Default null: Der Satz aus
+            // Plugin-Schlüsseln und zugewiesenen Rollen entstand dann nie, jede Anmeldung fiel still
+            // auf den festen Kern-Satz zurück. Getestet war die Zusammensetzung — nur nicht der Weg
+            // dorthin, und der ist es, der im Betrieb zählt.
+            [FromServices] WorkspaceSessionPermissions? sessionPermissions,
             CancellationToken cancellationToken) =>
             HandleAdminLoginAsync(
                 request.Login,
                 request.Password,
                 request.WorkspaceKey,
+                request.TenantKey,
                 options,
                 userStore,
                 rbacStore,
                 httpContext,
-                cancellationToken))
+                cancellationToken,
+                sessionPermissions))
             .WithName("Auth_Api_Login")
             .RequireSameOriginLogin()
             .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
@@ -97,16 +109,21 @@ public static class AuthEndpoints
             IBackendUserStore userStore,
             IBackendRbacStore rbacStore,
             HttpContext httpContext,
+            [FromServices] WorkspaceSessionPermissions? sessionPermissions,
             CancellationToken cancellationToken) =>
             HandleAdminLoginAsync(
                 request.Login,
                 request.Password,
                 request.WorkspaceKey,
+                // Kein Mandantenschlüssel: Diese Route ist die Anmeldung AN einem Workspace. Die
+                // Mandantenebene verwaltet, sie arbeitet nicht — sie geht über /api/login.
+                tenantKey: null,
                 options,
                 userStore,
                 rbacStore,
                 httpContext,
-                cancellationToken))
+                cancellationToken,
+                sessionPermissions))
             .WithName("Auth_Workspace_Login")
             .RequireSameOriginLogin()
             .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
@@ -116,17 +133,16 @@ public static class AuthEndpoints
         string login,
         string password,
         string? workspaceKey,
+        string? tenantKey,
         BackendHostOptions options,
         IBackendUserStore userStore,
         IBackendRbacStore rbacStore,
         HttpContext httpContext,
         CancellationToken cancellationToken,
-        // Ausdrücklich aus den Diensten und ausdrücklich optional. Ohne [FromServices] rät eine
-        // Minimal-API „Body" für jeden Typ, den der Container beim Aufbau der Route nicht kennt — in
-        // einem Testhost, der nur die Hälfte registriert, verlangte die Anmeldung dann einen zweiten
-        // Rumpf. Optional, weil ein Aufbau ohne Plugin-Persistenz weiterhin anmelden soll, nur mit dem
-        // Kern-Satz: Eine Anmeldung darf nicht an einem Dienst hängen, der sie nicht braucht.
-        [FromServices] WorkspaceSessionPermissions? sessionPermissions = null)
+        // Optional, weil ein Aufbau ohne Plugin-Persistenz weiterhin anmelden können muss — dann
+        // eben mit dem festen Kern-Satz der Mitgliedsrolle. Gebunden wird der Dienst an der Route;
+        // hier stünde [FromServices] wirkungslos.
+        WorkspaceSessionPermissions? sessionPermissions = null)
     {
         var user = await userStore.AuthenticateAsync(login, password, cancellationToken).ConfigureAwait(false);
         if (user is null)
@@ -136,7 +152,7 @@ public static class AuthEndpoints
 
         var grant = await AdminLoginResolver
             .ResolveAsync(
-                user, workspaceKey, userStore, rbacStore, options, cancellationToken, sessionPermissions)
+                user, workspaceKey, userStore, rbacStore, options, cancellationToken, sessionPermissions, tenantKey)
             .ConfigureAwait(false);
         if (grant is null)
         {
@@ -165,6 +181,11 @@ public static class AuthEndpoints
             customClaims[BackendClaimTypes.WorkspaceKey] = grant.WorkspaceKey;
         }
 
+        if (!string.IsNullOrWhiteSpace(grant.TenantKey))
+        {
+            customClaims[BackendClaimTypes.TenantKey] = grant.TenantKey;
+        }
+
         var token = BackendJwtTokenIssuer.Issue(
             options,
             subject: user.ExternalId,
@@ -190,6 +211,7 @@ public static class AuthEndpoints
             DisplayName: user.DisplayName,
             Email: user.Email,
             Role: grant.Role,
-            WorkspaceKey: grant.WorkspaceKey));
+            WorkspaceKey: grant.WorkspaceKey,
+            TenantKey: grant.TenantKey));
     }
 }

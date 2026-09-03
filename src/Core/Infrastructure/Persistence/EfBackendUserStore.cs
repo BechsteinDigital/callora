@@ -187,6 +187,30 @@ public sealed class EfBackendUserStore(
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<string?> GetTenantRoleAsync(
+        string externalId,
+        string tenantKey,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(externalId) || string.IsNullOrWhiteSpace(tenantKey))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        var normalizedExternalId = externalId.Trim();
+        var normalizedTenantKey = tenantKey.Trim();
+
+        // IsActive wird geprüft wie beim Workspace: Ein stillgelegter Mandant darf sich nicht
+        // anmelden können, sonst wäre "deaktiviert" eine Anzeige und keine Grenze.
+        return dbContext.TenantMemberships
+            .AsNoTracking()
+            .Where(x => x.User.ExternalId == normalizedExternalId &&
+                        x.Tenant.TenantKey == normalizedTenantKey &&
+                        x.Tenant.IsActive)
+            .Select(x => x.Role)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<BackendUser>> ListAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.BackendUsers

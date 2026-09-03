@@ -15,4 +15,5 @@ public sealed record AdminLoginGrant(
     string Scope,
     string? WorkspaceKey,
     string? Role,
-    IReadOnlyList<string> Permissions);
+    IReadOnlyList<string> Permissions,
+    string? TenantKey = null);
