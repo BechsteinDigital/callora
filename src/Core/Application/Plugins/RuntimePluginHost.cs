@@ -458,7 +458,8 @@ public sealed class RuntimePluginHost : ICalloraPluginRuntime, IAsyncDisposable
             // Das Plugin exportiert genau dort, und in _active steht es erst danach.
             _exportsRevoked.TryRemove(record.PluginId, out _);
 
-            var pluginContext = new PluginContext(_services, record.PluginId, RegisterExport, ResolveExport);
+            var pluginContext = new PluginContext(
+                _services, record.PluginId, RegisterExport, ResolveExport, _sharedContracts);
             await plugin.StartAsync(pluginContext, cancellationToken).ConfigureAwait(false);
 
             // Shopware-artige Controller-Discovery: IApiController-Typen der

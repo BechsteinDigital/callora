@@ -7,12 +7,13 @@ internal sealed class PluginContext(
     IServiceProvider services,
     string pluginId,
     Action<string, Type, object> registerExport,
-    Func<Type, object?> resolveExport) : IHostPluginContext
+    Func<Type, object?> resolveExport,
+    SharedContractAssemblyRegistry? sharedContracts = null) : IHostPluginContext
 {
     // Kuratierte Oberfläche statt Root-Provider: Plugins sehen nur
     // veröffentlichte Verträge, plugin-gebundene Dienste (PLAT-252) und
     // plugin-übergreifend exportierte Contract-Services (REV2 §9.3).
-    public IServiceProvider Services { get; } = new CuratedPluginServiceProvider(services, pluginId, resolveExport);
+    public IServiceProvider Services { get; } = new CuratedPluginServiceProvider(services, pluginId, resolveExport, sharedContracts);
 
     public IConfiguration? PluginConfiguration { get; } =
         services.GetService(typeof(IConfiguration)) is IConfiguration configuration

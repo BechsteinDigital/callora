@@ -2587,6 +2587,7 @@ Callora.Core.Application.Plugins.SessionResumePurgeRecurringJobProvider
 Callora.Core.Application.Plugins.SessionResumePurgeRecurringJobProvider.GetDefinitions() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Jobs.Contracts.RecurringJobDefinition!>!
 Callora.Core.Application.Plugins.SessionResumePurgeRecurringJobProvider.SessionResumePurgeRecurringJobProvider() -> void
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry
+Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.IsDeclaredContract(string? assemblyName) -> bool
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.ListRegistrations() -> System.Collections.Generic.IReadOnlyList<Callora.Core.Application.Plugins.SharedContractRegistration!>!
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.RegisterContracts(string! pluginDirectory, System.Collections.Generic.IReadOnlyCollection<string!>! contractFileNames, string? declaringPluginId = null) -> void
 Callora.Core.Application.Plugins.SharedContractAssemblyRegistry.SharedContractAssemblyRegistry(Microsoft.Extensions.Logging.ILogger? logger = null) -> void

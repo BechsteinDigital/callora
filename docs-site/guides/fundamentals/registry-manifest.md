@@ -161,6 +161,29 @@ malformed or removed `contractVersion` fails the plugin outright; a deprecated o
 with a warning.
 :::
 
+### Declared contracts are what a plugin may publish
+
+`contracts` names the assemblies that carry your published types:
+
+```json
+"contracts": ["Acme.Crm.Contracts.dll"]
+```
+
+The host lifts them into the shared load context, so every plugin sees **one** identity for those
+types instead of a copy per load context — and that same declaration is what lets a second plugin
+resolve them from `context.Services`.
+
+**Name them what you like.** The gate used to admit assemblies called `Callora.Plugin.*.Abstractions`,
+which worked while every plugin came from one house and refused `Acme.Crm.Contracts` for a reason its
+author could not have known. It asks the manifest now.
+
+::: warning Declare a capability of the plugin whose contracts you consume
+Contracts are registered when the declaring plugin activates, and activation runs in capability order.
+A plugin that consumes another's contracts without requiring one of its capabilities may be activated
+first — and then the type is not resolvable yet. `requiresCapabilities` is also what tells an operator,
+before installing, that one plugin needs the other.
+:::
+
 ### Fields read outside the core parser
 
 `databaseSchema` and `sensitiveFields` are **not** part of `PluginRegistryJsonDto`. They're

@@ -36,7 +36,12 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginDirectory);
         ArgumentNullException.ThrowIfNull(contractFileNames);
 
-        var rootPath = Path.GetFullPath(pluginDirectory);
+        // Der abschließende Trenner muss weg, sonst weist der Ausbruchs-Test unten alles ab: Der
+        // Vergleich hängt selbst einen Trenner an, und aus einem Verzeichnis mit Schrägstrich am Ende
+        // wird ein Präfix mit zweien, das kein Pfad je erfüllt. In Produktion fiel das nicht auf, weil
+        // der einzige Aufrufer Path.GetDirectoryName benutzt — jeder andere bekäme „escapes the plugin
+        // directory" für einen Pfad, der nirgendwohin ausbricht.
+        var rootPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(pluginDirectory));
         foreach (var fileName in contractFileNames)
         {
             if (string.IsNullOrWhiteSpace(fileName))
@@ -65,6 +70,35 @@ public sealed class SharedContractAssemblyRegistry(ILogger? logger = null)
     /// Resolves a shared contract assembly by name; null when unknown or
     /// incompatible (caller falls back to plugin-local resolution).
     /// </summary>
+    /// <summary>
+    /// Ob diese Assembly von irgendjemandem als geteilter Vertrag deklariert wurde.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Über <c>_registrationsByName</c> und nicht über <c>_assembliesByName</c>, und das ist der
+    /// Unterschied, der hier zählt: Ein Vertrag, den der Host selbst mitbringt, wird nur vermerkt und
+    /// nicht geladen — er liegt ohnehin im Default-Kontext. Über die geladenen Assemblies gefragt,
+    /// fiele er durch, obwohl er deklariert ist.
+    /// </para>
+    /// <para>
+    /// Die Frage stellt die kuratierte Dienstoberfläche: Darf ein Plugin diesen Typ auflösen? Sie hat
+    /// das früher am Namen entschieden — und damit an einer Eigenschaft, die ein Fremdanbieter nicht
+    /// kennt und nicht treffen kann.
+    /// </para>
+    /// </remarks>
+    public bool IsDeclaredContract(string? assemblyName)
+    {
+        if (assemblyName is not { Length: > 0 })
+        {
+            return false;
+        }
+
+        lock (_syncLock)
+        {
+            return _registrationsByName.ContainsKey(assemblyName);
+        }
+    }
+
     public Assembly? TryResolve(AssemblyName assemblyName)
     {
         ArgumentNullException.ThrowIfNull(assemblyName);
