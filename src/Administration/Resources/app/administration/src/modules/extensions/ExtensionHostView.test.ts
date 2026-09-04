@@ -16,6 +16,7 @@ const { contextRef, listMock } = vi.hoisted(() => ({
       permissions: ['*'],
       scope: null,
       workspaceKey: null,
+      tenantKey: null,
       isOperator: true,
     } as AdminContext,
   },

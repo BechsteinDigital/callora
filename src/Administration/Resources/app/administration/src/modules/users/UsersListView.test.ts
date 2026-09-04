@@ -29,6 +29,7 @@ function ctx(permissions: string[]): AdminContext {
     permissions,
     scope: null,
     workspaceKey: null,
+    tenantKey: null,
     isOperator: false,
   }
 }
