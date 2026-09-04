@@ -15,9 +15,11 @@
     <div class="topbar__right">
       <button type="button" class="topbar__search" aria-label="Suchen" @click="$emit('open-search')">
         <CalIcon :icon="Search" size="sm" />
-        <span class="topbar__search-label">Suchen</span>
+        <span class="topbar__search-label">{{ t('admin.search', 'Suchen') }}</span>
         <kbd class="topbar__kbd">{{ shortcutHint }}</kbd>
       </button>
+
+      <AreaSwitcher />
 
       <WorkspaceSwitcher />
 
@@ -41,6 +43,9 @@ import { RouterLink, useRoute } from 'vue-router'
 import { ChevronRight, Menu, Moon, Search, Sun } from 'lucide-vue-next'
 import CalIcon from '@/core/ui/CalIcon.vue'
 import UserMenu from '@/core/ui/UserMenu.vue'
+import AreaSwitcher from './AreaSwitcher.vue'
+import { currentAreaSubject } from './area'
+import { t } from '@/core/i18n/i18n'
 import WorkspaceSwitcher from '@/core/workspace/WorkspaceSwitcher.vue'
 import { useAuthStore } from '@/core/auth/authStore'
 import { useTheme } from '@/core/design/theme'
@@ -64,7 +69,9 @@ const scopeLabel = computed(() => {
   if (!ctx.value) {
     return undefined
   }
-  return ctx.value.isOperator ? 'Operator' : (ctx.value.workspaceKey ?? ctx.value.scope ?? undefined)
+  // Nicht mehr der rohe Scope als Rückfall: Bei einer Mandanten-Sitzung stand dort "tenant"
+  // — der Name der Ebene statt des Namens des Mandanten, in dem man sitzt.
+  return ctx.value.isOperator ? 'Operator' : (currentAreaSubject(ctx.value) ?? undefined)
 })
 
 // Mac users expect ⌘K, everyone else Ctrl+K — showing the wrong one is worse

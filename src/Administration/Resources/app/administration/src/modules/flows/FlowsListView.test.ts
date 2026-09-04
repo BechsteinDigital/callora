@@ -41,6 +41,7 @@ function ctx(permissions: string[]): AdminContext {
     permissions,
     scope: null,
     workspaceKey: 'workspace-a', // fixed workspace → no picker, no workspacesApi.list
+    tenantKey: null,
     isOperator: false,
   }
 }

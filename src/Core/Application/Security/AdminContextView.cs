@@ -8,6 +8,12 @@ namespace Callora.Core.Application.Security;
 /// binding, and whether the caller is a platform operator. The admin shell reads
 /// this to drive navigation and visibility; server-side authorization stays
 /// authoritative (UI hiding is not a security boundary, ADR-014 §3.4).
+/// <para>
+/// <see cref="TenantKey"/> kam mit der Mandantenebene dazu. Ohne ihn könnte die Shell zwar sehen,
+/// DASS eine Sitzung mandantengebunden ist (am <see cref="Scope"/>), aber nicht, an welchen —
+/// und „Mandant" als Bereichsname ohne den Namen des Mandanten ist eine Überschrift, die niemandem
+/// sagt, wo er ist.
+/// </para>
 /// </summary>
 public sealed record AdminContextView(
     string UserId,
@@ -17,7 +23,8 @@ public sealed record AdminContextView(
     IReadOnlyList<string> Permissions,
     string? Scope,
     string? WorkspaceKey,
-    bool IsOperator)
+    bool IsOperator,
+    string? TenantKey = null)
 {
     /// <summary>
     /// Builds the context from the principal's claims, or <c>null</c> when the
@@ -41,6 +48,7 @@ public sealed record AdminContextView(
             Permissions: user.FindAll(BackendClaimTypes.Permission).Select(claim => claim.Value).ToArray(),
             Scope: user.FindFirst(BackendClaimTypes.CalloraScope)?.Value,
             WorkspaceKey: user.FindFirst(BackendClaimTypes.WorkspaceKey)?.Value,
-            IsOperator: WorkspaceScopeEvaluator.IsOperator(user));
+            IsOperator: WorkspaceScopeEvaluator.IsOperator(user),
+            TenantKey: user.FindFirst(BackendClaimTypes.TenantKey)?.Value);
     }
 }

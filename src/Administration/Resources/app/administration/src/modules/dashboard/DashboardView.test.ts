@@ -32,6 +32,7 @@ function setContext(over: Partial<AdminContext>): void {
     permissions: [],
     scope: 'platform',
     workspaceKey: null,
+    tenantKey: null,
     isOperator: true,
     ...over,
   }
@@ -101,6 +102,7 @@ describe('DashboardView', () => {
       permissions: ['workspace.read', 'flow.manage'],
       scope: 'workspace',
       workspaceKey: 'sales-de',
+      tenantKey: null,
       isOperator: false,
     })
     const wrapper = mount(DashboardView, { global })

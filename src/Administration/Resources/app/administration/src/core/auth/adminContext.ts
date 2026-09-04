@@ -6,6 +6,8 @@ export interface AdminContext {
   permissions: string[]
   scope: string | null
   workspaceKey: string | null
+  /** The tenant a tenant-scoped session is bound to; null for every other scope. */
+  tenantKey: string | null
   isOperator: boolean
 }
 
@@ -17,6 +19,7 @@ export function parseAdminContext(raw: {
   permissions?: string[]
   scope?: string | null
   workspaceKey?: string | null
+  tenantKey?: string | null
   isOperator?: boolean
 }): AdminContext {
   return {
@@ -27,6 +30,7 @@ export function parseAdminContext(raw: {
     permissions: raw.permissions ?? [],
     scope: raw.scope ?? null,
     workspaceKey: raw.workspaceKey ?? null,
+    tenantKey: raw.tenantKey ?? null,
     isOperator: raw.isOperator ?? false,
   }
 }

@@ -42,6 +42,7 @@ function ctx(permissions: string[]): AdminContext {
     permissions,
     scope: 'platform',
     workspaceKey: null,
+    tenantKey: null,
     // Operators see all three scopes and start on the platform level — the view
     // these assertions describe.
     isOperator: true,

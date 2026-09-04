@@ -374,6 +374,77 @@ public sealed class AuthAndUserEndpointsTests
         Assert.DoesNotContain(BackendPermissionKeys.PluginCreate, permissions);
     }
 
+    /// <summary>
+    /// Der Bereichswechsel stellt eine neue Sitzung aus — ohne Kennwort, aber mit denselben Prüfungen.
+    /// </summary>
+    /// <remarks>
+    /// Der Bereich steht im Token, nicht im Client: Ein Umschalter in der Oberfläche kann ihn also
+    /// nicht setzen, er muss eine neue Sitzung anfordern. Damit das kein zweiter, schwächerer
+    /// Anmeldeweg wird, läuft er durch dieselbe Auflösung wie /login.
+    /// </remarks>
+    [Fact]
+    public async Task SwitchingScope_ToTheOwnTenant_IssuesATenantSession()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "carol");
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/scope", new SwitchScopeApiRequest(TenantKey: "tenant-a"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<LoginApiResponse>();
+        Assert.Equal("tenant-a", payload!.TenantKey);
+
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(payload.AccessToken);
+        Assert.Contains(token.Claims, x =>
+            x.Type == BackendClaimTypes.CalloraScope && x.Value == BackendAuthScopes.Tenant);
+    }
+
+    [Fact]
+    public async Task SwitchingScope_ToAForeignWorkspace_IsRefused()
+    {
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "carol");
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/scope", new SwitchScopeApiRequest(WorkspaceKey: "workspace-b"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    /// <summary>Kein Weg nach oben: Wer kein Betreiber ist, wird es durch einen Wechsel nicht.</summary>
+    [Fact]
+    public async Task SwitchingScope_ToThePlatform_IsRefusedForANonOperator()
+    {
+        // Ohne Schlüssel bedeutet die Anfrage „Plattform" — und die vergibt die Auflösung nur an
+        // eine Betreiber-Rolle. Der Test steht hier, weil der Endpunkt kein Kennwort verlangt und
+        // die Frage „was, wenn jemand einfach nichts schickt" damit die erste ist, die zählt.
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "carol");
+
+        var response = await client.PostAsJsonAsync("/api/auth/scope", new SwitchScopeApiRequest());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SwitchingScope_AsSomebodyWhoIsNotAUser_IsRefused()
+    {
+        // Ein API-Key-Principal trägt Plattform-Scope, aber keinen BackendUser. Fail-closed statt
+        // eines Wechsels für jemanden, dessen Mitgliedschaften niemand kennt.
+        await using var app = await CreateAppAsync();
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "gibt-es-nicht");
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/scope", new SwitchScopeApiRequest(TenantKey: "tenant-a"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private sealed class StubMembershipRoles : IWorkspaceMembershipRoleStore
     {
         public Task<IReadOnlyList<string>> ListRolesAsync(
