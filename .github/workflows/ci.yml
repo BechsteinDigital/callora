@@ -171,7 +171,7 @@ jobs:
       # wissenswert und behebenswert, erreicht aber keinen Kunden — darauf zu blockieren
       # erzieht dazu, auch das Signal zu ignorieren, das ihn erreicht.
       - name: Audit (ausgelieferte Abhängigkeiten)
-        run: npm audit --omit=dev --audit-level=high
+        run: bash $GITHUB_WORKSPACE/scripts/npm-audit-gate.sh
 
       - name: Audit (alle, nur zur Kenntnis)
         run: npm audit --audit-level=high || true

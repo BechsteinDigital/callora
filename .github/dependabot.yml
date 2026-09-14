@@ -22,8 +22,21 @@ updates:
     groups:
       npm-all:
         patterns: ["*"]
+    # TypeScript wird zurückgehalten, und das ist der Grund: Die Gruppe hob es auf ^7.0.2,
+    # während typescript-eslint@8.68 `typescript >=4.8.4 <6.1.0` als Peer verlangt. `npm ci`
+    # scheiterte damit in sechs Sekunden — und weil die Gruppe alles in EINEN Pull Request
+    # packt, blockierte dieser eine Konflikt die dreizehn anderen Updates gleich mit
+    # (PR #371, offen seit dem 30.08.). Ein Audit-Gate, dessen Update-Weg verstopft ist,
+    # fordert eine Handlung, die niemand ausführen kann.
+    #
+    # Wieder entfernen, sobald typescript-eslint TypeScript 7 als Peer zulässt. Bis dahin
+    # ist die Sperre sichtbar hier statt unsichtbar als roter Dependabot-PR.
+    ignore:
+      - dependency-name: "typescript"
+        versions: [">=6.1.0"]
 
-  # Surface-Runtime (ausgeliefert)
+  # Surface-Runtime (ausgeliefert). Dieselbe TypeScript-Sperre wie oben, aus demselben
+  # Grund — die Shell trägt dieselben Versionen (PR #370, ebenfalls seit dem 30.08. rot).
   - package-ecosystem: npm
     directory: /src/Surface.Rendering/Resources/app/surface
     schedule:
@@ -31,26 +44,25 @@ updates:
     groups:
       npm-all:
         patterns: ["*"]
+    # TypeScript wird zurückgehalten, und das ist der Grund: Die Gruppe hob es auf ^7.0.2,
+    # während typescript-eslint@8.68 `typescript >=4.8.4 <6.1.0` als Peer verlangt. `npm ci`
+    # scheiterte damit in sechs Sekunden — und weil die Gruppe alles in EINEN Pull Request
+    # packt, blockierte dieser eine Konflikt die dreizehn anderen Updates gleich mit
+    # (PR #371, offen seit dem 30.08.). Ein Audit-Gate, dessen Update-Weg verstopft ist,
+    # fordert eine Handlung, die niemand ausführen kann.
+    #
+    # Wieder entfernen, sobald typescript-eslint TypeScript 7 als Peer zulässt. Bis dahin
+    # ist die Sperre sichtbar hier statt unsichtbar als roter Dependabot-PR.
+    ignore:
+      - dependency-name: "typescript"
+        versions: [">=6.1.0"]
 
-  # Communication-Plugin: Admin- und Surface-Bundles. Die package.json liegt am
-  # Plugin-Wurzelverzeichnis, nicht bei den Quellen — der frühere Pfad
-  # (src/Resources/app/admin) enthielt kein Manifest, Dependabot lief dort ins Leere.
-  - package-ecosystem: npm
-    directory: /custom/static-plugins/Communication
-    schedule:
-      interval: weekly
-    groups:
-      npm-all:
-        patterns: ["*"]
-
-  # Composer-Plugin
-  - package-ecosystem: npm
-    directory: /custom/static-plugins/Composer
-    schedule:
-      interval: weekly
-    groups:
-      npm-all:
-        patterns: ["*"]
+  # Hier standen einmal Einträge für die Plugins Communication und Composer unter
+  # /custom/static-plugins/. Dort liegen im Repository nur .gitkeep und README.md: Die
+  # Plugins haben nach ADR-020 eigene Repositories, und ihre npm-Updates gehören dorthin.
+  # Dependabot lief also erneut ins Leere — dieselbe Fehlerform, die der Kommentar an
+  # dieser Stelle vorher beschrieb, nur eine Ebene höher. Ein Eintrag, der nichts findet,
+  # ist schlimmer als keiner: Er sieht nach Abdeckung aus.
 
   # Doku-Site
   - package-ecosystem: npm
