@@ -70,4 +70,24 @@ public sealed class AdminContextViewTests
     {
         Assert.Null(AdminContextView.FromPrincipal(new ClaimsPrincipal(new ClaimsIdentity())));
     }
+
+    [Fact]
+    public void ATenantSession_CarriesTheTenantItIsBoundTo()
+    {
+        // Ohne den Schlüssel sähe die Shell zwar, DASS die Sitzung mandantengebunden ist, aber nicht
+        // an welchen — und „Mandant" als Bereichsname ohne den Namen des Mandanten ist eine
+        // Überschrift, die niemandem sagt, wo er ist.
+        var view = AdminContextView.FromPrincipal(new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim("sub", "carol"),
+                new Claim(BackendClaimTypes.CalloraScope, BackendAuthScopes.Tenant),
+                new Claim(BackendClaimTypes.TenantKey, "tenant-a"),
+            ],
+            authenticationType: "Test")));
+
+        Assert.Equal(BackendAuthScopes.Tenant, view!.Scope);
+        Assert.Equal("tenant-a", view.TenantKey);
+        Assert.Null(view.WorkspaceKey);
+        Assert.False(view.IsOperator);
+    }
 }

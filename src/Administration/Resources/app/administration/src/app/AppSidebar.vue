@@ -102,6 +102,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { AppWindow, PanelLeftClose, PanelLeftOpen, Settings2, Store, X } from 'lucide-vue-next'
 import CalIcon from '@/core/ui/CalIcon.vue'
 import { useAuthStore } from '@/core/auth/authStore'
+import { useAreaContext } from './areaContext'
 import { visibleNavGroups } from './navigation'
 import { isNavItemActive } from './navActive'
 import { useSidebar } from './sidebarState'
@@ -111,7 +112,8 @@ import { resolvePluginIcon } from '@/core/extensions/pluginIcons'
 
 const route = useRoute()
 const ctx = useAuthStore().context
-const groups = computed(() => visibleNavGroups(ctx.value))
+const { active: activeArea } = useAreaContext()
+const groups = computed(() => visibleNavGroups(ctx.value, activeArea.value))
 
 // Plugin-contributed entries get their own group at the bottom. The server
 // already permission-filters them, so they render as delivered.

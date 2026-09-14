@@ -46,6 +46,7 @@ function ctx(permissions: string[], workspaceKey: string | null): AdminContext {
     permissions,
     scope: null,
     workspaceKey,
+    tenantKey: null,
     isOperator: workspaceKey === null,
   }
 }

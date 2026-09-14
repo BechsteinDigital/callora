@@ -30,6 +30,9 @@ public sealed class HeaderAuthenticationHandler : AuthenticationHandler<Authenti
             new(ClaimTypes.Name, "header-user")
         };
 
+        // Ohne "sub" ist ein Principal für alles anonym, was den Benutzer nachschlägt statt
+        // nur seine Rechte zu lesen — der Bereichswechsel etwa lädt ihn frisch.
+        AddClaimsFromHeader(claims, "X-Test-Subject", "sub");
         AddClaimsFromHeader(claims, "X-Test-Roles", ClaimTypes.Role);
         AddClaimsFromHeader(claims, "X-Test-Permissions", "permission");
         AddClaimsFromHeader(claims, "X-Test-Scopes", "scope");

@@ -65,6 +65,15 @@ Callora.Core.Api.PagedApiResponse<T>.NextCursor.init -> void
 Callora.Core.Api.PagedApiResponse<T>.PagedApiResponse(System.Collections.Generic.IReadOnlyList<T>! Items, int Total, string? NextCursor) -> void
 Callora.Core.Api.PagedApiResponse<T>.Total.get -> int
 Callora.Core.Api.PagedApiResponse<T>.Total.init -> void
+Callora.Core.Api.SwitchScopeApiRequest
+Callora.Core.Api.SwitchScopeApiRequest.<Clone>$() -> Callora.Core.Api.SwitchScopeApiRequest!
+Callora.Core.Api.SwitchScopeApiRequest.Deconstruct(out string? WorkspaceKey, out string? TenantKey) -> void
+Callora.Core.Api.SwitchScopeApiRequest.Equals(Callora.Core.Api.SwitchScopeApiRequest? other) -> bool
+Callora.Core.Api.SwitchScopeApiRequest.SwitchScopeApiRequest(string? WorkspaceKey = null, string? TenantKey = null) -> void
+Callora.Core.Api.SwitchScopeApiRequest.TenantKey.get -> string?
+Callora.Core.Api.SwitchScopeApiRequest.TenantKey.init -> void
+Callora.Core.Api.SwitchScopeApiRequest.WorkspaceKey.get -> string?
+Callora.Core.Api.SwitchScopeApiRequest.WorkspaceKey.init -> void
 Callora.Core.Api.WorkspaceLoginApiRequest
 Callora.Core.Api.WorkspaceLoginApiRequest.<Clone>$() -> Callora.Core.Api.WorkspaceLoginApiRequest!
 Callora.Core.Api.WorkspaceLoginApiRequest.Deconstruct(out string! Login, out string! Password, out string! WorkspaceKey) -> void
@@ -2886,8 +2895,8 @@ Callora.Core.Application.Secrets.Contracts.ISecretStore
 Callora.Core.Application.Secrets.Contracts.ISecretStore.GetSecretAsync(string! name, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string?>!
 Callora.Core.Application.Security.AdminContextView
 Callora.Core.Application.Security.AdminContextView.<Clone>$() -> Callora.Core.Application.Security.AdminContextView!
-Callora.Core.Application.Security.AdminContextView.AdminContextView(string! UserId, string? DisplayName, string? Email, System.Collections.Generic.IReadOnlyList<string!>! Roles, System.Collections.Generic.IReadOnlyList<string!>! Permissions, string? Scope, string? WorkspaceKey, bool IsOperator) -> void
-Callora.Core.Application.Security.AdminContextView.Deconstruct(out string! UserId, out string? DisplayName, out string? Email, out System.Collections.Generic.IReadOnlyList<string!>! Roles, out System.Collections.Generic.IReadOnlyList<string!>! Permissions, out string? Scope, out string? WorkspaceKey, out bool IsOperator) -> void
+Callora.Core.Application.Security.AdminContextView.AdminContextView(string! UserId, string? DisplayName, string? Email, System.Collections.Generic.IReadOnlyList<string!>! Roles, System.Collections.Generic.IReadOnlyList<string!>! Permissions, string? Scope, string? WorkspaceKey, bool IsOperator, string? TenantKey = null) -> void
+Callora.Core.Application.Security.AdminContextView.Deconstruct(out string! UserId, out string? DisplayName, out string? Email, out System.Collections.Generic.IReadOnlyList<string!>! Roles, out System.Collections.Generic.IReadOnlyList<string!>! Permissions, out string? Scope, out string? WorkspaceKey, out bool IsOperator, out string? TenantKey) -> void
 Callora.Core.Application.Security.AdminContextView.DisplayName.get -> string?
 Callora.Core.Application.Security.AdminContextView.DisplayName.init -> void
 Callora.Core.Application.Security.AdminContextView.Email.get -> string?
@@ -2901,6 +2910,8 @@ Callora.Core.Application.Security.AdminContextView.Roles.get -> System.Collectio
 Callora.Core.Application.Security.AdminContextView.Roles.init -> void
 Callora.Core.Application.Security.AdminContextView.Scope.get -> string?
 Callora.Core.Application.Security.AdminContextView.Scope.init -> void
+Callora.Core.Application.Security.AdminContextView.TenantKey.get -> string?
+Callora.Core.Application.Security.AdminContextView.TenantKey.init -> void
 Callora.Core.Application.Security.AdminContextView.UserId.get -> string!
 Callora.Core.Application.Security.AdminContextView.UserId.init -> void
 Callora.Core.Application.Security.AdminContextView.WorkspaceKey.get -> string?
@@ -6191,6 +6202,9 @@ override Callora.Core.Api.LoginApiResponse.ToString() -> string!
 override Callora.Core.Api.PagedApiResponse<T>.Equals(object? obj) -> bool
 override Callora.Core.Api.PagedApiResponse<T>.GetHashCode() -> int
 override Callora.Core.Api.PagedApiResponse<T>.ToString() -> string!
+override Callora.Core.Api.SwitchScopeApiRequest.Equals(object? obj) -> bool
+override Callora.Core.Api.SwitchScopeApiRequest.GetHashCode() -> int
+override Callora.Core.Api.SwitchScopeApiRequest.ToString() -> string!
 override Callora.Core.Api.WorkspaceLoginApiRequest.Equals(object? obj) -> bool
 override Callora.Core.Api.WorkspaceLoginApiRequest.GetHashCode() -> int
 override Callora.Core.Api.WorkspaceLoginApiRequest.ToString() -> string!
@@ -6788,6 +6802,8 @@ static Callora.Core.Api.OpenApi.BackendOpenApiExtensions.AddBackendOpenApi(this 
 static Callora.Core.Api.OpenApi.BackendOpenApiExtensions.MapBackendOpenApi(this Microsoft.AspNetCore.Builder.WebApplication! app) -> Microsoft.AspNetCore.Builder.WebApplication!
 static Callora.Core.Api.PagedApiResponse<T>.operator !=(Callora.Core.Api.PagedApiResponse<T>? left, Callora.Core.Api.PagedApiResponse<T>? right) -> bool
 static Callora.Core.Api.PagedApiResponse<T>.operator ==(Callora.Core.Api.PagedApiResponse<T>? left, Callora.Core.Api.PagedApiResponse<T>? right) -> bool
+static Callora.Core.Api.SwitchScopeApiRequest.operator !=(Callora.Core.Api.SwitchScopeApiRequest? left, Callora.Core.Api.SwitchScopeApiRequest? right) -> bool
+static Callora.Core.Api.SwitchScopeApiRequest.operator ==(Callora.Core.Api.SwitchScopeApiRequest? left, Callora.Core.Api.SwitchScopeApiRequest? right) -> bool
 static Callora.Core.Api.WorkspaceLoginApiRequest.operator !=(Callora.Core.Api.WorkspaceLoginApiRequest? left, Callora.Core.Api.WorkspaceLoginApiRequest? right) -> bool
 static Callora.Core.Api.WorkspaceLoginApiRequest.operator ==(Callora.Core.Api.WorkspaceLoginApiRequest? left, Callora.Core.Api.WorkspaceLoginApiRequest? right) -> bool
 static Callora.Core.Api.WorkspaceTemplateEffectiveApiResponse.operator !=(Callora.Core.Api.WorkspaceTemplateEffectiveApiResponse? left, Callora.Core.Api.WorkspaceTemplateEffectiveApiResponse? right) -> bool

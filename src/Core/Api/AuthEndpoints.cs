@@ -1,3 +1,4 @@
+using Callora.Core.Domain.Security;
 using Callora.Core.Application.Policies;
 using Callora.Core.Application.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -95,6 +96,49 @@ public static class AuthEndpoints
                 Role: user.FindFirst(ClaimTypes.Role)?.Value));
         }).WithName("Auth_Api_Me");
 
+        // Der Bereichswechsel. Er ist keine Client-Umschaltung: Der Bereich steht im Token
+        // (callora_scope), also braucht ein Wechsel eine neue Sitzung — deshalb stellt der Server
+        // eine aus, statt das Kennwort ein zweites Mal zu verlangen.
+        //
+        // Eskalation ist ausgeschlossen, ohne dass hier etwas dagegen steht: Die Auflösung ist
+        // dieselbe wie beim Anmelden, und die vergibt Plattform-Scope nur an eine Betreiber-Rolle,
+        // Workspace nur an ein Mitglied, Mandant nur an eine Mandanten-Mitgliedschaft. Wer hier
+        // etwas bekommt, hätte es auch über /login bekommen — nur eben mit Kennwort.
+        protectedApiGroup.MapPost("/scope", async (
+            SwitchScopeApiRequest request,
+            BackendHostOptions options,
+            IBackendUserStore userStore,
+            IBackendRbacStore rbacStore,
+            HttpContext httpContext,
+            [FromServices] WorkspaceSessionPermissions? sessionPermissions,
+            CancellationToken cancellationToken) =>
+        {
+            var userId = httpContext.User.FindFirst("sub")?.Value ??
+                httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            // Frisch geladen, nicht aus den Claims rekonstruiert: Der Sicherheitsstempel der neuen
+            // Sitzung muss der aktuelle sein. Sonst verlängerte ein Wechsel eine Sitzung über eine
+            // Deaktivierung oder Kennwortänderung hinweg, die sie gerade widerrufen hat (#105).
+            var user = await userStore
+                .GetByExternalIdAsync(userId, cancellationToken)
+                .ConfigureAwait(false);
+            if (user is null)
+            {
+                return Results.Forbid();
+            }
+
+            return await IssueSessionAsync(
+                    user, request.WorkspaceKey, request.TenantKey, options, userStore, rbacStore,
+                    httpContext, cancellationToken, sessionPermissions)
+                .ConfigureAwait(false);
+        }).WithName("Auth_Api_SwitchScope")
+            .RequireSameOriginLogin()
+            .RequireRateLimiting(BackendRateLimiting.AuthPolicy);
+
         var workspaceGroup = endpoints.MapGroup("/workspace/auth")
             .WithTags("Workspace Auth")
             .AllowAnonymous();
@@ -150,6 +194,27 @@ public static class AuthEndpoints
             return Results.Unauthorized();
         }
 
+        return await IssueSessionAsync(
+                user, workspaceKey, tenantKey, options, userStore, rbacStore, httpContext,
+                cancellationToken, sessionPermissions)
+            .ConfigureAwait(false);
+    }
+
+    // Alles ab der bestätigten Identität: auflösen, prüfen, Token ausstellen, Cookie setzen. Geteilt
+    // mit dem Bereichswechsel, weil dieser sich vom Anmelden nur darin unterscheidet, WOHER die
+    // Identität kommt — und weil ein zweiter Ausstellungspfad genau der Ort wäre, an dem eine der
+    // beiden Prüfungen später fehlt.
+    private static async Task<IResult> IssueSessionAsync(
+        BackendUser user,
+        string? workspaceKey,
+        string? tenantKey,
+        BackendHostOptions options,
+        IBackendUserStore userStore,
+        IBackendRbacStore rbacStore,
+        HttpContext httpContext,
+        CancellationToken cancellationToken,
+        WorkspaceSessionPermissions? sessionPermissions)
+    {
         var grant = await AdminLoginResolver
             .ResolveAsync(
                 user, workspaceKey, userStore, rbacStore, options, cancellationToken, sessionPermissions, tenantKey)

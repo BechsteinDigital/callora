@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import AppSidebar from './AppSidebar.vue'
 import type { AdminContext } from '@/core/auth/adminContext'
 import { usePluginNavigation } from '@/core/extensions/pluginNavigation'
+import { resetAreaContext, useAreaContext } from './areaContext'
 import { resetSidebar, useSidebar } from './sidebarState'
 
 const { contextRef, currentRoute } = vi.hoisted(() => ({
@@ -33,6 +34,7 @@ function ctx(permissions: string[]): AdminContext {
     permissions,
     scope: null,
     workspaceKey: null,
+    tenantKey: null,
     isOperator: true,
   }
 }
@@ -43,14 +45,28 @@ beforeEach(() => {
   currentRoute.path = '/'
   localStorage.clear()
   resetSidebar()
+  resetAreaContext()
 })
 
 describe('AppSidebar', () => {
-  it('renders the group headings a super admin may see', () => {
+  it('shows the platform area to an operator, not everything at once', () => {
+    // Der Punkt der Bereiche: Wer die Instanz betreibt, soll nicht an Medien und Flows
+    // vorbeiscrollen, um zu den Mandanten zu kommen. „Inhalte" gehört dem Workspace und
+    // steht deshalb erst da, wenn man dorthin wechselt.
     const wrapper = mount(AppSidebar)
 
     const headings = wrapper.findAll('.sidebar__group-label').map((n) => n.text())
-    expect(headings).toEqual(['Verwaltung', 'Inhalte', 'System'])
+    expect(headings).toEqual(['Verwaltung', 'System'])
+  })
+
+  it('shows the workspace area once the operator switches to it', () => {
+    useAreaContext().setActive('workspace')
+
+    const wrapper = mount(AppSidebar)
+
+    const headings = wrapper.findAll('.sidebar__group-label').map((n) => n.text())
+    expect(headings).toContain('Inhalte')
+    expect(headings).not.toContain('Verwaltung')
   })
 
   it('omits a heading for a group whose items are all gated away', () => {

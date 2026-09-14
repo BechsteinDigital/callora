@@ -12,6 +12,7 @@ function ctx(isOperator: boolean): AdminContext {
     permissions: ['*'],
     scope: null,
     workspaceKey: isOperator ? null : 'workspace-a',
+    tenantKey: null,
     isOperator,
   }
 }
