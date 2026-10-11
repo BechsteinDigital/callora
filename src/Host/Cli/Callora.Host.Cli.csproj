@@ -29,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" VersionOverride="8.23.0" />
     <ProjectReference Include="..\..\Core\Callora.Core.csproj" />
     <!-- REV2 §7: Callora governance analyzer (CAL0001). -->
     <ProjectReference Include="..\..\Analyzers\Callora.Analyzers.csproj"
