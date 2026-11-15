@@ -82,6 +82,7 @@
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <!-- Plugin dependency install gate: npm-range SemVer enforcement. -->
     <PackageReference Include="Semver" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" VersionOverride="8.23.0" />
   </ItemGroup>
 
 </Project>
